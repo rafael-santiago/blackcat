@@ -1,0 +1,153 @@
+#
+#                                Copyright (C) 2018 by Rafael Santiago
+#
+# This is a free software. You can redistribute it and/or modify under
+# the terms of the GNU General Public License version 2.
+#
+#
+
+include ~/toolsets/gcc/gcc-lib.hsl
+include ~/toolsets/gcc/gcc-app.hsl
+include ~/toolsets/clang/clang-lib.hsl
+include ~/toolsets/gcc/gcc-app.hsl
+include ~/fsutil.hsl
+
+function get_app_toolset() : result type string {
+    result get_toolset() + "-c-app";
+}
+
+function get_lib_toolset() : result type string {
+    result get_toolset() + "-c-lib";
+}
+
+function get_codes(dirlist type list) : result type list {
+    var oldcwd type string;
+    var codes type list;
+
+    $oldcwd = hefesto.sys.pwd();
+
+    var d type int;
+
+    $d = 0;
+
+    while ($d < $dirlist.count()) {
+        var dirpath type string;
+        $dirpath = $dirlist.item($d);
+
+        if (hefesto.sys.cd($dirpath)) {
+            $codes.ls(".*\\.c$");
+        } else {
+            hefesto.sys.echo("WARN: Unable to access the path \'" + $dirpath + "'. Just skipping it.\n");
+        }
+
+        $d = $d + 1;
+    }
+
+    hefesto.sys.cd($oldcwd);
+
+    result $codes;
+}
+
+function build_libkryptos() : result type int {
+    var option type list;
+    var libpath type string;
+    var rootdir type string;
+
+    $rootdir = hefesto.sys.env("BLACKCAT_ROOTDIR");
+
+    $libpath = hefesto.sys.make_path($rootdir, "lib/kryptos/lib/libkryptos.a");
+
+    $option = hefesto.sys.get_option("forge-anyway");
+
+    var exit_code type int;
+
+    $exit_code = 0;
+
+    if (isfile($libpath) == 0 || $option.count() > 0) {
+        var oldcwd type string;
+        $oldcwd = hefesto.sys.pwd();
+        $libpath = hefesto.sys.make_path($rootdir, "lib/kryptos/src/");
+        if (hefesto.sys.cd($libpath)) {
+            if (hefesto.sys.os_name() == "freebsd") {
+                $exit_code = hefesto.sys.run("hefesto");
+            } else {
+                $exit_code = hefesto.sys.run("hefesto --no-hmac-tests");
+            }
+            hefesto.sys.cd($oldcwd);
+        }
+    }
+
+    result $exit_code;
+}
+
+function build_libcutest() : result type int {
+    var option type list;
+    var libpath type string;
+    var rootdir type string;
+
+    $rootdir = hefesto.sys.env("BLACKCAT_ROOTDIR");
+
+    $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/lib/libcutest.a");
+
+    $option = hefesto.sys.get_option("forge-anyway");
+
+    var exit_code type int;
+
+    $exit_code = 0;
+
+    if (isfile($libpath) == 0 || $option.count() > 0) {
+        var oldcwd type string;
+        $oldcwd = hefesto.sys.pwd();
+        $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/");
+        if (hefesto.sys.cd($libpath)) {
+            $exit_code = hefesto.sys.run("hefesto");
+            hefesto.sys.cd($oldcwd);
+        }
+    }
+
+    result $exit_code;
+}
+
+
+local function get_toolset() : result type string {
+    var option type list;
+    var return type string;
+
+    $option = hefesto.sys.get_option("toolset");
+
+    if ($option.count() > 0) {
+        $return = $option.item(0);
+        $return.replace("-.*$", "");
+        result $return;
+    }
+
+    if (has_gcc()) {
+        $return = "gcc";
+    } else if (has_clang()) {
+        $return = "clang";
+    } else {
+        hefesto.sys.echo("ERROR: You must have gcc or clang well installed in your system.\n" +
+                         "       Install one of them and try again later.\n");
+        hefesto.project.abort(1);
+    }
+
+    result $return;
+}
+
+local function has_gcc() : result type int {
+    result (execbkcmd("gcc --version") == 0);
+}
+
+local function has_clang() : result type int {
+    result (execbkcmd("clang --version") == 0);
+}
+
+local function execbkcmd(cmdline type string) : result type int {
+    if (hefesto.sys.os_name() != "windows") {
+        $cmdline = $cmdline + " > /dev/null 2>&1";
+    } else {
+        $cmdline = $cmdline + " >  nul 2>&1";
+    }
+
+    result hefesto.sys.run($cmdline);
+}

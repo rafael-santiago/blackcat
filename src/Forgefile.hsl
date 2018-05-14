@@ -1,0 +1,33 @@
+#
+#                                Copyright (C) 2018 by Rafael Santiago
+#
+# This is a free software. You can redistribute it and/or modify under
+# the terms of the GNU General Public License version 2.
+#
+#
+
+include ~/toolsets/null/null.hsl
+include ~/toolsets/utils/forge_projects.hsl
+
+var exit_code type int;
+
+project blackcat : toolset "no-tool-any-set" : $exit_code;
+
+blackcat.prologue() {
+    # INFO(Rafael): This is useful in order to find artifacts from some submodules.
+    hefesto.sys.setenv("BLACKCAT_ROOTDIR", hefesto.sys.pwd());
+
+    var subforges type list;
+    $subforges.add_item("test");
+    $subforges.add_item("fs");
+
+    $exit_code = forge_projects($subforges);
+}
+
+blackcat.epilogue() {
+    if ($exit_code == 0) {
+        hefesto.sys.echo("INFO: Build success.\n");
+    } else {
+        hefesto.sys.echo("ERROR: Build has failed.\n");
+    }
+}

@@ -1,0 +1,6 @@
+[submodule "src/lib/kryptos"]
+	path = src/lib/kryptos
+	url = https://github.com/rafael-santiago/kryptos
+[submodule "src/lib/cutest"]
+	path = src/lib/cutest
+	url = https://github.com/rafael-santiago/cutest

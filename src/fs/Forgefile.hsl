@@ -1,0 +1,48 @@
+#
+#                                Copyright (C) 2018 by Rafael Santiago
+#
+# This is a free software. You can redistribute it and/or modify under
+# the terms of the GNU General Public License version 2.
+#
+#
+
+include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
+include ../forgeutils/toolsets.hsl
+
+local var curr_toolset type string;
+
+local var src type list;
+local var includes type list;
+local var cflags type list;
+local var libraries type list;
+local var ldflags type list;
+
+local var deps type string;
+
+project libbfs : toolset $curr_toolset : dependencies $deps : $src, $includes, $cflags, $libraries, $ldflags, "libbfs.lib";
+
+libbfs.preloading() {
+    $curr_toolset = get_lib_toolset();
+}
+
+libbfs.prologue() {
+    var code_paths type list;
+
+    # INFO(Rafael): All relevant sub-paths with code to scan and compile.
+
+    $code_paths.add_item(".");
+    $code_paths.add_item("base");
+
+    $src = get_codes($code_paths);
+
+    $includes = hefesto.sys.get_option("includes");
+    $cflags = hefesto.sys.get_option("cflags");
+    $libraries = hefesto.sys.get_option("libraries");
+    $ldflags = hefesto.sys.get_option("ldflags");
+
+    $deps = get_c_cpp_deps();
+
+    if (build_libkryptos() != 0) {
+        hefesto.project.abort(1);
+    }
+}

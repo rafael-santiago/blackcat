@@ -1,0 +1,94 @@
+#
+#                                Copyright (C) 2018 by Rafael Santiago
+#
+# This is a free software. You can redistribute it and/or modify under
+# the terms of the GNU General Public License version 2.
+#
+#
+
+include ../forgeutils/toolsets.hsl
+include ~/fsutil.hsl
+
+local var src type list;
+local var inc type list;
+local var cflags type list;
+local var lib type list;
+local var ldflags type list;
+local var appname type string;
+
+local var curr_toolset type string;
+
+blackcat-base-tests.preloading() {
+    $curr_toolset = get_app_toolset();
+}
+
+project blackcat-base-tests : toolset $curr_toolset : $src, $inc, $cflags, $lib, $ldflags, $appname;
+
+blackcat-base-tests.prologue() {
+    $src.ls(".*\\c$");
+    $inc = hefesto.sys.get_option("includes");
+    $cflags = hefesto.sys.get_option("cflags");
+    $lib = hefesto.sys.get_option("libraries");
+    $ldflags = hefesto.sys.get_option("ldflags");
+    $appname = get_appname();
+
+    if (build_libcutest() != 0) {
+        hefesto.project.abort(1);
+    }
+
+    if (hefesto.sys.os_name() == "linux") {
+        $ldflags.add_item("-ldl");
+        $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "freebsd") {
+        $ldflags.add_item("-lexecinfo");
+        $ldflags.add_item("-lpthread");
+    }
+
+    if (hefesto.sys.os_name() != "windows") {
+        if (isdir("/usr/local/include")) {
+            $inc.add_item("/usr/local/include");
+        }
+
+        if (isdir("/usr/local/lib")) {
+            $inc.add_item("/usr/local/lib");
+        }
+    }
+}
+
+blackcat-base-tests.epilogue() {
+    if (hefesto.sys.last_forge_result() == 0) {
+        if (run_test() != 0) {
+            hefesto.project.abort(1);
+        }
+    }
+}
+
+local function get_appname() : result type string {
+    var appname type string;
+
+    $appname = "blackcat-base-tests";
+
+    if (hefesto.sys.os_name() == "windows") {
+        $appname = $appname + ".exe";
+    }
+
+    result $appname;
+}
+
+local function run_test() : result type int {
+    var cmdline type string;
+    var option type list;
+
+    $option = hefesto.sys.get_option("bin-output-dir");
+    $cmdline = "";
+
+    if ($option.count() > 0) {
+        $cmdline = $option.item(0);
+    } else if (hefesto.sys.os_name() != "windows") {
+        $cmdline = "./";
+    }
+
+    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes";
+
+    result hefesto.sys.run($cmdline);
+}
