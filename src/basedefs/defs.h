@@ -31,6 +31,7 @@ typedef struct blackcat_protlayer_chain {
     size_t key_size;
     kryptos_cipher_mode_t mode;
     void *arg[BLACKCAT_PROTLAYER_EXTRA_ARGS_NR];
+    size_t argc;
     struct blackcat_protlayer_chain *last, *next;
 }blackcat_protlayer_chain_ctx;
 

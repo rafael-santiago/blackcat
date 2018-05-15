@@ -5,15 +5,13 @@
  * the terms of the GNU General Public License version 2.
  *
  */
-#ifndef BLACKCAT_KEYCHAIN_CIPHER_AES_H
-#define BLACKCAT_KEYCHAIN_CIPHER_AES_H 1
+#ifndef BLACKCAT_KEYCHAIN_CIPHER_SHACAL_H
+#define BLACKCAT_KEYCHAIN_CIPHER_SHACAL_H 1
 
 #include <basedefs/defs.h>
 
-DECL_BLACKCAT_CIPHER_PROCESSOR(aes128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(shacal1, ktask, p_layer)
 
-DECL_BLACKCAT_CIPHER_PROCESSOR(aes192, ktask, p_layer)
-
-DECL_BLACKCAT_CIPHER_PROCESSOR(aes256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(shacal2, ktask, p_layer)
 
 #endif

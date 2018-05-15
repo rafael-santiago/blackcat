@@ -10,8 +10,24 @@
 #include <keychain/cipher/seal.h>
 #include <keychain/cipher/rabbit.h>
 #include <keychain/cipher/aes.h>
+#include <keychain/cipher/blowfish.h>
+#include <keychain/cipher/camellia.h>
+#include <keychain/cipher/cast5.h>
 #include <keychain/cipher/des.h>
+#include <keychain/cipher/feal.h>
 #include <keychain/cipher/idea.h>
+#include <keychain/cipher/mars.h>
+#include <keychain/cipher/misty1.h>
+#include <keychain/cipher/noekeon.h>
+#include <keychain/cipher/present.h>
+#include <keychain/cipher/rc2.h>
+#include <keychain/cipher/rc5.h>
+#include <keychain/cipher/rc6.h>
+#include <keychain/cipher/saferk64.h>
+#include <keychain/cipher/serpent.h>
+#include <keychain/cipher/shacal.h>
+#include <keychain/cipher/tea.h>
+#include <keychain/cipher/xtea.h>
 #include <memory/memory.h>
 #include <kryptos.h>
 #include <stdlib.h>
@@ -37,34 +53,34 @@ static struct keychain_algo_params_ctx g_keychain_algo_param[] = {
     register_ciphering_scheme( 24, "aes-192-cbc", aes192, CBC),
     register_ciphering_scheme( 32, "aes-256-cbc", aes256, CBC),
     register_ciphering_scheme(  8, "des-cbc", des, CBC),
-    register_ciphering_scheme( 24, "3des-cbc", NULL, CBC),
-    register_ciphering_scheme( 24, "3des-ede-cbc", NULL, CBC),
+    register_ciphering_scheme( 24, "3des-cbc", triple_des, CBC),
+    register_ciphering_scheme( 24, "3des-ede-cbc", triple_des_ede, CBC),
     register_ciphering_scheme( 16, "idea-cbc", idea, CBC),
-    register_ciphering_scheme(128, "rc2-cbc", NULL, CBC), // WARN(Rafael): Let's use it in its maximum key size.
-    register_ciphering_scheme( 64, "rc5-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "rc6-128-cbc", NULL, CBC),
-    register_ciphering_scheme( 24, "rc6-192-cbc", NULL, CBC),
-    register_ciphering_scheme( 32, "rc6-256-cbc", NULL, CBC),
-    register_ciphering_scheme(  8, "feal-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "cast5-cbc", NULL, CBC),
-    register_ciphering_scheme( 20, "camellia-128-cbc", NULL, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
-    register_ciphering_scheme( 30, "camellia-192-cbc", NULL, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
-    register_ciphering_scheme( 40, "camellia-256-cbc", NULL, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
-    register_ciphering_scheme(  8, "safer-k64-cbc", NULL, CBC),
-    register_ciphering_scheme( 56, "blowfish-cbc", NULL, CBC), // WARN(Rafael): Let's use it in its maximum key size.
-    register_ciphering_scheme( 32, "serpent-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "tea-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "xtea-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "misty1-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "mars-128-cbc", NULL, CBC),
-    register_ciphering_scheme( 24, "mars-192-cbc", NULL, CBC),
-    register_ciphering_scheme( 32, "mars-256-cbc", NULL, CBC),
-    register_ciphering_scheme( 10, "present-80-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "present-128-cbc", NULL, CBC),
-    register_ciphering_scheme( 64, "shacal1-cbc", NULL, CBC),
-    register_ciphering_scheme( 64, "shacal2-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "noekeon-cbc", NULL, CBC),
-    register_ciphering_scheme( 16, "noekeon-d-cbc", NULL, CBC),
+    register_ciphering_scheme(128, "rc2-cbc", rc2, CBC), // WARN(Rafael): Let's use it in its maximum key size.
+    register_ciphering_scheme( 64, "rc5-cbc", rc5, CBC),
+    register_ciphering_scheme( 16, "rc6-128-cbc", rc6_128, CBC),
+    register_ciphering_scheme( 24, "rc6-192-cbc", rc6_192, CBC),
+    register_ciphering_scheme( 32, "rc6-256-cbc", rc6_256, CBC),
+    register_ciphering_scheme(  8, "feal-cbc", feal, CBC),
+    register_ciphering_scheme( 16, "cast5-cbc", cast5, CBC),
+    register_ciphering_scheme( 20, "camellia-128-cbc", camellia128, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
+    register_ciphering_scheme( 30, "camellia-192-cbc", camellia192, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
+    register_ciphering_scheme( 40, "camellia-256-cbc", camellia256, CBC), // WARN(Rafael): Yes, camellia is less obvious, do not mess.
+    register_ciphering_scheme(  8, "safer-k64-cbc", saferk64, CBC),
+    register_ciphering_scheme( 56, "blowfish-cbc", blowfish, CBC), // WARN(Rafael): Let's use it in its maximum key size.
+    register_ciphering_scheme( 32, "serpent-cbc", serpent, CBC),
+    register_ciphering_scheme( 16, "tea-cbc", tea, CBC),
+    register_ciphering_scheme( 16, "xtea-cbc", xtea, CBC),
+    register_ciphering_scheme( 16, "misty1-cbc", misty1, CBC),
+    register_ciphering_scheme( 16, "mars-128-cbc", mars128, CBC),
+    register_ciphering_scheme( 24, "mars-192-cbc", mars192, CBC),
+    register_ciphering_scheme( 32, "mars-256-cbc", mars256, CBC),
+    register_ciphering_scheme( 10, "present-80-cbc", present80, CBC),
+    register_ciphering_scheme( 16, "present-128-cbc", present128, CBC),
+    register_ciphering_scheme( 64, "shacal1-cbc", shacal1, CBC),
+    register_ciphering_scheme( 64, "shacal2-cbc", shacal2, CBC),
+    register_ciphering_scheme( 16, "noekeon-cbc", noekeon, CBC),
+    register_ciphering_scheme( 16, "noekeon-d-cbc", noekeon_d, CBC),
     register_ciphering_scheme( 16, "aes-128-ofb", aes128, OFB),
     register_ciphering_scheme( 24, "aes-192-ofb", aes192, OFB),
     register_ciphering_scheme( 32, "aes-256-ofb", aes256, OFB),
