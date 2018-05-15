@@ -8,21 +8,20 @@
 #include <ctx/ctx.h>
 #include <basedefs/defs.h>
 #include <memory/memory.h>
+#include <keychain/keychain.h>
 
 #define new_blackcat_protlayer_chain_ctx(b) {\
     (b) = (blackcat_protlayer_chain_ctx *) blackcat_getseg(sizeof(blackcat_protlayer_chain_ctx));\
     (b)->head = (b)->tail = (b)->next = (b)->last = NULL;\
     (b)->key = NULL;\
     (b)->key_size = 0;\
-    (b)->symm_algo = kBlackcatProtLayerNoProtection;\
-    (b)->hash_algo = kBlackcatHashNone;\
+    (b)->processor = NULL;\
 }
 
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);
 
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
-                                                     blackcat_protlayer_t symm_algo, blackcat_hash_t hash_algo,
-                                                     const kryptos_u8_t *key, const size_t key_size) {
+                                                     const char *algo_params, const kryptos_u8_t *key, const size_t key_size) {
     blackcat_protlayer_chain_ctx *hp, *cp;
 
     hp = cp = chain;
@@ -38,8 +37,7 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         hp->head = hp->tail = cp = hp;
     }
 
-    cp->symm_algo = symm_algo;
-    cp->hash_algo = hash_algo;
+    blackcat_set_keychain(&cp, algo_params, key, key_size);
 
     return hp;
 }

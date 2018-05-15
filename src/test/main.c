@@ -50,18 +50,16 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(ctx_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL;
 
-    pchain = add_protlayer_to_chain(pchain, kBlackcatProtLayerSEAL, kBlackcatHashNone, "password", 8);
+    pchain = add_protlayer_to_chain(pchain, "seal", "password", 8);
 
     CUTE_ASSERT(pchain->head == pchain);
     CUTE_ASSERT(pchain->tail == pchain);
-    CUTE_ASSERT(pchain->symm_algo == kBlackcatProtLayerSEAL);
-    CUTE_ASSERT(pchain->hash_algo == kBlackcatHashNone);
-    CUTE_ASSERT(pchain->key == NULL);
-    CUTE_ASSERT(pchain->key_size == 0);
+    //CUTE_ASSERT(pchain->key == NULL);
+    //CUTE_ASSERT(pchain->key_size == 0);
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, kBlackcatProtLayerAES256HMAC, kBlackcatHashSHA3, "envious", 7);
+    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7);
 
     CUTE_ASSERT(pchain->head == pchain);
     CUTE_ASSERT(pchain->tail == pchain->next);
@@ -70,10 +68,8 @@ CUTE_TEST_CASE(ctx_tests)
 
     CUTE_ASSERT(pchain->next->head == NULL);
     CUTE_ASSERT(pchain->next->tail == NULL);
-    CUTE_ASSERT(pchain->next->symm_algo == kBlackcatProtLayerAES256HMAC);
-    CUTE_ASSERT(pchain->next->hash_algo == kBlackcatHashSHA3);
-    CUTE_ASSERT(pchain->next->key == NULL);
-    CUTE_ASSERT(pchain->next->key_size == 0);
+    //CUTE_ASSERT(pchain->next->key == NULL);
+    //CUTE_ASSERT(pchain->next->key_size == 0);
     CUTE_ASSERT(pchain->next->last == pchain);
     CUTE_ASSERT(pchain->next->next == NULL);
 

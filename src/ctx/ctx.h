@@ -11,8 +11,7 @@
 #include <basedefs/defs.h>
 
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
-                                                     blackcat_protlayer_t symm_algo, blackcat_hash_t hash_algo,
-                                                     const kryptos_u8_t *key, const size_t key_size);
+                                                     const char *algo_params, const kryptos_u8_t *key, const size_t key_size);
 
 void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain);
 

@@ -31,6 +31,7 @@ blackcat-base-tests.prologue() {
     $codedirs.add_item("../ctx");
     $codedirs.add_item("../memory");
     $codedirs.add_item("../keychain");
+    $codedirs.add_item("../keychain/cipher");
 
     $src = get_codes($codedirs);
 

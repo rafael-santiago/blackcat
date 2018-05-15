@@ -11,7 +11,7 @@
 #include <basedefs/defs.h>
 #include <kryptos_types.h>
 
-kryptos_u8_t *blackcat_derive_key(const blackcat_protlayer_t algo, const kryptos_u8_t *key, const size_t key_size,
-                                  size_t *derived_size);
+void blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
+                           const char *algo_params, const kryptos_u8_t *key, const size_t key_size);
 
 #endif
