@@ -25,7 +25,15 @@ blackcat-base-tests.preloading() {
 project blackcat-base-tests : toolset $curr_toolset : $src, $inc, $cflags, $lib, $ldflags, $appname;
 
 blackcat-base-tests.prologue() {
-    $src.ls(".*\\c$");
+    var codedirs type list;
+
+    $codedirs.add_item(".");
+    $codedirs.add_item("../ctx");
+    $codedirs.add_item("../memory");
+    $codedirs.add_item("../keychain");
+
+    $src = get_codes($codedirs);
+
     $inc = hefesto.sys.get_option("includes");
     $cflags = hefesto.sys.get_option("cflags");
     $lib = hefesto.sys.get_option("libraries");

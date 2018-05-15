@@ -11,9 +11,9 @@
 
 #define new_blackcat_protlayer_chain_ctx(b) {\
     (b) = (blackcat_protlayer_chain_ctx *) blackcat_getseg(sizeof(blackcat_protlayer_chain_ctx));\
-    (b)->next = (b)->last = NULL;\
+    (b)->head = (b)->tail = (b)->next = (b)->last = NULL;\
     (b)->key = NULL;\
-    (b)->key_size = NULL;\
+    (b)->key_size = 0;\
     (b)->symm_algo = kBlackcatProtLayerNoProtection;\
     (b)->hash_algo = kBlackcatHashNone;\
 }
@@ -32,6 +32,10 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         new_blackcat_protlayer_chain_ctx(cp->next);
         cp->next->last = cp;
         cp = cp->next;
+        hp->tail = cp;
+    } else {
+        new_blackcat_protlayer_chain_ctx(hp);
+        hp->head = hp->tail = cp = hp;
     }
 
     cp->symm_algo = symm_algo;
@@ -55,7 +59,7 @@ void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain) {
 }
 
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain) {
-    blackcat_protlayer_chain_ctx *c
+    blackcat_protlayer_chain_ctx *c;
 
     if (chain == NULL) {
         return NULL;

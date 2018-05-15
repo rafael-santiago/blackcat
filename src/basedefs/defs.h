@@ -8,6 +8,8 @@
 #ifndef BLACKCAT_BASEDEFS_DEFS_H
 #define BLACKCAT_BASEDEFS_DEFS_H 1
 
+#include <kryptos_types.h>
+
 typedef enum {
     kBlackcatProtLayerARC4,
     kBlackcatProtLayerSEAL,
@@ -23,10 +25,12 @@ typedef enum {
     kBlackcatProtLayerRC5,
     kBlackcatProtLayerRC6128,
     kBlackcatProtLayerRC6192,
-    kBlackcatProtLayerRC5256,
+    kBlackcatProtLayerRC6256,
     kBlackcatProtLayerFEAL,
     kBlackcatProtLayerCAST5,
-    kBlackcatProtLayerCAMELLIA,
+    kBlackcatProtLayerCAMELLIA128,
+    kBlackcatProtLayerCAMELLIA192,
+    kBlackcatProtLayerCAMELLIA256,
     kBlackcatProtLayerSAFERK64,
     kBlackcatProtLayerBLOWFISH,
     kBlackcatProtLayerSERPENT,
@@ -53,10 +57,12 @@ typedef enum {
     kBlackcatProtLayerRC5HMAC,
     kBlackcatProtLayerRC6128HMAC,
     kBlackcatProtLayerRC6192HMAC,
-    kBlackcatProtLayerRC5256HMAC,
+    kBlackcatProtLayerRC6256HMAC,
     kBlackcatProtLayerFEALHMAC,
     kBlackcatProtLayerCAST5HMAC,
-    kBlackcatProtLayerCAMELLIAHMAC,
+    kBlackcatProtLayerCAMELLIA128HMAC,
+    kBlackcatProtLayerCAMELLIA192HMAC,
+    kBlackcatProtLayerCAMELLIA256HMAC,
     kBlackcatProtLayerSAFERK64HMAC,
     kBlackcatProtLayerBLOWFISHHMAC,
     kBlackcatProtLayerSERPENTHMAC,
@@ -88,9 +94,10 @@ typedef enum {
 }blackcat_hash_t;
 
 typedef struct blackcat_protlayer_chain {
+    struct blackcat_protlayer_chain *head, *tail;
     blackcat_protlayer_t symm_algo;
     blackcat_hash_t hash_algo;
-    const kryptos_u8_t *key;
+    kryptos_u8_t *key;
     size_t key_size;
     struct blackcat_protlayer_chain *last, *next;
 }blackcat_protlayer_chain_ctx;

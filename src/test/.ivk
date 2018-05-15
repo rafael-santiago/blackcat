@@ -1,1 +1,1 @@
---forgefiles=Forgefile.hsl --Forgefile-projects=blackcat-base-tests --obj-output-dir=o --bin-output-dir=bin --includes=../lib/cutest/src,../lib/kryptos/src --libraries=../lib/cutest/src/lib,../lib/kryptos/lib --ldflags=-lcutest
+--forgefiles=Forgefile.hsl --Forgefile-projects=blackcat-base-tests --obj-output-dir=o --bin-output-dir=bin --includes=..,../lib/cutest/src,../lib/kryptos/src --libraries=../lib/cutest/src/lib,../lib/kryptos/lib --ldflags=-lcutest,-lkryptos
