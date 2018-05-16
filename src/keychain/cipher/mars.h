@@ -58,5 +58,4 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_mars256, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_mars256, ktask, p_layer)
 
-
 #endif

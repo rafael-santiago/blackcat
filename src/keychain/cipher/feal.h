@@ -32,4 +32,6 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_feal, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_feal, ktask, p_layer)
 
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(feal, algo_params, args, args_nr, key, key_size, argc, err_mesg);
+
 #endif

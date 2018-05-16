@@ -12,4 +12,6 @@
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(seal, ktask, p_layer)
 
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key_size, argc, err_mesg);
+
 #endif

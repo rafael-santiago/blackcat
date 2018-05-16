@@ -6,7 +6,15 @@
  *
  */
 #include <keychain/cipher/des.h>
+#include <keychain/keychain.h>
+#include <memory/memory.h>
 #include <kryptos.h>
+#include <stdio.h>
+
+static int read_extra_des_keys(const char *algo_params,
+                               void *args, const size_t args_nr,
+                               kryptos_u8_t *key, const size_t key_size,
+                               size_t *argc, char *err_mesg);
 
 IMPL_BLACKCAT_CIPHER_PROCESSOR(des, ktask, p_layer,
                                kryptos_run_cipher(des, *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
@@ -249,3 +257,39 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_triple_des_ede, ktask, p_layer,
                                                        (kryptos_u8_t *)p_layer->arg[2],
                                                        (size_t *)p_layer->arg[3]))
 
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+    return read_extra_des_keys(algo_params, args, args_nr, key, key_size, argc, err_mesg);
+}
+
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des_ede, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+    return read_extra_des_keys(algo_params, args, args_nr, key, key_size, argc, err_mesg);
+}
+
+static int read_extra_des_keys(const char *algo_params,
+                               void *args, const size_t args_nr,
+                               kryptos_u8_t *key, const size_t key_size,
+                               size_t *argc, char *err_mesg) {
+    void *ap = args, *ap_end;
+
+    blackcat_keychain_verify_argv_bounds(ap, ap_end, args_nr, 4, err_mesg);
+
+    ap = (void *) blackcat_getseg(8);
+    memcpy(ap, key + 8, 8);
+    ap += sizeof(void *);
+
+    ap = (size_t *) blackcat_getseg(sizeof(size_t));
+    *(size_t *)ap = 8;
+    ap += sizeof(void *);
+
+    ap = (void *) blackcat_getseg(8);
+    memcpy(ap, key + 16, 8);
+    ap += sizeof(void *);
+
+    ap = (size_t *) blackcat_getseg(sizeof(size_t));
+    *(size_t *)ap = 8;
+    ap += sizeof(void *);
+
+    *argc = 4;
+
+    return 1;
+}

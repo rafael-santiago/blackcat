@@ -32,4 +32,6 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc5, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc5, ktask, p_layer)
 
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc5, algo_params, args, args_nr, key, key_size, argc, err_mesg);
+
 #endif
