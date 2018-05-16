@@ -12,4 +12,24 @@
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(rc5, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha256_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha384_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha512_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_224_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_256_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_384_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc5, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc5, ktask, p_layer)
+
 #endif

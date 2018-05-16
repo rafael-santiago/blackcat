@@ -12,8 +12,42 @@
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(rc6_128, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha256_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha384_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha512_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_224_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_256_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_384_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc6_128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_128, ktask, p_layer)
+
 DECL_BLACKCAT_CIPHER_PROCESSOR(rc6_192, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha256_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha384_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha512_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_224_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_256_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_384_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc6_192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_192, ktask, p_layer)
+
 DECL_BLACKCAT_CIPHER_PROCESSOR(rc6_256, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha256_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha384_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha512_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_224_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_256_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_384_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc6_256, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_256, ktask, p_layer)
+
 
 #endif
