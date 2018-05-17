@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 static int read_extra_des_keys(const char *algo_params,
-                               void *args, const size_t args_nr,
+                               void **args, const size_t args_nr,
                                kryptos_u8_t *key, const size_t key_size,
                                size_t *argc, char *err_mesg);
 
@@ -261,33 +261,24 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des, algo_params, args, args_nr, ke
     return read_extra_des_keys(algo_params, args, args_nr, key, key_size, argc, err_mesg);
 }
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des_ede, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
-    return read_extra_des_keys(algo_params, args, args_nr, key, key_size, argc, err_mesg);
-}
-
 static int read_extra_des_keys(const char *algo_params,
-                               void *args, const size_t args_nr,
+                               void **args, const size_t args_nr,
                                kryptos_u8_t *key, const size_t key_size,
                                size_t *argc, char *err_mesg) {
     void *ap = args, *ap_end;
 
-    blackcat_keychain_verify_argv_bounds(ap, ap_end, args_nr, 4, err_mesg);
+    blackcat_keychain_verify_argv_bounds(args_nr, 4, err_mesg);
 
-    ap = (void *) blackcat_getseg(8);
-    memcpy(ap, key + 8, 8);
-    ap += sizeof(void *);
+    args[0] = (kryptos_u8_t *) blackcat_getseg(sizeof(kryptos_u8_t) << 3);
+    memcpy(args[0], key + 8, 8);
 
-    ap = (size_t *) blackcat_getseg(sizeof(size_t));
-    *(size_t *)ap = 8;
-    ap += sizeof(void *);
+    args[1] = (kryptos_u8_t *) blackcat_getseg(sizeof(size_t));
+    *(size_t *)args[1] = 8;
 
-    ap = (void *) blackcat_getseg(8);
-    memcpy(ap, key + 16, 8);
-    ap += sizeof(void *);
+    args[2] = (kryptos_u8_t *) blackcat_getseg(sizeof(kryptos_u8_t) << 3);
+    memcpy(args[2], key + 16, 8);
 
-    ap = (size_t *) blackcat_getseg(sizeof(size_t));
-    *(size_t *)ap = 8;
-    ap += sizeof(void *);
+    args[3] = (size_t *) blackcat_getseg(sizeof(size_t));
 
     *argc = 4;
 

@@ -6,7 +6,13 @@
  *
  */
 #include <keychain/cipher/xtea.h>
+#include <keychain/keychain.h>
+#include <memory/memory.h>
 #include <kryptos.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+static int xtea_rounds_verifier(const char *data, const size_t data_size, char *err_mesg);
 
 IMPL_BLACKCAT_CIPHER_PROCESSOR(xtea, ktask, p_layer,
                                kryptos_run_cipher(xtea, *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
@@ -61,3 +67,54 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_xtea, ktask, p_layer,
                                kryptos_run_cipher_hmac(xtea, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
+
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(xtea, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+    const char *begin, *end;
+    char *arg;
+
+    blackcat_keychain_verify_argv_bounds(args_nr, 1, err_mesg);
+
+    blackcat_keychain_arg_init(algo_params, strlen(algo_params), &begin, &end);
+    arg = blackcat_keychain_arg_next(&begin, end, err_mesg, xtea_rounds_verifier);
+
+    if (arg == NULL) {
+        return 0;
+    }
+
+    args[0] = (int *) blackcat_getseg(sizeof(int));
+    *(int *)args[0] = atoi(arg);
+    free(arg);
+
+    *argc = 1;
+
+    return 1;
+}
+
+static int xtea_rounds_verifier(const char *data, const size_t data_size, char *err_mesg) {
+    int rounds;
+
+    if (data == NULL || data_size == 0) {
+        if (err_mesg != NULL) {
+            sprintf(err_mesg, "ERROR: Rounds argument for XTEA is missing.\n");
+        }
+        return 0;
+    }
+
+    if (blackcat_is_dec(data, data_size) == 0) {
+        if (err_mesg != NULL) {
+            sprintf(err_mesg, "ERROR: Rounds argument for XTEA must be a number.\n");
+        }
+        return 0;
+    }
+
+    rounds = atoi(data);
+
+    if (rounds < 1) {
+        if (err_mesg != NULL) {
+            sprintf(err_mesg, "ERROR: XTEA's rounds argument must be greater than zero.\n");
+        }
+        return 0;
+    }
+
+    return 1;
+}

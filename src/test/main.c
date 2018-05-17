@@ -50,7 +50,13 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(ctx_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL;
 
-    pchain = add_protlayer_to_chain(pchain, "seal", "password", 8);
+    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7);
+
+    CUTE_ASSERT(pchain == NULL);
+
+    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", "password", 8);
+
+    CUTE_ASSERT(pchain != NULL);
 
     CUTE_ASSERT(pchain->head == pchain);
     CUTE_ASSERT(pchain->tail == pchain);
@@ -59,7 +65,9 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7);
+    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", "envious", 7);
+
+    CUTE_ASSERT(pchain != NULL);
 
     CUTE_ASSERT(pchain->head == pchain);
     CUTE_ASSERT(pchain->tail == pchain->next);

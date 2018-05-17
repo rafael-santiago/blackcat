@@ -51,6 +51,4 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_triple_des_ede, ktask, p_layer)
 
 BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des, algo_params, args, args_nr, key, key_size, argc, err_mesg);
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(triple_des_ede, algo_params, args, args_nr, key, key_size, argc, err_mesg);
-
 #endif

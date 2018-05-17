@@ -9,6 +9,7 @@
 #include <basedefs/defs.h>
 #include <memory/memory.h>
 #include <keychain/keychain.h>
+#include <stdio.h>
 
 #define new_blackcat_protlayer_chain_ctx(b) {\
     (b) = (blackcat_protlayer_chain_ctx *) blackcat_getseg(sizeof(blackcat_protlayer_chain_ctx));\
@@ -24,11 +25,12 @@ static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
                                                      const char *algo_params, const kryptos_u8_t *key, const size_t key_size) {
     blackcat_protlayer_chain_ctx *hp, *cp;
+    char err_mesg[1024] = "";
 
     hp = cp = chain;
 
     if (hp != NULL) {
-        cp = get_protlayer_chain_tail(hp);
+        cp = (hp->tail == NULL) ? get_protlayer_chain_tail(hp) : hp->tail;
         new_blackcat_protlayer_chain_ctx(cp->next);
         cp->next->last = cp;
         cp = cp->next;
@@ -38,19 +40,28 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         hp->head = hp->tail = cp = hp;
     }
 
-    blackcat_set_keychain(&cp, algo_params, key, key_size);
+    if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, err_mesg) == 0) {
+        printf("%s", err_mesg);
+        del_protlayer_chain_ctx(hp);
+        hp = NULL;
+    }
 
     return hp;
 }
 
 void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain) {
     blackcat_protlayer_chain_ctx *t, *p;
+    size_t a;
 
-    for (t = p = chain; t; p = t) {
+    for (t = p = chain; t != NULL; p = t) {
         t = p->next;
 
         if (p->key != NULL) {
             blackcat_free(p->key, &p->key_size);
+        }
+
+        for (a = 0; a < p->argc; a++) {
+            free(p->arg[a]);
         }
 
         free(p);

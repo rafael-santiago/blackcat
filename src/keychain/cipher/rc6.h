@@ -49,8 +49,6 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_rc6_256, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc6_256, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_256, ktask, p_layer)
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc6_128, algo_params, args, args_nr, key, key_size, argc, err_mesg);
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc6_192, algo_params, args, args_nr, key, key_size, argc, err_mesg);
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc6_256, algo_params, args, args_nr, key, key_size, argc, err_mesg);
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc6, algo_params, args, args_nr, key, key_size, argc, err_mesg);
 
 #endif
