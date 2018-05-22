@@ -18,6 +18,7 @@
     (b)->key_size = 0;\
     (b)->processor = NULL;\
     (b)->argc = 0;\
+    (b)->is_hmac = 0;\
 }
 
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);

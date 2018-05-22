@@ -32,6 +32,7 @@ int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
 
     p->key = blackcat_derive_key(algo, key, key_size, &p->key_size);
     p->processor = g_blackcat_ciphering_schemes[algo].processor;
+    p->is_hmac = is_hmac_processor(p->processor);
     p->mode = g_blackcat_ciphering_schemes[algo].mode;
 
     args_reader = g_blackcat_ciphering_schemes[algo].args;
@@ -151,6 +152,8 @@ static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const 
     } else {
         kp = (kryptos_u8_t *) blackcat_getseg(*wanted_size);
         kp_size = *wanted_size;
+
+        kryptos_task_init_as_null(ktask);
 
         ktask->in = (kryptos_u8_t *) blackcat_getseg(key_size);
         ktask->in_size = key_size;

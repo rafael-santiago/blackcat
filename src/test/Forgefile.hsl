@@ -45,6 +45,10 @@ blackcat-base-tests.prologue() {
         hefesto.project.abort(1);
     }
 
+    if (build_libkryptos() != 0) {
+        hefesto.project.abort(1);
+    }
+
     if (hefesto.sys.os_name() == "linux") {
         $ldflags.add_item("-ldl");
         $ldflags.add_item("-lpthread");
@@ -97,7 +101,7 @@ local function run_test() : result type int {
         $cmdline = "./";
     }
 
-    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes";
+    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes " + hefesto.project.cmdline();
 
     result hefesto.sys.run($cmdline);
 }

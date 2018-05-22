@@ -10,33 +10,11 @@
 #include <ctx/ctx.h>
 #include <keychain/keychain.h>
 #include <keychain/ciphering_schemes.h>
+#include <keychain/processor.h>
 #include <string.h>
 
-CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
-
-CUTE_DECLARE_TEST_CASE(memory_tests);
-
-CUTE_DECLARE_TEST_CASE(ctx_tests);
-
-CUTE_DECLARE_TEST_CASE(keychain_arg_parsing_tests);
-
-CUTE_DECLARE_TEST_CASE(blackcat_is_dec_tests);
-
-CUTE_DECLARE_TEST_CASE(blackcat_available_cipher_schemes_tests);
-
-CUTE_MAIN(blackcat_base_tests_entry)
-
-CUTE_TEST_CASE(blackcat_base_tests_entry)
-    CUTE_RUN_TEST(memory_tests);
-    CUTE_RUN_TEST(ctx_tests);
-    CUTE_RUN_TEST(keychain_arg_parsing_tests);
-    CUTE_RUN_TEST(blackcat_is_dec_tests);
-    CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
-CUTE_TEST_CASE_END
-
-CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
-    static char *huge_protchain[] = {
-        "arc4", "seal/3-2012-3921", "rabbit/12234542",
+static char *huge_protchain[] = {
+        "arc4", "seal/3-20-301", "rabbit/12234542",
         "aes-128-cbc", "aes-192-cbc", "aes-256-cbc",
         "des-cbc", "3des-cbc", "3des-ede-cbc",
         "idea-cbc",
@@ -544,9 +522,90 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
         "hmac-sha3-512-noekeon-d-ctr",
         "hmac-tiger-noekeon-d-ctr",
         "hmac-whirlpool-noekeon-d-ctr"
-    };
+};
 
-    static size_t huge_protchain_sz = sizeof(huge_protchain) / sizeof(huge_protchain[0]);
+static size_t huge_protchain_sz = sizeof(huge_protchain) / sizeof(huge_protchain[0]);
+
+CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
+
+CUTE_DECLARE_TEST_CASE(memory_tests);
+
+CUTE_DECLARE_TEST_CASE(ctx_tests);
+
+CUTE_DECLARE_TEST_CASE(keychain_arg_parsing_tests);
+
+CUTE_DECLARE_TEST_CASE(blackcat_is_dec_tests);
+
+CUTE_DECLARE_TEST_CASE(blackcat_available_cipher_schemes_tests);
+
+CUTE_DECLARE_TEST_CASE(blackcat_meta_processor_tests);
+
+CUTE_MAIN(blackcat_base_tests_entry)
+
+CUTE_TEST_CASE(blackcat_base_tests_entry)
+    CUTE_RUN_TEST(memory_tests);
+    CUTE_RUN_TEST(ctx_tests);
+    CUTE_RUN_TEST(keychain_arg_parsing_tests);
+    CUTE_RUN_TEST(blackcat_is_dec_tests);
+    CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
+    CUTE_RUN_TEST(blackcat_meta_processor_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_meta_processor_tests)
+    blackcat_protlayer_chain_ctx *pchain = NULL;
+    size_t h;
+    kryptos_u8_t *in = "test", *out, *dec;
+    size_t in_size = 4, out_size, dec_size;
+
+    CUTE_ASSERT(huge_protchain_sz == g_blackcat_ciphering_schemes_nr);
+
+    for (h = 0; h < huge_protchain_sz; h++) {
+        pchain = NULL;
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6);
+
+        out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
+
+        CUTE_ASSERT(out != NULL);
+        CUTE_ASSERT(out_size != 0);
+
+        dec = blackcat_decrypt_data(pchain, out, out_size, &dec_size);
+
+        CUTE_ASSERT(dec != NULL);
+        CUTE_ASSERT(dec_size == in_size);
+        CUTE_ASSERT(memcmp(dec, in, in_size) == 0);
+
+        free(out);
+        free(dec);
+
+        del_protlayer_chain_ctx(pchain);
+    }
+
+    if (CUTE_GET_OPTION("quick-tests") == NULL) {
+        pchain = NULL;
+
+        for (h = 0; h < huge_protchain_sz; h++) {
+            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6);
+        }
+
+        out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
+
+        CUTE_ASSERT(out != NULL);
+        CUTE_ASSERT(out_size != 0);
+
+        dec = blackcat_decrypt_data(pchain, out, out_size, &dec_size);
+
+        CUTE_ASSERT(dec != NULL);
+        CUTE_ASSERT(dec_size == in_size);
+        CUTE_ASSERT(memcmp(dec, in, in_size) == 0);
+
+        free(out);
+        free(dec);
+
+        del_protlayer_chain_ctx(pchain);
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
     ssize_t a;
     size_t h;
     blackcat_protlayer_chain_ctx *pchain;

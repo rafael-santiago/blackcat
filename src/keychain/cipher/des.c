@@ -272,13 +272,14 @@ static int read_extra_des_keys(const char *algo_params,
     args[0] = (kryptos_u8_t *) blackcat_getseg(sizeof(kryptos_u8_t) << 3);
     memcpy(args[0], key + 8, 8);
 
-    args[1] = (kryptos_u8_t *) blackcat_getseg(sizeof(size_t));
+    args[1] = (size_t *) blackcat_getseg(sizeof(size_t));
     *(size_t *)args[1] = 8;
 
     args[2] = (kryptos_u8_t *) blackcat_getseg(sizeof(kryptos_u8_t) << 3);
     memcpy(args[2], key + 16, 8);
 
     args[3] = (size_t *) blackcat_getseg(sizeof(size_t));
+    *(size_t *)args[3] = 8;
 
     *argc = 4;
 

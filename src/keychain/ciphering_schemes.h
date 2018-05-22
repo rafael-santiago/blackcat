@@ -30,6 +30,7 @@
 #include <keychain/cipher/shacal.h>
 #include <keychain/cipher/tea.h>
 #include <keychain/cipher/xtea.h>
+#include <kryptos.h>
 
 struct blackcat_ciphering_scheme_ctx {
     ssize_t key_size;
@@ -37,6 +38,11 @@ struct blackcat_ciphering_scheme_ctx {
     blackcat_cipher_processor processor;
     blackcat_cipher_args_reader args;
     kryptos_cipher_mode_t mode;
+};
+
+struct blackcat_hash_algorithms_ctx {
+    const char *name;
+    blackcat_hash_processor processor;
 };
 
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
@@ -47,6 +53,25 @@ int blackcat_NULL_args(const char *algo_params,
                        size_t *argc, char *err_msg);
 
 ssize_t get_algo_index(const char *algo_params);
+
+blackcat_hash_processor get_hash_processor(const char *name);
+
+int is_hmac_processor(blackcat_cipher_processor processor);
+
+static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
+    { "sha224",    kryptos_sha224_hash    },
+    { "sha256",    kryptos_sha256_hash    },
+    { "sha384",    kryptos_sha384_hash    },
+    { "sha512",    kryptos_sha512_hash    },
+    { "sha3_224",  kryptos_sha3_224_hash  },
+    { "sha3_256",  kryptos_sha3_256_hash  },
+    { "sha3_384",  kryptos_sha3_384_hash  },
+    { "sha3_512",  kryptos_sha3_512_hash  },
+    { "tiger",     kryptos_tiger_hash     },
+    { "whirlpool", kryptos_whirlpool_hash }
+};
+
+static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / sizeof(g_blackcat_hashing_algos[0]);
 
 #define register_ciphering_scheme(k, n, p, a, m) { (k), (n), blackcat_ ## p, blackcat_ ## a ## _args, kKryptos ## m }
 
@@ -844,7 +869,7 @@ static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
     register_ciphering_scheme( 24, "hmac-sha3-224-3des-ctr", hmac_sha3_224_triple_des, triple_des, CTR),
     register_ciphering_scheme( 24, "hmac-sha3-256-3des-ctr", hmac_sha3_256_triple_des, triple_des, CTR),
     register_ciphering_scheme( 24, "hmac-sha3-384-3des-ctr", hmac_sha3_384_triple_des, triple_des, CTR),
-    register_ciphering_scheme( 24, "hmac-sha3-512-3des-ctr", hmac_sha3_512_triple_des, NULL, CTR),
+    register_ciphering_scheme( 24, "hmac-sha3-512-3des-ctr", hmac_sha3_512_triple_des, triple_des, CTR),
     register_ciphering_scheme( 24, "hmac-tiger-3des-ctr", hmac_tiger_triple_des, triple_des, CTR),
     register_ciphering_scheme( 24, "hmac-whirlpool-3des-ctr", hmac_whirlpool_triple_des, triple_des, CTR),
     register_ciphering_scheme( 24, "hmac-sha224-3des-ede-ctr", hmac_sha224_triple_des_ede, triple_des, CTR),
