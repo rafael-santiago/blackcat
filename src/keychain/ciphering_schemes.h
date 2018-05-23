@@ -43,6 +43,7 @@ struct blackcat_ciphering_scheme_ctx {
 struct blackcat_hash_algorithms_ctx {
     const char *name;
     blackcat_hash_processor processor;
+    blackcat_hash_size_func size;
 };
 
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
@@ -56,19 +57,23 @@ ssize_t get_algo_index(const char *algo_params);
 
 blackcat_hash_processor get_hash_processor(const char *name);
 
+blackcat_hash_size_func get_hash_size(const char *name);
+
 int is_hmac_processor(blackcat_cipher_processor processor);
 
+int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor h2);
+
 static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
-    { "sha224",    kryptos_sha224_hash    },
-    { "sha256",    kryptos_sha256_hash    },
-    { "sha384",    kryptos_sha384_hash    },
-    { "sha512",    kryptos_sha512_hash    },
-    { "sha3_224",  kryptos_sha3_224_hash  },
-    { "sha3_256",  kryptos_sha3_256_hash  },
-    { "sha3_384",  kryptos_sha3_384_hash  },
-    { "sha3_512",  kryptos_sha3_512_hash  },
-    { "tiger",     kryptos_tiger_hash     },
-    { "whirlpool", kryptos_whirlpool_hash }
+    { "sha224",    kryptos_sha224_hash,    kryptos_sha224_hash_size    },
+    { "sha256",    kryptos_sha256_hash,    kryptos_sha256_hash_size    },
+    { "sha384",    kryptos_sha384_hash,    kryptos_sha384_hash_size    },
+    { "sha512",    kryptos_sha512_hash,    kryptos_sha512_hash_size    },
+    { "sha3_224",  kryptos_sha3_224_hash,  kryptos_sha3_224_hash_size  },
+    { "sha3_256",  kryptos_sha3_256_hash,  kryptos_sha3_256_hash_size  },
+    { "sha3_384",  kryptos_sha3_384_hash,  kryptos_sha3_384_hash_size  },
+    { "sha3_512",  kryptos_sha3_512_hash,  kryptos_sha3_512_hash_size  },
+    { "tiger",     kryptos_tiger_hash,     kryptos_tiger_hash_size     },
+    { "whirlpool", kryptos_whirlpool_hash, kryptos_whirlpool_hash_size }
 };
 
 static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / sizeof(g_blackcat_hashing_algos[0]);

@@ -23,6 +23,8 @@ typedef int (*blackcat_cipher_args_reader)(const char *algo_params,
 
 typedef void (*blackcat_hash_processor)(kryptos_task_ctx **ktask, const int to_hex);
 
+typedef size_t (*blackcat_hash_size_func)(void);
+
 #define DECL_BLACKCAT_CIPHER_PROCESSOR(name, ktask, p_layer)\
     void blackcat_ ## name (kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 

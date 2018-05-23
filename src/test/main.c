@@ -542,7 +542,11 @@ CUTE_DECLARE_TEST_CASE(blackcat_meta_processor_tests);
 
 CUTE_DECLARE_TEST_CASE(get_hash_processor_tests);
 
+CUTE_DECLARE_TEST_CASE(get_hash_size_tests);
+
 CUTE_DECLARE_TEST_CASE(is_hmac_processor_tests);
+
+CUTE_DECLARE_TEST_CASE(is_weak_hash_funcs_usage_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -552,9 +556,56 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(keychain_arg_parsing_tests);
     CUTE_RUN_TEST(blackcat_is_dec_tests);
     CUTE_RUN_TEST(get_hash_processor_tests);
+    CUTE_RUN_TEST(get_hash_size_tests);
     CUTE_RUN_TEST(is_hmac_processor_tests);
+    CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
     CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(is_weak_hash_funcs_usage_tests)
+    struct test_ctx {
+        blackcat_hash_processor h1, h2;
+        int is;
+    };
+#define add_test_step(hash_1, hash_2, w) { kryptos_ ## hash_1 ## _hash, kryptos_ ## hash_2 ## _hash, w }
+    struct test_ctx test[] = {
+        add_test_step(sha224, sha224, 1),
+        add_test_step(sha256, sha256, 1),
+        add_test_step(sha384, sha384, 1),
+        add_test_step(sha512, sha512, 1),
+        add_test_step(sha224, sha256, 1),
+        add_test_step(sha256, sha224, 1),
+        add_test_step(sha384, sha512, 1),
+        add_test_step(sha512, sha384, 1),
+        add_test_step(sha3_224, sha3_224, 1),
+        add_test_step(sha3_256, sha3_256, 1),
+        add_test_step(sha3_384, sha3_384, 1),
+        add_test_step(sha3_512, sha3_512, 1),
+        add_test_step(sha3_224, sha3_256, 1),
+        add_test_step(sha3_224, sha3_384, 1),
+        add_test_step(sha3_224, sha3_512, 1),
+        add_test_step(sha3_256, sha3_224, 1),
+        add_test_step(sha3_256, sha3_384, 1),
+        add_test_step(sha3_256, sha3_512, 1),
+        add_test_step(sha3_384, sha3_224, 1),
+        add_test_step(sha3_384, sha3_256, 1),
+        add_test_step(sha3_384, sha3_512, 1),
+        add_test_step(sha3_512, sha3_224, 1),
+        add_test_step(sha3_512, sha3_256, 1),
+        add_test_step(sha3_512, sha3_384, 1),
+        add_test_step(tiger, tiger, 1),
+        add_test_step(whirlpool, whirlpool, 1),
+        add_test_step(sha224, sha3_224, 0),
+        add_test_step(whirlpool, sha512, 0),
+        add_test_step(tiger, sha3_384, 0)
+    };
+#undef add_test_step
+    size_t test_nr = sizeof(test) / sizeof(test[0]), t;
+
+    for (t = 0; t < test_nr; t++) {
+        CUTE_ASSERT(is_weak_hash_funcs_usage(test[t].h1, test[t].h2) == test[t].is);
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_hash_processor_tests)
@@ -579,6 +630,31 @@ CUTE_TEST_CASE(get_hash_processor_tests)
 
     for (t = 0; t < test_nr; t++) {
         CUTE_ASSERT(get_hash_processor(test[t].hash) == test[t].processor);
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_hash_size_tests)
+    struct test_ctx {
+        const char *hash;
+        blackcat_hash_size_func size;
+    };
+    struct test_ctx test[] = {
+        { "sha224",    kryptos_sha224_hash_size    },
+        { "sha256",    kryptos_sha256_hash_size    },
+        { "sha384",    kryptos_sha384_hash_size    },
+        { "sha512",    kryptos_sha512_hash_size    },
+        { "sha3_224",  kryptos_sha3_224_hash_size  },
+        { "sha3_256",  kryptos_sha3_256_hash_size  },
+        { "sha3_384",  kryptos_sha3_384_hash_size  },
+        { "sha3_512",  kryptos_sha3_512_hash_size  },
+        { "tiger",     kryptos_tiger_hash_size     },
+        { "whirlpool", kryptos_whirlpool_hash_size },
+        { "bug-a-loo", NULL                        }
+    };
+    size_t test_nr = sizeof(test) / sizeof(test[0]), t;
+
+    for (t = 0; t < test_nr; t++) {
+        CUTE_ASSERT(get_hash_size(test[t].hash) == test[t].size);
     }
 CUTE_TEST_CASE_END
 
@@ -961,7 +1037,7 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
 
     for (h = 0; h < huge_protchain_sz; h++) {
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
 
         out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
 
@@ -984,7 +1060,7 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
         pchain = NULL;
 
         for (h = 0; h < huge_protchain_sz; h++) {
-            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6);
+            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
         }
 
         out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
@@ -1018,7 +1094,7 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
         CUTE_ASSERT(a > -1 && a < g_blackcat_ciphering_schemes_nr);
 
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
 
         CUTE_ASSERT(pchain != NULL);
 
@@ -1123,11 +1199,11 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(ctx_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL;
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7);
+    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7, NULL);
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", "password", 8);
+    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", "password", 8, NULL);
 
     CUTE_ASSERT(pchain != NULL);
 
@@ -1139,7 +1215,7 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", "envious", 7);
+    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", "envious", 7, NULL);
 
     CUTE_ASSERT(pchain != NULL);
 

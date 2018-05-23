@@ -11,14 +11,18 @@
 #include <kryptos.h>
 #include <ctype.h>
 
-static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const size_t key_size, ssize_t *wanted_size);
+static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const size_t key_size, ssize_t *wanted_size,
+                                                 blackcat_hash_processor hash);
 
 static kryptos_u8_t *blackcat_derive_key(const size_t algo, const kryptos_u8_t *key, const size_t key_size,
-                                         size_t *derived_size);
+                                         size_t *derived_size,
+                                         blackcat_hash_processor hash);
 
 int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
                           const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
-                          const size_t args_nr, char *err_mesg) {
+                          const size_t args_nr,
+                          blackcat_hash_processor hash,
+                          char *err_mesg) {
     ssize_t algo = get_algo_index(algo_params);
     blackcat_protlayer_chain_ctx *p;
     int no_error = 1;
@@ -30,7 +34,7 @@ int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
 
     p = (*protlayer);
 
-    p->key = blackcat_derive_key(algo, key, key_size, &p->key_size);
+    p->key = blackcat_derive_key(algo, key, key_size, &p->key_size, hash);
     p->processor = g_blackcat_ciphering_schemes[algo].processor;
     p->is_hmac = is_hmac_processor(p->processor);
     p->mode = g_blackcat_ciphering_schemes[algo].mode;
@@ -129,18 +133,20 @@ int blackcat_is_dec(const char *buf, const size_t buf_size) {
 }
 
 static kryptos_u8_t *blackcat_derive_key(const size_t algo, const kryptos_u8_t *key, const size_t key_size,
-                                         size_t *derived_size) {
+                                         size_t *derived_size,
+                                         blackcat_hash_processor hash) {
     if (key == NULL || derived_size == NULL || algo > g_blackcat_ciphering_schemes_nr) {
         return NULL;
     }
 
     *derived_size = g_blackcat_ciphering_schemes[algo].key_size;
 
-    return keychain_hash_user_weak_key(key, key_size, derived_size);
+    return keychain_hash_user_weak_key(key, key_size, derived_size, hash);
 }
 
 static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const size_t key_size,
-                                                 ssize_t *wanted_size) {
+                                                 ssize_t *wanted_size,
+                                                 blackcat_hash_processor hash) {
     kryptos_u8_t *kp = NULL;
     kryptos_task_ctx t, *ktask = &t;
     size_t kp_size, curr_size;
@@ -160,7 +166,11 @@ static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const 
         memcpy(ktask->in, key, key_size);
 
         while (kp_size > 0) {
-            kryptos_hash(sha3_512, ktask, (kryptos_u8_t *)ktask->in, ktask->in_size, 0);
+            if (hash == NULL) {
+                kryptos_hash(sha3_512, ktask, (kryptos_u8_t *)ktask->in, ktask->in_size, 0);
+            } else {
+                hash(&ktask, 0);
+            }
             curr_size = (ktask->out_size < kp_size) ? ktask->out_size : kp_size;
             memcpy(kp, ktask->out, kp_size);
             if (ktask->in == key) {

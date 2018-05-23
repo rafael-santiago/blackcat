@@ -24,7 +24,8 @@
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);
 
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
-                                                     const char *algo_params, const kryptos_u8_t *key, const size_t key_size) {
+                                                     const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
+                                                     blackcat_hash_processor hash) {
     blackcat_protlayer_chain_ctx *hp, *cp;
     char err_mesg[1024] = "";
 
@@ -41,7 +42,7 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         hp->head = hp->tail = cp = hp;
     }
 
-    if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, err_mesg) == 0) {
+    if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, hash, err_mesg) == 0) {
         printf("%s", err_mesg);
         del_protlayer_chain_ctx(hp);
         hp = NULL;

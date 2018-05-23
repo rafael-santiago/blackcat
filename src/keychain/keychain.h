@@ -13,7 +13,9 @@
 
 int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
                           const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
-                          const size_t args_nr, char *err_mesg);
+                          const size_t args_nr,
+                          blackcat_hash_processor hash,
+                          char *err_mesg);
 
 void blackcat_keychain_arg_init(const char *algo_params, const size_t algo_params_size, const char **begin, const char **end);
 

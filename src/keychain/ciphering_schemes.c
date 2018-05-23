@@ -75,6 +75,22 @@ blackcat_hash_processor get_hash_processor(const char *name) {
     return NULL;
 }
 
+blackcat_hash_size_func get_hash_size(const char *name) {
+    size_t h;
+
+    if (name == NULL) {
+        return NULL;
+    }
+
+    for (h = 0; h < g_blackcat_hashing_algos_nr; h++) {
+        if (strcmp(g_blackcat_hashing_algos[h].name, name) == 0) {
+            return g_blackcat_hashing_algos[h].size;
+        }
+    }
+
+    return NULL;
+}
+
 int is_hmac_processor(blackcat_cipher_processor processor) {
     return is_hmac(processor, aes128)         ||
            is_hmac(processor, aes192)         ||
@@ -110,5 +126,48 @@ int is_hmac_processor(blackcat_cipher_processor processor) {
            is_hmac(processor, noekeon_d);
 }
 
+int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor h2) {
+    struct forbidden_hash_func_usage {
+        blackcat_hash_processor h1, h2;
+    };
+#define register_forbidden_usage(hash_1, hash_2) { kryptos_ ## hash_1 ## _hash, kryptos_ ## hash_2 ## _hash }
+    static struct forbidden_hash_func_usage fhfu[] = {
+        register_forbidden_usage(sha224, sha224),
+        register_forbidden_usage(sha256, sha256),
+        register_forbidden_usage(sha384, sha384),
+        register_forbidden_usage(sha512, sha512),
+        register_forbidden_usage(sha224, sha256),
+        register_forbidden_usage(sha256, sha224),
+        register_forbidden_usage(sha384, sha512),
+        register_forbidden_usage(sha512, sha384),
+        register_forbidden_usage(sha3_224, sha3_224),
+        register_forbidden_usage(sha3_256, sha3_256),
+        register_forbidden_usage(sha3_384, sha3_384),
+        register_forbidden_usage(sha3_512, sha3_512),
+        register_forbidden_usage(sha3_224, sha3_256),
+        register_forbidden_usage(sha3_224, sha3_384),
+        register_forbidden_usage(sha3_224, sha3_512),
+        register_forbidden_usage(sha3_256, sha3_224),
+        register_forbidden_usage(sha3_256, sha3_384),
+        register_forbidden_usage(sha3_256, sha3_512),
+        register_forbidden_usage(sha3_384, sha3_224),
+        register_forbidden_usage(sha3_384, sha3_256),
+        register_forbidden_usage(sha3_384, sha3_512),
+        register_forbidden_usage(sha3_512, sha3_224),
+        register_forbidden_usage(sha3_512, sha3_256),
+        register_forbidden_usage(sha3_512, sha3_384),
+        register_forbidden_usage(tiger, tiger),
+        register_forbidden_usage(whirlpool, whirlpool)
+    };
+#undef register_forbidden_usage
+    size_t fhfu_nr = sizeof(fhfu) / sizeof(fhfu[0]), f;
+    int is_weak = 0;
+
+    for (f = 0; f < fhfu_nr && !is_weak; f++) {
+        is_weak = (fhfu[f].h1 == h1 && fhfu[f].h2 == h2);
+    }
+
+    return is_weak;
+}
 
 #undef is_hmac
