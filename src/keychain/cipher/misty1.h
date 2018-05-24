@@ -1,8 +1,8 @@
 /*
- *                                Copyright (C) 2018 by Rafael Santiago
+ *                          Copyright (C) 2018 by Rafael Santiago
  *
- * This is a free software. You can redistribute it and/or modify under
- * the terms of the GNU General Public License version 2.
+ * Use of this source code is governed by GPL-v2 license that can
+ * be found in the COPYING file.
  *
  */
 #ifndef BLACKCAT_KEYCHAIN_CIPHER_MISTY1_H
