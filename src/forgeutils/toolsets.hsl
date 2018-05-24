@@ -10,6 +10,7 @@ include ~/toolsets/gcc/gcc-lib.hsl
 include ~/toolsets/gcc/gcc-app.hsl
 include ~/toolsets/clang/clang-lib.hsl
 include ~/toolsets/gcc/gcc-app.hsl
+include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
 include ~/fsutil.hsl
 
 function get_app_toolset() : result type string {
@@ -20,11 +21,13 @@ function get_lib_toolset() : result type string {
     result get_toolset() + "-c-lib";
 }
 
-function get_codes(dirlist type list) : result type list {
+function get_codes(dirlist type list, deps type string) : result type list {
     var oldcwd type string;
     var codes type list;
 
     $oldcwd = hefesto.sys.pwd();
+
+    hefesto.sys.setenv("GET_C_CPP_DEPS_SRC_ROOT", $oldcwd);
 
     var d type int;
 
@@ -35,6 +38,7 @@ function get_codes(dirlist type list) : result type list {
         $dirpath = $dirlist.item($d);
 
         if (hefesto.sys.cd($dirpath)) {
+            $deps = $deps + get_c_cpp_deps();
             $codes.ls(".*\\.c$");
         } else {
             hefesto.sys.echo("WARN: Unable to access the path \'" + $dirpath + "'. Just skipping it.\n");
@@ -44,6 +48,8 @@ function get_codes(dirlist type list) : result type list {
     }
 
     hefesto.sys.cd($oldcwd);
+
+    hefesto.sys.byref($deps);
 
     result $codes;
 }

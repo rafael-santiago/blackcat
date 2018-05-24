@@ -15,7 +15,7 @@ typedef enum {
     kBfsFileStatusPlain     = 'P',
     kBfsFileStatusLocked    = 'L',
     kBfsFileStatusUnlocked  = 'U',
-    kBfsFileStatusNr = 3
+    kBfsFileStatusNr        = 0x3
 }bfs_file_status_t;
 
 typedef struct bfs_catalog_relpath {

@@ -18,11 +18,13 @@ local var appname type string;
 
 local var curr_toolset type string;
 
+local var deps type string;
+
 blackcat-base-tests.preloading() {
     $curr_toolset = get_app_toolset();
 }
 
-project blackcat-base-tests : toolset $curr_toolset : $src, $inc, $cflags, $lib, $ldflags, $appname;
+project blackcat-base-tests : toolset $curr_toolset : dependencies $deps : $src, $inc, $cflags, $lib, $ldflags, $appname;
 
 blackcat-base-tests.prologue() {
     var codedirs type list;
@@ -33,7 +35,7 @@ blackcat-base-tests.prologue() {
     $codedirs.add_item("../keychain");
     $codedirs.add_item("../keychain/cipher");
 
-    $src = get_codes($codedirs);
+    $src = get_codes($codedirs, $deps);
 
     $inc = hefesto.sys.get_option("includes");
     $cflags = hefesto.sys.get_option("cflags");

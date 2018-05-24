@@ -33,14 +33,12 @@ libbfs.prologue() {
     $code_paths.add_item(".");
     $code_paths.add_item("base");
 
-    $src = get_codes($code_paths);
+    $src = get_codes($code_paths, $deps);
 
     $includes = hefesto.sys.get_option("includes");
     $cflags = hefesto.sys.get_option("cflags");
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
-
-    $deps = get_c_cpp_deps();
 
     if (build_libkryptos() != 0) {
         hefesto.project.abort(1);
