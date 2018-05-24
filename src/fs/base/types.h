@@ -13,8 +13,8 @@
 
 typedef enum {
     kBfsFileStatusPlain     = 'P',
-    kBfsFileStatusEncrypted = 'E',
-    kBfsFileStatusDecrypted = 'D',
+    kBfsFileStatusLocked    = 'L',
+    kBfsFileStatusUnlocked  = 'U',
     kBfsFileStatusNr = 3
 }bfs_file_status_t;
 

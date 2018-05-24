@@ -36,6 +36,8 @@ CUTE_DECLARE_TEST_CASE(is_hmac_processor_tests);
 
 CUTE_DECLARE_TEST_CASE(is_weak_hash_funcs_usage_tests);
 
+CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
+
 CUTE_MAIN(blackcat_base_tests_entry)
 
 CUTE_TEST_CASE(blackcat_base_tests_entry)
@@ -49,6 +51,36 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
     CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_hash_processor_name_tests)
+    struct test_ctx {
+        blackcat_hash_processor p;
+        const char *n;
+    };
+    struct test_ctx test[] = {
+        { kryptos_sha224_hash,     "sha224"    },
+        { kryptos_sha256_hash,     "sha256"    },
+        { kryptos_sha384_hash,     "sha384"    },
+        { kryptos_sha512_hash,     "sha512"    },
+        { kryptos_sha3_224_hash,   "sha3-224"  },
+        { kryptos_sha3_256_hash,   "sha3-256"  },
+        { kryptos_sha3_384_hash,   "sha3-384"  },
+        { kryptos_sha3_512_hash,   "sha3-512"  },
+        { kryptos_tiger_hash,      "tiger"     },
+        { kryptos_whirlpool_hash,  "whirlpool" },
+        { NULL,                    NULL        },
+        { (blackcat_hash_processor)&test[0], NULL }
+    };
+    size_t test_nr = sizeof(test) / sizeof(test[0]), t;
+
+    for (t = 0; t < test_nr; t++) {
+        if (test[t].n == NULL) {
+            CUTE_ASSERT(get_hash_processor_name(test[t].p) == NULL);
+        } else {
+            CUTE_ASSERT(strcmp(get_hash_processor_name(test[t].p), test[t].n) == 0);
+        }
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(is_weak_hash_funcs_usage_tests)
@@ -106,13 +138,17 @@ CUTE_TEST_CASE(get_hash_processor_tests)
         { "sha256",    kryptos_sha256_hash    },
         { "sha384",    kryptos_sha384_hash    },
         { "sha512",    kryptos_sha512_hash    },
-        { "sha3_224",  kryptos_sha3_224_hash  },
-        { "sha3_256",  kryptos_sha3_256_hash  },
-        { "sha3_384",  kryptos_sha3_384_hash  },
-        { "sha3_512",  kryptos_sha3_512_hash  },
+        { "sha3-224",  kryptos_sha3_224_hash  },
+        { "sha3-256",  kryptos_sha3_256_hash  },
+        { "sha3-384",  kryptos_sha3_384_hash  },
+        { "sha3-512",  kryptos_sha3_512_hash  },
         { "tiger",     kryptos_tiger_hash     },
         { "whirlpool", kryptos_whirlpool_hash },
-        { "bug-a-loo", NULL                   }
+        { "bug-a-loo", NULL                   },
+        { "sha3_224",  NULL                   },
+        { "sha3_256",  NULL                   },
+        { "sha3_384",  NULL                   },
+        { "sha3_512",  NULL                   }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 
@@ -131,13 +167,17 @@ CUTE_TEST_CASE(get_hash_size_tests)
         { "sha256",    kryptos_sha256_hash_size    },
         { "sha384",    kryptos_sha384_hash_size    },
         { "sha512",    kryptos_sha512_hash_size    },
-        { "sha3_224",  kryptos_sha3_224_hash_size  },
-        { "sha3_256",  kryptos_sha3_256_hash_size  },
-        { "sha3_384",  kryptos_sha3_384_hash_size  },
-        { "sha3_512",  kryptos_sha3_512_hash_size  },
+        { "sha3-224",  kryptos_sha3_224_hash_size  },
+        { "sha3-256",  kryptos_sha3_256_hash_size  },
+        { "sha3-384",  kryptos_sha3_384_hash_size  },
+        { "sha3-512",  kryptos_sha3_512_hash_size  },
         { "tiger",     kryptos_tiger_hash_size     },
         { "whirlpool", kryptos_whirlpool_hash_size },
-        { "bug-a-loo", NULL                        }
+        { "bug-a-loo", NULL                        },
+        { "sha3_224",  NULL                        },
+        { "sha3_256",  NULL                        },
+        { "sha3_384",  NULL                        },
+        { "sha3_512",  NULL                        }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 

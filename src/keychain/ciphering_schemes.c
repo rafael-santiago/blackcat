@@ -171,3 +171,15 @@ int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor
 }
 
 #undef is_hmac
+
+const char *get_hash_processor_name(blackcat_hash_processor processor) {
+    size_t h;
+
+    for (h = 0; h < g_blackcat_hashing_algos_nr; h++) {
+        if (processor == g_blackcat_hashing_algos[h].processor) {
+            return &g_blackcat_hashing_algos[h].name[0];
+        }
+    }
+
+    return NULL;
+}
