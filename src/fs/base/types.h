@@ -28,6 +28,7 @@ typedef struct bfs_catalog_relpath {
 
 typedef struct bfs_catalog {
     const char *bc_version;
+    const struct blackcat_hmac_catalog_algorithms_ctx *hmac_scheme;
     blackcat_hash_processor key_hash_algo, protlayer_key_hash_algo;
     const kryptos_u8_t *key_hash;
     const size_t key_hash_size;
