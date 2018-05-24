@@ -32,6 +32,7 @@ libbfs.prologue() {
 
     $code_paths.add_item(".");
     $code_paths.add_item("base");
+    $code_paths.add_item("bcrepo");
 
     $src = get_codes($code_paths, $deps);
 

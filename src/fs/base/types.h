@@ -23,7 +23,7 @@ typedef struct bfs_catalog_relpath {
     size_t data_size;
     bfs_file_status_t status;
     char timestamp[20];
-    struct bfs_container_path *last, *next;
+    struct bfs_catalog_relpath *last, *next;
 }bfs_catalog_relpath_ctx;
 
 typedef struct bfs_catalog {
@@ -32,7 +32,7 @@ typedef struct bfs_catalog {
     const kryptos_u8_t *key_hash;
     const size_t key_hash_size;
     const char *protection_layer;
-    bfs_catalog_relpath *path;
+    bfs_catalog_relpath_ctx *files;
 }bfs_catalog_ctx;
 
 #endif

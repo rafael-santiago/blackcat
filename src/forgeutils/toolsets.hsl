@@ -40,6 +40,7 @@ function get_codes(dirlist type list, deps type string) : result type list {
         if (hefesto.sys.cd($dirpath)) {
             $deps = $deps + get_c_cpp_deps();
             $codes.ls(".*\\.c$");
+            hefesto.sys.cd($oldcwd);
         } else {
             hefesto.sys.echo("WARN: Unable to access the path \'" + $dirpath + "'. Just skipping it.\n");
         }
