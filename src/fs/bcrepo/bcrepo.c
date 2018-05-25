@@ -23,6 +23,8 @@
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
+typedef int (*bcrepo_reader)(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
 static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog);
 
 static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
@@ -39,18 +41,35 @@ static kryptos_u8_t *protection_layer_w(kryptos_u8_t *out, const size_t out_size
 
 static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
-int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
+static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
+                                                  const kryptos_u8_t *key, const size_t key_size,
+                                                  bfs_catalog_ctx *catalog);
+
+static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
+                                                  const kryptos_u8_t *key, const size_t key_size,
+                                                  bfs_catalog_ctx *catalog);
+
+static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int protlayer_key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     FILE *fp = NULL;
     int no_error = 1;
     size_t o_size;
     kryptos_u8_t *o = NULL;
-    const struct blackcat_hmac_catalog_algorithms_ctx *hmac;
-    blackcat_protlayer_chain_ctx p_layer;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pem_buf = NULL;
     size_t pem_buf_size = 0;
-
-    kryptos_task_init_as_null(ktask);
 
     o_size = eval_catalog_buf_size(catalog);
 
@@ -71,21 +90,7 @@ int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kry
     memset(o, 0, o_size);
     dump_catalog_data(o, o_size, catalog);
 
-    hmac = get_random_hmac_catalog_scheme();
-
-    p_layer.key = (kryptos_u8_t *) key;
-    p_layer.key_size = key_size;
-    p_layer.mode = hmac->mode;
-
-    kryptos_task_set_in(ktask, o, o_size);
-
-    hmac->processor(&ktask, &p_layer);
-
-    p_layer.key = NULL;
-    p_layer.key_size = 0;
-    p_layer.mode = kKryptosCipherModeNr;
-
-    if (!kryptos_last_task_succeed(ktask)) {
+    if (encrypt_catalog_data(&o, &o_size, key, key_size, catalog) == kKryptosSuccess) {
         printf("ERROR: Error while encrypting the catalog data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
@@ -93,7 +98,8 @@ int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kry
 
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_HMAC_HDR,
-                             hmac->name, strlen(hmac->name)) != kKryptosSuccess) {
+                             catalog->hmac_scheme->name,
+                             strlen(catalog->hmac_scheme->name)) != kKryptosSuccess) {
         printf("ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
@@ -101,7 +107,7 @@ int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kry
 
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_CATALOG_DATA_HDR,
-                             ktask->out, ktask->out_size) != kKryptosSuccess) {
+                             o, o_size) != kKryptosSuccess) {
         printf("ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
@@ -123,8 +129,6 @@ int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kry
 
 bcrepo_write_epilogue:
 
-    kryptos_task_free(ktask, KRYPTOS_TASK_OUT | KRYPTOS_TASK_IV);
-
     if (fp != NULL) {
         fclose(fp);
     }
@@ -138,13 +142,196 @@ bcrepo_write_epilogue:
         pem_buf_size = 0;
     }
 
-    hmac = NULL;
+    return no_error;
+}
+
+kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t *out_size) {
+    kryptos_u8_t *o = NULL;
+    FILE *fp = NULL;
+    kryptos_u8_t *hmac_algo = NULL;
+    size_t hmac_algo_size = 0;
+    const struct blackcat_hmac_catalog_algorithms_ctx *hmac_scheme = NULL;
+
+    if (filepath == NULL || catalog == NULL || out_size == NULL) {
+        goto bcrepo_read_epilogue;
+    }
+
+    *out_size = 0;
+
+    fp = fopen(filepath, "r");
+
+    if (fp == NULL) {
+        printf("ERROR: Unable to read the catalog file '%s'.\n", filepath);
+        goto bcrepo_read_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    *out_size = (size_t) ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    o = (kryptos_u8_t *) kryptos_newseg(*out_size);
+
+    if (o == NULL) {
+        printf("ERROR: Not enough memory for reading the catalog file.\n");
+        goto bcrepo_read_epilogue;
+    }
+
+    fread(o, 1, *out_size, fp);
+
+    // INFO(Rafael): We will keep the catalog encrypted in memory, however, we need to know how to
+    //               open it in the next catalog reading operation. So let's 'trigger' the correct
+    //               HMAC processor.
+
+    hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
+
+    if (hmac_algo == NULL) {
+        printf("ERROR: Unable to get the catalog's HMAC scheme.\n");
+        kryptos_freeseg(o);
+        o = NULL;
+        *out_size = 0;
+        goto bcrepo_read_epilogue;
+    }
+
+    hmac_scheme = get_hmac_catalog_scheme(hmac_algo);
+
+    if (hmac_scheme == NULL) {
+        // INFO(Rafael): Some idiot trying to screw up the program's flow.
+        printf("ERROR: Unknown catalog's HMAC scheme.\n");
+        kryptos_freeseg(o);
+        o = NULL;
+        *out_size = 0;
+        goto bcrepo_read_epilogue;
+    }
+
+    catalog->hmac_scheme = hmac_scheme;
+
+bcrepo_read_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (hmac_algo != NULL) {
+        kryptos_freeseg(hmac_algo);
+        hmac_algo_size = 0;
+    }
+
+    hmac_scheme = NULL;
+
+    return o;
+}
+
+int bcrepo_stat(bfs_catalog_ctx **catalog,
+                const kryptos_u8_t *key, const size_t key_size,
+                kryptos_u8_t **data, size_t *data_size) {
+    kryptos_task_result_t result = kKryptosProcessError;
+    int no_error = 1;
+
+    result = decrypt_catalog_data(data, data_size, key, key_size, *catalog);
+
+    if (result != kKryptosSuccess) {
+        no_error = 0;
+        goto bcrepo_stat_epilogue;
+    }
+
+    if (!read_catalog_data(catalog, *data, *data_size)) {
+        no_error = 0;
+        goto bcrepo_stat_epilogue;
+    }
+
+bcrepo_stat_epilogue:
+
+    if (result == kKryptosSuccess) {
+        kryptos_freeseg(*data);
+        data = NULL;
+        *data_size = 0;
+    }
 
     return no_error;
 }
 
-kryptos_u8_t *bcrepo_read(const char *filepath, size_t out_size) {
-    return NULL;
+static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
+                                                  const kryptos_u8_t *key, const size_t key_size,
+                                                  bfs_catalog_ctx *catalog) {
+    blackcat_protlayer_chain_ctx p_layer;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_task_result_t result = kKryptosProcessError;
+
+    if (!is_hmac_processor(catalog->hmac_scheme->processor)) {
+        return kKryptosProcessError;
+    }
+
+    kryptos_task_init_as_null(ktask);
+
+    p_layer.key = (kryptos_u8_t *) key;
+    p_layer.key_size = key_size;
+    p_layer.mode = catalog->hmac_scheme->mode;
+
+    ktask->in = kryptos_pem_get_data(BCREPO_PEM_CATALOG_DATA_HDR, *data, *data_size, &ktask->in_size);
+
+    if (ktask->in == NULL) {
+        printf("ERROR: While decrypting catalog's data.\n");
+        goto decrypt_catalog_data_epilogue;
+    }
+
+    kryptos_task_set_decrypt_action(ktask);
+
+    catalog->hmac_scheme->processor(&ktask, &p_layer);
+
+    if (kryptos_last_task_succeed(ktask)) {
+        kryptos_freeseg(*data);
+        *data = ktask->out;
+        *data_size = ktask->out_size;
+    }
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
+
+    p_layer.key = NULL;
+    p_layer.key_size = 0;
+    p_layer.mode = kKryptosCipherModeNr;
+
+    result = ktask->result;
+
+decrypt_catalog_data_epilogue:
+
+    return result;
+}
+
+static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
+                                                  const kryptos_u8_t *key, const size_t key_size,
+                                                  bfs_catalog_ctx *catalog) {
+    blackcat_protlayer_chain_ctx p_layer;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_task_result_t result = kKryptosProcessError;
+
+    kryptos_task_init_as_null(ktask);
+
+    catalog->hmac_scheme = get_random_hmac_catalog_scheme();
+
+    p_layer.key = (kryptos_u8_t *) key;
+    p_layer.key_size = key_size;
+    p_layer.mode = catalog->hmac_scheme->mode;
+
+    kryptos_task_set_in(ktask, *data, *data_size);
+
+    kryptos_task_set_encrypt_action(ktask);
+
+    catalog->hmac_scheme->processor(&ktask, &p_layer);
+
+    if (kryptos_last_task_succeed(ktask)) {
+        *data = ktask->out;
+        *data_size = ktask->out_size;
+    }
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
+
+    p_layer.key = NULL;
+    p_layer.key_size = 0;
+    p_layer.mode = kKryptosCipherModeNr;
+
+    result = ktask->result;
+
+    return result;
 }
 
 static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
@@ -201,7 +388,7 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
         bcrepo_dumper dumper;
         int done;
     };
-    struct bcrepo_dumper_ctx dumpers[] = {
+    static struct bcrepo_dumper_ctx dumpers[] = {
         { BCREPO_CATALOG_BC_VERSION,              bc_version_w,              0 },
         { BCREPO_CATALOG_KEY_HASH_ALGO,           key_hash_algo_w,           0 },
         { BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO, protlayer_key_hash_algo_w, 0 },
@@ -209,7 +396,7 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
         { BCREPO_CATALOG_PROTECTION_LAYER,        protection_layer_w,        0 },
         { BCREPO_CATALOG_FILES,                   files_w,                   0 }
     };
-    size_t dumpers_nr = sizeof(dumpers) / sizeof(dumpers[0]), d;
+    static size_t dumpers_nr = sizeof(dumpers) / sizeof(dumpers[0]), d;
     kryptos_u8_t *o;
 #define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done && (d)[3].done && (d)[4].done && (d)[5].done )
 
@@ -332,6 +519,51 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
     *o = '\n';
 
     return (o + 1);
+}
+
+static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    static bcrepo_reader read[] = {
+        bc_version_r,
+        key_hash_algo_r,
+        protlayer_key_hash_algo_r,
+        key_hash_r,
+        protection_layer_r,
+        files_r
+    };
+    static size_t read_nr = sizeof(read) /  sizeof(read[0]), r;
+    int no_error = 1;
+
+    for (r = 0; r < read_nr && no_error; r++) {
+        no_error = read[r](catalog, in, in_size);
+    }
+
+    return no_error;
+}
+
+// TODO(Rafael): Guess what?
+
+static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
+}
+
+static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
+}
+
+static int protlayer_key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
+}
+
+static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
+}
+
+static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
+}
+
+static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    return 0;
 }
 
 #undef BCREPO_CATALOG_BC_VERSION
