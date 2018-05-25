@@ -10,7 +10,7 @@
 
 #include <fs/base/types.h>
 
-int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog);
+int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
 
 kryptos_u8_t *bcrepo_read(const char *filepath, size_t out_size);
 

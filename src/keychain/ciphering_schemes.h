@@ -73,6 +73,8 @@ int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor
 
 const struct blackcat_hmac_catalog_algorithms_ctx *get_hmac_catalog_scheme(const char *name);
 
+const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_scheme(void);
+
 static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
     { "sha224",    kryptos_sha224_hash,    kryptos_sha224_hash_size    },
     { "sha256",    kryptos_sha256_hash,    kryptos_sha256_hash_size    },

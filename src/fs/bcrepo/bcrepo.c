@@ -18,6 +18,9 @@
 #define BCREPO_CATALOG_PROTECTION_LAYER         "protection-layer: "
 #define BCREPO_CATALOG_FILES                    "files: "
 
+#define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
+#define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
+
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
 static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog);
@@ -36,11 +39,18 @@ static kryptos_u8_t *protection_layer_w(kryptos_u8_t *out, const size_t out_size
 
 static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
-int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog) {
+int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     FILE *fp = NULL;
     int no_error = 1;
     size_t o_size;
     kryptos_u8_t *o = NULL;
+    const struct blackcat_hmac_catalog_algorithms_ctx *hmac;
+    blackcat_protlayer_chain_ctx p_layer;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *pem_buf = NULL;
+    size_t pem_buf_size = 0;
+
+    kryptos_task_init_as_null(ktask);
 
     o_size = eval_catalog_buf_size(catalog);
 
@@ -61,20 +71,59 @@ int bcrepo_write(const char *filepath, const bfs_catalog_ctx *catalog) {
     memset(o, 0, o_size);
     dump_catalog_data(o, o_size, catalog);
 
-    // TODO(Rafael):  - Pick randomly a HMAC scheme.
-    //                - Encrypt 'o'.
-    //                - Stores the HMAC scheme and o into a PEM buffer.
-    //                - Write the PEM buffer into 'fp'.
+    hmac = get_random_hmac_catalog_scheme();
+
+    p_layer.key = (kryptos_u8_t *) key;
+    p_layer.key_size = key_size;
+    p_layer.mode = hmac->mode;
+
+    kryptos_task_set_in(ktask, o, o_size);
+
+    hmac->processor(&ktask, &p_layer);
+
+    p_layer.key = NULL;
+    p_layer.key_size = 0;
+    p_layer.mode = kKryptosCipherModeNr;
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        printf("ERROR: Error while encrypting the catalog data.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
+                             BCREPO_PEM_HMAC_HDR,
+                             hmac->name, strlen(hmac->name)) != kKryptosSuccess) {
+        printf("ERROR: Error while writing the catalog PEM data.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
+                             BCREPO_PEM_CATALOG_DATA_HDR,
+                             ktask->out, ktask->out_size) != kKryptosSuccess) {
+        printf("ERROR: Error while writing the catalog PEM data.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
 
     fp = fopen(filepath, "w");
 
     if (fp == NULL) {
-        printf("ERROR: Unable to write to the file '%s'.\n", filepath);
+        printf("ERROR: Unable to write to file '%s'.\n", filepath);
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    if (fwrite(pem_buf, 1, pem_buf_size, fp) == -1) {
+        printf("ERROR: While writing the PEM data to disk.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
 
 bcrepo_write_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT | KRYPTOS_TASK_IV);
 
     if (fp != NULL) {
         fclose(fp);
@@ -83,6 +132,13 @@ bcrepo_write_epilogue:
     if (o != NULL) {
         kryptos_freeseg(o);
     }
+
+    if (pem_buf != NULL) {
+        kryptos_freeseg(pem_buf);
+        pem_buf_size = 0;
+    }
+
+    hmac = NULL;
 
     return no_error;
 }
@@ -284,3 +340,7 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
 #undef BCREPO_CATALOG_KEY_HASH
 #undef BCREPO_CATALOG_PROTECTION_LAYER
 #undef BCREPO_CATALOG_FILES
+
+#undef BCREPO_PEM_HMAC_HDR
+#undef BCREPO_PEM_CATALOG_DATA_HDR
+

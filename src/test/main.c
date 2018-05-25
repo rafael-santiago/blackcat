@@ -40,6 +40,8 @@ CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
 
 CUTE_DECLARE_TEST_CASE(get_hmac_catalog_scheme_tests);
 
+CUTE_DECLARE_TEST_CASE(get_random_hmac_catalog_scheme_tests);
+
 CUTE_MAIN(blackcat_base_tests_entry)
 
 CUTE_TEST_CASE(blackcat_base_tests_entry)
@@ -54,6 +56,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
+    CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_hmac_catalog_scheme_tests)
@@ -67,6 +70,10 @@ CUTE_TEST_CASE(get_hmac_catalog_scheme_tests)
         CUTE_ASSERT(hc != NULL);
         CUTE_ASSERT(is_hmac_processor(hc->processor) == 1);
     }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_random_hmac_catalog_scheme_tests)
+    CUTE_ASSERT(get_random_hmac_catalog_scheme() != NULL);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_hash_processor_name_tests)

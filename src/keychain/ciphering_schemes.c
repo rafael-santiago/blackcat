@@ -6,6 +6,7 @@
  *
  */
 #include <keychain/ciphering_schemes.h>
+#include <kryptos_random.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -182,4 +183,24 @@ const char *get_hash_processor_name(blackcat_hash_processor processor) {
     }
 
     return NULL;
+}
+
+const struct blackcat_hmac_catalog_algorithms_ctx *get_hmac_catalog_scheme(const char *name) {
+    size_t s;
+
+    for (s = 0; s < g_blackcat_hmac_catalog_schemes_nr; s++) {
+        if (strcmp(name, g_blackcat_hmac_catalog_schemes[s].name) == 0) {
+            return &g_blackcat_hmac_catalog_schemes[s];
+        }
+    }
+
+    return NULL;
+}
+
+const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_scheme(void) {
+    size_t s = (size_t) kryptos_get_random_byte() << 24 |
+               (size_t) kryptos_get_random_byte() << 16 |
+               (size_t) kryptos_get_random_byte() <<  8 |
+               (size_t) kryptos_get_random_byte();
+    return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
 }
