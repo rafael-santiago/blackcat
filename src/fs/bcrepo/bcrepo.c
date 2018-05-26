@@ -376,7 +376,7 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
     hash_name = NULL;
 
     for (f = catalog->files; f != NULL; f = f->next) {
-        size += f->data_size + 1 + strlen(f->timestamp) + 1;
+        size += f->path_size + strlen(f->timestamp) + 4;
     }
 
     return (size + 2);
@@ -500,14 +500,17 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
     o += 1;
 
     for (f = catalog->files; f != NULL; f = f->next) {
-        size = f->data_size;
-        memcpy(o, f->data, size);
+        size = f->path_size;
+        memcpy(o, f->path, size);
         o += size;
 
         *o = ',';
         o += 1;
 
         *o = (kryptos_u8_t)f->status;
+        o += 1;
+
+        *o = ',';
         o += 1;
 
         size = strlen(f->timestamp);

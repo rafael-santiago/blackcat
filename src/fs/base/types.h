@@ -19,8 +19,9 @@ typedef enum {
 }bfs_file_status_t;
 
 typedef struct bfs_catalog_relpath {
-    kryptos_u8_t *data;
-    size_t data_size;
+    struct bfs_catalog_relpath *head, *tail;
+    kryptos_u8_t *path;
+    size_t path_size;
     bfs_file_status_t status;
     char timestamp[20];
     struct bfs_catalog_relpath *last, *next;
