@@ -63,6 +63,8 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 
 static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
+static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size);
+
 int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     FILE *fp = NULL;
     int no_error = 1;
@@ -179,7 +181,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     fread(o, 1, *out_size, fp);
 
     // INFO(Rafael): We will keep the catalog encrypted in memory, however, we need to know how to
-    //               open it in the next catalog reading operation. So let's 'trigger' the correct
+    //               open it in the next catalog stat operation. So let's 'trigger' the correct
     //               HMAC processor.
 
     hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
@@ -542,24 +544,111 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
 
 // TODO(Rafael): Guess what?
 
+static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size) {
+    const kryptos_u8_t *fp, *fp_end, *end;
+    kryptos_u8_t *data = NULL;
+
+    fp = strstr(in, field);
+    end = in + in_size;
+
+    if (fp == NULL) {
+        goto get_catalog_field_epilogue;
+    }
+
+    fp += strlen(field);
+
+    while (fp != end && *fp != ' ') {
+        fp++;
+    }
+
+    fp_end = fp;
+
+    while (fp_end != end && *fp_end != '\n') {
+        fp_end++;
+    }
+
+    data = (kryptos_u8_t *) kryptos_newseg(fp_end - fp + 1);
+    memset(data, 0, fp_end - fp + 1);
+    memcpy(data, fp, fp_end - fp);
+
+get_catalog_field_epilogue:
+
+    return data;
+}
+
 static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    bfs_catalog_ctx *cp = *catalog;
+    cp->bc_version = get_catalog_field(BCREPO_CATALOG_BC_VERSION, in, in_size);
+    return (cp->bc_version != NULL);
 }
 
 static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    char *hash_algo = NULL;
+    int done = 0;
+    bfs_catalog_ctx *cp = *catalog;
+
+    hash_algo = get_catalog_field(BCREPO_CATALOG_KEY_HASH_ALGO, in, in_size);
+
+    if (hash_algo == NULL) {
+        goto key_hash_algo_r_epilogue;
+    }
+
+    cp->key_hash_algo = get_hash_processor(hash_algo);
+    cp->key_hash_algo_size = get_hash_size(hash_algo);
+
+    done = (cp->key_hash_algo != NULL && cp->key_hash_algo_size != NULL);
+
+key_hash_algo_r_epilogue:
+
+    if (hash_algo != NULL) {
+        kryptos_freeseg(hash_algo);
+    }
+
+    return done;
 }
 
 static int protlayer_key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    char *hash_algo = NULL;
+    int done = 0;
+    bfs_catalog_ctx *cp = *catalog;
+
+    hash_algo = get_catalog_field(BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO, in, in_size);
+
+    if (hash_algo == NULL) {
+        goto protlayer_key_hash_algo_r_epilogue;
+    }
+
+    cp->protlayer_key_hash_algo = get_hash_processor(hash_algo);
+    cp->protlayer_key_hash_algo_size = get_hash_size(hash_algo);
+
+    done = (cp->protlayer_key_hash_algo != NULL && cp->protlayer_key_hash_algo_size != NULL);
+
+protlayer_key_hash_algo_r_epilogue:
+
+    if (hash_algo != NULL) {
+        kryptos_freeseg(hash_algo);
+    }
+
+    return done;
 }
 
 static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    bfs_catalog_ctx *cp = *catalog;
+
+    if (cp->key_hash_algo_size == NULL) {
+        return 0;
+    }
+
+    cp->key_hash = get_catalog_field(BCREPO_CATALOG_KEY_HASH, in, in_size);
+    cp->key_hash_size = cp->key_hash_algo_size() << 1; // INFO(Rafael): Stored in hexadecimal format.
+
+    return (cp->key_hash != NULL && cp->key_hash_size > 0);
 }
 
 static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    bfs_catalog_ctx *cp = *catalog;
+    cp->protection_layer = get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
+    return (cp->protection_layer != NULL);
 }
 
 static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
