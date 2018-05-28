@@ -1,2 +1,2 @@
---forgefiles=Forgefile.hsl --Forgefile-projects=libbfs --includes=..,../lib/kryptos/src --obj-output-dir=o --bin-output-dir=../lib
+--forgefiles=Forgefile.hsl --Forgefile-projects=libbfs --includes=..,../lib/kryptos/src --libraries=../lib/kryptos/lib --ldflags=-lkryptos --obj-output-dir=o --bin-output-dir=../lib
 

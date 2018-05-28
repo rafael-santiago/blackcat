@@ -57,8 +57,7 @@ fs-tests.prologue() {
     var dirlist type list;
 
     $dirlist.add_item(".");
-    $dirlist.add_item("../ctx");
-    get_codes($dirlist, $deps);
+    $src = get_codes($dirlist, $deps);
 }
 
 fs-tests.epilogue() {

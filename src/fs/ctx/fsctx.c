@@ -36,12 +36,19 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
         h = c = files;
     } else {
         h = files;
+
+        if (get_entry_from_relpath_ctx(h, path) != NULL) {
+            goto add_file_to_relpath_ctx_epilogue;
+        }
+
         if (files->tail == NULL) {
             c = get_relpath_ctx_tail(files);
         } else {
             c = files->tail;
         }
+
         new_relpath_ctx(c->next);
+
         c->next->last = c;
         c = c->next;
         files->tail = c;
@@ -88,6 +95,11 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
         }
     } else {
         h = files;
+
+        if (t->next == NULL) {
+            h->tail = t->last;
+        }
+
         t->last->next = t->next;
     }
 
