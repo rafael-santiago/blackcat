@@ -19,7 +19,7 @@ local var ldflags type list;
 
 local var deps type string;
 
-project libbfs : toolset $curr_toolset : dependencies $deps : $src, $includes, $cflags, $libraries, $ldflags, "libbfs.lib";
+project libbfs : toolset $curr_toolset : dependencies $deps : $src, $includes, $cflags, $libraries, $ldflags, "libbfs.a";
 
 libbfs.preloading() {
     $curr_toolset = get_lib_toolset();
