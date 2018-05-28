@@ -7,6 +7,7 @@
  */
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
+#include <fs/ctx/fsctx.h>
 #include <kryptos.h>
 #include <stdio.h>
 #include <string.h>
@@ -655,7 +656,137 @@ static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in,
 }
 
 static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
-    return 0;
+    const kryptos_u8_t *ip, *ip_end, *cp, *cp_end;
+    kryptos_u8_t *path = NULL;
+    size_t path_size;
+    bfs_file_status_t status;
+    char *timestamp = NULL;
+    size_t timestamp_size;
+    bfs_catalog_ctx *cat_p = *catalog;
+    int no_error = 1;
+
+    ip = in;
+    ip_end = ip + in_size;
+
+    if ((kryptos_u8_t *)strstr(ip, BCREPO_CATALOG_FILES) != ip) {
+        return 0;
+    }
+
+    ip += strlen(BCREPO_CATALOG_FILES);
+
+    if (*ip != '\n') {
+        return 0;
+    }
+
+    ip += 1;
+
+    while (ip < ip_end) {
+
+        if (*ip != '\n') {
+            cp = ip;
+            cp_end = cp;
+
+            // INFO(Rafael): Getting the path data.
+
+            while (cp_end != ip_end && *cp_end != ',') {
+                cp_end++;
+            }
+
+            if (*cp_end != ',') {
+                // INFO(Rafael): It should never happen since it is protected by a HMAC function!
+                printf("ERROR: The catalog seems corrupted.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            path_size = cp_end - cp;
+            path = (kryptos_u8_t *) kryptos_newseg(path_size + 1);
+
+            if (path == NULL) {
+                printf("ERROR: Not enough memory to read the file list from catalog.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            memset(path, 0, path_size + 1);
+            memcpy(path, cp, path_size);
+
+            // INFO(Rafael): Getting the status data.
+
+            cp = cp_end + 1;
+            cp_end = cp;
+
+            status = *cp_end;
+
+            if (status != 'L' && status != 'U' && status != 'P') {
+                printf("ERROR: Invalid file status.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            cp_end += 1;
+
+            if (*cp_end != ',') {
+                // INFO(Rafael): It should never happen since it is protected by a HMAC function!
+                printf("ERROR: The catalog seems corrupted.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            // INFO(Rafael): Getting the timestamp data.
+
+            cp = cp_end + 1;
+            cp_end = cp;
+
+            while (cp_end != ip_end && *cp_end != '\n') {
+                cp_end++;
+            }
+
+            if (*cp_end != '\n') {
+                // INFO(Rafael): It should never happen since it is protected by a HMAC function!
+                printf("ERROR: The catalog seems corrupted.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            timestamp_size = cp_end - cp;
+            timestamp = (char *) kryptos_newseg(timestamp_size + 1);
+
+            if (timestamp == NULL) {
+                printf("ERROR: Not enough memory to read the file list from catalog.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            memset(timestamp, 0, timestamp_size + 1);
+            memcpy(timestamp, cp, timestamp_size);
+
+            cat_p->files = add_file_to_relpath_ctx(cat_p->files, path, path_size, status, timestamp);
+
+            kryptos_freeseg(path);
+            kryptos_freeseg(timestamp);
+            path = timestamp = NULL;
+        }
+
+        ip++;
+    }
+
+files_r_epilogue:
+
+    if (no_error == 0) {
+        del_bfs_catalog_relpath_ctx(cat_p->files);
+        cat_p->files = NULL;
+    }
+
+    if (path != NULL) {
+        kryptos_freeseg(path);
+    }
+
+    if (timestamp != NULL) {
+        kryptos_freeseg(timestamp);
+    }
+
+    return no_error;
 }
 
 #undef BCREPO_CATALOG_BC_VERSION
