@@ -57,6 +57,10 @@ fs-tests.prologue() {
     var dirlist type list;
 
     $dirlist.add_item(".");
+    $dirlist.add_item("../../keychain");
+    $dirlist.add_item("../../keychain/cipher");
+    $dirlist.add_item("../../ctx");
+    $dirlist.add_item("../../memory");
     $src = get_codes($dirlist, $deps);
 }
 
