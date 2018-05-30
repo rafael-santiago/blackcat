@@ -12,6 +12,8 @@
 #include <keychain/ciphering_schemes.h>
 #include <kryptos_pem.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define BCREPO_DATA "bcrepo.data"
 
@@ -21,6 +23,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_write_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_read_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_stat_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_validate_key_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_get_rootpath_tests);
 
 CUTE_MAIN(fs_tests);
 
@@ -32,6 +35,44 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_stat_tests);
     CUTE_RUN_TEST(bcrepo_validate_key_tests);
     remove(BCREPO_DATA);
+    CUTE_RUN_TEST(bcrepo_get_rootpath_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_get_rootpath_tests)
+    // WARN(Rafael): This test can't be ran inside of a "repo".
+    char *rootpath;
+    char cwd[4096];
+    rmdir(".bcrepo");
+    rmdir("../.bcrepo");
+
+    getcwd(cwd, sizeof(cwd));
+
+    rootpath = bcrepo_get_rootpath();
+    CUTE_ASSERT(rootpath == NULL);
+
+    mkdir(".bcrepo", 0666);
+
+    rootpath = bcrepo_get_rootpath();
+    CUTE_ASSERT(rootpath != NULL);
+    CUTE_ASSERT(strcmp(rootpath, cwd) == 0);
+
+    kryptos_freeseg(rootpath);
+    rmdir(".bcrepo");
+
+    chdir("..");
+
+    getcwd(cwd, sizeof(cwd));
+
+    rmdir(".bcrepo");
+    mkdir(".bcrepo", 0666);
+    chdir("test");
+
+    rootpath = bcrepo_get_rootpath();
+    CUTE_ASSERT(rootpath != NULL);
+    CUTE_ASSERT(strcmp(rootpath, cwd) == 0);
+
+    kryptos_freeseg(rootpath);
+    rmdir(".bcrepo");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_validate_key_tests)

@@ -20,4 +20,6 @@ int bcrepo_stat(bfs_catalog_ctx **catalog,
 
 int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
 
+char *bcrepo_get_rootpath(void);
+
 #endif

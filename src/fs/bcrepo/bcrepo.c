@@ -11,6 +11,8 @@
 #include <kryptos.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
+#include <unistd.h>
 
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
 #define BCREPO_CATALOG_KEY_HASH_ALGO            "key-hash-algo: "
@@ -21,6 +23,9 @@
 
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
 #define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
+
+#define BCREPO_HIDDEN_DIR ".bcrepo"
+#define BCREPO_CATALOG_FILE "CATALOG"
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
@@ -65,6 +70,48 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
 static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size);
+
+static int root_dir_reached(const char *cwd);
+
+char *bcrepo_get_rootpath(void) {
+    char oldcwd[4096], cwd[4096];
+    DIR *dirp = NULL;
+    char *rootpath = NULL;
+    size_t rootpath_size;
+    int recur_nr = 0;
+
+    memset(oldcwd, 0, sizeof(oldcwd));
+    getcwd(oldcwd, sizeof(oldcwd) - 1);
+
+    memset(cwd, 0, sizeof(cwd));
+    memcpy(cwd, oldcwd, sizeof(oldcwd) - 1);
+
+    while ((dirp = opendir(BCREPO_HIDDEN_DIR)) == NULL && !root_dir_reached(cwd)) {
+        chdir("..");
+        recur_nr += 1;
+        getcwd(cwd, sizeof(cwd));
+    }
+
+    if (recur_nr > 0) {
+        chdir(oldcwd);
+    }
+
+    if (dirp != NULL) {
+        rootpath_size = strlen(cwd);
+        rootpath = (char *) kryptos_newseg(rootpath_size + 1);
+
+        if (rootpath == NULL) {
+            return NULL;
+        }
+
+        memset(rootpath, 0, rootpath_size + 1);
+        memcpy(rootpath, cwd, rootpath_size);
+
+        closedir(dirp);
+    }
+
+    return rootpath;
+}
 
 int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     int is_valid = 0;
@@ -280,6 +327,14 @@ bcrepo_stat_epilogue:
     }
 
     return no_error;
+}
+
+static int root_dir_reached(const char *cwd) {
+#ifndef _WIN32
+    return (strcmp(cwd, "/") == 0);
+#else
+    return 1;
+#endif
 }
 
 static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
@@ -841,3 +896,5 @@ files_r_epilogue:
 #undef BCREPO_PEM_HMAC_HDR
 #undef BCREPO_PEM_CATALOG_DATA_HDR
 
+#undef BCREPO_HIDDEN_DIR
+#undef BCREPO_CATALOG_FILE
