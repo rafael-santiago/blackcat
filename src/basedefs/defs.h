@@ -31,10 +31,10 @@ typedef size_t (*blackcat_hash_size_func)(void);
 #define IMPL_BLACKCAT_CIPHER_PROCESSOR(name, ktask, p_layer, stmt) \
     void blackcat_ ## name (kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer) {\
         stmt;\
-        if (kryptos_last_task_succeed((*ktask)) == 0) {\
-            printf("BLACKCAT PROCESSOR PANIC [at blackcat_%s()]: %s %d\n", #name, (*ktask)->result_verbose, (*ktask)->cipher);\
+        /*if (kryptos_last_task_succeed((*ktask)) == 0) {\
+            printf("BLACKCAT PROCESSOR PANIC [at blackcat_%s()]: %s\n", #name, (*ktask)->result_verbose);\
             exit(1);\
-        }\
+        }*/\
         if ((*ktask)->iv != NULL && (*ktask)->mode != kKryptosCipherModeNr) {\
             kryptos_freeseg((*ktask)->iv);\
             (*ktask)->iv = NULL;\

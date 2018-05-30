@@ -49,6 +49,23 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(data_size == 0);
 
     del_bfs_catalog_ctx(catalog);
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    data = bcrepo_read(BCREPO_DATA, catalog, &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size > 0);
+
+    CUTE_ASSERT(bcrepo_stat(&catalog, "wrong password", strlen("wrong password"), &data, &data_size) == 0);
+
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size > 0);
+
+    kryptos_freeseg(data);
+
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_read_tests)
