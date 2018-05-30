@@ -66,6 +66,35 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
 
 static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size);
 
+int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
+    int is_valid = 0;
+    kryptos_task_ctx t, *ktask = &t;
+
+    if (catalog == NULL || key == NULL || key_size == 0 || catalog->key_hash_algo == NULL) {
+        goto bcrepo_validate_key_epilogue;
+    }
+
+    kryptos_task_init_as_null(ktask);
+
+    ktask->in = (kryptos_u8_t *)key;
+    ktask->in_size = key_size;
+
+    catalog->key_hash_algo(&ktask, 1);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto bcrepo_validate_key_epilogue;
+    }
+
+    is_valid = (ktask->out_size == catalog->key_hash_size &&
+                    memcmp(ktask->out, catalog->key_hash, ktask->out_size) == 0);
+
+bcrepo_validate_key_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    return is_valid;
+}
+
 int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     FILE *fp = NULL;
     int no_error = 1;
@@ -554,6 +583,17 @@ static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in
     end = in + in_size;
 
     if (fp == NULL) {
+        goto get_catalog_field_epilogue;
+    }
+
+    if (fp > in && *(fp - 1) != '\n') {
+        while (*(fp - 1) != '\n' && fp < end) {
+            fp += 1;
+            fp = strstr(fp, field);
+        }
+    }
+
+    if (fp >= end) {
         goto get_catalog_field_epilogue;
     }
 

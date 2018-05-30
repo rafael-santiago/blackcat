@@ -18,4 +18,6 @@ int bcrepo_stat(bfs_catalog_ctx **catalog,
                 const kryptos_u8_t *key, const size_t key_size,
                 kryptos_u8_t **data, size_t *data_size);
 
+int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
+
 #endif
