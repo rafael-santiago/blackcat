@@ -15,31 +15,18 @@
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
-
 CUTE_DECLARE_TEST_CASE(memory_tests);
-
 CUTE_DECLARE_TEST_CASE(ctx_tests);
-
 CUTE_DECLARE_TEST_CASE(keychain_arg_parsing_tests);
-
 CUTE_DECLARE_TEST_CASE(blackcat_is_dec_tests);
-
 CUTE_DECLARE_TEST_CASE(blackcat_available_cipher_schemes_tests);
-
 CUTE_DECLARE_TEST_CASE(blackcat_meta_processor_tests);
-
 CUTE_DECLARE_TEST_CASE(get_hash_processor_tests);
-
 CUTE_DECLARE_TEST_CASE(get_hash_size_tests);
-
 CUTE_DECLARE_TEST_CASE(is_hmac_processor_tests);
-
 CUTE_DECLARE_TEST_CASE(is_weak_hash_funcs_usage_tests);
-
 CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
-
 CUTE_DECLARE_TEST_CASE(get_hmac_catalog_scheme_tests);
-
 CUTE_DECLARE_TEST_CASE(get_random_hmac_catalog_scheme_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)

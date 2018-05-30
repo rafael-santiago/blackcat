@@ -50,6 +50,7 @@ CUTE_TEST_CASE(bcrepo_validate_key_tests)
 
     CUTE_ASSERT(bcrepo_stat(&catalog, repo_key, strlen(repo_key), &data, &data_size) == 1);
 
+    CUTE_ASSERT(bcrepo_validate_key(catalog, repo_key, strlen(repo_key)) == 0);
     CUTE_ASSERT(bcrepo_validate_key(catalog, key, strlen(key)) == 0);
 
     key = "Goliath";
@@ -91,7 +92,7 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size == get_hash_size("sha3-384"));
 
     CUTE_ASSERT(catalog->key_hash != NULL);
-    // TIP(Rafael): This hash is stored in hexadecimal.
+    // TIP(Rafael): This hash is stored in hexadecimal format.
     CUTE_ASSERT(catalog->key_hash_size == (catalog->key_hash_algo_size() << 1));
     // INFO(Rafael): This repo has a secondary (protection layer) key, that is 'Goliath' not 'parangaricutirimirruaru'.
     //               The real validation of it is tested in 'bcrepo_validate_key_tests'.

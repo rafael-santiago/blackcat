@@ -198,9 +198,9 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_hmac_catalog_scheme(const
 }
 
 const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_scheme(void) {
-    size_t s = (size_t) kryptos_get_random_byte() << 24 |
-               (size_t) kryptos_get_random_byte() << 16 |
-               (size_t) kryptos_get_random_byte() <<  8 |
-               (size_t) kryptos_get_random_byte();
+    size_t s = ((size_t) kryptos_get_random_byte() << 24) |
+               ((size_t) kryptos_get_random_byte() << 16) |
+               ((size_t) kryptos_get_random_byte() <<  8) |
+               ((size_t) kryptos_get_random_byte());
     return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
 }

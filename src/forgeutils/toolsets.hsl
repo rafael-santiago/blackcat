@@ -78,7 +78,7 @@ function build_libkryptos() : result type int {
             if (hefesto.sys.os_name() == "freebsd") {
                 $exit_code = hefesto.sys.run("hefesto");
             } else {
-                $exit_code = hefesto.sys.run("hefesto --no-hmac-tests");
+                $exit_code = hefesto.sys.run("hefesto --no-hmac-tests " + hefesto.project.cmdline());
             }
             hefesto.sys.cd($oldcwd);
         }
@@ -107,7 +107,7 @@ function build_libcutest() : result type int {
         $oldcwd = hefesto.sys.pwd();
         $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/");
         if (hefesto.sys.cd($libpath)) {
-            $exit_code = hefesto.sys.run("hefesto");
+            $exit_code = hefesto.sys.run("hefesto " + hefesto.project.cmdline());
             hefesto.sys.cd($oldcwd);
         }
     }
