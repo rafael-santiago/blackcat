@@ -61,6 +61,8 @@ fs-tests.prologue() {
     $dirlist.add_item("../../keychain/cipher");
     $dirlist.add_item("../../ctx");
     $dirlist.add_item("../../memory");
+    $dirlist.add_item("../ctx");
+    $dirlist.add_item("../bcrepo");
     $src = get_codes($dirlist, $deps);
 }
 

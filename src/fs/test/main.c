@@ -19,6 +19,7 @@ CUTE_DECLARE_TEST_CASE(fs_tests);
 CUTE_DECLARE_TEST_CASE(relpath_ctx_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_write_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_read_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_stat_tests);
 
 CUTE_MAIN(fs_tests);
 
@@ -26,6 +27,28 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(relpath_ctx_tests);
     CUTE_RUN_TEST(bcrepo_write_tests);
     CUTE_RUN_TEST(bcrepo_read_tests);
+    CUTE_RUN_TEST(bcrepo_stat_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_stat_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *data = NULL;
+    size_t data_size;
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    data = bcrepo_read(BCREPO_DATA, catalog, &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size > 0);
+
+    CUTE_ASSERT(bcrepo_stat(&catalog, "parangaricutirimirruaru", strlen("parangaricutirimirruaru"), &data, &data_size) == 1);
+
+    CUTE_ASSERT(data == NULL);
+    CUTE_ASSERT(data_size == 0);
+
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_read_tests)
@@ -63,8 +86,9 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.key_hash_algo_size = get_hash_size("sha224");
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
-    catalog.key_hash = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
-    catalog.key_hash_size = 48;
+    catalog.key_hash = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+                       "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
+    catalog.key_hash_size = 96;
     catalog.protection_layer = "aes-256-ctr|hmac-whirlpool-cast5-cbc";
     catalog.files = &files;
 

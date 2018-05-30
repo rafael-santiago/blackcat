@@ -144,3 +144,46 @@ void del_bfs_catalog_relpath_ctx(bfs_catalog_relpath_ctx *files) {
         kryptos_freeseg(p);
     }
 }
+
+void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
+    if (catalog->bc_version != NULL) {
+        kryptos_freeseg(catalog->bc_version);
+    }
+
+    catalog->key_hash_algo = NULL;
+    catalog->key_hash_algo_size = NULL;
+
+    catalog->protlayer_key_hash_algo = NULL;
+    catalog->protlayer_key_hash_algo_size = NULL;
+
+    if (catalog->protection_layer != NULL) {
+        memset(catalog->protection_layer, 0, strlen(catalog->protection_layer));
+        kryptos_freeseg(catalog->protection_layer);
+    }
+
+    if (catalog->key_hash != NULL) {
+        memset(catalog->key_hash, 0, catalog->key_hash_size);
+        kryptos_freeseg(catalog->key_hash);
+        catalog->key_hash_size = 0;
+    }
+
+    if (catalog->files != NULL) {
+        del_bfs_catalog_relpath_ctx(catalog->files);
+    }
+
+    free(catalog);
+}
+
+bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
+    bfs_catalog_ctx *catalog = kryptos_newseg(sizeof(bfs_catalog_ctx));
+    if (catalog != NULL) {
+        catalog->bc_version = NULL;
+        catalog->protlayer_key_hash_algo = NULL;
+        catalog->protlayer_key_hash_algo_size = NULL;
+        catalog->protection_layer = NULL;
+        catalog->key_hash = NULL;
+        catalog->key_hash_size = 0;
+        catalog->files = NULL;
+    }
+    return catalog;
+}

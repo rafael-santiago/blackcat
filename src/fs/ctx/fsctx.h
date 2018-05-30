@@ -20,4 +20,8 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
 
 void del_bfs_catalog_relpath_ctx(bfs_catalog_relpath_ctx *files);
 
+void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog);
+
+bfs_catalog_ctx *new_bfs_catalog_ctx(void);
+
 #endif

@@ -15,7 +15,7 @@
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
 #define BCREPO_CATALOG_KEY_HASH_ALGO            "key-hash-algo: "
 #define BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO  "protlayer-key-hash-algo: "
-#define BCREPO_CATALOG_KEY_HASH                 "key_hash: "
+#define BCREPO_CATALOG_KEY_HASH                 "key-hash: "
 #define BCREPO_CATALOG_PROTECTION_LAYER         "protection-layer: "
 #define BCREPO_CATALOG_FILES                    "files: "
 
@@ -246,7 +246,7 @@ bcrepo_stat_epilogue:
 
     if (result == kKryptosSuccess) {
         kryptos_freeseg(*data);
-        data = NULL;
+        *data = NULL;
         *data_size = 0;
     }
 
@@ -287,13 +287,13 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
         *data_size = ktask->out_size;
     }
 
+    result = ktask->result;
+
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
     p_layer.key = NULL;
     p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
-
-    result = ktask->result;
 
 decrypt_catalog_data_epilogue:
 
@@ -405,7 +405,7 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
 
     o = out;
 
-    while (all_dump_done(dumpers)) {
+    while (!all_dump_done(dumpers)) {
         d = kryptos_get_random_byte() % dumpers_nr;
 
         if (dumpers[d].done) {
@@ -546,8 +546,6 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
     return no_error;
 }
 
-// TODO(Rafael): Guess what?
-
 static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size) {
     const kryptos_u8_t *fp, *fp_end, *end;
     kryptos_u8_t *data = NULL;
@@ -561,7 +559,7 @@ static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in
 
     fp += strlen(field);
 
-    while (fp != end && *fp != ' ') {
+    while (fp != end && *fp == ' ') {
         fp++;
     }
 
@@ -668,7 +666,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
     ip = in;
     ip_end = ip + in_size;
 
-    if ((kryptos_u8_t *)strstr(ip, BCREPO_CATALOG_FILES) != ip) {
+    if ((kryptos_u8_t *)(ip = strstr(ip, BCREPO_CATALOG_FILES)) == NULL) {
         return 0;
     }
 
@@ -766,6 +764,10 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             kryptos_freeseg(path);
             kryptos_freeseg(timestamp);
             path = timestamp = NULL;
+
+            ip = cp_end - 1;
+        } else if (*(ip + 1) == '\n') {
+            break;
         }
 
         ip++;
