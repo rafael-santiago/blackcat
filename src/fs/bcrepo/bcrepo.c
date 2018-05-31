@@ -8,10 +8,13 @@
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
 #include <fs/ctx/fsctx.h>
+#include <fs/strglob.h>
 #include <kryptos.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
@@ -26,6 +29,8 @@
 
 #define BCREPO_HIDDEN_DIR ".bcrepo"
 #define BCREPO_CATALOG_FILE "CATALOG"
+
+#define BCREPO_ADD_RECUR_LEVEL_LIMIT 1024
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
@@ -72,6 +77,180 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
 static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in, const size_t in_size);
 
 static int root_dir_reached(const char *cwd);
+
+int bcrepo_add(bfs_catalog_ctx **catalog,
+               const char *rootpath, const size_t rootpath_size,
+               const char *pattern, const size_t pattern_size) {
+    int add_nr = 0, matches;
+    char *filepath = NULL, *fp = NULL, *fp_end = NULL, *glob = NULL, *filename;
+    size_t filepath_size, glob_size, filename_size;
+    struct stat st;
+    bfs_catalog_ctx *cp;
+    DIR *dirp = NULL;
+    struct dirent *dt;
+    static int bcrepo_add_recur_level = 0;
+    char cwd[4096];
+
+    if (bcrepo_add_recur_level > BCREPO_ADD_RECUR_LEVEL_LIMIT) {
+        printf("ERROR: bcrepo_add() recursiveness level limit hit.\n");
+        goto bcrepo_add_epilogue;
+    }
+
+    if (catalog == NULL || rootpath == NULL || rootpath_size == 0 || pattern == NULL || pattern_size == 0) {
+        goto bcrepo_add_epilogue;
+    }
+
+    filepath_size = rootpath_size + pattern_size;
+    filepath = (char *) kryptos_newseg(filepath_size + 1);
+
+    if (filepath == NULL) {
+        printf("ERROR: Unable to allocate memory!\n");
+        goto bcrepo_add_epilogue;
+    }
+
+    memset(filepath, 0, filepath_size + 1);
+    memcpy(filepath, rootpath, rootpath_size);
+    memcpy(filepath + rootpath_size, pattern, pattern_size);
+
+    if (strstr(filepath, "*") != NULL || strstr(filepath, "?") != NULL || strstr(filepath, "[") != NULL) {
+        fp = filepath;
+        fp_end = fp + filepath_size;
+
+#ifndef _WIN32
+        while (fp != fp_end && *fp_end != '/') {
+            fp_end--;
+        }
+
+        *fp_end = 0;
+
+        fp = fp_end + 1;
+        fp_end = filepath + filepath_size;
+
+        glob_size = fp_end - fp;
+        glob = (char *) kryptos_newseg(glob_size + 1);
+
+        if (glob == NULL) {
+            printf("ERROR: Unable to allocate memory!\n");
+            goto bcrepo_add_epilogue;
+        }
+
+        memset(glob, 0, glob_size + 1);
+        memcpy(glob, fp, glob_size);
+
+        filepath = (char *) kryptos_realloc(filepath, 4096);
+
+        if (filepath == NULL) {
+            printf("ERROR: Unable to allocate memory!\n");
+            goto bcrepo_add_epilogue;
+        }
+
+        fp_end = filepath + 4095;
+
+        for (fp = filepath; fp != fp_end && *fp != 0; fp++)
+            ;
+#else
+# error Implement me... (__FILE__)
+#endif
+    }
+
+    cp = *catalog;
+
+    if (stat(filepath, &st) == 0) {
+        // INFO(Rafael): We are only interested in regular files and directories.
+        if (st.st_mode & S_IFREG) {
+            // INFO(Rafael): However, only regular files are really relevant for us.
+            if (get_entry_from_relpath_ctx(cp->files, filepath + rootpath_size) == NULL) {
+                cp->files = add_file_to_relpath_ctx(cp->files,
+                                                    filepath + rootpath_size,
+                                                    filepath_size - rootpath_size, 'U', NULL);
+                add_nr = 1;
+            }
+        } else if (st.st_mode & S_IFDIR) {
+            if ((dirp = opendir(filepath)) == NULL) {
+                printf("ERROR: Unable to access '%s'.\n", filepath);
+                goto bcrepo_add_epilogue;
+            }
+
+            while ((dt = readdir(dirp)) != NULL) {
+                filename = dt->d_name;
+
+                if (strcmp(filename, ".") == 0 || strcmp(filename, BCREPO_HIDDEN_DIR) == 0 || strcmp(filename, "..") == 0) {
+                    continue;
+                }
+
+                matches = (glob == NULL || *glob == 0 || strglob(filename, glob) == 1);
+
+                if (!matches) {
+                    continue;
+                }
+
+                filename_size = strlen(filename);
+
+                if ((fp + filename_size) >= fp_end) {
+                    printf("WARN: The filename '%s' is too long. It was not added.\n", filename);
+                    continue;
+                }
+
+                memcpy(fp, filename, filename_size);
+                *(fp + filename_size) = 0;
+                filepath_size = (fp - filepath) + filename_size;
+
+                bcrepo_add_recur_level++; // WARN(Rafael): Assuming sync usage.
+
+                add_nr += bcrepo_add(catalog,
+                                     rootpath, rootpath_size,
+                                     filepath + rootpath_size, filepath_size - rootpath_size);
+
+                bcrepo_add_recur_level--; // WARN(Rafael): Assuming sync usage.
+            }
+        }
+    } else {
+        // INFO(Rafael): It is about a glob to be tested over the current directory files.
+        //               Let's perform a new call to bcrepo_add() passing '<cwd>/<pattern>'.
+        memset(cwd, 0, sizeof(cwd));
+        if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
+            printf("ERROR: Unable to get the current cwd.\n");
+            goto bcrepo_add_epilogue;
+        }
+
+        fp = &cwd[0];
+        fp_end = fp + strlen(cwd);
+
+        if (*(fp_end - 1) != '/') {
+            *(fp_end) = '/';
+            fp_end++;
+        }
+
+        if ((fp_end + pattern_size) >= (fp + sizeof(cwd))) {
+            printf("ERROR: The passed file pattern is too long.\n");
+            goto bcrepo_add_epilogue;
+        }
+
+        memcpy(fp_end, pattern, pattern_size);
+
+        bcrepo_add_recur_level++; // WARN(Rafael): Assuming sync usage.
+
+        add_nr = bcrepo_add(catalog, rootpath, rootpath_size, cwd, strlen(cwd));
+
+        bcrepo_add_recur_level--; // WARN(Rafael): Assuming sync usage.
+    }
+
+bcrepo_add_epilogue:
+
+    if (filepath != NULL) {
+        kryptos_freeseg(filepath);
+    }
+
+    if (glob != NULL) {
+        kryptos_freeseg(glob);
+    }
+
+    if (dirp != NULL) {
+        closedir(dirp);
+    }
+
+    return add_nr;
+}
 
 char *bcrepo_get_rootpath(void) {
     char oldcwd[4096], cwd[4096];

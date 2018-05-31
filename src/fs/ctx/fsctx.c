@@ -20,8 +20,6 @@
 
 static bfs_catalog_relpath_ctx *get_relpath_ctx_tail(bfs_catalog_relpath_ctx *head);
 
-static bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path);
-
 bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
                                                  kryptos_u8_t *path,
                                                  size_t path_size,
@@ -110,7 +108,7 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
     return h;
 }
 
-static bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path) {
+bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path) {
     bfs_catalog_relpath_ctx *p;
 
     for (p = files; p != NULL; p = p->next) {

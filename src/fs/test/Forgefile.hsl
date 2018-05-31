@@ -63,6 +63,7 @@ fs-tests.prologue() {
     $dirlist.add_item("../../memory");
     $dirlist.add_item("../ctx");
     $dirlist.add_item("../bcrepo");
+    $dirlist.add_item("../");
     $src = get_codes($dirlist, $deps);
 }
 
