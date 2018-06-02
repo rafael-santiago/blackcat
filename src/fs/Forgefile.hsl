@@ -34,6 +34,11 @@ libbfs.prologue() {
     $code_paths.add_item("base");
     $code_paths.add_item("bcrepo");
     $code_paths.add_item("ctx");
+    $code_paths.add_item("../");
+    $code_paths.add_item("../ctx");
+    $code_paths.add_item("../memory");
+    $code_paths.add_item("../keychain");
+    $code_paths.add_item("../keychain/cipher");
 
     $src = get_codes($code_paths, $deps);
 

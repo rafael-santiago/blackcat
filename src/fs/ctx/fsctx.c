@@ -6,6 +6,7 @@
  *
  */
 #include <fs/ctx/fsctx.h>
+#include <ctx/ctx.h>
 #include <kryptos_memory.h>
 #include <string.h>
 #include <stdio.h>
@@ -159,6 +160,10 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
         kryptos_freeseg(catalog->protection_layer);
     }
 
+    if (catalog->protlayer != NULL) {
+        del_protlayer_chain_ctx(catalog->protlayer);
+    }
+
     if (catalog->key_hash != NULL) {
         memset(catalog->key_hash, 0, catalog->key_hash_size);
         kryptos_freeseg(catalog->key_hash);
@@ -179,6 +184,7 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
         catalog->protlayer_key_hash_algo = NULL;
         catalog->protlayer_key_hash_algo_size = NULL;
         catalog->protection_layer = NULL;
+        catalog->protlayer = NULL;
         catalog->key_hash = NULL;
         catalog->key_hash_size = 0;
         catalog->files = NULL;

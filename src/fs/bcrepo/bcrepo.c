@@ -7,6 +7,7 @@
  */
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
+#include <keychain/processor.h>
 #include <fs/ctx/fsctx.h>
 #include <fs/strglob.h>
 #include <kryptos.h>
@@ -94,22 +95,154 @@ typedef int (*unl_processor)(const char *rootpath, const size_t rootpath_size,
                              const char *path, const size_t path_size,
                              const blackcat_protlayer_chain_ctx *protlayer);
 
+
+typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_ctx *protlayer,
+                                                 kryptos_u8_t *in, size_t in_size, size_t *out_size);
+
+static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size,
+                                const char *path, const size_t path_size,
+                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor proc);
+
 static int unl_handle(bfs_catalog_ctx **catalog,
                       const char *rootpath, const size_t rootpath_size,
                       const char *pattern, const size_t pattern_size, unl_processor proc);
 
+static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t rootpath_size,
+                                           const char *path, const size_t path_size, size_t *size);
+
+static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_size,
+                                  const char *path, const size_t path_size, const kryptos_u8_t *data, const size_t data_size);
+
+static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_size,
+                                  const char *path, const size_t path_size, const kryptos_u8_t *data, const size_t data_size) {
+    int no_error = 1;
+    char fullpath[4096];
+    FILE *fp = NULL;
+
+    if ((rootpath_size + path_size + 3) >= sizeof(fullpath) - 1) {
+        printf("ERROR: The path is too long ('%s').\n", path);
+        no_error = 0;
+        goto bcrepo_write_file_data_epilogue;
+    }
+
+    sprintf(fullpath, "%s/%s", rootpath, path);
+
+    if ((fp = fopen(fullpath, "wb")) == NULL) {
+        printf("ERROR: Unable to write the file '%s'.\n", fullpath);
+        no_error = 0;
+        goto bcrepo_write_file_data_epilogue;
+    }
+
+    if (fwrite(data, 1, data_size, fp) == -1) {
+        printf("ERROR: Unable to dump data to the file '%s'.\n", fullpath);
+        no_error = 0;
+        goto bcrepo_write_file_data_epilogue;
+    }
+
+bcrepo_write_file_data_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    memset(fullpath, 0, sizeof(fullpath));
+
+    return no_error;
+}
+
+static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t rootpath_size,
+                                           const char *path, const size_t path_size, size_t *size) {
+    FILE *fp = NULL;
+    kryptos_u8_t *data = NULL;
+    char fullpath[4096];
+
+    if ((rootpath_size + path_size + 3) >= sizeof(fullpath) - 1) {
+        printf("ERROR: The path is too long ('%s').\n", path);
+        *size = 0;
+        goto bcrepo_read_file_data_epilogue;
+    }
+
+    sprintf(fullpath, "%s/%s", rootpath, path);
+
+    if ((fp = fopen(fullpath, "rb")) == NULL) {
+        printf("ERROR: Unable to read the file '%s'.\n", fullpath);
+        *size = 0;
+        goto bcrepo_read_file_data_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    *size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    data = (kryptos_u8_t *) kryptos_newseg(*size);
+
+    if (data == NULL) {
+        printf("ERROR: Not enough memory to read the file '%s'.\n", path);
+        *size = 0;
+        goto bcrepo_read_file_data_epilogue;
+    }
+
+    fread(data, 1, *size, fp);
+
+bcrepo_read_file_data_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    memset(fullpath, 0, sizeof(fullpath));
+
+    return data;
+}
+
+static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size,
+                                const char *path, const size_t path_size,
+                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor proc) {
+    int no_error = 1;
+    kryptos_u8_t *in = NULL, *out = NULL;
+    size_t in_size = 0, out_size;
+
+    in = bcrepo_read_file_data(rootpath, rootpath_size, path, path_size, &in_size);
+
+    if (in == NULL) {
+        no_error = 0;
+        goto unl_handle_meta_proc_epilogue;
+    }
+
+    out = proc(protlayer, in, in_size, &out_size);
+
+    if (out == NULL) {
+        no_error = 0;
+        goto unl_handle_meta_proc_epilogue;
+    }
+
+    no_error = bcrepo_write_file_data(rootpath, rootpath_size, path, path_size, out, out_size);
+
+unl_handle_meta_proc_epilogue:
+
+    if (in != NULL) {
+        kryptos_freeseg(in);
+        in_size = 0;
+    }
+
+    if (out != NULL) {
+        kryptos_freeseg(out);
+        out_size = 0;
+    }
+
+    return no_error;
+}
+
 static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer) {
-    int no_error = 1;
-    return no_error;
+    return unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_encrypt_data);
 }
 
 static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer) {
-    int no_error = 1;
-    return no_error;
+    return unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_decrypt_data);
 }
 
 static int unl_handle(bfs_catalog_ctx **catalog,
