@@ -101,7 +101,7 @@ typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_
 
 static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size,
                                 const char *path, const size_t path_size,
-                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor proc);
+                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor dproc);
 
 static int unl_handle(bfs_catalog_ctx **catalog,
                       const char *rootpath, const size_t rootpath_size,
@@ -136,7 +136,6 @@ static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_si
     if (fwrite(data, 1, data_size, fp) == -1) {
         printf("ERROR: Unable to dump data to the file '%s'.\n", fullpath);
         no_error = 0;
-        goto bcrepo_write_file_data_epilogue;
     }
 
 bcrepo_write_file_data_epilogue:
@@ -197,7 +196,7 @@ bcrepo_read_file_data_epilogue:
 
 static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size,
                                 const char *path, const size_t path_size,
-                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor proc) {
+                                const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor dproc) {
     int no_error = 1;
     kryptos_u8_t *in = NULL, *out = NULL;
     size_t in_size = 0, out_size;
@@ -209,7 +208,7 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
         goto unl_handle_meta_proc_epilogue;
     }
 
-    out = proc(protlayer, in, in_size, &out_size);
+    out = dproc(protlayer, in, in_size, &out_size);
 
     if (out == NULL) {
         no_error = 0;
