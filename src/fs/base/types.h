@@ -35,6 +35,7 @@ typedef struct bfs_catalog {
     kryptos_u8_t *key_hash;
     size_t key_hash_size;
     char *protection_layer;
+    blackcat_protlayer_chain_ctx *protlayer;
     bfs_catalog_relpath_ctx *files;
 }bfs_catalog_ctx;
 

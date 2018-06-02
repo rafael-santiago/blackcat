@@ -82,9 +82,39 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                           const char *rootpath, const size_t rootpath_size,
                           const char *pattern, const size_t pattern_size, int *recur_level, const int recur_max_level);
 
+static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
+                              const char *path, const size_t path_size,
+                              const blackcat_protlayer_chain_ctx *protlayer);
+
+static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
+                              const char *path, const size_t path_size,
+                              const blackcat_protlayer_chain_ctx *protlayer);
+
+typedef int (*unl_processor)(const char *rootpath, const size_t rootpath_size,
+                             const char *path, const size_t path_size,
+                             const blackcat_protlayer_chain_ctx *protlayer);
+
 static int unl_handle(bfs_catalog_ctx **catalog,
                       const char *rootpath, const size_t rootpath_size,
-                      const char *pattern, const size_t pattern_size, int lock) {
+                      const char *pattern, const size_t pattern_size, unl_processor proc);
+
+static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
+                              const char *path, const size_t path_size,
+                              const blackcat_protlayer_chain_ctx *protlayer) {
+    int no_error = 1;
+    return no_error;
+}
+
+static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
+                              const char *path, const size_t path_size,
+                              const blackcat_protlayer_chain_ctx *protlayer) {
+    int no_error = 1;
+    return no_error;
+}
+
+static int unl_handle(bfs_catalog_ctx **catalog,
+                      const char *rootpath, const size_t rootpath_size,
+                      const char *pattern, const size_t pattern_size, unl_processor proc) {
     int proc_nr = 0;
     bfs_catalog_ctx *cp;
     bfs_catalog_relpath_ctx *files = NULL, *fp, *fpp;
@@ -102,9 +132,9 @@ static int unl_handle(bfs_catalog_ctx **catalog,
         files = cp->files;
     }
 
-#define unl_fproc(file, l, pstmt) {\
-    if (((l) && !((file) != NULL && (file)->status == kBfsFileStatusUnlocked)) ||\
-        (!(l) && !((file) != NULL && (file)->status == kBfsFileStatusLocked))) {\
+#define unl_fproc(file, p, pstmt) {\
+    if ((((p) == unl_handle_encrypt) && !((file) != NULL && (file)->status == kBfsFileStatusUnlocked)) ||\
+        (((p) == unl_handle_decrypt) && !((file) != NULL && (file)->status == kBfsFileStatusLocked))) {\
         continue;\
     }\
     pstmt;\
@@ -112,13 +142,11 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     if (files != cp->files) {
         for (fp = files; fp != NULL; fp = files->next) {
             fpp = get_entry_from_relpath_ctx(cp->files, fp->path);
-            // TODO(Rafael): Process the file and increment the processing counter.
-            unl_fproc(fpp, lock, {});
+            unl_fproc(fpp, proc, proc_nr += proc(rootpath, rootpath_size, fpp->path, fpp->path_size, cp->protlayer));
         }
     } else {
         for (fp = files; fp != NULL; fp = files->next) {
-            // TODO(Rafael): Process the file and increment the processing counter.
-            unl_fproc(fp, lock, NULL);
+            unl_fproc(fp, proc, proc_nr += proc(rootpath, rootpath_size, fp->path, fp->path_size, cp->protlayer));
         }
     }
 
@@ -134,14 +162,14 @@ static int unl_handle(bfs_catalog_ctx **catalog,
 int bcrepo_lock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, 1);
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_encrypt);
 }
 
 
 int bcrepo_unlock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, 0);
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_decrypt);
 }
 
 int bcrepo_rm(bfs_catalog_ctx **catalog,
