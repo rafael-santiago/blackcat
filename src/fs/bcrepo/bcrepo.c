@@ -321,7 +321,10 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
     get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
 
     for (fp = files; fp != NULL; fp = fp->next) {
-        // TODO(Rafael): If the file is currently encrypted, decrypt it before deleting from catalog.
+        if (fp->status == kBfsFileStatusLocked &&
+            bcrepo_unlock(catalog, rootpath, rootpath_size, fp->path, fp->path_size) != 1) {
+            printf("WARN: Unable to unlock the file '%s'.\n", fp->path);
+        }
         cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
         rm_nr++;
     }
