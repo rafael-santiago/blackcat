@@ -38,4 +38,8 @@ int bcrepo_unlock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size);
 
+int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
+
+int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size);
+
 #endif

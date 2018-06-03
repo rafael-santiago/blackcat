@@ -113,6 +113,195 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
 static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_size,
                                   const char *path, const size_t path_size, const kryptos_u8_t *data, const size_t data_size);
 
+
+int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
+    char *rootpath = NULL;
+    int no_error = 1;
+    char filepath[4096];
+    mode_t oldmask;
+
+    oldmask = umask(0);
+
+    if (catalog == NULL || key == NULL || key_size == 0) {
+        no_error = 0;
+        goto bcrepo_init_epilogue;
+    }
+
+    rootpath = bcrepo_get_rootpath();
+
+    if (rootpath != NULL) {
+        no_error = 0;
+        printf("ERROR: This seems to be previously initialized at '%s'.\n", rootpath);
+        goto bcrepo_init_epilogue;
+    }
+
+    if (mkdir(BCREPO_HIDDEN_DIR, 0777) != 0) {
+        no_error = 0;
+        printf("ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
+        goto bcrepo_init_epilogue;
+    }
+
+    sprintf(filepath, "%s/%s", BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+
+    no_error = bcrepo_write(filepath, catalog, key, key_size);
+
+bcrepo_init_epilogue:
+
+    umask(oldmask);
+
+    if (rootpath != NULL) {
+        kryptos_freeseg(rootpath);
+    }
+
+    return no_error;
+}
+
+int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size) {
+    kryptos_u8_t *data = NULL;
+    size_t data_size = 0;
+    bfs_catalog_ctx *catalog = NULL;
+    int no_error = 1;
+    char filepath[4096];
+
+    if (rootpath == NULL || rootpath_size == 0 || key == NULL || key_size == 0) {
+        no_error = 0;
+        goto bcrepo_deinit_epilogue;
+    }
+
+    catalog = new_bfs_catalog_ctx();
+
+    if (catalog == NULL) {
+        no_error = 0;
+        printf("ERROR: Not enough memory!\n");
+        goto bcrepo_deinit_epilogue;
+    }
+
+    if (rootpath_size + strlen(BCREPO_HIDDEN_DIR) + strlen(BCREPO_CATALOG_FILE) >= sizeof(filepath)) {
+        no_error = 0;
+        printf("ERROR: The catalog file path is too long.\n");
+        goto bcrepo_deinit_epilogue;
+    }
+
+    sprintf(filepath, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+
+    data = bcrepo_read(filepath, catalog, &data_size);
+
+    if (data == NULL) {
+        no_error = 0;
+        goto bcrepo_deinit_epilogue;
+    }
+
+    if ((no_error = bcrepo_stat(&catalog, key, key_size, &data, &data_size)) != 1) {
+        goto bcrepo_deinit_epilogue;
+    }
+
+    if (remove(filepath) != 0) {
+        no_error = 0;
+        printf("ERROR: Unable to remove the file '%s'.\n", filepath);
+        goto bcrepo_deinit_epilogue;
+    }
+
+    sprintf(filepath, "%s/%s", rootpath, BCREPO_HIDDEN_DIR);
+
+    if (rmdir(filepath) != 0) {
+        no_error = 0;
+        printf("ERROR: Unable to remove the directory '%s'.\n", filepath);
+        goto bcrepo_deinit_epilogue;
+    }
+
+bcrepo_deinit_epilogue:
+
+    if (data != NULL) {
+        kryptos_freeseg(data);
+        data_size = 0;
+    }
+
+    if (catalog != NULL) {
+        del_bfs_catalog_ctx(catalog);
+    }
+
+    return no_error;
+}
+
+int bcrepo_lock(bfs_catalog_ctx **catalog,
+                  const char *rootpath, const size_t rootpath_size,
+                  const char *pattern, const size_t pattern_size) {
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_encrypt);
+}
+
+
+int bcrepo_unlock(bfs_catalog_ctx **catalog,
+                  const char *rootpath, const size_t rootpath_size,
+                  const char *pattern, const size_t pattern_size) {
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_decrypt);
+}
+
+int bcrepo_rm(bfs_catalog_ctx **catalog,
+              const char *rootpath, const size_t rootpath_size,
+              const char *pattern, const size_t pattern_size) {
+    int rm_nr = 0;
+    bfs_catalog_relpath_ctx *files = NULL, *fp;
+    bfs_catalog_ctx *cp;
+    int rl = 0;
+
+    if (catalog == NULL) {
+        goto bcrepo_rm_epilogue;
+    }
+
+    cp = *catalog;
+
+    get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
+
+    for (fp = files; fp != NULL; fp = fp->next) {
+        if (fp->status == kBfsFileStatusLocked &&
+            bcrepo_unlock(catalog, rootpath, rootpath_size, fp->path, fp->path_size) != 1) {
+            printf("WARN: Unable to unlock the file '%s'.\n", fp->path);
+        }
+        cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
+        rm_nr++;
+    }
+
+bcrepo_rm_epilogue:
+
+    if (files != NULL) {
+        del_bfs_catalog_relpath_ctx(files);
+    }
+
+    return rm_nr;
+}
+
+int bcrepo_add(bfs_catalog_ctx **catalog,
+               const char *rootpath, const size_t rootpath_size,
+               const char *pattern, const size_t pattern_size, const int plain) {
+    int add_nr = 0;
+    bfs_catalog_relpath_ctx *files = NULL, *fp;
+    bfs_catalog_ctx *cp;
+    int rl = 0;
+
+    if (catalog == NULL) {
+        goto bcrepo_add_epilogue;
+    }
+
+    cp = *catalog;
+
+    get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
+
+    for (fp = files; fp != NULL; fp = fp->next) {
+        cp->files = add_file_to_relpath_ctx(cp->files,
+                                            fp->path, fp->path_size,
+                                            (!plain) ? kBfsFileStatusUnlocked : kBfsFileStatusPlain, fp->timestamp);
+        add_nr++;
+    }
+
+bcrepo_add_epilogue:
+
+    if (files != NULL) {
+        del_bfs_catalog_relpath_ctx(files);
+    }
+
+    return add_nr;
+}
+
 static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_size,
                                   const char *path, const size_t path_size, const kryptos_u8_t *data, const size_t data_size) {
     int no_error = 1;
@@ -291,84 +480,6 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     return proc_nr;
 }
 
-int bcrepo_lock(bfs_catalog_ctx **catalog,
-                  const char *rootpath, const size_t rootpath_size,
-                  const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_encrypt);
-}
-
-
-int bcrepo_unlock(bfs_catalog_ctx **catalog,
-                  const char *rootpath, const size_t rootpath_size,
-                  const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_decrypt);
-}
-
-int bcrepo_rm(bfs_catalog_ctx **catalog,
-              const char *rootpath, const size_t rootpath_size,
-              const char *pattern, const size_t pattern_size) {
-    int rm_nr = 0;
-    bfs_catalog_relpath_ctx *files = NULL, *fp;
-    bfs_catalog_ctx *cp;
-    int rl = 0;
-
-    if (catalog == NULL) {
-        goto bcrepo_rm_epilogue;
-    }
-
-    cp = *catalog;
-
-    get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
-
-    for (fp = files; fp != NULL; fp = fp->next) {
-        if (fp->status == kBfsFileStatusLocked &&
-            bcrepo_unlock(catalog, rootpath, rootpath_size, fp->path, fp->path_size) != 1) {
-            printf("WARN: Unable to unlock the file '%s'.\n", fp->path);
-        }
-        cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
-        rm_nr++;
-    }
-
-bcrepo_rm_epilogue:
-
-    if (files != NULL) {
-        del_bfs_catalog_relpath_ctx(files);
-    }
-
-    return rm_nr;
-}
-
-int bcrepo_add(bfs_catalog_ctx **catalog,
-               const char *rootpath, const size_t rootpath_size,
-               const char *pattern, const size_t pattern_size, const int plain) {
-    int add_nr = 0;
-    bfs_catalog_relpath_ctx *files = NULL, *fp;
-    bfs_catalog_ctx *cp;
-    int rl = 0;
-
-    if (catalog == NULL) {
-        goto bcrepo_add_epilogue;
-    }
-
-    cp = *catalog;
-
-    get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
-
-    for (fp = files; fp != NULL; fp = fp->next) {
-        cp->files = add_file_to_relpath_ctx(cp->files,
-                                            fp->path, fp->path_size,
-                                            (!plain) ? kBfsFileStatusUnlocked : kBfsFileStatusPlain, fp->timestamp);
-        add_nr++;
-    }
-
-bcrepo_add_epilogue:
-
-    if (files != NULL) {
-        del_bfs_catalog_relpath_ctx(files);
-    }
-
-    return add_nr;
-}
 
 static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_ctx *dest_files,
                           const char *rootpath, const size_t rootpath_size,
