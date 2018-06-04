@@ -133,7 +133,7 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
 
     if (rootpath != NULL) {
         no_error = 0;
-        printf("ERROR: This seems to be previously initialized at '%s'.\n", rootpath);
+        printf("ERROR: It seems to be previously initialized at '%s'.\n", rootpath);
         goto bcrepo_init_epilogue;
     }
 
@@ -955,7 +955,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     if (!is_hmac_processor(catalog->hmac_scheme->processor)) {
         return kKryptosProcessError;
     }
-
+    //printf("d->%.8X %s\n", catalog->hmac_scheme, data);
     kryptos_task_init_as_null(ktask);
 
     p_layer.key = (kryptos_u8_t *) key;
@@ -1095,6 +1095,10 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
     kryptos_u8_t *o;
 #define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done && (d)[3].done && (d)[4].done && (d)[5].done )
 
+    for (d = 0; d < dumpers_nr; d++) {
+        dumpers[d].done = 0;
+    }
+
     o = out;
 
     while (!all_dump_done(dumpers)) {
@@ -1109,7 +1113,6 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
 
         dumpers[d].done = 1;
     }
-
 #undef all_dump_done
 }
 
@@ -1380,6 +1383,11 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
     }
 
     ip += 1;
+
+    if (*ip == '\n') {
+        // INFO(Rafael): Empty file list.
+        goto files_r_epilogue;
+    }
 
     while (ip < ip_end) {
 

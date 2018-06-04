@@ -26,10 +26,14 @@ CUTE_DECLARE_TEST_CASE(bcrepo_stat_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_validate_key_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_get_rootpath_tests);
 CUTE_DECLARE_TEST_CASE(strglob_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_init_deinit_tests);
 
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+    rmdir("../.bcrepo");
     remove(BCREPO_DATA);
     CUTE_RUN_TEST(relpath_ctx_tests);
     CUTE_RUN_TEST(bcrepo_write_tests);
@@ -39,6 +43,84 @@ CUTE_TEST_CASE(fs_tests)
     remove(BCREPO_DATA);
     CUTE_RUN_TEST(bcrepo_get_rootpath_tests);
     CUTE_RUN_TEST(strglob_tests);
+    CUTE_RUN_TEST(bcrepo_init_deinit_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_init_deinit_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "d34d m4n t311 n0 t4135";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+    rmdir("../.bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = "0.0.1";
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha3-512");
+    catalog->key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha256");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha256");
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc|des-cbc|mars-128-ctr|shacal1-cbc|hmac-tiger-aes-128-cbc";
+
+    // INFO(Rafael): An init attempt inside previously initialized repos must fail.
+
+    CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+    CUTE_ASSERT(rmdir(".bcrepo") == 0);
+
+    // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
+    //                a bcrepo_init() call will fail.
+
+    CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+    CUTE_ASSERT(rmdir("../.bcrepo") == 0);
+
+    // INFO(Rafael): Cute cases where everything is marvelously perfect. Wow!
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    // INFO(Rafael): The correct master key must match, otherwise it will fail.
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, "sp4c3 c4d3t", strlen("sp4c3 c4d3t")) == 0);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+
+    kryptos_freeseg(rootpath);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath == NULL); // INFO(Rafael): This is not a repo anymore.
+
+    catalog->bc_version = catalog->protection_layer = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(strglob_tests)
