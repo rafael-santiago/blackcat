@@ -85,16 +85,18 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
 static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
-                              const blackcat_protlayer_chain_ctx *protlayer);
+                              const blackcat_protlayer_chain_ctx *protlayer,
+                              bfs_file_status_t *f_st);
 
 static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
-                              const blackcat_protlayer_chain_ctx *protlayer);
+                              const blackcat_protlayer_chain_ctx *protlayer,
+                              bfs_file_status_t *f_st);
 
 typedef int (*unl_processor)(const char *rootpath, const size_t rootpath_size,
                              const char *path, const size_t path_size,
-                             const blackcat_protlayer_chain_ctx *protlayer);
-
+                             const blackcat_protlayer_chain_ctx *protlayer,
+                             bfs_file_status_t *f_st);
 
 typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_ctx *protlayer,
                                                  kryptos_u8_t *in, size_t in_size, size_t *out_size);
@@ -423,14 +425,30 @@ unl_handle_meta_proc_epilogue:
 
 static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
-                              const blackcat_protlayer_chain_ctx *protlayer) {
-    return unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_encrypt_data);
+                              const blackcat_protlayer_chain_ctx *protlayer,
+                              bfs_file_status_t *f_st) {
+
+    int no_error = unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_encrypt_data);
+
+    if (no_error) {
+        *f_st = kBfsFileStatusLocked;
+    }
+
+    return no_error;
 }
 
 static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
-                              const blackcat_protlayer_chain_ctx *protlayer) {
-    return unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_decrypt_data);
+                              const blackcat_protlayer_chain_ctx *protlayer,
+                              bfs_file_status_t *f_st) {
+
+    int no_error = unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_decrypt_data);
+
+    if (no_error) {
+        *f_st = kBfsFileStatusUnlocked;
+    }
+
+    return no_error;
 }
 
 static int unl_handle(bfs_catalog_ctx **catalog,
@@ -463,11 +481,21 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     if (files != cp->files) {
         for (fp = files; fp != NULL; fp = files->next) {
             fpp = get_entry_from_relpath_ctx(cp->files, fp->path);
-            unl_fproc(fpp, proc, proc_nr += proc(rootpath, rootpath_size, fpp->path, fpp->path_size, cp->protlayer));
+            unl_fproc(fpp, proc, proc_nr += proc(rootpath,
+                                                 rootpath_size,
+                                                 fpp->path,
+                                                 fpp->path_size,
+                                                 cp->protlayer,
+                                                 &fpp->status));
         }
     } else {
         for (fp = files; fp != NULL; fp = files->next) {
-            unl_fproc(fp, proc, proc_nr += proc(rootpath, rootpath_size, fp->path, fp->path_size, cp->protlayer));
+            unl_fproc(fp, proc, proc_nr += proc(rootpath,
+                                                rootpath_size,
+                                                fp->path,
+                                                fp->path_size,
+                                                cp->protlayer,
+                                                &fp->status));
         }
     }
 
