@@ -115,6 +115,8 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
 static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_size,
                                   const char *path, const size_t path_size, const kryptos_u8_t *data, const size_t data_size);
 
+static size_t bcrepo_mkpath(char *path, const size_t path_size,
+                            const char *root, const size_t root_size, const char *sub, const size_t sub_size);
 
 int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     char *rootpath = NULL;
@@ -508,13 +510,50 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     return proc_nr;
 }
 
+static size_t bcrepo_mkpath(char *path, const size_t path_size,
+                          const char *root, const size_t root_size, const char *sub, const size_t sub_size) {
+    char *p;
+    const char *s;
+    size_t s_d = 0;
+    if (path == NULL || root == NULL || sub == NULL) {
+        return 0;
+    }
+
+    if ((root_size + sub_size + 1) >= path_size) {
+        return 0;
+    }
+
+    memset(path, 0, path_size);
+
+    p = path;
+
+    memcpy(p, root, root_size);
+
+    p += root_size;
+
+    if (*(p - 1) != '/') {
+        *(p) = '/';
+        p += 1;
+    }
+
+    s = sub;
+
+    if (*s == '/') {
+        s++;
+        s_d = 1;
+    }
+
+    memcpy(p, s, sub_size - s_d);
+
+    return strlen(path);
+}
 
 static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_ctx *dest_files,
                           const char *rootpath, const size_t rootpath_size,
                           const char *pattern, const size_t pattern_size, int *recur_level, const int recur_max_level) {
     int matches;
     char *filepath = NULL, *fp = NULL, *fp_end = NULL, *glob = NULL, *filename;
-    size_t filepath_size, glob_size, filename_size;
+    size_t filepath_size, glob_size, filename_size, cwd_size;
     struct stat st;
     bfs_catalog_relpath_ctx *files_p;
     DIR *dirp = NULL;
@@ -531,16 +570,14 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
     }
 
     filepath_size = rootpath_size + pattern_size;
-    filepath = (char *) kryptos_newseg(filepath_size + 1);
+    filepath = (char *) kryptos_newseg(filepath_size + 2);
 
     if (filepath == NULL) {
         printf("ERROR: Unable to allocate memory!\n");
         goto get_file_list_epilogue;
     }
 
-    memset(filepath, 0, filepath_size + 1);
-    memcpy(filepath, rootpath, rootpath_size);
-    memcpy(filepath + rootpath_size, pattern, pattern_size);
+    filepath_size = bcrepo_mkpath(filepath, filepath_size + 2, rootpath, rootpath_size, pattern, pattern_size);
 
     if (strstr(filepath, "*") != NULL || strstr(filepath, "?") != NULL || strstr(filepath, "[") != NULL) {
         fp = filepath;
@@ -578,6 +615,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
         for (fp = filepath; fp != fp_end && *fp != 0; fp++)
             ;
+
 #else
 # error Implement me... (__FILE__)
 #endif
@@ -600,6 +638,10 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                 goto get_file_list_epilogue;
             }
 
+            memset(cwd, 0, sizeof(cwd));
+            memcpy(cwd, filepath, filepath_size % sizeof(cwd));
+            cwd_size = strlen(cwd);
+
             while ((dt = readdir(dirp)) != NULL) {
                 filename = dt->d_name;
 
@@ -620,13 +662,11 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                     continue;
                 }
 
-                memcpy(fp, filename, filename_size);
-                *(fp + filename_size) = 0;
-                filepath_size = (fp - filepath) + filename_size;
+                filepath_size = bcrepo_mkpath(filepath, 4096, cwd, cwd_size, filename, filename_size);
 
                 *recur_level += 1;
 
-                get_file_list(files,
+                get_file_list(&files_p,
                               dest_files,
                               rootpath, rootpath_size,
                               filepath + rootpath_size, filepath_size - rootpath_size,
@@ -635,7 +675,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                 *recur_level -= 1;
             }
         }
-    } else {
+    }/* else {
         // INFO(Rafael): It is about a glob to be tested over the current directory files.
         //               Let's perform a new call to bcrepo_add() passing '<cwd>/<pattern>'.
         memset(cwd, 0, sizeof(cwd));
@@ -661,10 +701,12 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
         *recur_level += 1;
 
-        get_file_list(files, dest_files, rootpath, rootpath_size, cwd, strlen(cwd), recur_level, recur_max_level);
+        get_file_list(&files_p, dest_files, rootpath, rootpath_size, cwd, strlen(cwd), recur_level, recur_max_level);
 
         *recur_level -= 1;
-    }
+    }*/
+
+    (*files) = files_p;
 
 get_file_list_epilogue:
 

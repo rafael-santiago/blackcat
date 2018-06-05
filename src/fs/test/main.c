@@ -27,6 +27,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_validate_key_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_get_rootpath_tests);
 CUTE_DECLARE_TEST_CASE(strglob_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_init_deinit_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_add_tests);
 
 CUTE_MAIN(fs_tests);
 
@@ -44,6 +45,107 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_get_rootpath_tests);
     CUTE_RUN_TEST(strglob_tests);
     CUTE_RUN_TEST(bcrepo_init_deinit_tests);
+    CUTE_RUN_TEST(bcrepo_add_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_add_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "better living through chemistry";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *pattern = NULL;
+
+    // INFO(Rafael): Repo bootstrapping.
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = "0.0.1";
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha3-512");
+    catalog->key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha256");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha256");
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha3-512-rc6-192-cbc/48";
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    // INFO(Rafael): Bootstrapping done.
+
+    pattern = "main.c";
+
+    CUTE_ASSERT(bcrepo_add(NULL, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 0);
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files);
+    CUTE_ASSERT(strcmp(catalog->files->path, "main.c") == 0);
+    CUTE_ASSERT(catalog->files->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->timestamp[0] != 0);
+
+    pattern = "Forgefile.*";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->path, "Forgefile.hsl") == 0);
+    CUTE_ASSERT(catalog->files->next->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->next->timestamp[0] != 0);
+
+    pattern = "o/main.o";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->next->path, "o/main.o") == 0);
+    CUTE_ASSERT(catalog->files->next->next->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->next->next->timestamp[0] != 0);
+
+    pattern = "o/aes.*";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next->next->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->next->next->path, "o/aes.o") == 0);
+    CUTE_ASSERT(catalog->files->next->next->next->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->next->next->next->timestamp[0] != 0);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+
+    kryptos_freeseg(rootpath);
+
+    catalog->protection_layer = catalog->bc_version = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_init_deinit_tests)

@@ -27,6 +27,8 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
                                                  bfs_file_status_t status,
                                                  const char *timestamp) {
     bfs_catalog_relpath_ctx *h, *c;
+    kryptos_u8_t *p;
+    size_t p_d = 0;
 
     if (files == NULL) {
         new_relpath_ctx(files);
@@ -60,9 +62,16 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
         goto add_file_to_relpath_ctx_epilogue;
     }
 
+    p = path;
+
+    if (*p == '/') {
+        p += 1;
+        p_d = 1;
+    }
+
     memset(c->path, 0, path_size + 1);
-    memcpy(c->path, path, path_size);
-    c->path_size = path_size;
+    c->path_size = path_size - p_d;
+    memcpy(c->path, p, c->path_size);
 
     if (timestamp != NULL) {
         sprintf(c->timestamp, "%s", timestamp);
@@ -110,11 +119,22 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
 }
 
 bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path) {
-    bfs_catalog_relpath_ctx *p;
+    bfs_catalog_relpath_ctx *rp;
+    const kryptos_u8_t *p;
 
-    for (p = files; p != NULL; p = p->next) {
-        if (strcmp(p->path, path) == 0) {
-            return p;
+    if (path == NULL) {
+        return NULL;
+    }
+
+    p = path;
+
+    if (*p == '/') {
+        p += 1;
+    }
+
+    for (rp = files; rp != NULL; rp = rp->next) {
+        if (strcmp(rp->path, p) == 0) {
+            return rp;
         }
     }
 
