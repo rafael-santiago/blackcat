@@ -29,7 +29,9 @@
 #define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
 
 #define BCREPO_HIDDEN_DIR ".bcrepo"
+#define BCREPO_HIDDEN_DIR_SIZE 7
 #define BCREPO_CATALOG_FILE "CATALOG"
+#define BCREPO_CATALOG_FILE_SIZE 7
 
 #define BCREPO_RECUR_LEVEL_LIMIT 1024
 
@@ -145,7 +147,9 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
         goto bcrepo_init_epilogue;
     }
 
-    sprintf(filepath, "%s/%s", BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    bcrepo_mkpath(filepath, sizeof(filepath),
+                  BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE,
+                  BCREPO_CATALOG_FILE, BCREPO_CATALOG_FILE_SIZE);
 
     no_error = bcrepo_write(filepath, catalog, key, key_size);
 
@@ -165,7 +169,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
     size_t data_size = 0;
     bfs_catalog_ctx *catalog = NULL;
     int no_error = 1;
-    char filepath[4096];
+    char filepath[4096], tmp[4096];
 
     if (rootpath == NULL || rootpath_size == 0 || key == NULL || key_size == 0) {
         no_error = 0;
@@ -180,13 +184,14 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
         goto bcrepo_deinit_epilogue;
     }
 
-    if (rootpath_size + strlen(BCREPO_HIDDEN_DIR) + strlen(BCREPO_CATALOG_FILE) >= sizeof(filepath)) {
+    if ((rootpath_size + BCREPO_HIDDEN_DIR_SIZE + BCREPO_CATALOG_FILE_SIZE) >= sizeof(filepath)) {
         no_error = 0;
         printf("ERROR: The catalog file path is too long.\n");
         goto bcrepo_deinit_epilogue;
     }
 
-    sprintf(filepath, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    data_size = bcrepo_mkpath(tmp, sizeof(tmp), rootpath, rootpath_size, BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE);
+    bcrepo_mkpath(filepath, sizeof(filepath), tmp, data_size, BCREPO_CATALOG_FILE, BCREPO_CATALOG_FILE_SIZE);
 
     data = bcrepo_read(filepath, catalog, &data_size);
 
@@ -205,7 +210,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
         goto bcrepo_deinit_epilogue;
     }
 
-    sprintf(filepath, "%s/%s", rootpath, BCREPO_HIDDEN_DIR);
+    bcrepo_mkpath(filepath, sizeof(filepath), rootpath, rootpath_size, BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE);
 
     if (rmdir(filepath) != 0) {
         no_error = 0;
@@ -318,7 +323,7 @@ static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_si
         goto bcrepo_write_file_data_epilogue;
     }
 
-    sprintf(fullpath, "%s/%s", rootpath, path);
+    bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
 
     if ((fp = fopen(fullpath, "wb")) == NULL) {
         printf("ERROR: Unable to write the file '%s'.\n", fullpath);
@@ -354,7 +359,7 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
         goto bcrepo_read_file_data_epilogue;
     }
 
-    sprintf(fullpath, "%s/%s", rootpath, path);
+    bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
 
     if ((fp = fopen(fullpath, "rb")) == NULL) {
         printf("ERROR: Unable to read the file '%s'.\n", fullpath);
@@ -543,6 +548,12 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
         s++;
         s_d = 1;
     }
+
+    // !-!--!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-+!
+    // WARN(Rafael): This function take into consideration the possibility of having: 'a/b/c' and 'c/y.z' as parameters. |
+    //               In this case, the resulting path will be 'a/b/c/y.z'. This function should not be used as a general !
+    //               purpose 'path maker' function. Just use it inside this module.                                      |
+    // !-!--!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-+!
 
     t = s + sub_size - s_d;
 
@@ -1002,7 +1013,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     if (!is_hmac_processor(catalog->hmac_scheme->processor)) {
         return kKryptosProcessError;
     }
-    //printf("d->%.8X %s\n", catalog->hmac_scheme, data);
+
     kryptos_task_init_as_null(ktask);
 
     p_layer.key = (kryptos_u8_t *) key;
