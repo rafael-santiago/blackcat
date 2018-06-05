@@ -164,6 +164,16 @@ CUTE_TEST_CASE(bcrepo_add_tests)
 
     CUTE_ASSERT(chdir("..") == 0);
 
+    pattern = "o/ciphering_schemes.o";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next->next->next->next->next->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->next->next->next->next->next->path, "o/ciphering_schemes.o") == 0);
+    CUTE_ASSERT(catalog->files->next->next->next->next->next->next->status == kBfsFileStatusPlain);
+    CUTE_ASSERT(catalog->files->next->next->next->next->next->next->timestamp[0] != 0);
+
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
     kryptos_freeseg(rootpath);
