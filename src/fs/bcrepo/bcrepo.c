@@ -513,8 +513,9 @@ static int unl_handle(bfs_catalog_ctx **catalog,
 static size_t bcrepo_mkpath(char *path, const size_t path_size,
                           const char *root, const size_t root_size, const char *sub, const size_t sub_size) {
     char *p;
-    const char *s;
-    size_t s_d = 0;
+    const char *s, *t;
+    size_t s_d = 0, subdir_size;
+    char subdir[4096];
     if (path == NULL || root == NULL || sub == NULL) {
         return 0;
     }
@@ -543,6 +544,26 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
         s_d = 1;
     }
 
+    t = s + sub_size - s_d;
+
+    while (t != s && *t != '/') {
+        t--;
+    }
+
+    if (t > s) {
+        memset(subdir, 0, sizeof(subdir));
+        subdir_size = t - s;
+        memcpy(subdir, s, subdir_size);
+        if (subdir[subdir_size - 1] != '/') {
+            subdir[subdir_size++] = '/';
+        }
+        t = strstr(path, subdir);
+        if (t != NULL && *(t + subdir_size) == 0) {
+            s += subdir_size;
+            s_d += subdir_size;
+        }
+    }
+
     memcpy(p, s, sub_size - s_d);
 
     return strlen(path);
@@ -553,12 +574,12 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                           const char *pattern, const size_t pattern_size, int *recur_level, const int recur_max_level) {
     int matches;
     char *filepath = NULL, *fp = NULL, *fp_end = NULL, *glob = NULL, *filename;
-    size_t filepath_size, glob_size, filename_size, cwd_size;
+    size_t filepath_size, glob_size, filename_size, cwd_size, tmp_size, filepath_delta_size;
     struct stat st;
     bfs_catalog_relpath_ctx *files_p;
     DIR *dirp = NULL;
     struct dirent *dt;
-    char cwd[4096];
+    char cwd[4096], tmp[4096];
 
     if (*recur_level > recur_max_level) {
         printf("ERROR: get_file_list() recursiveness level limit hit.\n");
@@ -569,7 +590,20 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         goto get_file_list_epilogue;
     }
 
-    filepath_size = rootpath_size + pattern_size;
+    memset(cwd, 0, sizeof(cwd));
+    if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
+        printf("ERROR: Unable to get the current cwd.\n");
+        goto get_file_list_epilogue;
+    }
+
+    if (strstr(cwd, rootpath) != &cwd[0]) {
+        // INFO(Rafael): It should never happen in normal conditions.
+        goto get_file_list_epilogue;
+    }
+
+    cwd_size = strlen(cwd);
+
+    filepath_size = rootpath_size + cwd_size + pattern_size;
     filepath = (char *) kryptos_newseg(filepath_size + 2);
 
     if (filepath == NULL) {
@@ -577,7 +611,8 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         goto get_file_list_epilogue;
     }
 
-    filepath_size = bcrepo_mkpath(filepath, filepath_size + 2, rootpath, rootpath_size, pattern, pattern_size);
+    tmp_size = bcrepo_mkpath(tmp, sizeof(tmp), rootpath, rootpath_size, cwd + rootpath_size, cwd_size - rootpath_size);
+    filepath_size = bcrepo_mkpath(filepath, filepath_size + 2, tmp, tmp_size, pattern, pattern_size);
 
     if (strstr(filepath, "*") != NULL || strstr(filepath, "?") != NULL || strstr(filepath, "[") != NULL) {
         fp = filepath;
@@ -615,7 +650,6 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
         for (fp = filepath; fp != fp_end && *fp != 0; fp++)
             ;
-
 #else
 # error Implement me... (__FILE__)
 #endif
@@ -675,36 +709,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                 *recur_level -= 1;
             }
         }
-    }/* else {
-        // INFO(Rafael): It is about a glob to be tested over the current directory files.
-        //               Let's perform a new call to bcrepo_add() passing '<cwd>/<pattern>'.
-        memset(cwd, 0, sizeof(cwd));
-        if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
-            printf("ERROR: Unable to get the current cwd.\n");
-            goto get_file_list_epilogue;
-        }
-
-        fp = &cwd[0];
-        fp_end = fp + strlen(cwd);
-
-        if (*(fp_end - 1) != '/') {
-            *(fp_end) = '/';
-            fp_end++;
-        }
-
-        if ((fp_end + pattern_size) >= (fp + sizeof(cwd))) {
-            printf("ERROR: The passed file pattern is too long.\n");
-            goto get_file_list_epilogue;
-        }
-
-        memcpy(fp_end, pattern, pattern_size);
-
-        *recur_level += 1;
-
-        get_file_list(&files_p, dest_files, rootpath, rootpath_size, cwd, strlen(cwd), recur_level, recur_max_level);
-
-        *recur_level -= 1;
-    }*/
+    }
 
     (*files) = files_p;
 

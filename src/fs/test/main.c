@@ -140,6 +140,30 @@ CUTE_TEST_CASE(bcrepo_add_tests)
     CUTE_ASSERT(catalog->files->next->next->next->status == kBfsFileStatusUnlocked);
     CUTE_ASSERT(catalog->files->next->next->next->timestamp[0] != 0);
 
+    CUTE_ASSERT(chdir("o") == 0);
+
+    pattern = "des.o";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next->next->next->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->next->next->next->path, "o/des.o") == 0);
+    CUTE_ASSERT(catalog->files->next->next->next->next->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->next->next->next->next->timestamp[0] != 0);
+
+    pattern = "mars.*";
+
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next->next->next->next->next);
+    CUTE_ASSERT(strcmp(catalog->files->next->next->next->next->next->path, "o/mars.o") == 0);
+    CUTE_ASSERT(catalog->files->next->next->next->next->next->status == kBfsFileStatusUnlocked);
+    CUTE_ASSERT(catalog->files->next->next->next->next->next->timestamp[0] != 0);
+
+    CUTE_ASSERT(chdir("..") == 0);
+
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
     kryptos_freeseg(rootpath);
