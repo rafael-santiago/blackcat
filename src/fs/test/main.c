@@ -28,6 +28,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_get_rootpath_tests);
 CUTE_DECLARE_TEST_CASE(strglob_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_init_deinit_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_add_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_rm_tests);
 
 CUTE_MAIN(fs_tests);
 
@@ -46,6 +47,89 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(strglob_tests);
     CUTE_RUN_TEST(bcrepo_init_deinit_tests);
     CUTE_RUN_TEST(bcrepo_add_tests);
+    CUTE_RUN_TEST(bcrepo_rm_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_rm_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "you're not the only one with mixed emotions,"
+                        "you're not the only one ship adrift on this ocean.";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *pattern = NULL;
+    int o_files_nr = 0;
+
+    // INFO(Rafael): The painful handmade bootstrapping arrrgh!
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = "0.0.1";
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-whirlpool-camellia-192-ctr");
+    catalog->key_hash_algo = get_hash_processor("tiger");
+    catalog->key_hash_algo_size = get_hash_size("tiger");
+    catalog->protlayer_key_hash_algo = get_hash_processor("whirlpool");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("whirlpool");
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "aes-128";
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    pattern = "main.c";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+
+    pattern = "o/*.o";
+    o_files_nr = bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0);
+    CUTE_ASSERT(o_files_nr > 1);
+
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail != catalog->files->head);
+
+    pattern = "main.c";
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+
+    pattern = "i_sat_by_the_ocean.txt";
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 0);
+
+    pattern = "o/*.o";
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == o_files_nr);
+
+    // TODO(Rafael): Test the locked file removing case.
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+
+    kryptos_freeseg(rootpath);
+
+    catalog->protection_layer = catalog->bc_version = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_add_tests)

@@ -259,7 +259,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
 
     cp = *catalog;
 
-    get_file_list(&files, cp->files, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
+    get_file_list(&files, NULL, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
 
     for (fp = files; fp != NULL; fp = fp->next) {
         if (fp->status == kBfsFileStatusLocked &&
