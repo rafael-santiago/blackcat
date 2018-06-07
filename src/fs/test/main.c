@@ -197,13 +197,13 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     data = open_text("sensitive.txt", &data_size);
     CUTE_ASSERT(data != NULL && data_size > 0);
     CUTE_ASSERT(data_size > strlen(sensitive));
-    CUTE_ASSERT(memcpy(data, sensitive, strlen(sensitive)) != 0);
+    CUTE_ASSERT(memcmp(data, sensitive, strlen(sensitive)) != 0);
     free(data);
 
     data = open_text("plain.txt", &data_size);
     CUTE_ASSERT(data != NULL && data_size > 0);
     CUTE_ASSERT(data_size == strlen(plain));
-    CUTE_ASSERT(memcpy(data, plain, data_size) != 0);
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
     free(data);
 
     pattern = "*";
@@ -212,13 +212,13 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     data = open_text("sensitive.txt", &data_size);
     CUTE_ASSERT(data != NULL && data_size > 0);
     CUTE_ASSERT(data_size == strlen(sensitive));
-    CUTE_ASSERT(memcpy(data, sensitive, data_size) != 0);
+    CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
     free(data);
 
     data = open_text("plain.txt", &data_size);
     CUTE_ASSERT(data != NULL && data_size > 0);
     CUTE_ASSERT(data_size == strlen(plain));
-    CUTE_ASSERT(memcpy(data, plain, data_size) != 0);
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
     free(data);
 
     remove("sensitive.txt");
