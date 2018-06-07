@@ -479,14 +479,14 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     }
 
 #define unl_fproc(file, p, pstmt) {\
-    if ((((p) == unl_handle_encrypt) && !((file) != NULL && (file)->status == kBfsFileStatusUnlocked)) ||\
-        (((p) == unl_handle_decrypt) && !((file) != NULL && (file)->status == kBfsFileStatusLocked))) {\
+    if ((((p) == unl_handle_encrypt) && ((file) == NULL || (file)->status == kBfsFileStatusLocked || (file)->status == kBfsFileStatusPlain)) ||\
+        (((p) == unl_handle_decrypt) && ((file) == NULL || (file)->status == kBfsFileStatusUnlocked || (file)->status == kBfsFileStatusPlain))) {\
         continue;\
     }\
     pstmt;\
 }
     if (files != cp->files) {
-        for (fp = files; fp != NULL; fp = files->next) {
+        for (fp = files; fp != NULL; fp = fp->next) {
             fpp = get_entry_from_relpath_ctx(cp->files, fp->path);
             unl_fproc(fpp, proc, proc_nr += proc(rootpath,
                                                  rootpath_size,
@@ -496,7 +496,7 @@ static int unl_handle(bfs_catalog_ctx **catalog,
                                                  &fpp->status));
         }
     } else {
-        for (fp = files; fp != NULL; fp = files->next) {
+        for (fp = files; fp != NULL; fp = fp->next) {
             unl_fproc(fp, proc, proc_nr += proc(rootpath,
                                                 rootpath_size,
                                                 fp->path,
@@ -615,7 +615,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
     cwd_size = strlen(cwd);
 
     filepath_size = rootpath_size + cwd_size + pattern_size;
-    filepath = (char *) kryptos_newseg(filepath_size + 2);
+    filepath = (char *) kryptos_newseg(filepath_size + 4096);
 
     if (filepath == NULL) {
         printf("ERROR: Unable to allocate memory!\n");
@@ -702,10 +702,10 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
                 filename_size = strlen(filename);
 
-                if ((fp + filename_size) >= fp_end) {
-                    printf("WARN: The filename '%s' is too long. It was not added.\n", filename);
-                    continue;
-                }
+                //if ((fp + filename_size) >= fp_end) {
+                //    printf("WARN: The filename '%s' is too long. It was not added.\n", filename);
+                //    continue;
+                //}
 
                 filepath_size = bcrepo_mkpath(filepath, 4096, cwd, cwd_size, filename, filename_size);
 

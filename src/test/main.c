@@ -28,6 +28,7 @@ CUTE_DECLARE_TEST_CASE(is_weak_hash_funcs_usage_tests);
 CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
 CUTE_DECLARE_TEST_CASE(get_hmac_catalog_scheme_tests);
 CUTE_DECLARE_TEST_CASE(get_random_hmac_catalog_scheme_tests);
+CUTE_DECLARE_TEST_CASE(add_composite_ciphers_to_chain_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -44,6 +45,36 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
+    CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
+    blackcat_protlayer_chain_ctx *chain = NULL;
+
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, "", 1, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, 1, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", "", 0, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", "", 1, NULL) == NULL);
+
+    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", "test", 4, get_hash_processor("tiger"));
+
+    CUTE_ASSERT(chain != NULL);
+    CUTE_ASSERT(chain->next == NULL);
+
+    del_protlayer_chain_ctx(chain);
+
+    chain = add_composite_protlayer_to_chain(chain,
+                                             "hmac-sha3-512-des-cbc|aes-128-ofb|shacal2-ctr|feal-cbc/167",
+                                             "test", 4, get_hash_processor("tiger"));
+
+    CUTE_ASSERT(chain != NULL);
+
+    CUTE_ASSERT(chain->next != NULL);
+    CUTE_ASSERT(chain->next->next != NULL);
+    CUTE_ASSERT(chain->next->next->next != NULL);
+    CUTE_ASSERT(chain->next->next->next->next == NULL);
+
+    del_protlayer_chain_ctx(chain);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_hmac_catalog_scheme_tests)

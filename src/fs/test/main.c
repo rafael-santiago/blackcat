@@ -8,6 +8,7 @@
 #include <cutest.h>
 #include <string.h>
 #include <ctx/fsctx.h>
+#include <ctx/ctx.h>
 #include <bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
 #include <fs/strglob.h>
@@ -29,6 +30,10 @@ CUTE_DECLARE_TEST_CASE(strglob_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_init_deinit_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_add_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_rm_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_lock_unlock_tests);
+
+int save_text(const char *data, const size_t data_size, const char *filepath);
+char *open_text(const char *filepath, size_t *data_size);
 
 CUTE_MAIN(fs_tests);
 
@@ -47,7 +52,181 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(strglob_tests);
     CUTE_RUN_TEST(bcrepo_init_deinit_tests);
     CUTE_RUN_TEST(bcrepo_add_tests);
+    CUTE_RUN_TEST(bcrepo_lock_unlock_tests);
     CUTE_RUN_TEST(bcrepo_rm_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "nao, sei... so sei que foi assim";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *pattern = NULL;
+    int o_files_nr = 0;
+    const char *sensitive = "I was paralyzed\n"
+                            "As I opened up my bloodshot eyes\n"
+                            "Do I really want to know\n"
+                            "Where I've been\n"
+                            "Or where I've put my nose\n"
+                            "I'm in a rut\n"
+                            "Keep kicking myself in the nuts\n"
+                            "In a stairwell I seek\n"
+                            "The lair where I stuck my dirty beak\n"
+                            "So I'm back again it's OK\n"
+                            "Well be that as it may\n"
+                            "Over and over away\n"
+                            "Into the fires unknown\n"
+                            "Into oblivion\n"
+                            "Through sticks and stones\n"
+                            "Pick up the phone\n"
+                            "My jacks are all blown\n"
+                            "Oh these nights out alone\n"
+                            "Come carry me home\n"
+                            "A habit hard to break\n"
+                            "Take me home, good lord\n"
+                            "For heaven's sake\n"
+                            "The doctor's not in\n"
+                            "Got no cure for the medicine\n"
+                            "So I'm back again it's OK\n"
+                            "Well be that as it may\n"
+                            "Over and over away\n"
+                            "Into the fires unknown\n"
+                            "Into oblivion\n"
+                            "Through sticks and stones\n"
+                            "Pick up the phone\n"
+                            "Listen to me moan\n"
+                            "Oh these nights out alone\n"
+                            "Come carry me home\n"
+                            "Every time I make the round\n"
+                            "I turn around\n"
+                            "I'm put upon the rack\n"
+                            "Every time I stand up\n"
+                            "I fall flat on my face\n"
+                            "And break my back\n"
+                            "Tombstoned and chicken shacked\n";
+    const char *plain = "If you like to gamble, I tell you I'm your man\n"
+                        "You win some, lose some, all the same to me\n"
+                        "The pleasure is to play, makes no difference what you say\n"
+                        "I don't share your greed, the only card I need is the Ace of Spades\n"
+                        "The Ace of Spades\n"
+                        "Playing for the high one, dancing with the devil\n"
+                        "Going with the flow, it's all a game to me\n"
+                        "Seven or eleven, snake eyes watching you\n"
+                        "Double up or quit, double stake or split, the Ace of Spades\n"
+                        "The Ace of Spades\n"
+                        "You know I'm born to lose, and gambling's for fools\n"
+                        "But that's the way I like it baby\n"
+                        "I don't wanna live for ever\n"
+                        "And don't forget the joker!\n"
+                        "Pushing up the ante, I know you gotta see me\n"
+                        "Read 'em and weep, the dead man's hand again\n"
+                        "I see it in your eyes, take one look and die\n"
+                        "The only thing you see, you know it's gonna be the Ace of Spades\n"
+                        "The Ace of Spades\n";
+    char *data;
+    size_t data_size;
+
+    // INFO(Rafael): Bootstrapping the test repo.
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = "0.0.1";
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha384-mars-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha512");
+    catalog->key_hash_algo_size = get_hash_size("sha512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha224-blowfish-ctr|mars-192-ctr|xtea-ofb|hmac-sha3-512-shacal2-cbc";
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer,
+                                                          "mumbo gumbo", 11, catalog->protlayer_key_hash_algo);
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+    CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
+
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+
+    pattern = "plain.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next);
+
+    pattern = "*";
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+
+    CUTE_ASSERT(catalog->files->status == kBfsFileStatusLocked);
+    CUTE_ASSERT(catalog->files->next->status == kBfsFileStatusPlain);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size > 0);
+    CUTE_ASSERT(data_size > strlen(sensitive));
+    CUTE_ASSERT(memcpy(data, sensitive, strlen(sensitive)) != 0);
+    free(data);
+
+    data = open_text("plain.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size > 0);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcpy(data, plain, data_size) != 0);
+    free(data);
+
+    pattern = "*";
+    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size > 0);
+    CUTE_ASSERT(data_size == strlen(sensitive));
+    CUTE_ASSERT(memcpy(data, sensitive, data_size) != 0);
+    free(data);
+
+    data = open_text("plain.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size > 0);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcpy(data, plain, data_size) != 0);
+    free(data);
+
+    remove("sensitive.txt");
+    remove("plain.txt");
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+    kryptos_freeseg(rootpath);
+    catalog->protection_layer = catalog->bc_version = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_rm_tests)
@@ -651,3 +830,47 @@ CUTE_TEST_CASE(relpath_ctx_tests)
     //               This function is internally called by del_file_from_relpath_ctx().
     del_bfs_catalog_relpath_ctx(relpath);
 CUTE_TEST_CASE_END
+
+int save_text(const char *data, const size_t data_size, const char *filepath) {
+    FILE *fp;
+
+    if ((fp = fopen(filepath, "wb")) == NULL) {
+        return 0;
+    }
+
+    fwrite(data, 1, data_size, fp);
+    fclose(fp);
+
+    return 1;
+}
+
+char *open_text(const char *filepath, size_t *data_size) {
+    FILE *fp;
+    size_t dsize;
+    char *data = NULL;
+
+    if ((fp = fopen(filepath, "rb")) == NULL) {
+        return NULL;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    dsize = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    data = (char *) malloc(dsize + 1);
+
+    if (data == NULL) {
+        return NULL;
+    }
+
+    memset(data, 0, dsize + 1);
+    fread(data, 1, dsize, fp);
+
+    fclose(fp);
+
+    if (data_size != NULL) {
+        *data_size = dsize;
+    }
+
+    return data;
+}

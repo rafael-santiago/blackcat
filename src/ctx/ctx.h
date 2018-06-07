@@ -10,6 +10,10 @@
 
 #include <basedefs/defs.h>
 
+blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
+                                                               const char *piped_ciphers, const kryptos_u8_t *key,
+                                                               const size_t key_size, blackcat_hash_processor hash);
+
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
                                                      const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
                                                      blackcat_hash_processor hash);
