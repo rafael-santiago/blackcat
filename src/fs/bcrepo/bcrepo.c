@@ -249,7 +249,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
               const char *rootpath, const size_t rootpath_size,
               const char *pattern, const size_t pattern_size) {
     int rm_nr = 0;
-    bfs_catalog_relpath_ctx *files = NULL, *fp;
+    bfs_catalog_relpath_ctx *files = NULL, *fp, *fpp;
     bfs_catalog_ctx *cp;
     int rl = 0;
 
@@ -262,11 +262,17 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
     get_file_list(&files, NULL, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
 
     for (fp = files; fp != NULL; fp = fp->next) {
-        if (fp->status == kBfsFileStatusLocked &&
-            bcrepo_unlock(catalog, rootpath, rootpath_size, fp->path, fp->path_size) != 1) {
-            printf("WARN: Unable to unlock the file '%s'.\n", fp->path);
+        if ((fpp = get_entry_from_relpath_ctx(cp->files, fp->path)) == NULL) {
+            continue;
         }
-        cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
+
+        if (fpp->status == kBfsFileStatusLocked &&
+            bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size) != 1) {
+            printf("WARN: Unable to unlock the file '%s'.\n", fpp->path);
+        }
+
+        cp->files = del_file_from_relpath_ctx(cp->files, fpp->path);
+
         rm_nr++;
     }
 

@@ -106,6 +106,8 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
 
         if (t->next == NULL) {
             h->tail = t->last;
+        } else {
+            t->next->last = t->last;
         }
 
         t->last->next = t->next;

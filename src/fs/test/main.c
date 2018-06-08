@@ -232,12 +232,38 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(bcrepo_rm_tests)
     bfs_catalog_ctx *catalog = NULL;
     kryptos_u8_t *key = "you're not the only one with mixed emotions,"
-                        "you're not the only one ship adrift on this ocean.";
+                        "you're not the only ship adrift on this ocean.";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
     kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
+    char *sensitive = "You know you can't be hurt\n"
+                      "You gotta believe in your star\n"
+                      "They'll always treat you like dirt\n"
+                      "They can only push you so far\n"
+                      "They can't take it away\n"
+                      "If they've got something to say\n"
+                      "They might try and fence you in\n"
+                      "But you've only gotta live to win\n"
+                      "Know it's hard, a natural drag\n"
+                      "It's a hassle to fight\n"
+                      "If you don't want to be a slag\n"
+                      "If you believe you're right\n"
+                      "They've got the power, now\n"
+                      "But soon it's our hour, now\n"
+                      "We all know where we been\n"
+                      "We only live to win\n"
+                      "You mustn't shout it out loud\n"
+                      "Don't create a scene\n"
+                      "Nobody told you being proud\n"
+                      "It only feeds the scheme\n"
+                      "And break down the wall\n"
+                      "Live it up, it's their time to fall\n"
+                      "Anarchy is coming in\n"
+                      "If you know we live to win\n";
+    char *data = NULL;
+    size_t data_size;
 
     // INFO(Rafael): The painful handmade bootstrapping arrrgh!
 
@@ -269,7 +295,11 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     catalog->key_hash = ktask->out;
     catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "aes-128";
+    catalog->protection_layer = "aes-128-cbc";
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer,
+                                                          "ready to forget", 15, catalog->protlayer_key_hash_algo);
 
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 
@@ -279,11 +309,22 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     rootpath_size = strlen(rootpath);
 
-    pattern = "main.c";
+    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+
+    pattern = "sensitive.txt";
     CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
 
     CUTE_ASSERT(catalog->files->head == catalog->files);
     CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+
+    pattern = "main.c";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail != catalog->files->head);
 
     pattern = "o/*.o";
     o_files_nr = bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0);
@@ -301,7 +342,14 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     pattern = "o/*.o";
     CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == o_files_nr);
 
-    // TODO(Rafael): Test the locked file removing case.
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+
+    data = open_text("sensitive.txt", &data_size);
+
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive));
+    CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
@@ -309,6 +357,8 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     catalog->protection_layer = catalog->bc_version = NULL;
     del_bfs_catalog_ctx(catalog);
+    kryptos_freeseg(data);
+    remove("sensitive.txt");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_add_tests)
