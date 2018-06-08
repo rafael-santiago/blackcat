@@ -16,7 +16,7 @@ void *blackcat_getseg(const size_t ssize) {
     void *seg = malloc(ssize);
 
     if (seg == NULL) {
-        printf("PANIC: no memory!\n");
+        fprintf(stderr, "PANIC: no memory!\n");
         exit(1);
     }
 

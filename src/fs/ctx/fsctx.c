@@ -58,7 +58,7 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
     c->path = (kryptos_u8_t *) kryptos_newseg(path_size + 1);
 
     if (c->path == NULL) {
-        printf("ERROR: While adding a file to the catalog. Not enough memory.\n");
+        fprintf(stderr, "ERROR: While adding a file to the catalog. Not enough memory.\n");
         goto add_file_to_relpath_ctx_epilogue;
     }
 

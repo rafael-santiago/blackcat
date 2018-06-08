@@ -137,13 +137,13 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
 
     if (rootpath != NULL) {
         no_error = 0;
-        printf("ERROR: It seems to be previously initialized at '%s'.\n", rootpath);
+        fprintf(stderr, "ERROR: It seems to be previously initialized at '%s'.\n", rootpath);
         goto bcrepo_init_epilogue;
     }
 
     if (mkdir(BCREPO_HIDDEN_DIR, 0777) != 0) {
         no_error = 0;
-        printf("ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
+        fprintf(stderr, "ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
         goto bcrepo_init_epilogue;
     }
 
@@ -180,13 +180,13 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
 
     if (catalog == NULL) {
         no_error = 0;
-        printf("ERROR: Not enough memory!\n");
+        fprintf(stderr, "ERROR: Not enough memory!\n");
         goto bcrepo_deinit_epilogue;
     }
 
     if ((rootpath_size + BCREPO_HIDDEN_DIR_SIZE + BCREPO_CATALOG_FILE_SIZE) >= sizeof(filepath)) {
         no_error = 0;
-        printf("ERROR: The catalog file path is too long.\n");
+        fprintf(stderr, "ERROR: The catalog file path is too long.\n");
         goto bcrepo_deinit_epilogue;
     }
 
@@ -206,7 +206,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
 
     if (remove(filepath) != 0) {
         no_error = 0;
-        printf("ERROR: Unable to remove the file '%s'.\n", filepath);
+        fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
         goto bcrepo_deinit_epilogue;
     }
 
@@ -214,7 +214,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
 
     if (rmdir(filepath) != 0) {
         no_error = 0;
-        printf("ERROR: Unable to remove the directory '%s'.\n", filepath);
+        fprintf(stderr, "ERROR: Unable to remove the directory '%s'.\n", filepath);
         goto bcrepo_deinit_epilogue;
     }
 
@@ -268,7 +268,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
 
         if (fpp->status == kBfsFileStatusLocked &&
             bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size) != 1) {
-            printf("WARN: Unable to unlock the file '%s'.\n", fpp->path);
+            fprintf(stderr, "WARN: Unable to unlock the file '%s'.\n", fpp->path);
         }
 
         cp->files = del_file_from_relpath_ctx(cp->files, fpp->path);
@@ -324,7 +324,7 @@ static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_si
     FILE *fp = NULL;
 
     if ((rootpath_size + path_size + 3) >= sizeof(fullpath) - 1) {
-        printf("ERROR: The path is too long ('%s').\n", path);
+        fprintf(stderr, "ERROR: The path is too long ('%s').\n", path);
         no_error = 0;
         goto bcrepo_write_file_data_epilogue;
     }
@@ -332,13 +332,13 @@ static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_si
     bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
 
     if ((fp = fopen(fullpath, "wb")) == NULL) {
-        printf("ERROR: Unable to write the file '%s'.\n", fullpath);
+        fprintf(stderr, "ERROR: Unable to write the file '%s'.\n", fullpath);
         no_error = 0;
         goto bcrepo_write_file_data_epilogue;
     }
 
     if (fwrite(data, 1, data_size, fp) == -1) {
-        printf("ERROR: Unable to dump data to the file '%s'.\n", fullpath);
+        fprintf(stderr, "ERROR: Unable to dump data to the file '%s'.\n", fullpath);
         no_error = 0;
     }
 
@@ -360,7 +360,7 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
     char fullpath[4096];
 
     if ((rootpath_size + path_size + 3) >= sizeof(fullpath) - 1) {
-        printf("ERROR: The path is too long ('%s').\n", path);
+        fprintf(stderr, "ERROR: The path is too long ('%s').\n", path);
         *size = 0;
         goto bcrepo_read_file_data_epilogue;
     }
@@ -368,7 +368,7 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
     bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
 
     if ((fp = fopen(fullpath, "rb")) == NULL) {
-        printf("ERROR: Unable to read the file '%s'.\n", fullpath);
+        fprintf(stderr, "ERROR: Unable to read the file '%s'.\n", fullpath);
         *size = 0;
         goto bcrepo_read_file_data_epilogue;
     }
@@ -380,7 +380,7 @@ static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t ro
     data = (kryptos_u8_t *) kryptos_newseg(*size);
 
     if (data == NULL) {
-        printf("ERROR: Not enough memory to read the file '%s'.\n", path);
+        fprintf(stderr, "ERROR: Not enough memory to read the file '%s'.\n", path);
         *size = 0;
         goto bcrepo_read_file_data_epilogue;
     }
@@ -599,7 +599,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
     char cwd[4096], tmp[4096];
 
     if (*recur_level > recur_max_level) {
-        printf("ERROR: get_file_list() recursiveness level limit hit.\n");
+        fprintf(stderr, "ERROR: get_file_list() recursiveness level limit hit.\n");
         goto get_file_list_epilogue;
     }
 
@@ -609,7 +609,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
     memset(cwd, 0, sizeof(cwd));
     if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
-        printf("ERROR: Unable to get the current cwd.\n");
+        fprintf(stderr, "ERROR: Unable to get the current cwd.\n");
         goto get_file_list_epilogue;
     }
 
@@ -624,7 +624,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
     filepath = (char *) kryptos_newseg(filepath_size + 4096);
 
     if (filepath == NULL) {
-        printf("ERROR: Unable to allocate memory!\n");
+        fprintf(stderr, "ERROR: Unable to allocate memory!\n");
         goto get_file_list_epilogue;
     }
 
@@ -649,7 +649,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         glob = (char *) kryptos_newseg(glob_size + 1);
 
         if (glob == NULL) {
-            printf("ERROR: Unable to allocate memory!\n");
+            fprintf(stderr, "ERROR: Unable to allocate memory!\n");
             goto get_file_list_epilogue;
         }
 
@@ -659,7 +659,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         filepath = (char *) kryptos_realloc(filepath, 4096);
 
         if (filepath == NULL) {
-            printf("ERROR: Unable to allocate memory!\n");
+            fprintf(stderr, "ERROR: Unable to allocate memory!\n");
             goto get_file_list_epilogue;
         }
 
@@ -685,7 +685,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
             }
         } else if (st.st_mode & S_IFDIR) {
             if ((dirp = opendir(filepath)) == NULL) {
-                printf("ERROR: Unable to access '%s'.\n", filepath);
+                fprintf(stderr, "ERROR: Unable to access '%s'.\n", filepath);
                 goto get_file_list_epilogue;
             }
 
@@ -709,7 +709,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
                 filename_size = strlen(filename);
 
                 //if ((fp + filename_size) >= fp_end) {
-                //    printf("WARN: The filename '%s' is too long. It was not added.\n", filename);
+                //    fprintf(stderr, "WARN: The filename '%s' is too long. It was not added.\n", filename);
                 //    continue;
                 //}
 
@@ -825,7 +825,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     o_size = eval_catalog_buf_size(catalog);
 
     if (o_size == 0) {
-        printf("ERROR: Nothing to be written.\n");
+        fprintf(stderr, "ERROR: Nothing to be written.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -833,7 +833,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     o = (kryptos_u8_t *) kryptos_newseg(o_size);
 
     if (o == NULL) {
-        printf("ERROR: Not enough memory.\n");
+        fprintf(stderr, "ERROR: Not enough memory.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -842,7 +842,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     dump_catalog_data(o, o_size, catalog);
 
     if (encrypt_catalog_data(&o, &o_size, key, key_size, catalog) == kKryptosSuccess) {
-        printf("ERROR: Error while encrypting the catalog data.\n");
+        fprintf(stderr, "ERROR: Error while encrypting the catalog data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -851,7 +851,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
                              BCREPO_PEM_HMAC_HDR,
                              catalog->hmac_scheme->name,
                              strlen(catalog->hmac_scheme->name)) != kKryptosSuccess) {
-        printf("ERROR: Error while writing the catalog PEM data.\n");
+        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -859,7 +859,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_CATALOG_DATA_HDR,
                              o, o_size) != kKryptosSuccess) {
-        printf("ERROR: Error while writing the catalog PEM data.\n");
+        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -867,13 +867,13 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     fp = fopen(filepath, "w");
 
     if (fp == NULL) {
-        printf("ERROR: Unable to write to file '%s'.\n", filepath);
+        fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", filepath);
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
 
     if (fwrite(pem_buf, 1, pem_buf_size, fp) == -1) {
-        printf("ERROR: While writing the PEM data to disk.\n");
+        fprintf(stderr, "ERROR: While writing the PEM data to disk.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -912,7 +912,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     fp = fopen(filepath, "r");
 
     if (fp == NULL) {
-        printf("ERROR: Unable to read the catalog file '%s'.\n", filepath);
+        fprintf(stderr, "ERROR: Unable to read the catalog file '%s'.\n", filepath);
         goto bcrepo_read_epilogue;
     }
 
@@ -923,7 +923,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     o = (kryptos_u8_t *) kryptos_newseg(*out_size);
 
     if (o == NULL) {
-        printf("ERROR: Not enough memory for reading the catalog file.\n");
+        fprintf(stderr, "ERROR: Not enough memory for reading the catalog file.\n");
         goto bcrepo_read_epilogue;
     }
 
@@ -936,7 +936,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
 
     if (hmac_algo == NULL) {
-        printf("ERROR: Unable to get the catalog's HMAC scheme.\n");
+        fprintf(stderr, "ERROR: Unable to get the catalog's HMAC scheme.\n");
         kryptos_freeseg(o);
         o = NULL;
         *out_size = 0;
@@ -947,7 +947,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     if (hmac_scheme == NULL) {
         // INFO(Rafael): Some idiot trying to screw up the program's flow.
-        printf("ERROR: Unknown catalog's HMAC scheme.\n");
+        fprintf(stderr, "ERROR: Unknown catalog's HMAC scheme.\n");
         kryptos_freeseg(o);
         o = NULL;
         *out_size = 0;
@@ -1029,7 +1029,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     ktask->in = kryptos_pem_get_data(BCREPO_PEM_CATALOG_DATA_HDR, *data, *data_size, &ktask->in_size);
 
     if (ktask->in == NULL) {
-        printf("ERROR: While decrypting catalog's data.\n");
+        fprintf(stderr, "ERROR: While decrypting catalog's data.\n");
         goto decrypt_catalog_data_epilogue;
     }
 
@@ -1467,7 +1467,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 
             if (*cp_end != ',') {
                 // INFO(Rafael): It should never happen since it is protected by a HMAC function!
-                printf("ERROR: The catalog seems corrupted.\n");
+                fprintf(stderr, "ERROR: The catalog seems corrupted.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }
@@ -1476,7 +1476,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             path = (kryptos_u8_t *) kryptos_newseg(path_size + 1);
 
             if (path == NULL) {
-                printf("ERROR: Not enough memory to read the file list from catalog.\n");
+                fprintf(stderr, "ERROR: Not enough memory to read the file list from catalog.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }
@@ -1492,7 +1492,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             status = *cp_end;
 
             if (status != 'L' && status != 'U' && status != 'P') {
-                printf("ERROR: Invalid file status.\n");
+                fprintf(stderr, "ERROR: Invalid file status.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }
@@ -1501,7 +1501,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 
             if (*cp_end != ',') {
                 // INFO(Rafael): It should never happen since it is protected by a HMAC function!
-                printf("ERROR: The catalog seems corrupted.\n");
+                fprintf(stderr, "ERROR: The catalog seems corrupted.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }
@@ -1517,7 +1517,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 
             if (*cp_end != '\n') {
                 // INFO(Rafael): It should never happen since it is protected by a HMAC function!
-                printf("ERROR: The catalog seems corrupted.\n");
+                fprintf(stderr, "ERROR: The catalog seems corrupted.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }
@@ -1526,7 +1526,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             timestamp = (char *) kryptos_newseg(timestamp_size + 1);
 
             if (timestamp == NULL) {
-                printf("ERROR: Not enough memory to read the file list from catalog.\n");
+                fprintf(stderr, "ERROR: Not enough memory to read the file list from catalog.\n");
                 no_error = 0;
                 goto files_r_epilogue;
             }

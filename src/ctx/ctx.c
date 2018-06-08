@@ -51,7 +51,7 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
         }
 
         if ((p - cp) > sizeof(curr_algo_param)) {
-            printf("ERROR: Unable to process the current algo param. Aborted.\n");
+            fprintf(stderr, "ERROR: Unable to process the current algo param. Aborted.\n");
             return NULL;
         }
 
@@ -86,7 +86,7 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
     }
 
     if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, hash, err_mesg) == 0) {
-        printf("%s", err_mesg);
+        fprintf(stderr, "%s", err_mesg);
         del_protlayer_chain_ctx(hp);
         hp = NULL;
     }
