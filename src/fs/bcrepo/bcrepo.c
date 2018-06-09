@@ -452,6 +452,12 @@ unl_handle_meta_proc_epilogue:
 
 static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
                            const char *path, const size_t path_size, const size_t data_size) {
+    // WARN(Rafael): This ***is not*** a silver bullet because it depends on the current filesystem in use.
+    //               What optimizations it brings and what heuristics it takes advantage to work on.
+    //               Anyway, I am following the basic idea of the DoD standard. Here we do not want to
+    //               erase every single trace of the related file. Only its content data is relevant.
+    //               Inode infos such as file size, file name and other file meta data infos are (at first sight)
+    //               negligible for an eavesdropper and us either.
     char fullpath[4096];
     FILE *fp = NULL;
     kryptos_u8_t *data = NULL;
