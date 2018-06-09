@@ -120,6 +120,9 @@ static int bcrepo_write_file_data(const char *rootpath, const size_t rootpath_si
 static size_t bcrepo_mkpath(char *path, const size_t path_size,
                             const char *root, const size_t root_size, const char *sub, const size_t sub_size);
 
+static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
+                           const char *path, const size_t path_size, const size_t data_size);
+
 int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     char *rootpath = NULL;
     int no_error = 1;
@@ -401,7 +404,7 @@ bcrepo_read_file_data_epilogue:
 static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size,
                                 const char *path, const size_t path_size,
                                 const blackcat_protlayer_chain_ctx *protlayer, blackcat_data_processor dproc) {
-    int no_error = 1;
+    int no_error = 1, ntry;
     kryptos_u8_t *in = NULL, *out = NULL;
     size_t in_size = 0, out_size;
 
@@ -410,6 +413,17 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
     if (in == NULL) {
         no_error = 0;
         goto unl_handle_meta_proc_epilogue;
+    }
+
+    if (dproc == blackcat_encrypt_data) {
+        ntry = 10;
+
+        while ((no_error = bfs_data_wiping(rootpath, rootpath_size, path, path_size, in_size)) == 0 && ntry-- > 0)
+            ;
+
+        if (ntry == 0 && no_error == 0) {
+            goto unl_handle_meta_proc_epilogue;
+        }
     }
 
     out = dproc(protlayer, in, in_size, &out_size);
@@ -432,6 +446,106 @@ unl_handle_meta_proc_epilogue:
         kryptos_freeseg(out);
         out_size = 0;
     }
+
+    return no_error;
+}
+
+static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
+                           const char *path, const size_t path_size, const size_t data_size) {
+    char fullpath[4096];
+    FILE *fp = NULL;
+    kryptos_u8_t *data = NULL;
+    int no_error = 1;
+
+    bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
+
+#define bfs_data_wiping_bit_fliping_step(fn, f, d, ds, bp, ne, esc_text) {\
+    if (((f) = fopen((fn), "wb")) == NULL) {\
+        fprintf(stderr, "ERROR: Unable to open file '%s' for wiping.\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    memset((d), (bp), (ds));\
+    if (fwrite((d), 1, (ds), (f)) == -1) {\
+        fprintf(stderr, "ERROR: Unable to write data to the file '%s'. The data wiping was skipped!\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    if (fflush((f)) != 0) {\
+        fprintf(stderr, "ERROR: Unable to write data to the file '%s'. The data wiping was skipped!\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    /*INFO(Rafael): Yes, we will flush it twice.*/\
+    fclose((f));\
+    (f) = NULL;\
+}
+
+#define bfs_data_wiping_paranoid_reverie_step(fn, d, ds, f, ne, esc_text) {\
+    if (((f) = fopen((fn), "wb")) == NULL) {\
+        fprintf(stderr, "ERROR: Unable to open file '%s' for wiping.\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    (d) =  kryptos_get_random_block((ds));\
+    if ((d) == NULL) {\
+        fprintf(stderr, "WARN: Not enough memory. The data wiping was incomplete!\n");\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    if (fwrite((d), 1, (ds), (f)) == -1) {\
+        fprintf(stderr, "WARN: Unable to write data to the file '%s'. The data wiping was incomplete!\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    if (fflush((f)) != 0) {\
+        fprintf(stderr, "WARN: Unable to flush data to the file '%s'. The data wiping was incomplete!\n", (fn));\
+        (ne) = 0;\
+        goto esc_text;\
+    }\
+    /*INFO(Rafael): Yes, we will flush it twice.*/\
+    fclose((f));\
+    (f) = NULL;\
+    kryptos_freeseg((d));\
+    (d) = NULL;\
+}
+
+    data = (kryptos_u8_t *) kryptos_newseg(data_size);
+
+    if (data == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to perform data wiping. It was skipped!\n");
+        no_error = 0;
+        goto bfs_data_wiping_epilogue;
+    }
+
+    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size,   0, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size, 255, no_error, bfs_data_wiping_epilogue);
+
+    kryptos_freeseg(data);
+
+    // INFO(Rafael): This step of the implemented data wiping is based on the Bruce Schneier's suggestions given
+    //               in his book Applied Cryptography [228 pp.].
+
+    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
+
+#undef bfs_data_wiping_bit_fliping_step
+#undef bfs_data_wiping_paranoid_reverie_step
+
+bfs_data_wiping_epilogue:
+
+    if (data != NULL) {
+        kryptos_freeseg(data);
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    memset(fullpath, 0, sizeof(fullpath));
 
     return no_error;
 }
