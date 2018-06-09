@@ -416,6 +416,8 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
     }
 
     if (dproc == blackcat_encrypt_data) {
+        // INFO(Rafael): Let's to apply some data wiping over the plain data laying on the current file system
+        //               before encrypting it.
         ntry = 10;
 
         while ((no_error = bfs_data_wiping(rootpath, rootpath_size, path, path_size, in_size)) == 0 && ntry-- > 0)
@@ -452,12 +454,15 @@ unl_handle_meta_proc_epilogue:
 
 static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
                            const char *path, const size_t path_size, const size_t data_size) {
-    // WARN(Rafael): This ***is not*** a silver bullet because it depends on the current filesystem in use.
+    // WARN(Rafael): This ***is not*** a silver bullet because it depends on the current filesystem (and device) in use.
     //               What optimizations it brings and what heuristics it takes advantage to work on.
     //               Anyway, I am following the basic idea of the DoD standard. Here we do not want to
     //               erase every single trace of the related file. Only its content data is relevant.
-    //               Inode infos such as file size, file name and other file meta data infos are (at first sight)
+    //               Inode infos such as file size, file name and other file metadata are (at first sight)
     //               negligible for an eavesdropper and us either.
+
+    // TODO(Rafael): Try to find a way of removing thumbnails and things like that. If the user takes "advantage"
+    //               this kind of disservices would be cool to protect she/he against her/his own naivety.
     char fullpath[4096];
     FILE *fp = NULL;
     kryptos_u8_t *data = NULL;
