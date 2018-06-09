@@ -534,7 +534,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
 
     kryptos_freeseg(data);
 
-    // INFO(Rafael): This step of the implemented data wiping is based on the Bruce Schneier's suggestions given
+    // INFO(Rafael): This step of the implemented data wiping is based on the Bruce Schneier's given suggestions
     //               in his book Applied Cryptography [228 pp.].
 
     bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
@@ -610,8 +610,10 @@ static int unl_handle(bfs_catalog_ctx **catalog,
     }
 
 #define unl_fproc(file, p, pstmt) {\
-    if ((((p) == unl_handle_encrypt) && ((file) == NULL || (file)->status == kBfsFileStatusLocked || (file)->status == kBfsFileStatusPlain)) ||\
-        (((p) == unl_handle_decrypt) && ((file) == NULL || (file)->status == kBfsFileStatusUnlocked || (file)->status == kBfsFileStatusPlain))) {\
+    if ((((p) == unl_handle_encrypt) && ((file) == NULL || (file)->status == kBfsFileStatusLocked   ||\
+                                                           (file)->status == kBfsFileStatusPlain))  ||\
+        (((p) == unl_handle_decrypt) && ((file) == NULL || (file)->status == kBfsFileStatusUnlocked ||\
+                                                           (file)->status == kBfsFileStatusPlain))) {\
         continue;\
     }\
     pstmt;\
