@@ -533,6 +533,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size, 255, no_error, bfs_data_wiping_epilogue);
 
     kryptos_freeseg(data);
+    data = NULL;
 
     // INFO(Rafael): This step of the implemented data wiping is based on the Bruce Schneier's given suggestions
     //               in his book Applied Cryptography [228 pp.].
