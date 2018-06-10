@@ -20,6 +20,7 @@ blackcat.prologue() {
     var subforges type list;
     $subforges.add_item("test");
     $subforges.add_item("fs");
+    $subforges.add_item("cmd");
 
     $exit_code = forge_projects($subforges);
 }

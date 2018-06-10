@@ -1,0 +1,65 @@
+#
+#                          Copyright (C) 2018 by Rafael Santiago
+#
+# Use of this source code is governed by GPL-v2 license that can
+# be found in the COPYING file.
+#
+#
+
+include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
+include ../forgeutils/toolsets.hsl
+
+local var curr_toolset type string;
+
+local var src type list;
+local var includes type list;
+local var cflags type list;
+local var libraries type list;
+local var ldflags type list;
+
+local var deps type string;
+
+local var appname type string;
+
+project blackcat-cmd : toolset $curr_toolset : dependencies $deps : $src, $includes, $cflags, $libraries, $ldflags, $appname;
+
+blackcat-cmd.preloading() {
+    $curr_toolset = get_app_toolset();
+}
+
+blackcat-cmd.prologue() {
+    var code_paths type list;
+
+    # INFO(Rafael): All relevant sub-paths with code to scan and compile.
+
+    $code_paths.add_item(".");
+    $code_paths.add_item("../ctx");
+    $code_paths.add_item("../memory");
+    $code_paths.add_item("../keychain");
+    $code_paths.add_item("../keychain/cipher");
+
+    $src = get_codes($code_paths, $deps);
+
+    $includes = hefesto.sys.get_option("includes");
+    $cflags = hefesto.sys.get_option("cflags");
+    $libraries = hefesto.sys.get_option("libraries");
+    $ldflags = hefesto.sys.get_option("ldflags");
+
+    if (build_libkryptos() != 0) {
+        hefesto.project.abort(1);
+    }
+
+    $appname = get_appname();
+}
+
+local function get_appname() : result type string {
+    var appname type string;
+
+    $appname = "blackcat";
+
+    if (hefesto.sys.os_name() == "windows") {
+        $appname = $appname + ".exe";
+    }
+
+    result $appname;
+}
