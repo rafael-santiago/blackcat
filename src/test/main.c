@@ -50,22 +50,38 @@ CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     blackcat_protlayer_chain_ctx *chain = NULL;
+    kryptos_u8_t *key = NULL;
+    size_t key_size = 0;
 
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, "", 1, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, 1, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", "", 0, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", "", 1, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, &key, &key_size, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, &key_size, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, NULL, get_hash_processor("tiger")) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, &key_size, NULL) == NULL);
 
-    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", "test", 4, get_hash_processor("tiger"));
+    key = (kryptos_u8_t *) malloc(4);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "test", 4);
+    key_size = 4;
+
+    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", &key, &key_size, get_hash_processor("tiger"));
 
     CUTE_ASSERT(chain != NULL);
     CUTE_ASSERT(chain->next == NULL);
 
+    CUTE_ASSERT(key == NULL);
+    CUTE_ASSERT(key_size == 0);
+
     del_protlayer_chain_ctx(chain);
 
+    key = (kryptos_u8_t *) malloc(4);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "test", 4);
+    key_size = 4;
+
+    chain = NULL;
     chain = add_composite_protlayer_to_chain(chain,
                                              "hmac-sha3-512-des-cbc|aes-128-ofb|shacal2-ctr|feal-cbc/167",
-                                             "test", 4, get_hash_processor("tiger"));
+                                             &key, &key_size, get_hash_processor("tiger"));
 
     CUTE_ASSERT(chain != NULL);
 
@@ -73,6 +89,9 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     CUTE_ASSERT(chain->next->next != NULL);
     CUTE_ASSERT(chain->next->next->next != NULL);
     CUTE_ASSERT(chain->next->next->next->next == NULL);
+
+    CUTE_ASSERT(key == NULL);
+    CUTE_ASSERT(key_size == 0);
 
     del_protlayer_chain_ctx(chain);
 CUTE_TEST_CASE_END
@@ -601,12 +620,19 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
     size_t h;
     kryptos_u8_t *in = "test", *out, *dec;
     size_t in_size = 4, out_size, dec_size;
+    kryptos_u8_t *key;
+    size_t key_size;
 
     CUTE_ASSERT(huge_protchain_sz == g_blackcat_ciphering_schemes_nr);
 
+    key = (kryptos_u8_t *) malloc(6);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "secret", 6);
+    key_size = 6;
+
     for (h = 0; h < huge_protchain_sz; h++) {
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, NULL);
 
         out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
 
@@ -625,12 +651,21 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
         del_protlayer_chain_ctx(pchain);
     }
 
+    free(key);
+
     if (CUTE_GET_OPTION("quick-tests") == NULL) {
         pchain = NULL;
 
+        key = (kryptos_u8_t *) malloc(6);
+        CUTE_ASSERT(key != NULL);
+        memcpy(key, "secret", 6);
+        key_size = 6;
+
         for (h = 0; h < huge_protchain_sz; h++) {
-            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
+            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, NULL);
         }
+
+        free(key);
 
         out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
 
@@ -654,8 +689,15 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
     ssize_t a;
     size_t h;
     blackcat_protlayer_chain_ctx *pchain;
+    kryptos_u8_t *key;
+    size_t key_size;
 
     CUTE_ASSERT(huge_protchain_sz == g_blackcat_ciphering_schemes_nr);
+
+    key = (kryptos_u8_t *) malloc(6);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "secret", 6);
+    key_size = 6;
 
     for (h = 0; h < huge_protchain_sz; h++) {
         a = get_algo_index(huge_protchain[h]);
@@ -663,7 +705,7 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
         CUTE_ASSERT(a > -1 && a < g_blackcat_ciphering_schemes_nr);
 
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], "secret", 6, NULL);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, NULL);
 
         CUTE_ASSERT(pchain != NULL);
 
@@ -687,6 +729,8 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
 
         del_protlayer_chain_ctx(pchain);
     }
+
+    free(key);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_is_dec_tests)
@@ -767,12 +811,19 @@ CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(ctx_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL;
+    kryptos_u8_t *key;
+    size_t key_size;
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", "envious", 7, NULL);
+    key = (kryptos_u8_t *) malloc(5);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "clean", 5);
+    key_size = 5;
+
+    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", "password", 8, NULL);
+    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain != NULL);
 
@@ -784,7 +835,7 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", "envious", 7, NULL);
+    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain != NULL);
 
@@ -802,4 +853,5 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->next->next == NULL);
 
     del_protlayer_chain_ctx(pchain);
+    free(key);
 CUTE_TEST_CASE_END

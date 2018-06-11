@@ -126,6 +126,8 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
                         "The Ace of Spades\n";
     char *data;
     size_t data_size;
+    kryptos_u8_t *protkey;
+    size_t protkey_size;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -159,9 +161,17 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = "hmac-sha224-blowfish-ctr|mars-192-ctr|xtea-ofb|hmac-sha3-512-shacal2-cbc";
 
+    protkey = (kryptos_u8_t *) kryptos_newseg(11);
+    CUTE_ASSERT(protkey != NULL);
+    memcpy(protkey, "mumbo gumbo", 11);
+    protkey_size = 11;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          "mumbo gumbo", 11, catalog->protlayer_key_hash_algo);
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo);
+
+    CUTE_ASSERT(protkey == NULL);
+    CUTE_ASSERT(protkey_size == 0);
 
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 
@@ -264,6 +274,8 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
                       "If you know we live to win\n";
     char *data = NULL;
     size_t data_size;
+    kryptos_u8_t *protkey;
+    size_t protkey_size;
 
     // INFO(Rafael): The painful handmade bootstrapping arrrgh!
 
@@ -297,9 +309,17 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = "aes-128-cbc";
 
+    protkey = (kryptos_u8_t *) kryptos_newseg(15);
+    CUTE_ASSERT(protkey != NULL);
+    memcpy(protkey, "ready to forget", 15);
+    protkey_size = 15;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          "ready to forget", 15, catalog->protlayer_key_hash_algo);
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo);
+
+    CUTE_ASSERT(protkey == NULL);
+    CUTE_ASSERT(protkey_size == 0);
 
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 

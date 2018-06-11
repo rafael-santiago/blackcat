@@ -11,15 +11,15 @@
 #include <kryptos.h>
 #include <ctype.h>
 
-static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const size_t key_size, ssize_t *wanted_size,
+static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key_size, ssize_t *wanted_size,
                                                  blackcat_hash_processor hash);
 
-static kryptos_u8_t *blackcat_derive_key(const size_t algo, const kryptos_u8_t *key, const size_t key_size,
+static kryptos_u8_t *blackcat_derive_key(const size_t algo, kryptos_u8_t **key, size_t *key_size,
                                          size_t *derived_size,
                                          blackcat_hash_processor hash);
 
 int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
-                          const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
+                          const char *algo_params, kryptos_u8_t **key, size_t *key_size,
                           const size_t args_nr,
                           blackcat_hash_processor hash,
                           char *err_mesg) {
@@ -42,7 +42,7 @@ int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
     args_reader = g_blackcat_ciphering_schemes[algo].args;
 
     if (!is_null_arg_handler(args_reader)) {
-        no_error = args_reader(algo_params, p->arg, args_nr, (kryptos_u8_t *)key, key_size, &p->argc, err_mesg);
+        no_error = args_reader(algo_params, p->arg, args_nr, (*key), *key_size, &p->argc, err_mesg);
     }
 
     return no_error;
@@ -132,7 +132,7 @@ int blackcat_is_dec(const char *buf, const size_t buf_size) {
     return 1;
 }
 
-static kryptos_u8_t *blackcat_derive_key(const size_t algo, const kryptos_u8_t *key, const size_t key_size,
+static kryptos_u8_t *blackcat_derive_key(const size_t algo, kryptos_u8_t **key, size_t *key_size,
                                          size_t *derived_size,
                                          blackcat_hash_processor hash) {
     if (key == NULL || derived_size == NULL || algo > g_blackcat_ciphering_schemes_nr) {
@@ -144,7 +144,7 @@ static kryptos_u8_t *blackcat_derive_key(const size_t algo, const kryptos_u8_t *
     return keychain_hash_user_weak_key(key, key_size, derived_size, hash);
 }
 
-static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const size_t key_size,
+static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key_size,
                                                  ssize_t *wanted_size,
                                                  blackcat_hash_processor hash) {
     kryptos_u8_t *kp = NULL;
@@ -152,18 +152,18 @@ static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const 
     size_t kp_size, curr_size;
 
     if (*wanted_size == - 1) {
-        kp = (kryptos_u8_t *) blackcat_getseg(key_size);
-        memcpy(kp, key, key_size); // XXX(Rafael): Maybe hash it too.
-        *wanted_size = key_size;
+        kp = (kryptos_u8_t *) blackcat_getseg(*key_size);
+        memcpy(kp, *key, *key_size); // XXX(Rafael): Maybe hash it too.
+        *wanted_size = *key_size;
     } else {
         kp = (kryptos_u8_t *) blackcat_getseg(*wanted_size);
         kp_size = *wanted_size;
 
         kryptos_task_init_as_null(ktask);
 
-        ktask->in = (kryptos_u8_t *) blackcat_getseg(key_size);
-        ktask->in_size = key_size;
-        memcpy(ktask->in, key, key_size);
+        ktask->in = (kryptos_u8_t *) blackcat_getseg(*key_size);
+        ktask->in_size = *key_size;
+        memcpy(ktask->in, *key, *key_size);
 
         while (kp_size > 0) {
             if (hash == NULL) {
@@ -173,7 +173,7 @@ static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const 
             }
             curr_size = (ktask->out_size < kp_size) ? ktask->out_size : kp_size;
             memcpy(kp, ktask->out, kp_size);
-            if (ktask->in == key) {
+            if (ktask->in == (*key)) {
                 ktask->in = NULL;
                 ktask->in_size = 0;
             }
@@ -182,7 +182,11 @@ static kryptos_u8_t *keychain_hash_user_weak_key(const kryptos_u8_t *key, const 
             kp_size -= curr_size;
         }
 
-        kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+        kryptos_freeseg(*key);
+
+        // INFO(Rafael): Refreshing the key buffer for the next key derivation.
+        (*key) = ktask->out;
+        *key_size = ktask->out_size;
     }
 
     return kp;

@@ -12,7 +12,7 @@
 #include <kryptos_types.h>
 
 int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
-                          const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
+                          const char *algo_params, kryptos_u8_t **key, size_t *key_size,
                           const size_t args_nr,
                           blackcat_hash_processor hash,
                           char *err_mesg);

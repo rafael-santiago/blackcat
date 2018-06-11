@@ -9,6 +9,7 @@
 #include <basedefs/defs.h>
 #include <memory/memory.h>
 #include <keychain/keychain.h>
+#include <kryptos_memory.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -25,12 +26,12 @@
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);
 
 blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
-                                                               const char *piped_ciphers, const kryptos_u8_t *key,
-                                                               const size_t key_size, blackcat_hash_processor hash) {
+                                                               const char *piped_ciphers, kryptos_u8_t **key,
+                                                               size_t *key_size, blackcat_hash_processor hash) {
     char curr_algo_param[100];
     const char *p, *p_end, *cp;
 
-    if (piped_ciphers == NULL || key == NULL || key_size == 0 || hash == NULL) {
+    if (piped_ciphers == NULL || key == NULL || key_size == NULL || hash == NULL) {
         return chain;
     }
 
@@ -63,11 +64,15 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
         p++;
     }
 
+    kryptos_freeseg(*key);
+    *key = NULL;
+    *key_size = 0;
+
     return chain;
 }
 
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
-                                                     const char *algo_params, const kryptos_u8_t *key, const size_t key_size,
+                                                     const char *algo_params, kryptos_u8_t **key, size_t *key_size,
                                                      blackcat_hash_processor hash) {
     blackcat_protlayer_chain_ctx *hp, *cp;
     char err_mesg[1024] = "";
