@@ -7,7 +7,6 @@
  */
 #include <keychain/keychain.h>
 #include <keychain/ciphering_schemes.h>
-#include <memory/memory.h>
 #include <kryptos.h>
 #include <ctype.h>
 
@@ -88,7 +87,7 @@ char *blackcat_keychain_arg_next(const char **begin, const char *end, char *err_
     }
 
     arg_size = (bp_next - bp);
-    arg = (char *) blackcat_getseg(arg_size + 1);
+    arg = (char *) kryptos_newseg(arg_size + 1);
     memset(arg, 0, arg_size + 1);
     memcpy(arg, bp, arg_size);
 
@@ -152,16 +151,16 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
     size_t kp_size, curr_size;
 
     if (*wanted_size == - 1) {
-        kp = (kryptos_u8_t *) blackcat_getseg(*key_size);
+        kp = (kryptos_u8_t *) kryptos_newseg(*key_size);
         memcpy(kp, *key, *key_size); // XXX(Rafael): Maybe hash it too.
         *wanted_size = *key_size;
     } else {
-        kp = (kryptos_u8_t *) blackcat_getseg(*wanted_size);
+        kp = (kryptos_u8_t *) kryptos_newseg(*wanted_size);
         kp_size = *wanted_size;
 
         kryptos_task_init_as_null(ktask);
 
-        ktask->in = (kryptos_u8_t *) blackcat_getseg(*key_size);
+        ktask->in = (kryptos_u8_t *) kryptos_newseg(*key_size);
         ktask->in_size = *key_size;
         memcpy(ktask->in, *key, *key_size);
 

@@ -7,7 +7,6 @@
  */
 #include <keychain/cipher/seal.h>
 #include <keychain/keychain.h>
-#include <memory/memory.h>
 #include <kryptos.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +46,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key
         goto seal_args_reader_epilogue;
     }
 
-    args[0] = (kryptos_seal_version_t *) blackcat_getseg(sizeof(kryptos_seal_version_t));
+    args[0] = (kryptos_seal_version_t *) kryptos_newseg(sizeof(kryptos_seal_version_t));
     *(kryptos_seal_version_t *)args[0] = atoi(arg);
     free(arg);
 
@@ -58,7 +57,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key
         goto seal_args_reader_epilogue;
     }
 
-    args[1] = (size_t *) blackcat_getseg(sizeof(size_t));
+    args[1] = (size_t *) kryptos_newseg(sizeof(size_t));
     *(size_t *)args[1] = atoi(arg);
     free(arg);
 
@@ -69,7 +68,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key
         goto seal_args_reader_epilogue;
     }
 
-    args[2] = (size_t *) blackcat_getseg(sizeof(size_t));
+    args[2] = (size_t *) kryptos_newseg(sizeof(size_t));
     *(size_t *)args[2] = atoi(arg);
 
     *argc = 3;

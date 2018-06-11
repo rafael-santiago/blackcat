@@ -7,7 +7,6 @@
  */
 #include <cutest.h>
 #include <test/huge_protchain.h>
-#include <memory/memory.h>
 #include <ctx/ctx.h>
 #include <keychain/keychain.h>
 #include <keychain/ciphering_schemes.h>
@@ -15,7 +14,6 @@
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
-CUTE_DECLARE_TEST_CASE(memory_tests);
 CUTE_DECLARE_TEST_CASE(ctx_tests);
 CUTE_DECLARE_TEST_CASE(keychain_arg_parsing_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_is_dec_tests);
@@ -33,7 +31,6 @@ CUTE_DECLARE_TEST_CASE(add_composite_ciphers_to_chain_tests);
 CUTE_MAIN(blackcat_base_tests_entry)
 
 CUTE_TEST_CASE(blackcat_base_tests_entry)
-    CUTE_RUN_TEST(memory_tests);
     CUTE_RUN_TEST(ctx_tests);
     CUTE_RUN_TEST(keychain_arg_parsing_tests);
     CUTE_RUN_TEST(blackcat_is_dec_tests);
@@ -787,26 +784,6 @@ CUTE_TEST_CASE(keychain_arg_parsing_tests)
     arg = blackcat_keychain_arg_next(&begin, end, NULL, NULL);
 
     CUTE_ASSERT(arg == NULL);
-CUTE_TEST_CASE_END
-
-CUTE_TEST_CASE(memory_tests)
-    void *data;
-    size_t data_size = 1024;
-
-    data = blackcat_getseg(1024);
-    CUTE_ASSERT(data != NULL);
-    memset(data, 1, 1024);
-    blackcat_free(data, NULL);
-
-    data = blackcat_getseg(data_size);
-    CUTE_ASSERT(data != NULL);
-    memset(data, 1, data_size);
-    blackcat_free(data, &data_size);
-    CUTE_ASSERT(data_size == 0);
-
-    blackcat_free(NULL, NULL);
-    blackcat_free(NULL, &data_size);
-    // WARN(Rafael): The libcutest memory leak check system will catch any non well freed memory area.
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(ctx_tests)

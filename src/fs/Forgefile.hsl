@@ -36,7 +36,6 @@ libbfs.prologue() {
     $code_paths.add_item("ctx");
     $code_paths.add_item("../");
     $code_paths.add_item("../ctx");
-    $code_paths.add_item("../memory");
     $code_paths.add_item("../keychain");
     $code_paths.add_item("../keychain/cipher");
 

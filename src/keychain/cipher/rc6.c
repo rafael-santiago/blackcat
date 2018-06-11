@@ -7,7 +7,6 @@
  */
 #include <keychain/cipher/rc5.h>
 #include <keychain/keychain.h>
-#include <memory/memory.h>
 #include <kryptos.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -188,7 +187,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc6, algo_params, args, args_nr, key, key_
         return 0;
     }
 
-    args[0] = (int *) blackcat_getseg(sizeof(int));
+    args[0] = (int *) kryptos_newseg(sizeof(int));
     *(int *)args[0] = atoi(arg);
 
     free(arg);

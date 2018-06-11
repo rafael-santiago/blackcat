@@ -7,14 +7,13 @@
  */
 #include <ctx/ctx.h>
 #include <basedefs/defs.h>
-#include <memory/memory.h>
 #include <keychain/keychain.h>
 #include <kryptos_memory.h>
 #include <string.h>
 #include <stdio.h>
 
 #define new_blackcat_protlayer_chain_ctx(b) {\
-    (b) = (blackcat_protlayer_chain_ctx *) blackcat_getseg(sizeof(blackcat_protlayer_chain_ctx));\
+    (b) = (blackcat_protlayer_chain_ctx *) kryptos_newseg(sizeof(blackcat_protlayer_chain_ctx));\
     (b)->head = (b)->tail = (b)->next = (b)->last = NULL;\
     (b)->key = NULL;\
     (b)->key_size = 0;\
@@ -107,14 +106,15 @@ void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain) {
         t = p->next;
 
         if (p->key != NULL) {
-            blackcat_free(p->key, &p->key_size);
+            kryptos_freeseg(p->key);
+            p->key_size = 0;
         }
 
         for (a = 0; a < p->argc; a++) {
-            free(p->arg[a]);
+            kryptos_freeseg(p->arg[a]);
         }
 
-        free(p);
+        kryptos_freeseg(p);
     }
 }
 
