@@ -170,10 +170,11 @@ bcrepo_init_epilogue:
 
 int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size) {
     kryptos_u8_t *data = NULL;
-    size_t data_size = 0;
+    size_t data_size = 0, temp_size;
     bfs_catalog_ctx *catalog = NULL;
     int no_error = 1;
     char filepath[4096], tmp[4096];
+    size_t filepath_size;
 
     if (rootpath == NULL || rootpath_size == 0 || key == NULL || key_size == 0) {
         no_error = 0;
@@ -195,7 +196,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
     }
 
     data_size = bcrepo_mkpath(tmp, sizeof(tmp), rootpath, rootpath_size, BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE);
-    bcrepo_mkpath(filepath, sizeof(filepath), tmp, data_size, BCREPO_CATALOG_FILE, BCREPO_CATALOG_FILE_SIZE);
+    filepath_size = bcrepo_mkpath(filepath, sizeof(filepath), tmp, data_size, BCREPO_CATALOG_FILE, BCREPO_CATALOG_FILE_SIZE);
 
     data = bcrepo_read(filepath, catalog, &data_size);
 
@@ -204,9 +205,23 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
         goto bcrepo_deinit_epilogue;
     }
 
+    temp_size = data_size;
+
     if ((no_error = bcrepo_stat(&catalog, key, key_size, &data, &data_size)) != 1) {
         goto bcrepo_deinit_epilogue;
     }
+
+    // WARN(Rafael): We cannot perform data wiping before the bcrepo_stat(), otherwise a wrong key will be able to
+    //               corrupt the entire repository's catalog without concluding the deinit stuff.
+
+    if (bfs_data_wiping(rootpath, rootpath_size,
+                        filepath + rootpath_size + 1, filepath_size - rootpath_size + 1, temp_size) == 0) {
+        fprintf(stderr, "WARN: Unable to perform data wiping over the file '%s'\n", filepath);
+        fprintf(stderr, "      If you are paranoid enough you should run a data wiping software"
+                        " over your entire storage device.\n");
+    }
+
+    temp_size = 0;
 
     if (remove(filepath) != 0) {
         no_error = 0;
