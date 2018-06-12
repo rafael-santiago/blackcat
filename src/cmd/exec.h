@@ -5,11 +5,9 @@
  * be found in the COPYING file.
  *
  */
-#ifndef BLACKCAT_CMD_VERSION_H
-#define BLACKCAT_CMD_VERSION_H 1
+#ifndef BLACKCAT_CMD_EXEC_H
+#define BLACKCAT_CMD_EXEC_H 1
 
-const char *get_blackcat_version(void);
-
-int blackcat_cmd_version(void);
+int blackcat_exec(int argc, char **argv);
 
 #endif

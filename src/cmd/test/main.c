@@ -26,6 +26,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_set_argc_argv_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_command_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_option_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_bool_option_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_get_argv_tests);
 CUTE_DECLARE_TEST_CASE(get_blackcat_version_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
@@ -35,6 +36,7 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(blackcat_get_command_tests);
     CUTE_RUN_TEST(blackcat_get_option_tests);
     CUTE_RUN_TEST(blackcat_get_bool_option_tests);
+    CUTE_RUN_TEST(blackcat_get_argv_tests);
     CUTE_RUN_TEST(get_blackcat_version_tests);
 CUTE_TEST_CASE_END
 
@@ -71,6 +73,22 @@ CUTE_TEST_CASE(blackcat_get_bool_option_tests)
     CUTE_ASSERT(blackcat_get_bool_option("bool", 0) == 1);
     CUTE_ASSERT(blackcat_get_bool_option("not-supplied", 0) == 0);
     CUTE_ASSERT(blackcat_get_bool_option("not-supplied", 1) == 1);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_get_argv_tests)
+    char *data;
+    CUTE_ASSERT(blackcat_get_argv(-1) == NULL);
+    data = blackcat_get_argv(0);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(strcmp(data, "--foo=bar") == 0);
+    data = blackcat_get_argv(1);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(strcmp(data, "--bar=foo") == 0);
+    data = blackcat_get_argv(2);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(strcmp(data, "--bool") == 0);
+    CUTE_ASSERT(blackcat_get_argv(3) == NULL);
+    CUTE_ASSERT(blackcat_get_argv(4) == NULL);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_blackcat_version_tests)

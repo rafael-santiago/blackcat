@@ -5,6 +5,8 @@
  * be found in the COPYING file.
  *
  */
+#include <cmd/exec.h>
+
 int main(int argc, char **argv) {
-    return 0;
+    return blackcat_exec(argc, argv);
 }

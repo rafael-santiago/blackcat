@@ -69,3 +69,10 @@ void blackcat_set_argc_argv(int argc, char **argv) {
     }
 }
 
+char *blackcat_get_argv(const int v) {
+    if (v < 0 || v >= g_blackcat_argc) {
+        return NULL;
+    }
+
+    return &g_blackcat_argv[v][0];
+}

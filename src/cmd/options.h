@@ -16,4 +16,6 @@ char *blackcat_get_command(void);
 
 void blackcat_set_argc_argv(int argc, char **argv);
 
+char *blackcat_get_argv(const int v);
+
 #endif
