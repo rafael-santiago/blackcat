@@ -14,6 +14,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(help),
@@ -25,8 +27,18 @@ DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)
 int blackcat_exec(int argc, char **argv) {
     size_t c;
     const char *command = NULL;
+    int err = EINVAL;
 
     blackcat_set_argc_argv(argc, argv);
+
+    if (blackcat_get_bool_option("set-high-priority", 0) == 1) {
+        // WARN(Rafael): Yes, it is a paranoid care. This only seeks to mitigate the preemption, there is no guarantee.
+        //               In fact, the best case would be a real-time OS, but...
+        if ((err = setpriority(PRIO_PROCESS, 0, -20)) == -1) {
+            fprintf(stderr, "ERROR: While setting the process' priority as high.\n");
+            return err;
+        }
+    }
 
     command = blackcat_get_command();
 
@@ -48,5 +60,5 @@ blackcat_exec_epilogue:
 
     fprintf(stderr, "ERROR: Invalid command.\n");
 
-    return -EINVAL;
+    return err;
 }
