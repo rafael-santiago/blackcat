@@ -25,6 +25,7 @@
 #define BCREPO_CATALOG_PROTECTION_LAYER         "protection-layer: "
 #define BCREPO_CATALOG_FILES                    "files: "
 
+#define BCREPO_PEM_KEY_HASH_ALGO_HDR "BCREPO KEY HASH ALGO"
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
 #define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
 
@@ -458,7 +459,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     //               What optimizations it brings and what heuristics it takes advantage to work on.
     //               Anyway, I am following the basic idea of the DoD standard. Here we do not want to
     //               erase every single trace of the related file. Only its content data is relevant.
-    //               Inode infos such as file size, file name and other file metadata are (at first sight)
+    //               Inode infos such as file size, file name and other file metadata are (at first glance)
     //               negligible for an eavesdropper and us either.
 
     // TODO(Rafael): Try to find a way of removing thumbnails and things like that. If the user takes "advantage"
@@ -535,7 +536,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     kryptos_freeseg(data);
     data = NULL;
 
-    // INFO(Rafael): This step of the implemented data wiping is based on the Bruce Schneier's given suggestions
+    // INFO(Rafael): This step of the implemented data wiping is based on the suggestions given by Bruce Schneier's
     //               in his book Applied Cryptography [228 pp.].
 
     bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
@@ -949,6 +950,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     kryptos_u8_t *o = NULL;
     kryptos_u8_t *pem_buf = NULL;
     size_t pem_buf_size = 0;
+    const char *key_hash_algo = NULL;
 
     o_size = eval_catalog_buf_size(catalog);
 
@@ -971,6 +973,23 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
 
     if (encrypt_catalog_data(&o, &o_size, key, key_size, catalog) == kKryptosSuccess) {
         fprintf(stderr, "ERROR: Error while encrypting the catalog data.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    key_hash_algo = get_hash_processor_name(catalog->catalog_key_hash_algo);
+
+    if (key_hash_algo == NULL) {
+        fprintf(stderr, "ERROR: Unknow catalog's key hash processor.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
+                             BCREPO_PEM_KEY_HASH_ALGO_HDR,
+                             key_hash_algo,
+                             strlen(key_hash_algo)) != kKryptosSuccess) {
+        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -1021,15 +1040,20 @@ bcrepo_write_epilogue:
         pem_buf_size = 0;
     }
 
+    if (key_hash_algo != NULL) {
+        key_hash_algo = NULL;
+    }
+
     return no_error;
 }
 
 kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t *out_size) {
     kryptos_u8_t *o = NULL;
     FILE *fp = NULL;
-    kryptos_u8_t *hmac_algo = NULL;
-    size_t hmac_algo_size = 0;
+    kryptos_u8_t *hmac_algo = NULL, *key_hash_algo = NULL;
+    size_t hmac_algo_size = 0, key_hash_algo_size = 0;
     const struct blackcat_hmac_catalog_algorithms_ctx *hmac_scheme = NULL;
+    blackcat_hash_processor catalog_key_hash_algo = NULL;
 
     if (filepath == NULL || catalog == NULL || out_size == NULL) {
         goto bcrepo_read_epilogue;
@@ -1059,7 +1083,30 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     // INFO(Rafael): We will keep the catalog encrypted in memory, however, we need to know how to
     //               open it in the next catalog stat operation. So let's 'trigger' the correct
-    //               HMAC processor.
+    //               hash algorithm (key crunching) and the HMAC processor.
+
+    key_hash_algo = kryptos_pem_get_data(BCREPO_PEM_KEY_HASH_ALGO_HDR, o, *out_size, &key_hash_algo_size);
+
+    if (key_hash_algo == NULL) {
+        fprintf(stderr, "ERROR: Unable to get the catalog's hash algorithm.\n");
+        kryptos_freeseg(o);
+        o = NULL;
+        *out_size = 0;
+        goto bcrepo_read_epilogue;
+    }
+
+    catalog_key_hash_algo = get_hash_processor(key_hash_algo);
+
+    if (catalog_key_hash_algo == NULL) {
+        // INFO(Rafael): Some idiot trying to screw up the program's flow.
+        fprintf(stderr, "ERROR: Unknown catalog's hash algorithm.\n");
+        kryptos_freeseg(o);
+        o = NULL;
+        *out_size = 0;
+        goto bcrepo_read_epilogue;
+    }
+
+    catalog->catalog_key_hash_algo = catalog_key_hash_algo;
 
     hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
 
@@ -1088,6 +1135,11 @@ bcrepo_read_epilogue:
 
     if (fp != NULL) {
         fclose(fp);
+    }
+
+    if (key_hash_algo != NULL) {
+        kryptos_freeseg(key_hash_algo);
+        key_hash_algo_size = 0;
     }
 
     if (hmac_algo != NULL) {
@@ -1144,14 +1196,26 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     kryptos_task_ctx t, *ktask = &t;
     kryptos_task_result_t result = kKryptosProcessError;
 
-    if (!is_hmac_processor(catalog->hmac_scheme->processor)) {
+    if (!is_hmac_processor(catalog->hmac_scheme->processor) || catalog->catalog_key_hash_algo == NULL) {
         return kKryptosProcessError;
     }
 
+    p_layer.key = NULL;
+
     kryptos_task_init_as_null(ktask);
 
-    p_layer.key = (kryptos_u8_t *) key;
-    p_layer.key_size = key_size;
+    ktask->in = (kryptos_u8_t *) key;
+    ktask->in_size = key_size;
+
+    catalog->catalog_key_hash_algo(&ktask, 0);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        fprintf(stderr, "ERROR: Unable to process the catalog's key.\n");
+        goto decrypt_catalog_data_epilogue;
+    }
+
+    p_layer.key = ktask->out;
+    p_layer.key_size = ktask->out_size;
     p_layer.mode = catalog->hmac_scheme->mode;
 
     ktask->in = kryptos_pem_get_data(BCREPO_PEM_CATALOG_DATA_HDR, *data, *data_size, &ktask->in_size);
@@ -1175,11 +1239,14 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    p_layer.key = NULL;
     p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
 decrypt_catalog_data_epilogue:
+
+    if (p_layer.key != NULL) {
+        kryptos_freeseg(p_layer.key);
+    }
 
     return result;
 }
@@ -1191,12 +1258,28 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
     kryptos_task_ctx t, *ktask = &t;
     kryptos_task_result_t result = kKryptosProcessError;
 
+    if (catalog->catalog_key_hash_algo == NULL) {
+        return kKryptosProcessError;
+    }
+
+    p_layer.key = NULL;
+
     kryptos_task_init_as_null(ktask);
 
     catalog->hmac_scheme = get_random_hmac_catalog_scheme();
 
-    p_layer.key = (kryptos_u8_t *) key;
-    p_layer.key_size = key_size;
+    ktask->in = (kryptos_u8_t *) key;
+    ktask->in_size = key_size;
+
+    catalog->catalog_key_hash_algo(&ktask, 0);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        fprintf(stderr, "ERROR: Unable to process the catalog's key.\n");
+        goto encrypt_catalog_data_epilogue;
+    }
+
+    p_layer.key = ktask->out;
+    p_layer.key_size = ktask->out_size;
     p_layer.mode = catalog->hmac_scheme->mode;
 
     kryptos_task_set_in(ktask, *data, *data_size);
@@ -1212,11 +1295,16 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    p_layer.key = NULL;
     p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
     result = ktask->result;
+
+encrypt_catalog_data_epilogue:
+
+    if (p_layer.key != NULL) {
+        kryptos_freeseg(p_layer.key);
+    }
 
     return result;
 }
@@ -1701,6 +1789,7 @@ files_r_epilogue:
 #undef BCREPO_CATALOG_PROTECTION_LAYER
 #undef BCREPO_CATALOG_FILES
 
+#undef BCREPO_PEM_KEY_HASH_ALGO_HDR
 #undef BCREPO_PEM_HMAC_HDR
 #undef BCREPO_PEM_CATALOG_DATA_HDR
 
