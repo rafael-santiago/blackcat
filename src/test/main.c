@@ -60,6 +60,31 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     memcpy(key, "test", 4);
     key_size = 4;
 
+    chain = add_composite_protlayer_to_chain(chain, "hmac-cha3-512-bug-a-loo-cipher-cbc",
+                                             &key, &key_size, get_hash_processor("tiger"));
+
+    CUTE_ASSERT(chain == NULL);
+    CUTE_ASSERT(key == NULL);
+    CUTE_ASSERT(key_size == 0);
+
+    key = (kryptos_u8_t *) malloc(4);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "test", 4);
+    key_size = 4;
+
+    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc|aes-128-ofb|shacal2-ctr|feal-cbc/167|"
+                                                    "hmac-cha3-512-bug-a-loo-cipher-cbc",
+                                             &key, &key_size, get_hash_processor("tiger"));
+
+    CUTE_ASSERT(chain == NULL);
+    CUTE_ASSERT(key == NULL);
+    CUTE_ASSERT(key_size == 0);
+
+    key = (kryptos_u8_t *) malloc(4);
+    CUTE_ASSERT(key != NULL);
+    memcpy(key, "test", 4);
+    key_size = 4;
+
     chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", &key, &key_size, get_hash_processor("tiger"));
 
     CUTE_ASSERT(chain != NULL);

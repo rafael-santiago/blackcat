@@ -159,7 +159,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
 
     catalog->key_hash = ktask->out;
     catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "hmac-sha224-blowfish-ctr|mars-192-ctr|xtea-ofb|hmac-sha3-512-shacal2-cbc";
+    catalog->protection_layer = "hmac-sha224-blowfish-ctr|mars-192-ctr|xtea-ofb/202|hmac-sha3-512-shacal2-cbc";
 
     protkey = (kryptos_u8_t *) kryptos_newseg(11);
     CUTE_ASSERT(protkey != NULL);

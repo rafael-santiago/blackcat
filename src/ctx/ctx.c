@@ -58,10 +58,18 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
         memcpy(curr_algo_param, cp, p - cp);
 
         chain = add_protlayer_to_chain(chain, curr_algo_param, key, key_size, hash);
+
+        if (chain == NULL) {
+            fprintf(stderr, "ERROR: Invalid algorithm '%s'.\n", curr_algo_param);
+            goto add_composite_protlayer_to_chain_epilogue;
+        }
+
         memset(curr_algo_param, 0, sizeof(curr_algo_param));
 
         p++;
     }
+
+add_composite_protlayer_to_chain_epilogue:
 
     kryptos_freeseg(*key);
     *key = NULL;
