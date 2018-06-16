@@ -153,3 +153,24 @@ blackcat_getuserkey_epilogue:
     return key;
 }
 
+void blackcat_clear_options(void) {
+    // WARN(Rafael): This is not an alibi to pass sensible data through command line.
+    size_t size;
+
+    if (g_blackcat_cmd != NULL) {
+        size = strlen(g_blackcat_cmd);
+        memset(g_blackcat_cmd, 0, size);
+    }
+
+    if (g_blackcat_argv != NULL) {
+        while (g_blackcat_argc-- > -1) {
+            size = strlen(g_blackcat_argv[g_blackcat_argc]);
+            memset(g_blackcat_argv[g_blackcat_argc], 0, size);
+        }
+    }
+
+    g_blackcat_cmd = NULL;
+    g_blackcat_argv = NULL;
+    g_blackcat_argc = 0;
+    size = 0;
+}

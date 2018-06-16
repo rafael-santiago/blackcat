@@ -6,7 +6,10 @@
  *
  */
 #include <cmd/exec.h>
+#include <cmd/options.h>
 
 int main(int argc, char **argv) {
-    return blackcat_exec(argc, argv);
+    int exit_code = blackcat_exec(argc, argv);
+    blackcat_clear_options();
+    return exit_code;
 }

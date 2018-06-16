@@ -30,4 +30,6 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size);
     }\
 }
 
+void blackcat_clear_options(void);
+
 #endif
