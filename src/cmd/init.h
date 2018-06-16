@@ -10,6 +10,6 @@
 
 int blackcat_cmd_init(void);
 
-int blakcat_cmd_init_help(void);
+int blackcat_cmd_init_help(void);
 
 #endif

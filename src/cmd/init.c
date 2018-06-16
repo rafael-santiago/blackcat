@@ -205,7 +205,7 @@ blackcat_cmd_init_epilogue:
     return exit_code;
 }
 
-int blakcat_cmd_init_help(void) {
+int blackcat_cmd_init_help(void) {
     fprintf(stderr, "use: blackcat init --catalog-hash=<hash> --key-hash=<hash> --protection-layer-hash=<hash>\n"
                     "                   --protection-layer=<algorithm layers> [--keyed-alike]\n");
 }

@@ -10,6 +10,8 @@
 #include <cmd/options.h>
 #include <cmd/help.h>
 #include <cmd/version.h>
+#include <cmd/init.h>
+#include <cmd/deinit.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -19,7 +21,9 @@
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(help),
-    BLACKCAT_COMMAND_TABLE_ENTRY(version)
+    BLACKCAT_COMMAND_TABLE_ENTRY(version),
+    BLACKCAT_COMMAND_TABLE_ENTRY(init),
+    BLACKCAT_COMMAND_TABLE_ENTRY(deinit)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)
