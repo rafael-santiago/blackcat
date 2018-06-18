@@ -26,4 +26,6 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void);
 
 bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path);
 
+void get_new_file_seed(kryptos_u8_t **seed, size_t *seed_size);
+
 #endif

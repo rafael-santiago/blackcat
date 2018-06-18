@@ -818,6 +818,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     files.path = "a/b/c.txt";
     files.path_size = strlen("a/b/c.txt");
     files.status = 'U';
+    files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
+    files.seed_size = 8;
     sprintf(files.timestamp, "%s", "123456789");
     files.last = NULL;
     files.next = NULL;

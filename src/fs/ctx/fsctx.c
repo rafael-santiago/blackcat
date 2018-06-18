@@ -8,6 +8,7 @@
 #include <fs/ctx/fsctx.h>
 #include <ctx/ctx.h>
 #include <kryptos_memory.h>
+#include <kryptos_random.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -17,7 +18,11 @@
                              (r)->path = NULL,\
                              memset((r)->timestamp, 0, sizeof((r)->timestamp)),\
                              (r)->status = kBfsFileStatusNr,\
-                             (r)->path_size = 0 )
+                             (r)->path_size = 0,\
+                             (r)->seed = NULL,\
+                             (r)->seed_size = 0 )
+
+#define BLACKCAT_FILE_SEED_BYTES_NR 8
 
 static bfs_catalog_relpath_ctx *get_relpath_ctx_tail(bfs_catalog_relpath_ctx *head);
 
@@ -162,6 +167,11 @@ void del_bfs_catalog_relpath_ctx(bfs_catalog_relpath_ctx *files) {
             kryptos_freeseg(p->path);
         }
 
+        if (p->seed != NULL) {
+            kryptos_freeseg(p->seed);
+            p->seed_size = 0;
+        }
+
         kryptos_freeseg(p);
     }
 }
@@ -213,3 +223,26 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
     }
     return catalog;
 }
+
+void get_new_file_seed(kryptos_u8_t **seed, size_t *seed_size) {
+    kryptos_u8_t *new_seed;
+    size_t ns;
+
+    new_seed = (kryptos_u8_t *) kryptos_newseg(BLACKCAT_FILE_SEED_BYTES_NR);
+
+    if (new_seed == NULL) {
+        fprintf(stderr, "WARN: Unable to get a new seed, recycling the old one.\n");
+    } else {
+        for (ns = 0; ns < BLACKCAT_FILE_SEED_BYTES_NR; ns++) {
+            new_seed[ns] = kryptos_get_random_byte();
+        }
+        ns = 0;
+        if (*seed != NULL) {
+            kryptos_freeseg(*seed);
+        }
+        (*seed) = new_seed;
+        *seed_size = BLACKCAT_FILE_SEED_BYTES_NR;
+    }
+}
+
+#undef BLACKCAT_FILE_SEED_BYTES_NR

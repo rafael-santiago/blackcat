@@ -8,9 +8,11 @@
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
+#include <keychain/keychain.h>
 #include <fs/ctx/fsctx.h>
 #include <fs/strglob.h>
 #include <kryptos.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -123,6 +125,10 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
 
 static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
                            const char *path, const size_t path_size, const size_t data_size);
+
+static void bcrepo_seed_to_hex(char *buf, const size_t buf_size, const kryptos_u8_t *seed, const size_t seed_size);
+
+static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const char *buf, const size_t buf_size);
 
 int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     char *rootpath = NULL;
@@ -626,33 +632,38 @@ static int unl_handle(bfs_catalog_ctx **catalog,
         files = cp->files;
     }
 
-#define unl_fproc(file, p, pstmt) {\
+#define unl_fproc(file, p, protlayer, pstmt) {\
     if ((((p) == unl_handle_encrypt) && ((file) == NULL || (file)->status == kBfsFileStatusLocked   ||\
                                                            (file)->status == kBfsFileStatusPlain))  ||\
         (((p) == unl_handle_decrypt) && ((file) == NULL || (file)->status == kBfsFileStatusUnlocked ||\
                                                            (file)->status == kBfsFileStatusPlain))) {\
         continue;\
     }\
+    if ((p) == unl_handle_encrypt) {\
+        get_new_file_seed(&(file)->seed, &(file)->seed_size);\
+    }\
+    blackcat_xor_keychain_protkey(protlayer, (file)->seed, (file)->seed_size);\
     pstmt;\
+    blackcat_xor_keychain_protkey(protlayer, (file)->seed, (file)->seed_size);\
 }
     if (files != cp->files) {
         for (fp = files; fp != NULL; fp = fp->next) {
             fpp = get_entry_from_relpath_ctx(cp->files, fp->path);
-            unl_fproc(fpp, proc, proc_nr += proc(rootpath,
-                                                 rootpath_size,
-                                                 fpp->path,
-                                                 fpp->path_size,
-                                                 cp->protlayer,
-                                                 &fpp->status));
+            unl_fproc(fpp, proc, cp->protlayer, proc_nr += proc(rootpath,
+                                                                rootpath_size,
+                                                                fpp->path,
+                                                                fpp->path_size,
+                                                                cp->protlayer,
+                                                                &fpp->status));
         }
     } else {
         for (fp = files; fp != NULL; fp = fp->next) {
-            unl_fproc(fp, proc, proc_nr += proc(rootpath,
-                                                rootpath_size,
-                                                fp->path,
-                                                fp->path_size,
-                                                cp->protlayer,
-                                                &fp->status));
+            unl_fproc(fp, proc, cp->protlayer, proc_nr += proc(rootpath,
+                                                               rootpath_size,
+                                                               fp->path,
+                                                               fp->path_size,
+                                                               cp->protlayer,
+                                                               &fp->status));
         }
     }
 
@@ -1364,7 +1375,7 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
     hash_name = NULL;
 
     for (f = catalog->files; f != NULL; f = f->next) {
-        size += f->path_size + strlen(f->timestamp) + 4;
+        size += f->path_size + strlen(f->timestamp) + 6 + (f->seed_size << 1);
     }
 
     return (size + 2);
@@ -1481,6 +1492,7 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
     kryptos_u8_t *o;
     bfs_catalog_relpath_ctx *f;
     size_t size;
+    char xseed[40];
 
     o = out;
 
@@ -1508,11 +1520,21 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
         memcpy(o, f->timestamp, size);
         o += size;
 
+        *o = ',';
+        o += 1;
+
+        bcrepo_seed_to_hex(xseed, sizeof(xseed), f->seed, f->seed_size);
+        size = strlen(xseed);
+        memcpy(o, xseed, size);
+        o += size;
+
         *o = '\n';
         o += 1;
     }
 
     *o = '\n';
+
+    memset(xseed, 0, sizeof(xseed));
 
     return (o + 1);
 }
@@ -1742,11 +1764,11 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             cp = cp_end + 1;
             cp_end = cp;
 
-            while (cp_end != ip_end && *cp_end != '\n') {
+            while (cp_end != ip_end && *cp_end != ',') {
                 cp_end++;
             }
 
-            if (*cp_end != '\n') {
+            if (*cp_end != ',') {
                 // INFO(Rafael): It should never happen since it is protected by a HMAC function!
                 fprintf(stderr, "ERROR: The catalog seems corrupted.\n");
                 no_error = 0;
@@ -1766,6 +1788,24 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
             memcpy(timestamp, cp, timestamp_size);
 
             cat_p->files = add_file_to_relpath_ctx(cat_p->files, path, path_size, status, timestamp);
+
+            // INFO(Rafael): Getting the file's seed.
+
+            cp = cp_end + 1;
+            cp_end = cp;
+
+            while (cp_end != ip_end && *cp_end != '\n') {
+                cp_end++;
+            }
+
+            if (*cp_end != '\n') {
+                // INFO(Rafael): It should never happen since it is protected by a HMAC function!
+                fprintf(stderr, "ERROR: The catalog seems corrupted.\n");
+                no_error = 0;
+                goto files_r_epilogue;
+            }
+
+            bcrepo_hex_to_seed(&cat_p->files->tail->seed, &cat_p->files->tail->seed_size, cp, cp_end - cp);
 
             kryptos_freeseg(path);
             kryptos_freeseg(timestamp);
@@ -1795,6 +1835,71 @@ files_r_epilogue:
     }
 
     return no_error;
+}
+
+static void bcrepo_seed_to_hex(char *buf, const size_t buf_size, const kryptos_u8_t *seed, const size_t seed_size) {
+    char *bp, *bp_end;
+    const kryptos_u8_t *sp, *sp_end;
+    static char hex_digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    size_t n1, n2;
+
+    memset(buf, 0, buf_size);
+
+    bp = buf;
+    bp_end = bp + buf_size - 1;
+
+    sp = seed;
+    sp_end = sp + seed_size;
+
+    while (sp != sp_end && bp != bp_end) {
+#define get_nibble_value(n, n1, n2)  ( (n1) = ((n) >> 4), (n2) = ((n) & 0xF) )
+        get_nibble_value(sp[0], n1, n2);
+#undef get_nibble_value
+        bp[0] = hex_digits[n1];
+        bp[1] = hex_digits[n2];
+        bp += 2;
+        sp += 1;
+    }
+
+    sp = sp_end = NULL;
+    bp = bp_end = NULL;
+}
+
+static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const char *buf, const size_t buf_size) {
+    const char *bp, *bp_end;
+    kryptos_u8_t *sp, *sp_end;
+
+    if ((*seed) != NULL) {
+        kryptos_freeseg(*seed);
+        (*seed) = NULL;
+    }
+
+    *seed_size = buf_size >> 1;
+
+    sp = (*seed) = (kryptos_u8_t *) kryptos_newseg(*seed_size);
+
+    if (sp == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to get the file's seed.\n");
+        *seed_size = 0;
+        return;
+    }
+
+    bp = buf;
+    bp_end = bp + buf_size;
+
+    sp_end = sp + *seed_size;
+
+    while (bp != bp_end && sp != sp_end) {
+#define get_xnibble_value(n) ( isdigit((n)) ? ((n) - '0') : (toupper(n) - 55) )
+        *sp = get_xnibble_value(bp[0]) << 4 | get_xnibble_value(bp[1]);
+#undef get_xnibble_value
+        sp += 1;
+        bp += 2;
+    }
+
+    sp = sp_end = NULL;
+    bp = bp_end = NULL;
+
 }
 
 #undef BCREPO_CATALOG_BC_VERSION

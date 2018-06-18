@@ -131,6 +131,29 @@ int blackcat_is_dec(const char *buf, const size_t buf_size) {
     return 1;
 }
 
+void blackcat_xor_keychain_protkey(blackcat_protlayer_chain_ctx *protlayer,
+                                   const kryptos_u8_t *seed, const size_t seed_size) {
+    const kryptos_u8_t *sp, *sp_end;
+    blackcat_protlayer_chain_ctx *p;
+    kryptos_u8_t *kp, *kp_end;
+
+    if (protlayer == NULL || seed == NULL || seed_size == 0) {
+        return;
+    }
+
+    for (p = protlayer; p != NULL; p = p->next) {
+        sp = seed;
+        sp_end = sp + seed_size;
+        kp = p->key;
+        kp_end = kp + p->key_size;
+        while (kp != kp_end) {
+            *kp ^= *sp;
+            sp = ((sp + 1) != sp_end) ? sp + 1 : seed;
+            kp++;
+        }
+    }
+}
+
 static kryptos_u8_t *blackcat_key_crunching(const size_t algo, kryptos_u8_t **key, size_t *key_size,
                                             size_t *derived_size,
                                             blackcat_hash_processor hash) {

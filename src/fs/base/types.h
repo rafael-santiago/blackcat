@@ -24,6 +24,8 @@ typedef struct bfs_catalog_relpath {
     size_t path_size;
     bfs_file_status_t status;
     char timestamp[20];
+    kryptos_u8_t *seed;
+    size_t seed_size;
     struct bfs_catalog_relpath *last, *next;
 }bfs_catalog_relpath_ctx;
 
