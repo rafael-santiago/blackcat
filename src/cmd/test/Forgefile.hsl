@@ -17,25 +17,16 @@ local var cflags type list;
 local var libraries type list;
 local var ldflags type list;
 
-local var deps type string;
-
 local var appname type string;
 
-project blackcat-cmd-tests : toolset $curr_toolset : dependencies $deps : $src, $includes, $cflags,
-                                                                            $libraries, $ldflags, $appname;
+project blackcat-cmd-tests : toolset $curr_toolset : $src, $includes, $cflags, $libraries, $ldflags, $appname;
 
 blackcat-cmd-tests.preloading() {
     $curr_toolset = get_app_toolset();
 }
 
 blackcat-cmd-tests.prologue() {
-    var code_paths type list;
-
-    # INFO(Rafael): All relevant sub-paths with code to scan and compile.
-
-    $code_paths.add_item(".");
-
-    $src = get_codes($code_paths, $deps);
+    $src.ls(".*\\.c$");
 
     $includes = hefesto.sys.get_option("includes");
     $cflags = hefesto.sys.get_option("cflags");
@@ -43,10 +34,6 @@ blackcat-cmd-tests.prologue() {
     $ldflags = hefesto.sys.get_option("ldflags");
 
     $ldflags = get_cmd_objects($ldflags);
-
-    if (build_libkryptos() != 0) {
-        hefesto.project.abort(1);
-    }
 
     if (build_libcutest() != 0) {
         hefesto.project.abort(1);

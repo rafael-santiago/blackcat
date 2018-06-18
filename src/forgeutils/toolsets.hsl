@@ -56,7 +56,6 @@ function get_codes(dirlist type list, deps type string) : result type list {
 }
 
 function build_libkryptos() : result type int {
-    var option type list;
     var libpath type string;
     var rootdir type string;
 
@@ -64,13 +63,11 @@ function build_libkryptos() : result type int {
 
     $libpath = hefesto.sys.make_path($rootdir, "lib/kryptos/lib/libkryptos.a");
 
-    $option = hefesto.sys.get_option("forge-anyway");
-
     var exit_code type int;
 
     $exit_code = 0;
 
-    if (isfile($libpath) == 0 || $option.count() > 0) {
+    if (isfile($libpath) == 0) {
         var oldcwd type string;
         $oldcwd = hefesto.sys.pwd();
         $libpath = hefesto.sys.make_path($rootdir, "lib/kryptos/src/");
@@ -88,7 +85,6 @@ function build_libkryptos() : result type int {
 }
 
 function build_libcutest() : result type int {
-    var option type list;
     var libpath type string;
     var rootdir type string;
 
@@ -96,18 +92,16 @@ function build_libcutest() : result type int {
 
     $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/lib/libcutest.a");
 
-    $option = hefesto.sys.get_option("forge-anyway");
-
     var exit_code type int;
 
     $exit_code = 0;
 
-    if (isfile($libpath) == 0 || $option.count() > 0) {
+    if (isfile($libpath) == 0) {
         var oldcwd type string;
         $oldcwd = hefesto.sys.pwd();
         $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/");
         if (hefesto.sys.cd($libpath)) {
-            $exit_code = hefesto.sys.run("hefesto " + hefesto.project.cmdline());
+            $exit_code = hefesto.sys.run("hefesto");
             hefesto.sys.cd($oldcwd);
         }
     }

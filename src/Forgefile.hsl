@@ -17,8 +17,16 @@ blackcat.prologue() {
     # INFO(Rafael): This is useful in order to find artifacts from some submodules.
     hefesto.sys.setenv("BLACKCAT_ROOTDIR", hefesto.sys.pwd());
 
+    var option type list;
+    $option = hefesto.sys.get_option("forge-anyway");
+
+    if ($option.count() > 0) {
+        hefesto.sys.rm("lib/kryptos/lib/libkryptos.a");
+        hefesto.sys.rm("lib/cutest/src/lib/libcutest.a");
+    }
+
     var subforges type list;
-    $subforges.add_item("test");
+    $subforges.add_item("base");
     $subforges.add_item("fs");
     $subforges.add_item("cmd");
 

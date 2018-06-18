@@ -1,0 +1,1 @@
+--forgefiles=Forgefile.hsl --Forgefile-projects=libbbase --obj-output-dir=o --bin-output-dir=../lib --includes=../,../lib/kryptos/src --libraries=../lib,../lib/kryptos/lib --ldflags=-lkryptos

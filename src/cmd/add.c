@@ -106,7 +106,7 @@ blackcat_cmd_add_epilogue:
 }
 
 int blackcat_cmd_add_help(void) {
-    fprintf(stderr, "use: blackcat add <relative file path | glob pattern>\n");
+    fprintf(stderr, "use: blackcat add <relative file path | glob pattern> [--plain]\n");
     return 0;
 }
 

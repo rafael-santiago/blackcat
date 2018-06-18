@@ -10,7 +10,6 @@ include ../../forgeutils/toolsets.hsl
 include ~/fsutil.hsl
 
 local var curr_tool type string;
-local var deps type string;
 local var src type list;
 local var inc type list;
 local var cflags type list;
@@ -22,10 +21,10 @@ fs-tests.preloading() {
     $curr_tool = get_app_toolset();
 }
 
-project fs-tests : toolset $curr_tool : dependencies $deps : $src, $inc, $cflags, $lib, $ldflags, $appname;
+project fs-tests : toolset $curr_tool : $src, $inc, $cflags, $lib, $ldflags, $appname;
 
 fs-tests.prologue() {
-    if (build_libkryptos() != 0 || build_libcutest() != 0) {
+    if (build_libcutest() != 0) {
         hefesto.project.abort(1);
     }
 
@@ -54,16 +53,7 @@ fs-tests.prologue() {
 
     $appname = get_appname();
 
-    var dirlist type list;
-
-    $dirlist.add_item(".");
-    $dirlist.add_item("../../keychain");
-    $dirlist.add_item("../../keychain/cipher");
-    $dirlist.add_item("../../ctx");
-    $dirlist.add_item("../ctx");
-    $dirlist.add_item("../bcrepo");
-    $dirlist.add_item("../");
-    $src = get_codes($dirlist, $deps);
+    $src.ls(".*\\.c$");
 }
 
 fs-tests.epilogue() {

@@ -33,10 +33,6 @@ blackcat-cmd.prologue() {
     # INFO(Rafael): All relevant sub-paths with code to scan and compile.
 
     $code_paths.add_item(".");
-    $code_paths.add_item("../ctx");
-    $code_paths.add_item("../keychain");
-    $code_paths.add_item("../keychain/cipher");
-
     $src = get_codes($code_paths, $deps);
 
     $includes = hefesto.sys.get_option("includes");
