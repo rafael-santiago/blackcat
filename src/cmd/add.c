@@ -40,13 +40,6 @@ int blackcat_cmd_add(void) {
         goto blackcat_cmd_add_epilogue;
     }
 
-    key = blackcat_getuserkey(&key_size);
-
-    if (key == NULL) {
-        fprintf(stderr, "ERROR: Null key.\n");
-        goto blackcat_cmd_add_epilogue;
-    }
-
     catalog = new_bfs_catalog_ctx();
 
     if (catalog == NULL) {
@@ -60,6 +53,13 @@ int blackcat_cmd_add(void) {
     if (catalog_data == NULL) {
         fprintf(stderr, "ERROR: Unable to read the repo's catalog file.\n");
         exit_code = EFAULT;
+        goto blackcat_cmd_add_epilogue;
+    }
+
+    key = blackcat_getuserkey(&key_size);
+
+    if (key == NULL) {
+        fprintf(stderr, "ERROR: Null key.\n");
         goto blackcat_cmd_add_epilogue;
     }
 
