@@ -42,4 +42,6 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
 
 int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size);
 
+char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath);
+
 #endif

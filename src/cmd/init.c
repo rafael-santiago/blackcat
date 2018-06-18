@@ -114,6 +114,7 @@ int blackcat_cmd_init(void) {
 
     if (catalog == NULL) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
+        exit_code = ENOMEM;
         goto blackcat_cmd_init_epilogue;
     }
 
@@ -121,6 +122,7 @@ int blackcat_cmd_init(void) {
 
     if (temp_key == NULL) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
+        exit_code = ENOMEM;
         goto blackcat_cmd_init_epilogue;
     }
 

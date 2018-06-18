@@ -130,6 +130,18 @@ static void bcrepo_seed_to_hex(char *buf, const size_t buf_size, const kryptos_u
 
 static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const char *buf, const size_t buf_size);
 
+char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath) {
+    if (rootpath == NULL || buf == NULL || buf_size == 0) {
+        return buf;
+    }
+    memset(buf, 0, buf_size);
+    if ((strlen(rootpath) + BCREPO_HIDDEN_DIR_SIZE + BCREPO_CATALOG_FILE_SIZE) >= buf_size - 1) {
+        return buf;
+    }
+    sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    return buf;
+}
+
 int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     char *rootpath = NULL;
     int no_error = 1;
