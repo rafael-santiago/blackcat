@@ -78,7 +78,7 @@ function build_libkryptos() : result type int {
             if (hefesto.sys.os_name() == "freebsd") {
                 $exit_code = hefesto.sys.run("hefesto");
             } else {
-                $exit_code = hefesto.sys.run("hefesto --no-hmac-tests " + hefesto.project.cmdline());
+                $exit_code = hefesto.sys.run("hefesto --no-hmac-tests");
             }
             hefesto.sys.cd($oldcwd);
         }
