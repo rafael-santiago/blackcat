@@ -563,8 +563,8 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
         goto bfs_data_wiping_epilogue;
     }
 
-    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size,   0, no_error, bfs_data_wiping_epilogue);
     bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size, 255, no_error, bfs_data_wiping_epilogue);
+    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size,   0, no_error, bfs_data_wiping_epilogue);
 
     kryptos_freeseg(data);
     data = NULL;
