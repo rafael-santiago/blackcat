@@ -204,7 +204,7 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
             kp_size -= curr_size;
         }
 
-        kryptos_freeseg(*key);
+        kryptos_freeseg(*key, *key_size);
 
         // INFO(Rafael): Refreshing the key buffer for the next key derivation.
         (*key) = ktask->out;

@@ -234,7 +234,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     remove("sensitive.txt");
     remove("plain.txt");
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, rootpath_size);
     catalog->protection_layer = catalog->bc_version = NULL;
     del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
@@ -373,11 +373,11 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, rootpath_size);
 
     catalog->protection_layer = catalog->bc_version = NULL;
     del_bfs_catalog_ctx(catalog);
-    kryptos_freeseg(data);
+    kryptos_freeseg(data, data_size);
     remove("sensitive.txt");
 CUTE_TEST_CASE_END
 
@@ -509,7 +509,7 @@ CUTE_TEST_CASE(bcrepo_add_tests)
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, rootpath_size);
 
     catalog->protection_layer = catalog->bc_version = NULL;
     del_bfs_catalog_ctx(catalog);
@@ -583,7 +583,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, rootpath_size);
 
     rootpath = bcrepo_get_rootpath();
 
@@ -646,7 +646,7 @@ CUTE_TEST_CASE(bcrepo_get_rootpath_tests)
     CUTE_ASSERT(rootpath != NULL);
     CUTE_ASSERT(strcmp(rootpath, cwd) == 0);
 
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, strlen(rootpath));
     rmdir(".bcrepo");
 
     chdir("..");
@@ -661,7 +661,7 @@ CUTE_TEST_CASE(bcrepo_get_rootpath_tests)
     CUTE_ASSERT(rootpath != NULL);
     CUTE_ASSERT(strcmp(rootpath, cwd) == 0);
 
-    kryptos_freeseg(rootpath);
+    kryptos_freeseg(rootpath, strlen(rootpath));
     rmdir(".bcrepo");
 CUTE_TEST_CASE_END
 
@@ -760,7 +760,7 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(data != NULL);
     CUTE_ASSERT(data_size > 0);
 
-    kryptos_freeseg(data);
+    kryptos_freeseg(data, data_size);
 
     del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
@@ -784,8 +784,8 @@ CUTE_TEST_CASE(bcrepo_read_tests)
 
     CUTE_ASSERT(catalog.hmac_scheme == get_hmac_catalog_scheme(hmac_algo));
 
-    kryptos_freeseg(data);
-    kryptos_freeseg(hmac_algo);
+    kryptos_freeseg(data, data_size);
+    kryptos_freeseg(hmac_algo, strlen(hmac_algo));
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_write_tests)

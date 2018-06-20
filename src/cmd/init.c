@@ -83,7 +83,7 @@ int blackcat_cmd_init(void) {
         goto blackcat_cmd_init_epilogue;
     }
 
-    kryptos_freeseg(temp_key);
+    kryptos_freeseg(temp_key, temp_key_size);
     temp_key_size = 0;
 
     if (keyed_alike) {
@@ -187,21 +187,18 @@ blackcat_cmd_init_epilogue:
     }
 
     if (temp_key != NULL) {
-        memset(temp_key, 0, temp_key_size);
+        kryptos_freeseg(temp_key, temp_key_size);
         temp_key_size = 0;
-        kryptos_freeseg(temp_key);
     }
 
     if (protlayer_key != NULL && protlayer_key != catalog_key) {
-        memset(protlayer_key, 0, protlayer_key_size);
+        kryptos_freeseg(protlayer_key, protlayer_key_size);
         protlayer_key_size = 0;
-        kryptos_freeseg(protlayer_key);
     }
 
     if (catalog_key != NULL) {
-        memset(catalog_key, 0, catalog_key_size);
+        kryptos_freeseg(catalog_key, catalog_key_size);
         catalog_key_size = 0;
-        kryptos_freeseg(catalog_key);
     }
 
     return exit_code;

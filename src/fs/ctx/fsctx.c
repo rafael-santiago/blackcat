@@ -164,21 +164,22 @@ void del_bfs_catalog_relpath_ctx(bfs_catalog_relpath_ctx *files) {
         t = p->next;
 
         if (p->path != NULL) {
-            kryptos_freeseg(p->path);
+            kryptos_freeseg(p->path, p->path_size);
+            p->path_size = 0;
         }
 
         if (p->seed != NULL) {
-            kryptos_freeseg(p->seed);
+            kryptos_freeseg(p->seed, p->seed_size);
             p->seed_size = 0;
         }
 
-        kryptos_freeseg(p);
+        kryptos_freeseg(p, sizeof(bfs_catalog_relpath_ctx));
     }
 }
 
 void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
     if (catalog->bc_version != NULL) {
-        kryptos_freeseg(catalog->bc_version);
+        kryptos_freeseg(catalog->bc_version, strlen(catalog->bc_version));
     }
 
     catalog->key_hash_algo = NULL;
@@ -188,8 +189,7 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
     catalog->protlayer_key_hash_algo_size = NULL;
 
     if (catalog->protection_layer != NULL) {
-        memset(catalog->protection_layer, 0, strlen(catalog->protection_layer));
-        kryptos_freeseg(catalog->protection_layer);
+        kryptos_freeseg(catalog->protection_layer, strlen(catalog->protection_layer));
     }
 
     if (catalog->protlayer != NULL) {
@@ -197,8 +197,7 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
     }
 
     if (catalog->key_hash != NULL) {
-        memset(catalog->key_hash, 0, catalog->key_hash_size);
-        kryptos_freeseg(catalog->key_hash);
+        kryptos_freeseg(catalog->key_hash, catalog->key_hash_size);
         catalog->key_hash_size = 0;
     }
 
@@ -238,7 +237,7 @@ void get_new_file_seed(kryptos_u8_t **seed, size_t *seed_size) {
         }
         ns = 0;
         if (*seed != NULL) {
-            kryptos_freeseg(*seed);
+            kryptos_freeseg(*seed, *seed_size);
         }
         (*seed) = new_seed;
         *seed_size = BLACKCAT_FILE_SEED_BYTES_NR;

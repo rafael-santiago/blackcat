@@ -44,11 +44,11 @@ int blackcat_cmd_deinit(void) {
 blackcat_cmd_deinit_epilogue:
 
     if (rootpath != NULL) {
-        kryptos_freeseg(rootpath);
+        kryptos_freeseg(rootpath, strlen(rootpath));
     }
 
     if (key != NULL) {
-        kryptos_freeseg(key);
+        kryptos_freeseg(key, key_size);
         key_size = 0;
     }
 

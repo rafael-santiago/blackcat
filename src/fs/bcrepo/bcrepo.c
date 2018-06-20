@@ -180,7 +180,7 @@ bcrepo_init_epilogue:
     umask(oldmask);
 
     if (rootpath != NULL) {
-        kryptos_freeseg(rootpath);
+        kryptos_freeseg(rootpath, strlen(rootpath));
     }
 
     return no_error;
@@ -258,7 +258,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
 bcrepo_deinit_epilogue:
 
     if (data != NULL) {
-        kryptos_freeseg(data);
+        kryptos_freeseg(data, data_size);
         data_size = 0;
     }
 
@@ -474,12 +474,12 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
 unl_handle_meta_proc_epilogue:
 
     if (in != NULL) {
-        kryptos_freeseg(in);
+        kryptos_freeseg(in, in_size);
         in_size = 0;
     }
 
     if (out != NULL) {
-        kryptos_freeseg(out);
+        kryptos_freeseg(out, out_size);
         out_size = 0;
     }
 
@@ -551,7 +551,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     /*INFO(Rafael): Yes, we will flush it twice.*/\
     fclose((f));\
     (f) = NULL;\
-    kryptos_freeseg((d));\
+    kryptos_freeseg((d), (ds));\
     (d) = NULL;\
 }
 
@@ -566,7 +566,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size, 255, no_error, bfs_data_wiping_epilogue);
     bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size,   0, no_error, bfs_data_wiping_epilogue);
 
-    kryptos_freeseg(data);
+    kryptos_freeseg(data, data_size);
     data = NULL;
 
     // INFO(Rafael): This step of the implemented data wiping is based on the suggestions given by Bruce Schneier's
@@ -584,7 +584,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
 bfs_data_wiping_epilogue:
 
     if (data != NULL) {
-        kryptos_freeseg(data);
+        kryptos_freeseg(data, data_size);
     }
 
     if (fp != NULL) {
@@ -900,11 +900,11 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 get_file_list_epilogue:
 
     if (filepath != NULL) {
-        kryptos_freeseg(filepath);
+        kryptos_freeseg(filepath, strlen(filepath));
     }
 
     if (glob != NULL) {
-        kryptos_freeseg(glob);
+        kryptos_freeseg(glob, 0);
     }
 
     if (dirp != NULL) {
@@ -1070,11 +1070,12 @@ bcrepo_write_epilogue:
     }
 
     if (o != NULL) {
-        kryptos_freeseg(o);
+        kryptos_freeseg(o, o_size);
+        o_size = 0;
     }
 
     if (pem_buf != NULL) {
-        kryptos_freeseg(pem_buf);
+        kryptos_freeseg(pem_buf, pem_buf_size);
         pem_buf_size = 0;
     }
 
@@ -1127,7 +1128,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     if (key_hash_algo == NULL) {
         fprintf(stderr, "ERROR: Unable to get the catalog's hash algorithm.\n");
-        kryptos_freeseg(o);
+        kryptos_freeseg(o, *out_size);
         o = NULL;
         *out_size = 0;
         goto bcrepo_read_epilogue;
@@ -1138,7 +1139,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     if (catalog_key_hash_algo == NULL) {
         // INFO(Rafael): Some idiot trying to screw up the program's flow.
         fprintf(stderr, "ERROR: Unknown catalog's hash algorithm.\n");
-        kryptos_freeseg(o);
+        kryptos_freeseg(o, *out_size);
         o = NULL;
         *out_size = 0;
         goto bcrepo_read_epilogue;
@@ -1150,7 +1151,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     if (hmac_algo == NULL) {
         fprintf(stderr, "ERROR: Unable to get the catalog's HMAC scheme.\n");
-        kryptos_freeseg(o);
+        kryptos_freeseg(o, *out_size);
         o = NULL;
         *out_size = 0;
         goto bcrepo_read_epilogue;
@@ -1161,7 +1162,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     if (hmac_scheme == NULL) {
         // INFO(Rafael): Some idiot trying to screw up the program's flow.
         fprintf(stderr, "ERROR: Unknown catalog's HMAC scheme.\n");
-        kryptos_freeseg(o);
+        kryptos_freeseg(o, *out_size);
         o = NULL;
         *out_size = 0;
         goto bcrepo_read_epilogue;
@@ -1176,12 +1177,12 @@ bcrepo_read_epilogue:
     }
 
     if (key_hash_algo != NULL) {
-        kryptos_freeseg(key_hash_algo);
+        kryptos_freeseg(key_hash_algo, key_hash_algo_size);
         key_hash_algo_size = 0;
     }
 
     if (hmac_algo != NULL) {
-        kryptos_freeseg(hmac_algo);
+        kryptos_freeseg(hmac_algo, hmac_algo_size);
         hmac_algo_size = 0;
     }
 
@@ -1211,7 +1212,7 @@ int bcrepo_stat(bfs_catalog_ctx **catalog,
 bcrepo_stat_epilogue:
 
     if (result == kKryptosSuccess) {
-        kryptos_freeseg(*data);
+        kryptos_freeseg(*data, *data_size);
         *data = NULL;
         *data_size = 0;
     }
@@ -1268,7 +1269,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     catalog->hmac_scheme->processor(&ktask, &p_layer);
 
     if (kryptos_last_task_succeed(ktask)) {
-        kryptos_freeseg(*data);
+        kryptos_freeseg(*data, *data_size);
         *data = ktask->out;
         *data_size = ktask->out_size;
     }
@@ -1283,7 +1284,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
 decrypt_catalog_data_epilogue:
 
     if (p_layer.key != NULL) {
-        kryptos_freeseg(p_layer.key);
+        kryptos_freeseg(p_layer.key, p_layer.key_size);
     }
 
     return result;
@@ -1341,7 +1342,7 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 encrypt_catalog_data_epilogue:
 
     if (p_layer.key != NULL) {
-        kryptos_freeseg(p_layer.key);
+        kryptos_freeseg(p_layer.key, p_layer.key_size);
     }
 
     return result;
@@ -1638,7 +1639,7 @@ static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, co
 key_hash_algo_r_epilogue:
 
     if (hash_algo != NULL) {
-        kryptos_freeseg(hash_algo);
+        kryptos_freeseg(hash_algo, strlen(hash_algo));
     }
 
     return done;
@@ -1663,7 +1664,7 @@ static int protlayer_key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8
 protlayer_key_hash_algo_r_epilogue:
 
     if (hash_algo != NULL) {
-        kryptos_freeseg(hash_algo);
+        kryptos_freeseg(hash_algo, strlen(hash_algo));
     }
 
     return done;
@@ -1819,8 +1820,8 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 
             bcrepo_hex_to_seed(&cat_p->files->tail->seed, &cat_p->files->tail->seed_size, cp, cp_end - cp);
 
-            kryptos_freeseg(path);
-            kryptos_freeseg(timestamp);
+            kryptos_freeseg(path, path_size + 1);
+            kryptos_freeseg(timestamp, timestamp_size + 1);
             path = timestamp = NULL;
 
             ip = cp_end - 1;
@@ -1839,11 +1840,11 @@ files_r_epilogue:
     }
 
     if (path != NULL) {
-        kryptos_freeseg(path);
+        kryptos_freeseg(path, path_size + 1);
     }
 
     if (timestamp != NULL) {
-        kryptos_freeseg(timestamp);
+        kryptos_freeseg(timestamp, timestamp_size + 1);
     }
 
     return no_error;
@@ -1882,7 +1883,7 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
     kryptos_u8_t *sp, *sp_end;
 
     if ((*seed) != NULL) {
-        kryptos_freeseg(*seed);
+        kryptos_freeseg(*seed, *seed_size);
         (*seed) = NULL;
     }
 

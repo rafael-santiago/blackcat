@@ -81,7 +81,7 @@ static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx 
 
         if (!done) {
             if (ktask->out != NULL) {
-                kryptos_freeseg(ktask);
+                kryptos_freeseg(ktask->out, ktask->out_size);
             }
             goto blackcat_meta_processor_epilogue;
         }

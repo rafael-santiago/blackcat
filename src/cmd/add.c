@@ -85,7 +85,7 @@ int blackcat_cmd_add(void) {
 blackcat_cmd_add_epilogue:
 
     if (key != NULL) {
-        kryptos_freeseg(key);
+        kryptos_freeseg(key, key_size);
         key_size = 0;
     }
 
@@ -94,12 +94,12 @@ blackcat_cmd_add_epilogue:
     }
 
     if (catalog_data != NULL) {
-        kryptos_freeseg(catalog_data);
+        kryptos_freeseg(catalog_data, catalog_data_size);
         catalog_data_size = 0;
     }
 
     if (rootpath != NULL) {
-        kryptos_freeseg(rootpath);
+        kryptos_freeseg(rootpath, strlen(rootpath));
     }
 
     return exit_code;

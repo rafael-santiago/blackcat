@@ -71,7 +71,7 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
 
 add_composite_protlayer_to_chain_epilogue:
 
-    kryptos_freeseg(*key);
+    kryptos_freeseg(*key, *key_size);
     *key = NULL;
     *key_size = 0;
 
@@ -114,15 +114,15 @@ void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain) {
         t = p->next;
 
         if (p->key != NULL) {
-            kryptos_freeseg(p->key);
+            kryptos_freeseg(p->key, p->key_size);
             p->key_size = 0;
         }
 
         for (a = 0; a < p->argc; a++) {
-            kryptos_freeseg(p->arg[a]);
+            kryptos_freeseg(p->arg[a], 0);
         }
 
-        kryptos_freeseg(p);
+        kryptos_freeseg(p, sizeof(blackcat_protlayer_chain_ctx));
     }
 }
 

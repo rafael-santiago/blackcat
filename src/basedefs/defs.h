@@ -36,7 +36,7 @@ typedef size_t (*blackcat_hash_size_func)(void);
             exit(1);\
         }*/\
         if ((*ktask)->iv != NULL && (*ktask)->mode != kKryptosCipherModeNr) {\
-            kryptos_freeseg((*ktask)->iv);\
+            kryptos_freeseg((*ktask)->iv, (*ktask)->iv_size);\
             (*ktask)->iv = NULL;\
             (*ktask)->iv_size = 0;\
         }\
