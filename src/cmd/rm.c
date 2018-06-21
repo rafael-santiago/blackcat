@@ -42,6 +42,8 @@ int blackcat_cmd_rm(void) {
         goto blackcat_cmd_rm_epilogue;
     }
 
+    rm_param = remove_go_ups_from_path(rm_param, strlen(rm_param) + 1);
+
     catalog = new_bfs_catalog_ctx();
 
     if (catalog == NULL) {

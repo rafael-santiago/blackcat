@@ -40,6 +40,8 @@ int blackcat_cmd_add(void) {
         goto blackcat_cmd_add_epilogue;
     }
 
+    add_param = remove_go_ups_from_path(add_param, strlen(add_param) + 1);
+
     catalog = new_bfs_catalog_ctx();
 
     if (catalog == NULL) {

@@ -130,6 +130,8 @@ static void bcrepo_seed_to_hex(char *buf, const size_t buf_size, const kryptos_u
 
 static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const char *buf, const size_t buf_size);
 
+char *remove_go_ups_from_path(char *path, const size_t path_size);
+
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath) {
     if (rootpath == NULL || buf == NULL || buf_size == 0) {
         return buf;
@@ -1218,6 +1220,74 @@ bcrepo_stat_epilogue:
     }
 
     return no_error;
+}
+
+char *remove_go_ups_from_path(char *path, const size_t path_size) {
+    char cwd[4096];
+    int go_up_nr = 0;
+    char *p, *p_end;
+    size_t cwd_size;
+
+    getcwd(cwd, sizeof(cwd) - 1);
+
+    if (cwd == NULL) {
+        return path;
+    }
+
+    // TODO(Rafael): When in Windows also test '..\\'.
+
+    p = path;
+    p_end = path + strlen(path);
+
+    while (p < p_end && (p = strstr(p, "../")) != NULL) {
+        go_up_nr++;
+        p += 3;
+    }
+
+    if (go_up_nr == 0) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+
+    p = &cwd[strlen(cwd) - 1];
+
+    while (p != &cwd[0] && go_up_nr > 0) {
+        while (p != &cwd[0] && *p != '/') {
+            p--;
+        }
+        go_up_nr -= 1;
+        p -= (go_up_nr != 0);
+    }
+
+    *p = 0;
+
+    cwd_size = strlen(cwd);
+
+    if (cwd_size < path_size) {
+        memset(path, 0, path_size);
+        memcpy(path, cwd, cwd_size);
+    }
+
+remove_go_ups_from_path_epilogue:
+
+    p = path;
+    p_end = p + strlen(path);
+    cwd_size = 0;
+
+    while (p < p_end) {
+        if ((p + 1) < p_end && p[0] == '.' && p[1] == '/') {
+            p += 2;
+            if (p == p_end) {
+                continue;
+            }
+        }
+        cwd[cwd_size++] = *p;
+        p++;
+    }
+
+    memset(path, 0, path_size);
+    memcpy(path, cwd, cwd_size);
+
+    return path;
 }
 
 static int root_dir_reached(const char *cwd) {

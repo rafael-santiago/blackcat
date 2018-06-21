@@ -14,6 +14,7 @@
 #include <fs/strglob.h>
 #include <kryptos_pem.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -32,6 +33,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_add_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_rm_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_lock_unlock_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_catalog_file_tests);
+CUTE_DECLARE_TEST_CASE(remove_go_ups_from_path_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -39,6 +41,7 @@ char *open_text(const char *filepath, size_t *data_size);
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
+    CUTE_RUN_TEST(remove_go_ups_from_path_tests);
     remove(".bcrepo/CATALOG");
     rmdir(".bcrepo");
     rmdir("../.bcrepo");
@@ -56,6 +59,28 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_add_tests);
     CUTE_RUN_TEST(bcrepo_lock_unlock_tests);
     CUTE_RUN_TEST(bcrepo_rm_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(remove_go_ups_from_path_tests)
+    char cwd[4096];
+    char path[4096];
+    char exp_path[4096];
+    CUTE_ASSERT(getcwd(cwd, sizeof(cwd) - 1) != NULL);
+    CUTE_ASSERT(chdir("../../") == 0);
+    CUTE_ASSERT(getcwd(path, sizeof(path) - 1) != NULL);
+    strncpy(exp_path, path, sizeof(exp_path) - 1);
+    strcat(path, "../../");
+    CUTE_ASSERT(chdir(cwd) == 0);
+    CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
+    CUTE_ASSERT(strcmp(path, exp_path) == 0);
+    sprintf(exp_path, "//encore break//");
+    sprintf(path, "//encore break//");
+    CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
+    CUTE_ASSERT(strcmp(path, exp_path) == 0);
+    sprintf(exp_path, "the-fun-machine-took-a-shit-and-died-exactly-here");
+    sprintf(path, "./the-fun-machine-took-a-shit-and-died-exactly-here");
+    CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
+    CUTE_ASSERT(strcmp(path, exp_path) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_catalog_file_tests)
