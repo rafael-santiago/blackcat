@@ -11,6 +11,7 @@
 #include <cmd/init.h>
 #include <cmd/deinit.h>
 #include <cmd/add.h>
+#include <cmd/rm.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -19,7 +20,8 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(help_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(init_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(deinit_help),
-    BLACKCAT_COMMAND_TABLE_ENTRY(add_help)
+    BLACKCAT_COMMAND_TABLE_ENTRY(add_help),
+    BLACKCAT_COMMAND_TABLE_ENTRY(rm_help)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)

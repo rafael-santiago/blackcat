@@ -31,6 +31,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_init_deinit_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_add_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_rm_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_lock_unlock_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_catalog_file_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -49,11 +50,21 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_validate_key_tests);
     remove(BCREPO_DATA);
     CUTE_RUN_TEST(bcrepo_get_rootpath_tests);
+    CUTE_RUN_TEST(bcrepo_catalog_file_tests);
     CUTE_RUN_TEST(strglob_tests);
     CUTE_RUN_TEST(bcrepo_init_deinit_tests);
     CUTE_RUN_TEST(bcrepo_add_tests);
     CUTE_RUN_TEST(bcrepo_lock_unlock_tests);
     CUTE_RUN_TEST(bcrepo_rm_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_catalog_file_tests)
+    char temp[4096];
+    char *retval;
+    char *expret = "/root/alk/crosscut-saw/.bcrepo/CATALOG";
+    retval = bcrepo_catalog_file(temp, sizeof(temp), "/root/alk/crosscut-saw");
+    CUTE_ASSERT(retval == &temp[0]);
+    CUTE_ASSERT(memcmp(temp, expret, strlen(expret)) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
