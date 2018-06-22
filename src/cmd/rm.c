@@ -8,6 +8,7 @@
 #include <cmd/rm.h>
 #include <cmd/options.h>
 #include <fs/ctx/fsctx.h>
+#include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <kryptos_memory.h>
 #include <stdio.h>
@@ -18,8 +19,8 @@ int blackcat_cmd_rm(void) {
     int exit_code = EINVAL;
     char *rm_param = NULL;
     bfs_catalog_ctx *catalog = NULL;
-    kryptos_u8_t *key[2] = { NULL, NULL };
-    size_t key_size[2], rootpath_size;
+    kryptos_u8_t *key = NULL;
+    size_t key_size, rootpath_size;
     int rm_nr;
     kryptos_u8_t *catalog_data = NULL;
     size_t catalog_data_size;
@@ -61,25 +62,40 @@ int blackcat_cmd_rm(void) {
     }
 
     fprintf(stdout, "Password: ");
-    key[0] = blackcat_getuserkey(&key_size[0]);
+    key = blackcat_getuserkey(&key_size);
 
-    if (key[0] == NULL) {
+    if (key == NULL) {
         fprintf(stderr, "ERROR: Null key.\n");
         goto blackcat_cmd_rm_epilogue;
     }
 
-    if (bcrepo_stat(&catalog, key[0], key_size[0], &catalog_data, &catalog_data_size) == 0) {
+    if (bcrepo_stat(&catalog, key, key_size, &catalog_data, &catalog_data_size) == 0) {
         fprintf(stderr, "ERROR: While trying to access the catalog data.\n");
         exit_code = EACCES;
         goto blackcat_cmd_rm_epilogue;
     }
 
-    if (bcrepo_validate_key(catalog, key[0], key_size[0]) == 0) {
+    if (bcrepo_validate_key(catalog, key, key_size) == 0) {
+        kryptos_freeseg(key, key_size);
         fprintf(stdout, "Second password: ");
-        key[1] = blackcat_getuserkey(&key_size[1]);
-    } else {
-        key[1] = key[0];
-        key_size[1] = key_size[0];
+        key = blackcat_getuserkey(&key_size);
+        if (key == NULL) {
+            fprintf(stderr, "ERROR: Null key.\n");
+            goto blackcat_cmd_rm_epilogue;
+        }
+    }
+
+    // INFO(Rafael): We need the protection layer because some removed files may be encrypted and
+    //               they will be decrypted before being actually removed from the catalog.
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer, &key, &key_size,
+                                                          catalog->protlayer_key_hash_algo);
+
+    if (catalog->protlayer == NULL) {
+        fprintf(stderr, "ERROR: While building the protection layer.\n");
+        exit_code = EFAULT;
+        goto blackcat_cmd_rm_epilogue;
     }
 
     rm_nr = bcrepo_rm(&catalog, rootpath, rootpath_size, rm_param, strlen(rm_param));
@@ -94,14 +110,8 @@ int blackcat_cmd_rm(void) {
 
 blackcat_cmd_rm_epilogue:
 
-    if (key[1] != key[0]) {
-        kryptos_freeseg(key[0], key_size[0]);
-        key_size[0] = 0;
-        kryptos_freeseg(key[1], key_size[1]);
-        key_size[1] = 0;
-    } else {
-        kryptos_freeseg(key[0], key_size[0]);
-        key_size[0] = key_size[1] = 0;
+    if (key != NULL) {
+        kryptos_freeseg(key, key_size);
     }
 
     if (catalog != NULL) {
