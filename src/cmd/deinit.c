@@ -22,13 +22,14 @@ int blackcat_cmd_deinit(void) {
     rootpath = bcrepo_get_rootpath();
 
     if (rootpath == NULL) {
-        fprintf(stderr, "ERROR: You are out of a blackcat repo.\n");
+        fprintf(stderr, "ERROR: You are not in a blackcat repo.\n");
         goto blackcat_cmd_deinit_epilogue;
     }
 
     // INFO(Rafael): During a deinit we only need the first key or master key.
     //               No encrypted files will be decrypted.
 
+    fprintf(stdout, "Password: ");
     key = blackcat_getuserkey(&key_size);
 
     if (key == NULL) {
@@ -56,6 +57,6 @@ blackcat_cmd_deinit_epilogue:
 }
 
 int blackcat_cmd_deinit_help(void) {
-    fprintf(stderr, "use: blackcat deinit\n");
+    fprintf(stdout, "use: blackcat deinit\n");
     return 0;
 }
