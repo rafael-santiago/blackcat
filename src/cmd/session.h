@@ -9,6 +9,7 @@
 #define BLACKCAT_CMD_SESSION_H 1
 
 #include <fs/ctx/fsctx.h>
+#include <kryptos_memory.h>
 
 typedef struct blackcat_exec_session {
     char *rootpath;

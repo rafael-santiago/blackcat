@@ -5,7 +5,7 @@
  * be found in the COPYING file.
  *
  */
-#include <cmd/lock.h>
+#include <cmd/unlock.h>
 #include <cmd/session.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
@@ -13,31 +13,33 @@
 #include <stdio.h>
 #include <errno.h>
 
-int blackcat_cmd_lock(void) {
+int blackcat_cmd_unlock(void) {
     int exit_code = EINVAL;
-    char *lock_param = NULL;
+    char *unlock_param = NULL;
     blackcat_exec_session_ctx *session = NULL;
-    int lock_nr;
+    int unlock_nr;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
-        goto blackcat_cmd_lock_epilogue;
+        goto blackcat_cmd_unlock_epilogue;
     }
 
-    if ((lock_param = blackcat_get_argv(0)) != NULL) {
-        lock_param = remove_go_ups_from_path(lock_param, strlen(lock_param) + 1);
+    if ((unlock_param = blackcat_get_argv(0)) != NULL) {
+        unlock_param = remove_go_ups_from_path(unlock_param, strlen(unlock_param) + 1);
     }
 
-    lock_nr = bcrepo_lock(&session->catalog, session->rootpath, session->rootpath_size, lock_param, strlen(lock_param));
+    unlock_nr = bcrepo_unlock(&session->catalog,
+                              session->rootpath, session->rootpath_size,
+                              unlock_param, strlen(unlock_param));
 
-    if (lock_nr > 0) {
-        fprintf(stdout, "%d file(s) encrypted.\n", lock_nr);
+    if (unlock_nr > 0) {
+        fprintf(stdout, "%d file(s) decrypted.\n", unlock_nr);
         exit_code = 0;
     } else {
         fprintf(stdout, "File(s) not found.\n");
         exit_code = ENOENT;
     }
 
-blackcat_cmd_lock_epilogue:
+blackcat_cmd_unlock_epilogue:
 
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
@@ -46,7 +48,7 @@ blackcat_cmd_lock_epilogue:
     return exit_code;
 }
 
-int blackcat_cmd_lock_help(void) {
-    fprintf(stdout, "use: blackcat lock [<relative file path | glob pattern>]\n");
+int blackcat_cmd_unlock_help(void) {
+    fprintf(stdout, "use: blackcat unlock [<relative file path | glob pattern>]\n");
     return 0;
 }

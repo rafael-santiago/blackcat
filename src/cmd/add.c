@@ -9,6 +9,7 @@
 #include <cmd/session.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 
