@@ -18,6 +18,7 @@ int blackcat_cmd_lock(void) {
     char *lock_param = NULL;
     blackcat_exec_session_ctx *session = NULL;
     int lock_nr;
+    char temp[4096];
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_lock_epilogue;
@@ -30,8 +31,14 @@ int blackcat_cmd_lock(void) {
     lock_nr = bcrepo_lock(&session->catalog, session->rootpath, session->rootpath_size, lock_param, strlen(lock_param));
 
     if (lock_nr > 0) {
-        fprintf(stdout, "%d file(s) encrypted.\n", lock_nr);
-        exit_code = 0;
+        if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
+                         session->catalog, session->key[0], session->key_size[0])) {
+            fprintf(stdout, "%d file(s) encrypted.\n", lock_nr);
+            exit_code = 0;
+        } else {
+            fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
+            exit_code = EFAULT;
+        }
     } else {
         fprintf(stdout, "File(s) not found.\n");
         exit_code = ENOENT;

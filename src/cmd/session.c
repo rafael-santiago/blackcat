@@ -25,6 +25,12 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     }
 
     es = kryptos_newseg(sizeof(blackcat_exec_session_ctx));
+    es->key[0] = es->key[1] = NULL;
+    es->key_size[0] = es->key_size[1] = 0;
+    es->catalog = NULL;
+    es->rootpath = NULL;
+    es->rootpath_size = 0;
+
     (*session) = NULL;
 
     if (es == NULL) {
@@ -59,35 +65,43 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     }
 
     fprintf(stdout, "Password: ");
-    es->key = blackcat_getuserkey(&es->key_size);
+    es->key[0] = blackcat_getuserkey(&es->key_size[0]);
 
-    if (es->key == NULL) {
+    if (es->key[0] == NULL) {
         fprintf(stderr, "ERROR: Null key.\n");
         goto new_blackcat_exec_session_ctx_epilogue;
     }
 
-    if (bcrepo_stat(&es->catalog, es->key, es->key_size, &catalog_data, &catalog_data_size) == 0) {
+    if (bcrepo_stat(&es->catalog, es->key[0], es->key_size[0], &catalog_data, &catalog_data_size) == 0) {
         fprintf(stderr, "ERROR: While trying to access the catalog data.\n");
         exit_code = EACCES;
         goto new_blackcat_exec_session_ctx_epilogue;
     }
 
     if (build_protlayer) {
-        if (bcrepo_validate_key(es->catalog, es->key, es->key_size) == 0) {
-            kryptos_freeseg(es->key, es->key_size);
+        if (bcrepo_validate_key(es->catalog, es->key[0], es->key_size[0]) == 0) {
             fprintf(stdout, "Second password: ");
-            es->key = blackcat_getuserkey(&es->key_size);
-            if (es->key == NULL) {
+            es->key[1] = blackcat_getuserkey(&es->key_size[1]);
+            if (es->key[1] == NULL) {
                 fprintf(stderr, "ERROR: Null key.\n");
                 goto new_blackcat_exec_session_ctx_epilogue;
             }
+        } else {
+            es->key[1] = (kryptos_u8_t *) kryptos_newseg(es->key_size[0]);
+
+            if (es->key[1] == NULL) {
+                fprintf(stderr, "ERROR: Null key.\n");
+                goto new_blackcat_exec_session_ctx_epilogue;
+            }
+
+            es->key_size[1] = es->key_size[0];
         }
 
         // INFO(Rafael): We need the protection layer because some removed files may be encrypted and
         //               they will be decrypted before being actually removed from the catalog.
 
         es->catalog->protlayer = add_composite_protlayer_to_chain(es->catalog->protlayer,
-                                                                  es->catalog->protection_layer, &es->key, &es->key_size,
+                                                                  es->catalog->protection_layer, &es->key[1], &es->key_size[1],
                                                                   es->catalog->protlayer_key_hash_algo);
 
         if (es->catalog->protlayer == NULL) {

@@ -18,6 +18,7 @@ int blackcat_cmd_add(void) {
     char *add_param;
     int add_nr;
     blackcat_exec_session_ctx *session = NULL;
+    char temp[4096];
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_add_epilogue;
@@ -39,8 +40,14 @@ int blackcat_cmd_add(void) {
                         blackcat_get_bool_option("plain", 0));
 
     if (add_nr > 0) {
-        fprintf(stdout, "%d file(s) added.\n", add_nr);
-        exit_code = 0;
+        if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
+                         session->catalog, session->key[0], session->key_size[0])) {
+            fprintf(stdout, "%d file(s) added.\n", add_nr);
+            exit_code = 0;
+        } else {
+            fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
+            exit_code = EFAULT;
+        }
     } else {
         fprintf(stderr, "File(s) not found.\n");
         exit_code = ENOENT;

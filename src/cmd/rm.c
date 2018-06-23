@@ -18,6 +18,7 @@ int blackcat_cmd_rm(void) {
     char *rm_param = NULL;
     int rm_nr;
     blackcat_exec_session_ctx *session = NULL;
+    char temp[4096];
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_rm_epilogue;
@@ -36,8 +37,14 @@ int blackcat_cmd_rm(void) {
     rm_nr = bcrepo_rm(&session->catalog, session->rootpath, session->rootpath_size, rm_param, strlen(rm_param));
 
     if (rm_nr > 0) {
-        fprintf(stdout, "%d file(s) removed from repo's catalog.\n", rm_nr);
-        exit_code = 0;
+        if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
+                         session->catalog, session->key[0], session->key_size[0])) {
+            fprintf(stdout, "%d file(s) removed from repo's catalog.\n", rm_nr);
+            exit_code = 0;
+        } else {
+            fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
+            exit_code = EFAULT;
+        }
     } else {
         fprintf(stderr, "File(s) not found.\n");
         exit_code = ENOENT;
