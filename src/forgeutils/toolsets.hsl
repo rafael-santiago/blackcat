@@ -68,6 +68,7 @@ function build_libkryptos() : result type int {
     $exit_code = 0;
 
     if (isfile($libpath) == 0) {
+        $exit_code = 1;
         var oldcwd type string;
         $oldcwd = hefesto.sys.pwd();
         $libpath = hefesto.sys.make_path($rootdir, "lib/kryptos/src/");
@@ -97,6 +98,7 @@ function build_libcutest() : result type int {
     $exit_code = 0;
 
     if (isfile($libpath) == 0) {
+        $exit_code = 1;
         var oldcwd type string;
         $oldcwd = hefesto.sys.pwd();
         $libpath = hefesto.sys.make_path($rootdir, "lib/cutest/src/");
@@ -109,6 +111,31 @@ function build_libcutest() : result type int {
     result $exit_code;
 }
 
+function build_libaccacia() : result type int {
+    var libpath type string;
+    var rootdir type string;
+
+    $rootdir = hefesto.sys.env("BLACKCAT_ROOTDIR");
+
+    $libpath = hefesto.sys.make_path($rootdir, "lib/accacia/lib/libaccacia.a");
+
+    var exit_code type int;
+
+    $exit_code = 0;
+
+    if (isfile($libpath) == 0) {
+        $exit_code = 1;
+        var oldcwd type string;
+        $oldcwd = hefesto.sys.pwd();
+        $libpath = hefesto.sys.make_path($rootdir, "lib/accacia/src");
+        if (hefesto.sys.cd($libpath)) {
+            $exit_code = hefesto.sys.run("hefesto");
+            hefesto.sys.cd($oldcwd);
+        }
+    }
+
+    result $exit_code;
+}
 
 local function get_toolset() : result type string {
     var option type list;
