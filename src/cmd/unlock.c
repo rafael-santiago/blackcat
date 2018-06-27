@@ -30,7 +30,7 @@ int blackcat_cmd_unlock(void) {
 
     unlock_nr = bcrepo_unlock(&session->catalog,
                               session->rootpath, session->rootpath_size,
-                              unlock_param, strlen(unlock_param));
+                              (unlock_param != NULL) ? unlock_param : "*", (unlock_param != NULL) ? strlen(unlock_param) : 1);
 
     if (unlock_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),

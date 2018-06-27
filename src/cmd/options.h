@@ -24,8 +24,8 @@ char *blackcat_get_argv(const int v);
 kryptos_u8_t *blackcat_getuserkey(size_t *key_size);
 
 #define BLACKCAT_GET_OPTION_OR_DIE(option, cute_option, esc_label) {\
-    if ((option = blackcat_get_option(option, NULL)) == NULL) {\
-        fprintf(stderr, "ERROR: The required '%s' option is missing.\n");\
+    if ((option = blackcat_get_option(cute_option, NULL)) == NULL) {\
+        fprintf(stderr, "ERROR: The required '%s' option is missing.\n", cute_option);\
         goto esc_label;\
     }\
 }

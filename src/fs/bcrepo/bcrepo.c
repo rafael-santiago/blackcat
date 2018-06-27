@@ -1279,6 +1279,11 @@ remove_go_ups_from_path_epilogue:
             if (p == p_end) {
                 continue;
             }
+        } else if ((p + 2) < p_end && p[0] == '.' && p[1] == '.' && p[2] == '/') {
+            p += 3;
+            if (p == p_end) {
+                continue;
+            }
         }
         cwd[cwd_size++] = *p;
         p++;

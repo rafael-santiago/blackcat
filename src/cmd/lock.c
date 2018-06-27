@@ -28,7 +28,8 @@ int blackcat_cmd_lock(void) {
         lock_param = remove_go_ups_from_path(lock_param, strlen(lock_param) + 1);
     }
 
-    lock_nr = bcrepo_lock(&session->catalog, session->rootpath, session->rootpath_size, lock_param, strlen(lock_param));
+    lock_nr = bcrepo_lock(&session->catalog, session->rootpath, session->rootpath_size,
+                          (lock_param != NULL) ? lock_param : "*", (lock_param != NULL) ? strlen(lock_param) : 1);
 
     if (lock_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),

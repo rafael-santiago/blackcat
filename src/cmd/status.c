@@ -48,7 +48,7 @@ int blackcat_cmd_status(void) {
             break;\
     }\
     fprintf(stdout, "%s\n", f->path);\
-    accacia_textstyle(AC_TSTYLE_DEFAULT);\
+    accacia_screennormalize();\
 }
 
     if (session->catalog->files != NULL) {

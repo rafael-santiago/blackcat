@@ -9,6 +9,7 @@
 #include <cmd/options.h>
 #include <kryptos.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <accacia.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -29,6 +30,8 @@ int blackcat_cmd_deinit(void) {
     // INFO(Rafael): During a deinit we only need the first key or master key.
     //               No encrypted files will be decrypted.
 
+    accacia_savecursorposition();
+
     fprintf(stdout, "Password: ");
     key = blackcat_getuserkey(&key_size);
 
@@ -37,9 +40,15 @@ int blackcat_cmd_deinit(void) {
         goto blackcat_cmd_deinit_epilogue;
     }
 
+    accacia_restorecursorposition();
+    accacia_delline();
 
     if (bcrepo_deinit(rootpath, strlen(rootpath), key, key_size)) {
         exit_code = 0;
+    } else {
+        fflush(stdout);
+        fprintf(stderr, "ERROR: While accessing the catalog.\n");
+        exit_code = EACCES;
     }
 
 blackcat_cmd_deinit_epilogue:

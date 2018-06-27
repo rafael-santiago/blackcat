@@ -12,6 +12,7 @@
 #include <keychain/ciphering_schemes.h>
 #include <ctx/ctx.h>
 #include <fs/ctx/fsctx.h>
+#include <accacia.h>
 #include <kryptos.h>
 #include <stdio.h>
 #include <errno.h>
@@ -22,10 +23,17 @@ int blackcat_cmd_init(void) {
     int exit_code = EINVAL;
     blackcat_hash_processor key_hash_proc, protlayer_hash_proc, catalog_hash_proc;
     bfs_catalog_ctx *catalog = NULL;
-    kryptos_u8_t *catalog_key = NULL, *protlayer_key = NULL, *temp_key;
+    kryptos_u8_t *catalog_key = NULL, *protlayer_key = NULL, *temp_key = NULL;
     size_t catalog_key_size, protlayer_key_size, temp_key_size;
     kryptos_task_ctx t, *ktask = &t;
     char *info = NULL;
+    char *rootpath = NULL;
+
+    if ((rootpath = bcrepo_get_rootpath()) != NULL) {
+        fprintf(stderr, "ERROR: This is already a blackcat repo.\n");
+        goto blackcat_cmd_init_epilogue;
+    }
+
 
     BLACKCAT_GET_OPTION_OR_DIE(catalog_hash, "catalog-hash", blackcat_cmd_init_epilogue);
 
@@ -66,25 +74,35 @@ int blackcat_cmd_init(void) {
         info = "first layer key";
     }
 
+    accacia_savecursorposition();
+
     fprintf(stdout, "Type the %s: ", info);
     if ((catalog_key = blackcat_getuserkey(&catalog_key_size)) == NULL) {
-        fprintf(stdout, "ERROR: Unable to get the user's key.\n");
+        fprintf(stderr, "ERROR: Unable to get the user's key.\n");
         goto blackcat_cmd_init_epilogue;
     }
+
+    accacia_restorecursorposition();
+    accacia_delline();
 
     fprintf(stdout, "Confirm the %s: ", info);
     if ((temp_key = blackcat_getuserkey(&temp_key_size)) == NULL) {
-        fprintf(stdout, "ERROR: Unable to get the user's key.\n");
+        fprintf(stderr, "ERROR: Unable to get the user's key.\n");
         goto blackcat_cmd_init_epilogue;
     }
 
+    accacia_restorecursorposition();
+    accacia_delline();
+
     if (temp_key_size != catalog_key_size || memcmp(catalog_key, temp_key, catalog_key_size) != 0) {
-        fprintf(stdout, "ERROR: The keys do not match.\n");
+        fflush(stdout);
+        fprintf(stderr, "ERROR: The keys do not match.\n");
         goto blackcat_cmd_init_epilogue;
     }
 
     kryptos_freeseg(temp_key, temp_key_size);
     temp_key_size = 0;
+    temp_key = NULL;
 
     if (keyed_alike) {
         protlayer_key = catalog_key;
@@ -94,18 +112,26 @@ int blackcat_cmd_init(void) {
 
         fprintf(stdout, "Type the second layer key: ");
         if ((protlayer_key = blackcat_getuserkey(&protlayer_key_size)) == NULL) {
-            fprintf(stdout, "ERROR: Unable to get the user's key.\n");
+            fprintf(stderr, "ERROR: Unable to get the user's key.\n");
             goto blackcat_cmd_init_epilogue;
         }
+
+        accacia_restorecursorposition();
+        accacia_delline();
 
         fprintf(stdout, "Confirm the second layer key: ");
         if ((temp_key = blackcat_getuserkey(&temp_key_size)) == NULL) {
-            fprintf(stdout, "ERROR: Unable to get the user's key.\n");
+            fflush(stdout);
+            fprintf(stderr, "ERROR: Unable to get the user's key.\n");
             goto blackcat_cmd_init_epilogue;
         }
 
-        if (temp_key_size != catalog_key_size || memcmp(protlayer_key, temp_key, catalog_key_size) != 0) {
-            fprintf(stdout, "ERROR: The keys do not match.\n");
+        accacia_restorecursorposition();
+        accacia_delline();
+
+        if (temp_key_size != protlayer_key_size || memcmp(protlayer_key, temp_key, protlayer_key_size) != 0) {
+            fflush(stdout);
+            fprintf(stderr, "ERROR: The keys do not match.\n");
             goto blackcat_cmd_init_epilogue;
         }
     }
@@ -181,8 +207,13 @@ int blackcat_cmd_init(void) {
 
 blackcat_cmd_init_epilogue:
 
+    if (rootpath != NULL) {
+        kryptos_freeseg(rootpath, strlen(rootpath));
+    }
+
     if (catalog != NULL) {
         catalog->bc_version = NULL;
+        catalog->protection_layer = NULL;
         del_bfs_catalog_ctx(catalog);
     }
 

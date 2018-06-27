@@ -10,6 +10,7 @@
 #include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <kryptos_memory.h>
+#include <accacia.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -64,6 +65,8 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
         goto new_blackcat_exec_session_ctx_epilogue;
     }
 
+    accacia_savecursorposition();
+
     fprintf(stdout, "Password: ");
     es->key[0] = blackcat_getuserkey(&es->key_size[0]);
 
@@ -72,7 +75,11 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
         goto new_blackcat_exec_session_ctx_epilogue;
     }
 
+    accacia_restorecursorposition();
+    accacia_delline();
+
     if (bcrepo_stat(&es->catalog, es->key[0], es->key_size[0], &catalog_data, &catalog_data_size) == 0) {
+        fflush(stdout);
         fprintf(stderr, "ERROR: While trying to access the catalog data.\n");
         exit_code = EACCES;
         goto new_blackcat_exec_session_ctx_epilogue;
@@ -80,10 +87,23 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
 
     if (build_protlayer) {
         if (bcrepo_validate_key(es->catalog, es->key[0], es->key_size[0]) == 0) {
+            accacia_savecursorposition();
+
             fprintf(stdout, "Second password: ");
             es->key[1] = blackcat_getuserkey(&es->key_size[1]);
+
             if (es->key[1] == NULL) {
                 fprintf(stderr, "ERROR: Null key.\n");
+                goto new_blackcat_exec_session_ctx_epilogue;
+            }
+
+            accacia_restorecursorposition();
+            accacia_delline();
+
+            if (bcrepo_validate_key(es->catalog, es->key[1], es->key_size[1]) == 0) {
+                fflush(stdout);
+                fprintf(stderr, "ERROR: Wrong key.\n");
+                exit_code = EACCES;
                 goto new_blackcat_exec_session_ctx_epilogue;
             }
         } else {
@@ -94,6 +114,7 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
                 goto new_blackcat_exec_session_ctx_epilogue;
             }
 
+            memcpy(es->key[1], es->key[0], es->key_size[0]);
             es->key_size[1] = es->key_size[0];
         }
 
