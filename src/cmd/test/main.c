@@ -517,7 +517,19 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
+    CUTE_ASSERT(chdir("etc") == 0);
+
+    // INFO(Rafael): Path with "go ups" are valid.
+    CUTE_ASSERT(blackcat("unlock ../etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+    CUTE_ASSERT(blackcat("lock ../etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+    // INFO(Rafael): A relative path from the rootpath is also valid.
     CUTE_ASSERT(blackcat("unlock etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+    CUTE_ASSERT(blackcat("lock etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+    // INFO(Rafael): A relative path based on the cwd is also valid.
+    CUTE_ASSERT(blackcat("unlock s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
+    CUTE_ASSERT(chdir("..") == 0);
+
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
     CUTE_ASSERT(data_size == strlen(sensitive2));
@@ -526,7 +538,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("status", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
 
-    // INFO(Rafael): Lock and Unlock all at once.
+    // INFO(Rafael): Lock and unlock all at once.
 
     CUTE_ASSERT(blackcat("lock", "IThinkILostMyHeadache", "GiveTheMuleWhatHeWants-") != 0);
 
