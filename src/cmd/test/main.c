@@ -651,12 +651,22 @@ static int create_file(const char *filepath, const unsigned char *data, const si
 }
 
 static int blackcat(const char *command, const unsigned char *p1, const unsigned char *p2) {
-    char *bin = "../../../bin/blackcat";
+    char bin[4096];
     char cmdline[4096];
     int exit_code;
+    struct stat st;
 
     if (p1 == NULL) {
         return 0;
+    }
+
+    strncpy(cmdline, "../", sizeof(cmdline) - 1);
+
+    sprintf(bin, "%sbin/blackcat", cmdline);
+
+    while (stat(bin, &st) != 0) {
+        strcat(cmdline, "../");
+        sprintf(bin, "%sbin/blackcat", cmdline);
     }
 
     sprintf(cmdline, "%s\n", p1);
