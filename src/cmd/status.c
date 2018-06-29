@@ -23,6 +23,7 @@ int blackcat_cmd_status(void) {
     char *status_param;
     time_t t;
     char date[50];
+    int a;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_status_epilogue;
@@ -54,14 +55,18 @@ int blackcat_cmd_status(void) {
 }
 
     if (session->catalog->files != NULL) {
-        for (fp = session->catalog->files; fp != NULL; fp = fp->next) {
-            if (status_param == NULL || strglob(fp->path, status_param)) {
-                t = (time_t)strtoul(fp->timestamp, NULL, 10);
-                strftime(date, sizeof(date) - 1, "%b %d %Y %H:%M:%S", localtime(&t));
-                print_file_info(fp, date);
-            }
-        }
-        exit_code = 0;
+        BLACKCAT_CONSUME_USER_OPTIONS(a,
+                                      status_param,
+                                      {
+                                        for (fp = session->catalog->files; fp != NULL; fp = fp->next) {
+                                            if (status_param == NULL || strglob(fp->path, status_param)) {
+                                                t = (time_t)strtoul(fp->timestamp, NULL, 10);
+                                                strftime(date, sizeof(date) - 1, "%b %d %Y %H:%M:%S", localtime(&t));
+                                                print_file_info(fp, date);
+                                            }
+                                        }
+                                        exit_code = 0;
+                                       })
     } else {
         fprintf(stdout, "The catalog is empty.\n");
         exit_code = ENOENT;

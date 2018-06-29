@@ -30,6 +30,19 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size);
     }\
 }
 
+#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt) {\
+    ac = 1;\
+    do {\
+        consume_stmt;\
+        do {\
+            option_var = blackcat_get_argv(a++);\
+            if (option_var != NULL) {\
+                option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
+            }\
+        } while (option_var != NULL && strlen(option_var) > 1 && option_var[0] == '-' && option_var[1] == '-');\
+    } while(option_var != NULL);\
+}
+
 void blackcat_clear_options(void);
 
 #endif

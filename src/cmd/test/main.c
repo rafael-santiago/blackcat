@@ -671,6 +671,56 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
+    // INFO(Rafael): Shell conveniences.
+
+    // ===================================================================================
+    // = WARN(Rafael): Do not run `blackcat add *` or you can screw up the source codes  =
+    // ===================================================================================
+
+    CUTE_ASSERT(blackcat("add s1.txt etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
+    CUTE_ASSERT(blackcat("status s1.txt etc/s2.txt p.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
+    CUTE_ASSERT(blackcat("lock *", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock *", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm *", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
+
     CUTE_ASSERT(blackcat("deinit", "IThinkILostMyHeadache", NULL) == 0);
     remove("etc/s2.txt");
     rmdir("etc");

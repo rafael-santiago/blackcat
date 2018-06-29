@@ -16,9 +16,10 @@
 int blackcat_cmd_add(void) {
     int exit_code = EINVAL;
     char *add_param;
-    int add_nr;
+    int add_nr = 0;
     blackcat_exec_session_ctx *session = NULL;
     char temp[4096];
+    int a;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_add_epilogue;
@@ -34,10 +35,14 @@ int blackcat_cmd_add(void) {
 
     add_param = remove_go_ups_from_path(add_param, strlen(add_param) + 1);
 
-    add_nr = bcrepo_add(&session->catalog,
-                        session->rootpath, session->rootpath_size,
-                        add_param, strlen(add_param),
-                        blackcat_get_bool_option("plain", 0));
+    BLACKCAT_CONSUME_USER_OPTIONS(a,
+                                  add_param,
+                                  {
+                                    add_nr += bcrepo_add(&session->catalog,
+                                                         session->rootpath, session->rootpath_size,
+                                                         add_param, strlen(add_param),
+                                                         blackcat_get_bool_option("plain", 0));
+                                  })
 
     if (add_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
