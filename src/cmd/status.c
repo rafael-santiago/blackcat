@@ -13,6 +13,7 @@
 #include <accacia.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include <errno.h>
 
 int blackcat_cmd_status(void) {
@@ -20,6 +21,8 @@ int blackcat_cmd_status(void) {
     blackcat_exec_session_ctx *session = NULL;
     bfs_catalog_relpath_ctx *fp;
     char *status_param;
+    time_t t;
+    char date[50];
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_status_epilogue;
@@ -29,8 +32,7 @@ int blackcat_cmd_status(void) {
         status_param = remove_go_ups_from_path(status_param, strlen(status_param) + 1);
     }
 
-#define print_file_info(f) {\
-    accacia_textstyle(AC_TSTYLE_BOLD);\
+#define print_file_info(f, d) {\
     switch (f->status) {\
         case kBfsFileStatusPlain:\
             accacia_textcolor(AC_TCOLOR_GREEN);\
@@ -47,14 +49,16 @@ int blackcat_cmd_status(void) {
         default:\
             break;\
     }\
-    fprintf(stdout, "%s\n", f->path);\
+    fprintf(stdout, "%s (%s)\n", f->path, d);\
     accacia_screennormalize();\
 }
 
     if (session->catalog->files != NULL) {
         for (fp = session->catalog->files; fp != NULL; fp = fp->next) {
             if (status_param == NULL || strglob(fp->path, status_param)) {
-                print_file_info(fp);
+                t = (time_t)strtoul(fp->timestamp, NULL, 10);
+                strftime(date, sizeof(date) - 1, "%b %d %Y %H:%M:%S", localtime(&t));
+                print_file_info(fp, date);
             }
         }
         exit_code = 0;
