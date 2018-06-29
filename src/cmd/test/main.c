@@ -180,7 +180,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
@@ -193,13 +193,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
@@ -208,7 +208,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
 
@@ -217,7 +217,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
@@ -421,14 +421,14 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc ",
                          "IThinkILostMyHeadache\nIThinkILOstMyHeadache", "UntilMyHeadacheGoes\nUntilMyHeadacheGoes") != 0);
 
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc ",
                          "IThinkILostMyHeadache\nIThinkILostMyHeadache", "UntilMyHeadacheGoe5\nUntilMyHeadacheGoes") != 0);
 
@@ -437,7 +437,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("init "
                          "--catalog-hash=sha3-384 "
                          "--key-hash=whirlpool "
-                         "--protection-layer-hash=sha512 "
+                         "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc ",
                          "IThinkILostMyHeadache\nIThinkILostMyHeadache", "UntilMyHeadacheGoes\nUntilMyHeadacheGoes") == 0);
 

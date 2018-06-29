@@ -72,7 +72,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     memcpy(key, "test", 4);
     key_size = 4;
 
-    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc|aes-128-ofb|shacal2-ctr|feal-cbc/167|"
+    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr|feal-cbc/167,"
                                                     "hmac-cha3-512-bug-a-loo-cipher-cbc",
                                              &key, &key_size, get_hash_processor("tiger"));
 
@@ -102,7 +102,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
 
     chain = NULL;
     chain = add_composite_protlayer_to_chain(chain,
-                                             "hmac-sha3-512-des-cbc|aes-128-ofb|shacal2-ctr|feal-cbc/167",
+                                             "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr,feal-cbc/167",
                                              &key, &key_size, get_hash_processor("tiger"));
 
     CUTE_ASSERT(chain != NULL);
@@ -216,10 +216,10 @@ CUTE_TEST_CASE(get_hash_processor_tests)
         blackcat_hash_processor processor;
     };
     struct test_ctx test[] = {
-        { "sha224",    kryptos_sha224_hash    },
-        { "sha256",    kryptos_sha256_hash    },
-        { "sha384",    kryptos_sha384_hash    },
-        { "sha512",    kryptos_sha512_hash    },
+        { "sha-224",   kryptos_sha224_hash    },
+        { "sha-256",   kryptos_sha256_hash    },
+        { "sha-384",   kryptos_sha384_hash    },
+        { "sha-512",   kryptos_sha512_hash    },
         { "sha3-224",  kryptos_sha3_224_hash  },
         { "sha3-256",  kryptos_sha3_256_hash  },
         { "sha3-384",  kryptos_sha3_384_hash  },
@@ -245,10 +245,10 @@ CUTE_TEST_CASE(get_hash_size_tests)
         blackcat_hash_size_func size;
     };
     struct test_ctx test[] = {
-        { "sha224",    kryptos_sha224_hash_size    },
-        { "sha256",    kryptos_sha256_hash_size    },
-        { "sha384",    kryptos_sha384_hash_size    },
-        { "sha512",    kryptos_sha512_hash_size    },
+        { "sha-224",   kryptos_sha224_hash_size    },
+        { "sha-256",   kryptos_sha256_hash_size    },
+        { "sha-384",   kryptos_sha384_hash_size    },
+        { "sha-512",   kryptos_sha512_hash_size    },
         { "sha3-224",  kryptos_sha3_224_hash_size  },
         { "sha3-256",  kryptos_sha3_256_hash_size  },
         { "sha3-384",  kryptos_sha3_384_hash_size  },
@@ -837,7 +837,7 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-sha224-aes-256-cbc", &key, &key_size, NULL);
+    pchain = add_protlayer_to_chain(pchain, "hmac-sha-224-aes-256-cbc", &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain != NULL);
 

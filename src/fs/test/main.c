@@ -175,9 +175,9 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     CUTE_ASSERT(catalog != NULL);
 
     catalog->bc_version = "0.0.1";
-    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha384-mars-256-cbc");
-    catalog->key_hash_algo = get_hash_processor("sha512");
-    catalog->key_hash_algo_size = get_hash_size("sha512");
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha-512");
+    catalog->key_hash_algo_size = get_hash_size("sha-512");
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
 
@@ -195,7 +195,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
 
     catalog->key_hash = ktask->out;
     catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "hmac-sha224-blowfish-ctr|mars-192-ctr|xtea-ofb/202|hmac-sha3-512-shacal2-cbc";
+    catalog->protection_layer = "hmac-sha-224-blowfish-ctr,mars-192-ctr,xtea-ofb/202,hmac-sha3-512-shacal2-cbc";
 
     protkey = (kryptos_u8_t *) kryptos_newseg(11);
     CUTE_ASSERT(protkey != NULL);
@@ -438,8 +438,8 @@ CUTE_TEST_CASE(bcrepo_add_tests)
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha3-512");
     catalog->key_hash_algo_size = get_hash_size("sha3-512");
-    catalog->protlayer_key_hash_algo = get_hash_processor("sha256");
-    catalog->protlayer_key_hash_algo_size = get_hash_size("sha256");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -567,12 +567,12 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     CUTE_ASSERT(catalog != NULL);
 
     catalog->bc_version = "0.0.1";
-    catalog->catalog_key_hash_algo = get_hash_processor("sha384");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha3-512");
     catalog->key_hash_algo_size = get_hash_size("sha3-512");
-    catalog->protlayer_key_hash_algo = get_hash_processor("sha256");
-    catalog->protlayer_key_hash_algo_size = get_hash_size("sha256");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -588,7 +588,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
     catalog->key_hash = ktask->out;
     catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc|des-cbc|mars-128-ctr|shacal1-cbc|hmac-tiger-aes-128-cbc";
+    catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc,des-cbc|mars-128-ctr,shacal1-cbc,hmac-tiger-aes-128-cbc";
 
     // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
@@ -753,8 +753,8 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     // INFO(Rafael): If it was correctly read for sure that the hmac_scheme must match.
     //               Test it would be a little bit stupid.
 
-    CUTE_ASSERT(catalog->key_hash_algo == get_hash_processor("sha224"));
-    CUTE_ASSERT(catalog->key_hash_algo_size == get_hash_size("sha224"));
+    CUTE_ASSERT(catalog->key_hash_algo == get_hash_processor("sha-224"));
+    CUTE_ASSERT(catalog->key_hash_algo_size == get_hash_size("sha-224"));
     CUTE_ASSERT(catalog->protlayer_key_hash_algo == get_hash_processor("sha3-384"));
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size == get_hash_size("sha3-384"));
 
@@ -766,7 +766,7 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(memcmp(catalog->key_hash, protlayer_key_hash, strlen(protlayer_key_hash)) == 0);
 
     CUTE_ASSERT(catalog->protection_layer != NULL);
-    CUTE_ASSERT(strcmp(catalog->protection_layer, "aes-256-ctr|hmac-whirlpool-cast5-cbc") == 0);
+    CUTE_ASSERT(strcmp(catalog->protection_layer, "aes-256-ctr,hmac-whirlpool-cast5-cbc") == 0);
 
     CUTE_ASSERT(catalog->files != NULL);
 
@@ -833,8 +833,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.bc_version = "0.0.1";
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
     catalog.hmac_scheme = get_hmac_catalog_scheme("hmac-sha3-256-tea-ofb");
-    catalog.key_hash_algo = get_hash_processor("sha224");
-    catalog.key_hash_algo_size = get_hash_size("sha224");
+    catalog.key_hash_algo = get_hash_processor("sha-224");
+    catalog.key_hash_algo_size = get_hash_size("sha-224");
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
 
@@ -846,7 +846,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
 
     catalog.key_hash = ktask->out;
     catalog.key_hash_size = ktask->out_size;
-    catalog.protection_layer = "aes-256-ctr|hmac-whirlpool-cast5-cbc";
+    catalog.protection_layer = "aes-256-ctr,hmac-whirlpool-cast5-cbc";
     catalog.files = &files;
 
     files.head = &files;

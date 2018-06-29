@@ -46,7 +46,7 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
 
         cp = p;
 
-        while (p != p_end && *p != '|') {
+        while (p != p_end && *p != ',') {
             p++;
         }
 
