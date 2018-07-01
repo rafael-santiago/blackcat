@@ -17,6 +17,7 @@
 #include <cmd/lock.h>
 #include <cmd/unlock.h>
 #include <cmd/status.h>
+#include <cmd/show.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -33,7 +34,8 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(rm),
     BLACKCAT_COMMAND_TABLE_ENTRY(lock),
     BLACKCAT_COMMAND_TABLE_ENTRY(unlock),
-    BLACKCAT_COMMAND_TABLE_ENTRY(status)
+    BLACKCAT_COMMAND_TABLE_ENTRY(status),
+    BLACKCAT_COMMAND_TABLE_ENTRY(show)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)

@@ -35,7 +35,7 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size);
     do {\
         consume_stmt;\
         do {\
-            option_var = blackcat_get_argv(a++);\
+            option_var = blackcat_get_argv(ac++);\
             if (option_var != NULL) {\
                 option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
             }\

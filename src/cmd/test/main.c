@@ -175,6 +175,14 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s1.txt");
     remove("p.txt");
 
+    // INFO(Rafael): Showing the available ciphers, HMACs and hashes.
+
+    CUTE_ASSERT(blackcat("show your-hands", "---", NULL) != 0);
+    CUTE_ASSERT(blackcat("show ciphers", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show hmacs", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show hashes", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show hashes hmacs ciphers", "---", NULL) == 0);
+
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
 

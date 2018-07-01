@@ -75,6 +75,12 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_hmac_catalog_scheme(const
 
 const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_scheme(void);
 
+kryptos_u8_t *blackcat_get_avail_ciphers(size_t *size);
+
+kryptos_u8_t *blackcat_get_avail_hmacs(size_t *size);
+
+kryptos_u8_t *blackcat_get_avail_hashes(size_t *size);
+
 static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
     { "sha-224",   kryptos_sha224_hash,    kryptos_sha224_hash_size    },
     { "sha-256",   kryptos_sha256_hash,    kryptos_sha256_hash_size    },

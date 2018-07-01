@@ -210,3 +210,39 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_schem
                ((size_t) kryptos_get_random_byte());
     return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
 }
+
+#define IMPL_BLACKCAT_GET_AVAIL(what, data_vector)\
+kryptos_u8_t *blackcat_get_avail_ ## what(size_t *size) {\
+    size_t s, c;\
+    kryptos_u8_t *data, *dp;\
+    if (size == NULL) {\
+        return NULL;\
+    }\
+    s = 0;\
+    for (c = 0; c < data_vector ## _nr; c++) {\
+        s += strlen(data_vector[c].name) + 1;\
+    }\
+    data = (kryptos_u8_t *)kryptos_newseg(s + 1);\
+    if (data == NULL) {\
+        return NULL;\
+    }\
+    *size = s;\
+    memset(data, 0, s + 1);\
+    dp = data;\
+    for (c = 0; c < data_vector ## _nr; c++) {\
+        s = strlen(data_vector[c].name);\
+        memcpy(dp, data_vector[c].name, s);\
+        dp += s;\
+        *dp = '\n';\
+        dp++;\
+    }\
+    return data;\
+}\
+
+IMPL_BLACKCAT_GET_AVAIL(ciphers, g_blackcat_ciphering_schemes)
+
+IMPL_BLACKCAT_GET_AVAIL(hmacs, g_blackcat_hmac_catalog_schemes)
+
+IMPL_BLACKCAT_GET_AVAIL(hashes, g_blackcat_hashing_algos)
+
+#undef IMPL_BLACKCAT_GET_AVAIL
