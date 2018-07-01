@@ -183,6 +183,21 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("show hashes", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hashes hmacs ciphers", "---", NULL) == 0);
 
+    // INFO(Rafael): Quick help.
+
+    CUTE_ASSERT(blackcat("help init", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help deinit", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help add", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help rm", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help status", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help lock", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help unlock", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help show", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help help", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help", "", NULL) == 0);
+
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
 

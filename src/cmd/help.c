@@ -37,29 +37,42 @@ DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)
 int blackcat_cmd_help(void) {
     size_t h;
     char *topic, temp[100];
-    int exit_code = EINVAL;
+    int exit_code;
+    int a;
 
     topic = blackcat_get_argv(0);
 
     if (topic == NULL) {
+        exit_code = EINVAL;
         blackcat_cmd_help_help();
         goto blackcat_cmd_help_epilogue;
     }
 
-    if (strlen(topic) > sizeof(temp) - 1) {
-        fprintf(stderr, "Too long option. No SIGSEGVs for today. Goodbye!\n");
-        goto blackcat_cmd_help_epilogue;
-    }
+    a = 1;
 
-    sprintf(temp, "%s_help", topic);
+    do {
+        exit_code = EINVAL;
 
-    for (h = 0; h < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper); h++) {
-        if (strcmp(GET_BLACKCAT_COMMAND_NAME(g_blackcat_helper, h), temp) == 0) {
-            return GET_BLACKCAT_COMMAND_TEXT(g_blackcat_helper, h)();
+        if (strlen(topic) > sizeof(temp) - 20) {
+            fprintf(stderr, "Too long option. No SIGSEGVs for today. Goodbye!\n");
+            goto blackcat_cmd_help_epilogue;
         }
-    }
 
-    fprintf(stderr, "No help entry for '%s'.\n", topic);
+        sprintf(temp, "%s_help", topic);
+
+        for (h = 0; h < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper) && exit_code == EINVAL; h++) {
+            if (strcmp(GET_BLACKCAT_COMMAND_NAME(g_blackcat_helper, h), temp) == 0) {
+                exit_code = GET_BLACKCAT_COMMAND_TEXT(g_blackcat_helper, h)();
+            }
+        }
+
+        if (exit_code != 0) {
+            fprintf(stderr, "No help entry for '%s'.\n", topic);
+            goto blackcat_cmd_help_epilogue;
+        }
+
+        topic = blackcat_get_argv(a++);
+    } while (topic != NULL);
 
 blackcat_cmd_help_epilogue:
 

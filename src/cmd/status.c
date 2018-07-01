@@ -85,4 +85,5 @@ blackcat_cmd_status_epilogue:
 
 int blackcat_cmd_status_help(void) {
     fprintf(stdout, "use: blackcat status [relative file path | <glob pattern>]\n");
+    return 0;
 }
