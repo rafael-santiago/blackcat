@@ -132,6 +132,8 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 
 char *remove_go_ups_from_path(char *path, const size_t path_size);
 
+static kryptos_u8_t *random_printable_padding(size_t *size);
+
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath) {
     if (rootpath == NULL || buf == NULL || buf_size == 0) {
         return buf;
@@ -991,6 +993,8 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     kryptos_u8_t *pem_buf = NULL;
     size_t pem_buf_size = 0;
     const char *key_hash_algo = NULL;
+    kryptos_u8_t *pfx = NULL, *sfx = NULL;
+    size_t pfx_size, sfx_size;
 
     o_size = eval_catalog_buf_size(catalog);
 
@@ -1000,7 +1004,23 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         goto bcrepo_write_epilogue;
     }
 
-    o = (kryptos_u8_t *) kryptos_newseg(o_size);
+    pfx = random_printable_padding(&pfx_size);
+
+    if (pfx == NULL || pfx_size == 0) {
+        fprintf(stderr, "ERROR: Unable to generate the random bytes.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    sfx = random_printable_padding(&sfx_size);
+
+    if (sfx == NULL || sfx_size == 0) {
+        fprintf(stderr, "ERROR: Unable to generate the random bytes.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    o = (kryptos_u8_t *) kryptos_newseg(o_size + pfx_size + sfx_size);
 
     if (o == NULL) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
@@ -1008,8 +1028,15 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         goto bcrepo_write_epilogue;
     }
 
-    memset(o, 0, o_size);
-    dump_catalog_data(o, o_size, catalog);
+    //memset(o, 0, o_size);
+    dump_catalog_data(o + pfx_size, o_size, catalog);
+
+    // INFO(Rafael): Mitigating chose-plaintext attack by making its applying hard.
+
+    memcpy(o, pfx, pfx_size);
+    memcpy(o + pfx_size + o_size, sfx, sfx_size);
+
+    o_size += pfx_size + sfx_size;
 
     if (encrypt_catalog_data(&o, &o_size, key, key_size, catalog) == kKryptosSuccess) {
         fprintf(stderr, "ERROR: Error while encrypting the catalog data.\n");
@@ -1066,6 +1093,16 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     }
 
 bcrepo_write_epilogue:
+
+    if (pfx != NULL) {
+        kryptos_freeseg(pfx, pfx_size);
+        pfx_size = 0;
+    }
+
+    if (sfx != NULL) {
+        kryptos_freeseg(sfx, sfx_size);
+        sfx_size = 0;
+    }
 
     if (fp != NULL) {
         fclose(fp);
@@ -1657,14 +1694,14 @@ static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in
         goto get_catalog_field_epilogue;
     }
 
-    if (fp > in && *(fp - 1) != '\n') {
-        while (*(fp - 1) != '\n' && fp < end) {
+    if (*(fp - 1) == '-') {
+        while (fp != NULL && *(fp - 1) == '-' && fp < end) {
             fp += 1;
             fp = strstr(fp, field);
         }
     }
 
-    if (fp >= end) {
+    if (fp >= end || fp == NULL) {
         goto get_catalog_field_epilogue;
     }
 
@@ -1988,6 +2025,63 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
     sp = sp_end = NULL;
     bp = bp_end = NULL;
 
+}
+
+static kryptos_u8_t *random_printable_padding(size_t *size) {
+    // WARN(Rafael): This function only generates random blocks from 1b up to 1Kb. However,
+    //               it is enough to make harder the building of an infrastructure to promote
+    //               a chosen-plaintext attack over the catalog's data.
+    kryptos_u8_t s1[62] = {
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+        'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+        'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+    };
+    kryptos_u8_t s2[62];
+    size_t *rs, s;
+    kryptos_u8_t *data, *dp, *dp_end;
+
+    *size = 0;
+    rs = (size_t *) kryptos_get_random_block(sizeof(size_t));
+
+    if (rs == NULL) {
+        goto random_printable_padding_epilogue;
+    }
+
+    *size = *rs % 1024;
+
+    if (*size == 0) {
+        *size = 1;
+    }
+
+    kryptos_freeseg(rs, sizeof(size_t));
+
+    dp = data = (kryptos_u8_t *) kryptos_newseg(*size);
+
+    if (dp == NULL) {
+        *size = 0;
+        goto random_printable_padding_epilogue;
+    }
+
+    dp_end = dp + *size;
+
+    for (s = 0; s < 62; s++) {
+        s2[s] = s1[kryptos_get_random_byte() % 62];
+    }
+
+    while (dp != dp_end) {
+        *dp = s2[kryptos_get_random_byte() % 62];
+        dp++;
+    }
+
+random_printable_padding_epilogue:
+
+    memset(s2, 0, sizeof(s2));
+
+    dp = dp_end = NULL;
+
+    return data;
 }
 
 #undef BCREPO_CATALOG_BC_VERSION
