@@ -19,7 +19,7 @@ int blackcat_cmd_rm(void) {
     int rm_nr = 0;
     blackcat_exec_session_ctx *session = NULL;
     char temp[4096];
-    int a;
+    int a, force;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_rm_epilogue;
@@ -35,11 +35,14 @@ int blackcat_cmd_rm(void) {
 
     rm_param = remove_go_ups_from_path(rm_param, strlen(rm_param) + 1);
 
+    force = blackcat_get_bool_option("force", 0);
+
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   rm_param,
                                   {
                                     rm_nr += bcrepo_rm(&session->catalog,
-                                                       session->rootpath, session->rootpath_size, rm_param, strlen(rm_param));
+                                                       session->rootpath, session->rootpath_size, rm_param, strlen(rm_param),
+                                                       force);
                                   })
     if (rm_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
@@ -65,6 +68,6 @@ blackcat_cmd_rm_epilogue:
 }
 
 int blackcat_cmd_rm_help(void) {
-    fprintf(stdout, "use: blackcat rm <relative file name | glob pattern>\n");
+    fprintf(stdout, "use: blackcat rm <relative file name | glob pattern> [--force]\n");
     return 0;
 }

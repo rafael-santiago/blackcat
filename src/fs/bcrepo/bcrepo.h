@@ -30,7 +30,7 @@ int bcrepo_add(bfs_catalog_ctx **catalog,
 
 int bcrepo_rm(bfs_catalog_ctx **catalog,
               const char *rootpath, const size_t rootpath_size,
-              const char *pattern, const size_t pattern_size);
+              const char *pattern, const size_t pattern_size, const int force);
 
 int bcrepo_lock(bfs_catalog_ctx **catalog,
                 const char *rootpath, const size_t rootpath_size,

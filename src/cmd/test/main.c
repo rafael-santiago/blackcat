@@ -457,6 +457,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(data_size != strlen(sensitive2));
     kryptos_freeseg(data, data_size);
 
+    // INFO(Rafael): Removing from catalog a unexistent/unaccessible file.
+
+    CUTE_ASSERT(blackcat("add s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+    remove("s1.txt");
+    CUTE_ASSERT(blackcat("rm s1.txt", "GiveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("rm s1.txt --force", "GiveTheMuleWhatHeWants", NULL) == 0);
+
     CUTE_ASSERT(blackcat("rm etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
 
     data = get_file_data("etc/s2.txt", &data_size);

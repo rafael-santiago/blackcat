@@ -394,22 +394,29 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     CUTE_ASSERT(catalog->files->tail != catalog->files->head);
 
     pattern = "main.c";
-    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
 
     pattern = "i_sat_by_the_ocean.txt";
-    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 0);
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 0);
 
     pattern = "o/*.o";
-    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == o_files_nr);
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == o_files_nr);
 
     pattern = "sensitive.txt";
-    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
 
     data = open_text("sensitive.txt", &data_size);
 
     CUTE_ASSERT(data != NULL);
     CUTE_ASSERT(data_size == strlen(sensitive));
     CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
+
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+    remove("sensitive.txt");
+
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 0);
+    CUTE_ASSERT(bcrepo_rm(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 

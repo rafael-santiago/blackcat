@@ -289,7 +289,7 @@ int bcrepo_unlock(bfs_catalog_ctx **catalog,
 
 int bcrepo_rm(bfs_catalog_ctx **catalog,
               const char *rootpath, const size_t rootpath_size,
-              const char *pattern, const size_t pattern_size) {
+              const char *pattern, const size_t pattern_size, const int force) {
     int rm_nr = 0;
     bfs_catalog_relpath_ctx *files = NULL, *fp, *fpp;
     bfs_catalog_ctx *cp;
@@ -316,6 +316,13 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
         cp->files = del_file_from_relpath_ctx(cp->files, fpp->path);
 
         rm_nr++;
+    }
+
+    if (force) {
+        if (get_entry_from_relpath_ctx(cp->files, pattern) != NULL) {
+            cp->files = del_file_from_relpath_ctx(cp->files, pattern);
+            rm_nr++;
+        }
     }
 
 bcrepo_rm_epilogue:
