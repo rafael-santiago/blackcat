@@ -18,10 +18,11 @@
 #include <errno.h>
 
 int blackcat_cmd_init(void) {
-    char *catalog_hash, *key_hash, *protection_layer_hash, *protection_layer;
+    char *catalog_hash, *key_hash, *protection_layer_hash, *protection_layer, *encoder;
     int keyed_alike;
     int exit_code = EINVAL;
     blackcat_hash_processor key_hash_proc, protlayer_hash_proc, catalog_hash_proc;
+    blackcat_encoder encoder_proc = NULL;
     bfs_catalog_ctx *catalog = NULL;
     kryptos_u8_t *catalog_key = NULL, *protlayer_key = NULL, *temp_key = NULL;
     size_t catalog_key_size, protlayer_key_size, temp_key_size;
@@ -63,6 +64,15 @@ int blackcat_cmd_init(void) {
     }
 
     BLACKCAT_GET_OPTION_OR_DIE(protection_layer, "protection-layer", blackcat_cmd_init_epilogue);
+
+    encoder = blackcat_get_option("encoder", NULL);
+
+    if (encoder != NULL) {
+        if ((encoder_proc = get_encoder(encoder)) == NULL) {
+            fprintf(stderr, "ERROR: Unknown encoder supplied in 'encoder'.\n");
+            goto blackcat_cmd_init_epilogue;
+        }
+    }
 
     keyed_alike = blackcat_get_bool_option("keyed-alike", 0);
 
@@ -158,7 +168,7 @@ int blackcat_cmd_init(void) {
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           protection_layer, &temp_key, &temp_key_size,
-                                                          protlayer_hash_proc);
+                                                          protlayer_hash_proc, catalog->encoder);
 
     if (catalog->protlayer == NULL) {
         goto blackcat_cmd_init_epilogue;
@@ -201,6 +211,8 @@ int blackcat_cmd_init(void) {
     catalog->protlayer_key_hash_algo_size = get_hash_size(protection_layer_hash);
     catalog->protection_layer = protection_layer;
 
+    catalog->encoder = encoder_proc;
+
     if (bcrepo_init(catalog, catalog_key, catalog_key_size)) {
         exit_code = 0;
     }
@@ -237,7 +249,7 @@ blackcat_cmd_init_epilogue:
 
 int blackcat_cmd_init_help(void) {
     fprintf(stdout, "use: blackcat init --catalog-hash=<hash> --key-hash=<hash> --protection-layer-hash=<hash>\n"
-                    "                   --protection-layer=<algorithm layers> [--keyed-alike]\n");
+                    "                   --protection-layer=<algorithm layers> [--keyed-alike --encoder=<encoder>]\n");
     return 0;
 }
 

@@ -39,6 +39,9 @@ int blackcat_cmd_show(void) {
                                      } else if (strcmp(show_param, "hashes") == 0) {
                                         data = blackcat_get_avail_hashes(&data_size);
                                         goto print_data;
+                                     } else if (strcmp(show_param, "encoders") == 0) {
+                                        data = blackcat_get_avail_encoders(&data_size);
+                                        goto print_data;
                                      } else {
                                         fprintf(stderr, "ERROR: '%s' is a unknown show parameter.\n", show_param);
                                         goto blackcat_cmd_show_epilogue;
@@ -61,6 +64,6 @@ blackcat_cmd_show_epilogue:
 }
 
 int blackcat_cmd_show_help(void) {
-    fprintf(stdout, "use: blackcat show <ciphers | hmacs | hashes>\n");
+    fprintf(stdout, "use: blackcat show <ciphers | hmacs | hashes | encoders>\n");
     return 0;
 }

@@ -211,6 +211,38 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_schem
     return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
 }
 
+blackcat_encoder get_encoder(const char *name) {
+    size_t e;
+
+    if (name == NULL) {
+        return NULL;
+    }
+
+    for (e = 0; e < g_blackcat_encoding_algos_nr; e++) {
+        if (strcmp(name, g_blackcat_encoding_algos[e].name) == 0) {
+            return g_blackcat_encoding_algos[e].encoder;
+        }
+    }
+
+    return NULL;
+}
+
+const char *get_encoder_name(blackcat_encoder encoder) {
+    size_t e;
+
+    if (encoder == NULL) {
+        return NULL;
+    }
+
+    for (e = 0; e < g_blackcat_encoding_algos_nr; e++) {
+        if (encoder == g_blackcat_encoding_algos[e].encoder) {
+            return &g_blackcat_encoding_algos[e].name[0];
+        }
+    }
+
+    return NULL;
+}
+
 #define IMPL_BLACKCAT_GET_AVAIL(what, data_vector)\
 kryptos_u8_t *blackcat_get_avail_ ## what(size_t *size) {\
     size_t s, c;\
@@ -244,5 +276,7 @@ IMPL_BLACKCAT_GET_AVAIL(ciphers, g_blackcat_ciphering_schemes)
 IMPL_BLACKCAT_GET_AVAIL(hmacs, g_blackcat_hmac_catalog_schemes)
 
 IMPL_BLACKCAT_GET_AVAIL(hashes, g_blackcat_hashing_algos)
+
+IMPL_BLACKCAT_GET_AVAIL(encoders, g_blackcat_encoding_algos)
 
 #undef IMPL_BLACKCAT_GET_AVAIL

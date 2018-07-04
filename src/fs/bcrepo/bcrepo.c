@@ -30,6 +30,7 @@
 #define BCREPO_PEM_KEY_HASH_ALGO_HDR "BCREPO KEY HASH ALGO"
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
 #define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
+#define BCREPO_PEM_ENCODER_HDR "BCREPO ENCODER"
 
 #define BCREPO_HIDDEN_DIR ".bcrepo"
 #define BCREPO_HIDDEN_DIR_SIZE 7
@@ -992,7 +993,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     kryptos_u8_t *o = NULL;
     kryptos_u8_t *pem_buf = NULL;
     size_t pem_buf_size = 0;
-    const char *key_hash_algo = NULL;
+    const char *key_hash_algo = NULL, *encoder = NULL;
     kryptos_u8_t *pfx = NULL, *sfx = NULL;
     size_t pfx_size, sfx_size;
 
@@ -1031,7 +1032,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     //memset(o, 0, o_size);
     dump_catalog_data(o + pfx_size, o_size, catalog);
 
-    // INFO(Rafael): Mitigating chose-plaintext attack by making its applying hard.
+    // INFO(Rafael): Mitigating chosen-plaintext attack by making its applying hard.
 
     memcpy(o, pfx, pfx_size);
     memcpy(o + pfx_size + o_size, sfx, sfx_size);
@@ -1047,7 +1048,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     key_hash_algo = get_hash_processor_name(catalog->catalog_key_hash_algo);
 
     if (key_hash_algo == NULL) {
-        fprintf(stderr, "ERROR: Unknow catalog's key hash processor.\n");
+        fprintf(stderr, "ERROR: Unknown catalog's key hash processor.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -1068,6 +1069,26 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
+    }
+
+    if (catalog->encoder != NULL) {
+        if ((encoder = get_encoder_name(catalog->encoder)) == NULL) {
+            fprintf(stderr, "ERROR: Unknown encoder processor.\n");
+            no_error = 0;
+            encoder = NULL;
+            goto bcrepo_write_epilogue;
+        }
+
+        if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
+                                 BCREPO_PEM_ENCODER_HDR,
+                                 encoder, strlen(encoder)) != kKryptosSuccess) {
+            fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
+            no_error = 0;
+            encoder = NULL;
+            goto bcrepo_write_epilogue;
+        }
+
+        encoder = NULL;
     }
 
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
@@ -1128,8 +1149,8 @@ bcrepo_write_epilogue:
 kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t *out_size) {
     kryptos_u8_t *o = NULL;
     FILE *fp = NULL;
-    kryptos_u8_t *hmac_algo = NULL, *key_hash_algo = NULL;
-    size_t hmac_algo_size = 0, key_hash_algo_size = 0;
+    kryptos_u8_t *hmac_algo = NULL, *key_hash_algo = NULL, *encoder = NULL;
+    size_t hmac_algo_size = 0, key_hash_algo_size = 0, encoder_size = 0;
     const struct blackcat_hmac_catalog_algorithms_ctx *hmac_scheme = NULL;
     blackcat_hash_processor catalog_key_hash_algo = NULL;
 
@@ -1209,6 +1230,18 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     catalog->hmac_scheme = hmac_scheme;
 
+    encoder = kryptos_pem_get_data(BCREPO_PEM_ENCODER_HDR, o, *out_size, &encoder_size);
+
+    if (encoder != NULL) {
+        if ((catalog->encoder = get_encoder(encoder)) == NULL) {
+            fprintf(stderr, "ERROR: Unable to get the repo's encoder.\n");
+            kryptos_freeseg(o, *out_size);
+            o = NULL;
+            *out_size = 0;
+            goto bcrepo_read_epilogue;
+        }
+    }
+
 bcrepo_read_epilogue:
 
     if (fp != NULL) {
@@ -1223,6 +1256,11 @@ bcrepo_read_epilogue:
     if (hmac_algo != NULL) {
         kryptos_freeseg(hmac_algo, hmac_algo_size);
         hmac_algo_size = 0;
+    }
+
+    if (encoder != NULL) {
+        kryptos_freeseg(encoder, encoder_size);
+        encoder_size = 0;
     }
 
     hmac_scheme = NULL;
@@ -2094,6 +2132,7 @@ random_printable_padding_epilogue:
 #undef BCREPO_PEM_KEY_HASH_ALGO_HDR
 #undef BCREPO_PEM_HMAC_HDR
 #undef BCREPO_PEM_CATALOG_DATA_HDR
+#undef BCREPO_PEM_ENCODER_HDR
 
 #undef BCREPO_HIDDEN_DIR
 #undef BCREPO_HIDDEN_DIR_SIZE

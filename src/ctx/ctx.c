@@ -20,13 +20,15 @@
     (b)->processor = NULL;\
     (b)->argc = 0;\
     (b)->is_hmac = 0;\
+    (b)->encoder = NULL;\
 }
 
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);
 
 blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
                                                                const char *piped_ciphers, kryptos_u8_t **key,
-                                                               size_t *key_size, blackcat_hash_processor hash) {
+                                                               size_t *key_size, blackcat_hash_processor hash,
+                                                               blackcat_encoder encoder) {
     char curr_algo_param[100];
     const char *p, *p_end, *cp;
 
@@ -70,6 +72,11 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
     }
 
 add_composite_protlayer_to_chain_epilogue:
+
+    if (chain != NULL && encoder != NULL) {
+        // INFO(Rafael): Until now the encoding will not be layered.
+        chain->head->encoder = encoder;
+    }
 
     kryptos_freeseg(*key, *key_size);
     *key = NULL;

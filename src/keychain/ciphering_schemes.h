@@ -30,6 +30,8 @@
 #include <keychain/cipher/shacal.h>
 #include <keychain/cipher/tea.h>
 #include <keychain/cipher/xtea.h>
+#include <keychain/encoder/uuencode.h>
+#include <keychain/encoder/base64.h>
 #include <kryptos.h>
 
 struct blackcat_ciphering_scheme_ctx {
@@ -52,6 +54,11 @@ struct blackcat_hmac_catalog_algorithms_ctx {
     kryptos_cipher_mode_t mode;
 };
 
+struct blackcat_encoding_algorithms_ctx {
+    const char *name;
+    blackcat_encoder encoder;
+};
+
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
 int blackcat_NULL_args(const char *algo_params,
@@ -67,6 +74,10 @@ blackcat_hash_size_func get_hash_size(const char *name);
 
 const char *get_hash_processor_name(blackcat_hash_processor processor);
 
+blackcat_encoder get_encoder(const char *name);
+
+const char *get_encoder_name(blackcat_encoder encoder);
+
 int is_hmac_processor(blackcat_cipher_processor processor);
 
 int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor h2);
@@ -80,6 +91,15 @@ kryptos_u8_t *blackcat_get_avail_ciphers(size_t *size);
 kryptos_u8_t *blackcat_get_avail_hmacs(size_t *size);
 
 kryptos_u8_t *blackcat_get_avail_hashes(size_t *size);
+
+kryptos_u8_t *blackcat_get_avail_encoders(size_t *size);
+
+static struct blackcat_encoding_algorithms_ctx g_blackcat_encoding_algos[] = {
+    { "uuencode", blackcat_uuencode },
+    { "base64",   blackcat_base64   }
+};
+
+static size_t g_blackcat_encoding_algos_nr = sizeof(g_blackcat_encoding_algos) / sizeof(g_blackcat_encoding_algos[0]);
 
 static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
     { "sha-224",   kryptos_sha224_hash,    kryptos_sha224_hash_size    },

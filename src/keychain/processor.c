@@ -7,6 +7,7 @@
  */
 #include <keychain/processor.h>
 #include <kryptos.h>
+#include <ctype.h>
 
 static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx *protlayer,
                                              kryptos_u8_t *in, size_t in_size,
@@ -23,6 +24,23 @@ kryptos_u8_t *blackcat_decrypt_data(const blackcat_protlayer_chain_ctx *protlaye
                                     size_t *out_size) {
     return blackcat_meta_processor(protlayer, in, in_size, out_size, kKryptosDecrypt);
 }
+
+/*static void print_data(const kryptos_u8_t *bytes, size_t bytes_total) {
+    const kryptos_u8_t *bp, *bp_end;
+
+    bp = bytes;
+    bp_end = bp + bytes_total;
+
+    while (bp != bp_end) {
+        if (isprint(*bp)) {
+            printf("%c", *bp);
+        } else {
+            printf(".");
+        }
+        bp++;
+    }
+    printf("\n");
+}*/
 
 static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx *protlayer,
                                              kryptos_u8_t *in, size_t in_size,
@@ -70,6 +88,30 @@ static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx 
         p = protlayer->tail;
     }
 
+    if (protlayer->head->encoder != NULL && action == kKryptosDecrypt) {
+        kryptos_task_set_decode_action(ktask);
+
+        protlayer->head->encoder(&ktask);
+        done = kryptos_last_task_succeed(ktask);
+
+        if (ktask->in != in) {
+            kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+        }
+
+        if (!done) {
+            if (ktask->out != NULL) {
+                kryptos_freeseg(ktask->out, ktask->out_size);
+            }
+            goto blackcat_meta_processor_epilogue;
+        }
+
+        ktask->action = action;
+        kryptos_task_set_in(ktask, ktask->out, ktask->out_size);
+
+        ktask->out = NULL;
+        ktask->out_size = 0;
+    }
+
     while (p != NULL) {
         p->processor(&ktask, p);
 
@@ -94,6 +136,23 @@ static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx 
             p = p->next;
         } else {
             p = p->last;
+        }
+    }
+
+    if (protlayer->head->encoder != NULL && action == kKryptosEncrypt) {
+        kryptos_task_set_encode_action(ktask);
+        protlayer->head->encoder(&ktask);
+        done = kryptos_last_task_succeed(ktask);
+
+        if (ktask->in != in) {
+            kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+        }
+
+        if (!done) {
+            if (ktask->out != NULL) {
+                kryptos_freeseg(ktask->out, ktask->out_size);
+            }
+            goto blackcat_meta_processor_epilogue;
         }
     }
 

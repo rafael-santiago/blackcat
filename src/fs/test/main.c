@@ -180,9 +180,11 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     catalog->key_hash_algo_size = get_hash_size("sha-512");
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->encoder = get_encoder("uuencode");
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+    CUTE_ASSERT(catalog->encoder != NULL);
 
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
@@ -204,7 +206,8 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo);
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
     CUTE_ASSERT(protkey_size == 0);
@@ -352,7 +355,8 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo);
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
     CUTE_ASSERT(protkey_size == 0);
@@ -820,6 +824,8 @@ CUTE_TEST_CASE(bcrepo_read_tests)
 
     CUTE_ASSERT(catalog.hmac_scheme == get_hmac_catalog_scheme(hmac_algo));
 
+    CUTE_ASSERT(catalog.encoder == get_encoder("uuencode"));
+
     kryptos_freeseg(data, data_size);
     kryptos_freeseg(hmac_algo, strlen(hmac_algo));
 CUTE_TEST_CASE_END
@@ -837,6 +843,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.key_hash_algo_size = get_hash_size("sha-224");
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
+    catalog.encoder = get_encoder("uuencode");
 
     ktask->in = key;
     ktask->in_size = strlen(key);

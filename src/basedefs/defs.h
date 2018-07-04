@@ -25,6 +25,8 @@ typedef void (*blackcat_hash_processor)(kryptos_task_ctx **ktask, const int to_h
 
 typedef size_t (*blackcat_hash_size_func)(void);
 
+typedef void (*blackcat_encoder)(kryptos_task_ctx **ktask);
+
 #define DECL_BLACKCAT_CIPHER_PROCESSOR(name, ktask, p_layer)\
     void blackcat_ ## name (kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
@@ -50,9 +52,20 @@ typedef size_t (*blackcat_hash_size_func)(void);
 
 #define BLACKCAT_PROTLAYER_EXTRA_ARGS_NR 10
 
+#define DECL_BLACKCAT_ENCODER_PROCESSOR(name, ktask)\
+    void blackcat_ ## name (kryptos_task_ctx **ktask);
+
+#define IMPL_BLACKCAT_ENCODER_PROCESSOR(name, ktask)\
+    void blackcat_ ## name(kryptos_task_ctx **ktask) {\
+        kryptos_ ## name ##_setup(*ktask);\
+        kryptos_ ## name ## _processor(ktask);\
+        (*ktask)->encoder = kKryptosEncodingNr;\
+    }
+
 typedef struct blackcat_protlayer_chain {
     struct blackcat_protlayer_chain *head, *tail;
     int is_hmac;
+    blackcat_encoder encoder;
     blackcat_cipher_processor processor;
     blackcat_hash_processor hash;
     kryptos_u8_t *key;

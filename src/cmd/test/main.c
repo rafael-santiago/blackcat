@@ -170,6 +170,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     blackcat("deinit", "GiveTheMuleWhatHeWants", NULL);
     blackcat("deinit", "IThinkILostMyHeadache", NULL);
+    blackcat("deinit", "PaperScratcher", NULL);
+    blackcat("deinit", "StoneFree", NULL);
     remove("etc/s2.txt");
     rmdir("etc");
     remove("s1.txt");
@@ -181,7 +183,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("show ciphers", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hmacs", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hashes", "---", NULL) == 0);
-    CUTE_ASSERT(blackcat("show hashes hmacs ciphers", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show encoders", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show hashes hmacs ciphers encoders", "---", NULL) == 0);
 
     // INFO(Rafael): Quick help.
 
@@ -227,6 +230,14 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--protection-layer-hash=sha-512 "
                          "--protection-layer=aes-128-cbc "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike "
+                         "--encoder=OI''55", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
     // INFO(Rafael): Valid keyed alike init.
 
@@ -745,6 +756,485 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("rm *", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
 
     CUTE_ASSERT(blackcat("deinit", "IThinkILostMyHeadache", NULL) == 0);
+
+    remove("etc/s2.txt");
+    rmdir("etc");
+    remove("s1.txt");
+    remove("p.txt");
+
+    // INFO(Rafael): Valid keyed alike init with base64 encoding.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike "
+                         "--encoder=base64", "PaperScratcher", "PaperScratcher") == 0);
+
+    // INFO(Rafael): Init again must fail.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike "
+                         "--encoder=base64", "PaperScratcher", "PaperScratcher") != 0);
+
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+
+    //INFO(Rafael): Adding s1 and s2 to the repo's catalog.
+
+    CUTE_ASSERT(blackcat("add s1.txt", "PaperScratch3r", NULL) != 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "PaperScratcher", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s1.txt", "PaperScratcher", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/*.c", "PaperScratcher", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "PaperScratcher", NULL) != 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "PaperScratcher", NULL) == 0);
+
+    // INFO(Rafael): Getting the current repo's status.
+
+    CUTE_ASSERT(blackcat("status", "Ahhhhh", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("status s1.txt", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("status etc/s2.txt", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("status etc/*.txt", "PaperScratcher", NULL) == 0);
+    CUTE_ASSERT(blackcat("status p.txt", "PaperScratcher", NULL) == 0);
+
+    // INFO(Rafael): Lock tests.
+
+    CUTE_ASSERT(blackcat("lock p.txt", "PaperScratcher", NULL) != 0);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "Green Machine", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "PaperScratcher", NULL) == 0);
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "PaperScratcher", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "PaperScratcher", NULL) == 0);
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock p.txt", "PaperScratcher", NULL) != 0);
+
+    // INFO(Rafael): Unlock tests.
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "PaperScratcher.", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "PaperScratcher", NULL) != 0);
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock etc/s2.txt", "PaperScratcher", NULL) == 0);
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    // INFO(Rafael): Lock and Unlock all at once.
+
+    CUTE_ASSERT(blackcat("lock", "PaperScratcher-", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "PaperScratcher-", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
+
+    // INFO(Rafael): Rm test.
+
+    CUTE_ASSERT(blackcat("lock", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm s1.txt", "PaperWhat?", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm s1.txt", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm etc/s2.txt", "PaperWhat?", NULL) != 0);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm etc/s2.txt", "PaperScratcher", NULL) == 0);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): Deinit stuff.
+
+    CUTE_ASSERT(blackcat("deinit", "PaperScratcheR", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("deinit", "PaperScratcher", NULL) == 0);
+
+    remove("etc/s2.txt");
+    rmdir("etc");
+    remove("s1.txt");
+    remove("p.txt");
+
+    // INFO(Rafael): Valid keyed alike init with uuencode encoding.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike "
+                         "--encoder=uuencode", "StoneFree", "StoneFree") == 0);
+
+    // INFO(Rafael): Init again must fail.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike "
+                         "--encoder=uuencode", "StoneFree", "StoneFree") != 0);
+
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+
+    //INFO(Rafael): Adding s1 and s2 to the repo's catalog.
+
+    CUTE_ASSERT(blackcat("add s1.txt", "5t0n3Fr33", NULL) != 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "StoneFree", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s1.txt", "StoneFree", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/*.c", "StoneFree", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "StoneFree", NULL) != 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "StoneFree", NULL) == 0);
+
+    // INFO(Rafael): Getting the current repo's status.
+
+    CUTE_ASSERT(blackcat("status", "Ahhhhh", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("status s1.txt", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("status etc/s2.txt", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("status etc/*.txt", "StoneFree", NULL) == 0);
+    CUTE_ASSERT(blackcat("status p.txt", "StoneFree", NULL) == 0);
+
+    // INFO(Rafael): Lock tests.
+
+    CUTE_ASSERT(blackcat("lock p.txt", "StoneFree", NULL) != 0);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "Green Machine", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "StoneFree", NULL) == 0);
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock s1.txt", "StoneFree", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "StoneFree", NULL) == 0);
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock p.txt", "StoneFree", NULL) != 0);
+
+    // INFO(Rafael): Unlock tests.
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "StoneFree.", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "StoneFree", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "StoneFree", NULL) != 0);
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock etc/s2.txt", "StoneFree", NULL) == 0);
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    // INFO(Rafael): Lock and Unlock all at once.
+
+    CUTE_ASSERT(blackcat("lock", "-StoneFree-", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "StoneFree", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "StoneFree-", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "StoneFree", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
+
+    // INFO(Rafael): Rm test.
+
+    CUTE_ASSERT(blackcat("lock", "StoneFree", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm s1.txt", "StoneTree", NULL) != 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm s1.txt", "StoneFree", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm etc/s2.txt", "StoneTree?!", NULL) != 0);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("rm etc/s2.txt", "StoneFree", NULL) == 0);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): Deinit stuff.
+
+    CUTE_ASSERT(blackcat("deinit", "StoneFreE", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("deinit", "StoneFree", NULL) == 0);
+
     remove("etc/s2.txt");
     rmdir("etc");
     remove("s1.txt");

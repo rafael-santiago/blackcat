@@ -27,6 +27,8 @@ CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
 CUTE_DECLARE_TEST_CASE(get_hmac_catalog_scheme_tests);
 CUTE_DECLARE_TEST_CASE(get_random_hmac_catalog_scheme_tests);
 CUTE_DECLARE_TEST_CASE(add_composite_ciphers_to_chain_tests);
+CUTE_DECLARE_TEST_CASE(get_encoder_tests);
+CUTE_DECLARE_TEST_CASE(get_encoder_name_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -36,6 +38,8 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_is_dec_tests);
     CUTE_RUN_TEST(get_hash_processor_tests);
     CUTE_RUN_TEST(get_hash_size_tests);
+    CUTE_RUN_TEST(get_encoder_tests);
+    CUTE_RUN_TEST(get_encoder_name_tests);
     CUTE_RUN_TEST(is_hmac_processor_tests);
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
     CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
@@ -45,15 +49,56 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
 CUTE_TEST_CASE_END
 
+CUTE_TEST_CASE(get_encoder_name_tests)
+    struct get_encoder_name_test_ctx {
+        blackcat_encoder encoder;
+        const char *name;
+    };
+    struct get_encoder_name_test_ctx test_vect[] = {
+        { blackcat_uuencode, "uuencode"                                            },
+        { blackcat_base64,   "base64"                                              },
+        { NULL,              "uh-uh-it-is-all-the-same-no-matter-where-you-are..." },
+        { NULL,              "he-said-but-he-was-wrong"                            },
+        { NULL,              NULL                                                  }
+    };
+    size_t test_vect_nr = sizeof(test_vect) / sizeof(test_vect[0]), t;
+
+    for (t = 0; t < test_vect_nr; t++) {
+        if (test_vect[t].encoder != NULL) {
+            CUTE_ASSERT(strcmp(get_encoder_name(test_vect[t].encoder), test_vect[t].name) == 0);
+        } else {
+            CUTE_ASSERT(get_encoder_name(test_vect[t].encoder) == NULL);
+        }
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_encoder_tests)
+    struct get_encoder_test_ctx {
+        const char *name;
+        blackcat_encoder encoder;
+    };
+    struct get_encoder_test_ctx test_vect[] = {
+        { "base64",        blackcat_base64    },
+        { "uuencode",      blackcat_uuencode  },
+        { "BeastOfBurden", NULL               },
+        { NULL,            NULL               }
+    };
+    size_t test_vect_nr = sizeof(test_vect) / sizeof(test_vect[0]), t;
+
+    for (t = 0; t < test_vect_nr; t++) {
+        CUTE_ASSERT(get_encoder(test_vect[t].name) == test_vect[t].encoder);
+    }
+CUTE_TEST_CASE_END
+
 CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     blackcat_protlayer_chain_ctx *chain = NULL;
     kryptos_u8_t *key = NULL;
     size_t key_size = 0;
 
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, &key, &key_size, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, &key_size, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, NULL, get_hash_processor("tiger")) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, &key_size, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, &key, &key_size, get_hash_processor("tiger"), NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, &key_size, get_hash_processor("tiger"), NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, NULL, get_hash_processor("tiger"), NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, &key_size, NULL, NULL) == NULL);
 
     key = (kryptos_u8_t *) malloc(4);
     CUTE_ASSERT(key != NULL);
@@ -61,7 +106,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     key_size = 4;
 
     chain = add_composite_protlayer_to_chain(chain, "hmac-cha3-512-bug-a-loo-cipher-cbc",
-                                             &key, &key_size, get_hash_processor("tiger"));
+                                             &key, &key_size, get_hash_processor("tiger"), get_encoder("uuencode"));
 
     CUTE_ASSERT(chain == NULL);
     CUTE_ASSERT(key == NULL);
@@ -74,7 +119,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
 
     chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr|feal-cbc/167,"
                                                     "hmac-cha3-512-bug-a-loo-cipher-cbc",
-                                             &key, &key_size, get_hash_processor("tiger"));
+                                             &key, &key_size, get_hash_processor("tiger"), get_encoder("base64"));
 
     CUTE_ASSERT(chain == NULL);
     CUTE_ASSERT(key == NULL);
@@ -85,7 +130,8 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     memcpy(key, "test", 4);
     key_size = 4;
 
-    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", &key, &key_size, get_hash_processor("tiger"));
+    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", &key, &key_size, get_hash_processor("tiger"),
+                                             NULL);
 
     CUTE_ASSERT(chain != NULL);
     CUTE_ASSERT(chain->next == NULL);
@@ -103,7 +149,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     chain = NULL;
     chain = add_composite_protlayer_to_chain(chain,
                                              "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr,feal-cbc/167",
-                                             &key, &key_size, get_hash_processor("tiger"));
+                                             &key, &key_size, get_hash_processor("tiger"), NULL);
 
     CUTE_ASSERT(chain != NULL);
 
