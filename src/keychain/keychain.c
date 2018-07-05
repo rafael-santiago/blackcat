@@ -173,6 +173,10 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
     kryptos_task_ctx t, *ktask = &t;
     size_t kp_size, curr_size;
 
+    if (*wanted_size == 0) {
+        return NULL;
+    }
+
     if (*wanted_size == - 1) {
         kp = (kryptos_u8_t *) kryptos_newseg(*key_size);
         memcpy(kp, *key, *key_size); // XXX(Rafael): Maybe hash it too.

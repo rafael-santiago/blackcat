@@ -32,6 +32,7 @@
 #include <keychain/cipher/xtea.h>
 #include <keychain/encoder/uuencode.h>
 #include <keychain/encoder/base64.h>
+#include <keychain/steganography/gibberish_wrap.h>
 #include <kryptos.h>
 
 struct blackcat_ciphering_scheme_ctx {
@@ -1184,7 +1185,10 @@ static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
     register_ciphering_scheme( 16, "hmac-sha3-384-noekeon-d-ctr", hmac_sha3_384_noekeon_d, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha3-512-noekeon-d-ctr", hmac_sha3_512_noekeon_d, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-tiger-noekeon-d-ctr", hmac_tiger_noekeon_d, NULL, CTR),
-    register_ciphering_scheme( 16, "hmac-whirlpool-noekeon-d-ctr", hmac_whirlpool_noekeon_d, NULL, CTR)
+    register_ciphering_scheme( 16, "hmac-whirlpool-noekeon-d-ctr", hmac_whirlpool_noekeon_d, NULL, CTR),
+    // INFO(Rafael): This is not actually a cipher but it can be used between ciphers to difficult cryptanalysis.
+    //               It can be used by the user in the following way: 'gibberish-wrap/n-n'.
+    register_ciphering_scheme(  0, "gibberish-wrap", gibberish_wrap, gibberish_wrap, CipherModeNr)
 };
 
 #undef register_ciphering_scheme

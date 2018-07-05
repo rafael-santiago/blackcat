@@ -23,6 +23,7 @@ static char *huge_protchain[] = {
     "blowfish-cbc",
     "serpent-cbc",
     "tea-cbc",
+    "gibberish-wrap/80-203",
     "xtea-cbc/273",
     "misty1-cbc",
     "mars-128-cbc", "mars-192-cbc", "mars-256-cbc",

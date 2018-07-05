@@ -354,6 +354,7 @@ CUTE_TEST_CASE(is_hmac_processor_tests)
         add_test_step(shacal2, 0),
         add_test_step(noekeon, 0),
         add_test_step(noekeon_d, 0),
+        add_test_step(gibberish_wrap, 0),
         add_test_step(hmac_sha224_aes128, 1),
         add_test_step(hmac_sha224_aes192, 1),
         add_test_step(hmac_sha224_aes256, 1),
@@ -777,12 +778,18 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
 
         CUTE_ASSERT(pchain != NULL);
 
-        CUTE_ASSERT(pchain->key != NULL);
-
-        if (g_blackcat_ciphering_schemes[a].key_size > -1) {
-            CUTE_ASSERT(pchain->key_size == g_blackcat_ciphering_schemes[a].key_size);
-        } else {
-            CUTE_ASSERT(pchain->key_size == 6);
+        switch (g_blackcat_ciphering_schemes[a].key_size) {
+            case 0:
+                CUTE_ASSERT(pchain->key == NULL);
+                break;
+            case -1:
+                CUTE_ASSERT(pchain->key != NULL);
+                CUTE_ASSERT(pchain->key_size == 6);
+                break;
+            default:
+                CUTE_ASSERT(pchain->key != NULL);
+                CUTE_ASSERT(pchain->key_size == g_blackcat_ciphering_schemes[a].key_size);
+                break;
         }
 
         CUTE_ASSERT(pchain->processor == g_blackcat_ciphering_schemes[a].processor);
