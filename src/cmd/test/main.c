@@ -8,6 +8,7 @@
 #include <cutest.h>
 #include <cmd/options.h>
 #include <cmd/version.h>
+#include <cmd/levenshtein_distance.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,6 +50,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_get_argv_tests);
 CUTE_DECLARE_TEST_CASE(get_blackcat_version_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_clear_options_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poking_tests);
+CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
 
@@ -60,8 +62,15 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(blackcat_get_argv_tests);
     CUTE_RUN_TEST(blackcat_clear_options_tests);
     CUTE_RUN_TEST(get_blackcat_version_tests);
+    CUTE_RUN_TEST(levenshtein_distance_tests);
     // INFO(Rafael): If all is okay, time to poke this shit.
     CUTE_RUN_TEST(blackcat_poking_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(levenshtein_distance_tests)
+    CUTE_ASSERT(levenshtein_distance("stat", "status") == 2);
+    CUTE_ASSERT(levenshtein_distance("parangaritititero", "parangaricutirimirruaru") == 12);
+    CUTE_ASSERT(levenshtein_distance("self", "help") == 2);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_set_argc_argv_tests)
@@ -176,6 +185,15 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     remove("s1.txt");
     remove("p.txt");
+
+    // INFO(Rafael): Wrong commands.
+
+    CUTE_ASSERT(blackcat("shew", "---", NULL) != 0);
+    CUTE_ASSERT(blackcat("self", "---", NULL) != 0);
+    CUTE_ASSERT(blackcat("adds", "---", NULL) != 0);
+    CUTE_ASSERT(blackcat("rms", "---", NULL) != 0);
+    CUTE_ASSERT(blackcat("state", "----", NULL) != 0);
+    CUTE_ASSERT(blackcat("rinite", "---", NULL) != 0);
 
     // INFO(Rafael): Showing the available ciphers, HMACs and hashes.
 
