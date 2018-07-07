@@ -169,7 +169,7 @@ static kryptos_u8_t *blackcat_key_crunching(const size_t algo, kryptos_u8_t **ke
 static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key_size,
                                                  ssize_t *wanted_size,
                                                  blackcat_hash_processor hash) {
-    kryptos_u8_t *kp = NULL;
+    kryptos_u8_t *kp = NULL, *skey = NULL;
     kryptos_task_ctx t, *ktask = &t;
     size_t kp_size, curr_size;
 
@@ -178,11 +178,27 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
     }
 
     if (*wanted_size == - 1) {
-        kp = (kryptos_u8_t *) kryptos_newseg(*key_size);
-        memcpy(kp, *key, *key_size); // XXX(Rafael): Maybe hash it too.
-        *wanted_size = *key_size;
+        kryptos_task_init_as_null(ktask);
+
+        ktask->in = (kryptos_u8_t *) kryptos_newseg(*key_size);
+        ktask->in_size = *key_size;
+        memcpy(ktask->in, *key, *key_size);
+
+        if (hash == NULL) {
+            kryptos_hash(sha3_512, ktask, (kryptos_u8_t *)ktask->in, ktask->in_size, 0);
+        } else {
+            hash(&ktask, 0);
+        }
+
+        *wanted_size = ktask->out_size + ktask->out[0] + ktask->in_size;
+
+        kp = skey = (kryptos_u8_t *) kryptos_newseg(*wanted_size);
+        kp_size = *wanted_size;
+
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+        kryptos_task_set_in(ktask, ktask->out, ktask->out_size);
     } else {
-        kp = (kryptos_u8_t *) kryptos_newseg(*wanted_size);
+        kp = skey = (kryptos_u8_t *) kryptos_newseg(*wanted_size);
         kp_size = *wanted_size;
 
         kryptos_task_init_as_null(ktask);
@@ -190,30 +206,31 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
         ktask->in = (kryptos_u8_t *) kryptos_newseg(*key_size);
         ktask->in_size = *key_size;
         memcpy(ktask->in, *key, *key_size);
-
-        while (kp_size > 0) {
-            if (hash == NULL) {
-                kryptos_hash(sha3_512, ktask, (kryptos_u8_t *)ktask->in, ktask->in_size, 0);
-            } else {
-                hash(&ktask, 0);
-            }
-            curr_size = (ktask->out_size < kp_size) ? ktask->out_size : kp_size;
-            memcpy(kp, ktask->out, kp_size);
-            if (ktask->in == (*key)) {
-                ktask->in = NULL;
-                ktask->in_size = 0;
-            }
-            kryptos_task_free(ktask, KRYPTOS_TASK_IN);
-            kryptos_task_set_in(ktask, ktask->out, ktask->out_size);
-            kp_size -= curr_size;
-        }
-
-        kryptos_freeseg(*key, *key_size);
-
-        // INFO(Rafael): Refreshing the key buffer for the next key derivation.
-        (*key) = ktask->out;
-        *key_size = ktask->out_size;
     }
 
-    return kp;
+    while (kp_size > 0) {
+        if (hash == NULL) {
+            kryptos_hash(sha3_512, ktask, (kryptos_u8_t *)ktask->in, ktask->in_size, 0);
+        } else {
+            hash(&ktask, 0);
+        }
+        curr_size = (ktask->out_size < kp_size) ? ktask->out_size : kp_size;
+        memcpy(kp, ktask->out, kp_size);
+        if (ktask->in == (*key)) {
+            ktask->in = NULL;
+            ktask->in_size = 0;
+        }
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+        kryptos_task_set_in(ktask, ktask->out, ktask->out_size);
+        kp_size -= curr_size;
+        kp += curr_size;
+    }
+
+    kryptos_freeseg(*key, *key_size);
+
+    // INFO(Rafael): Refreshing the key buffer for the next key derivation.
+    (*key) = ktask->out;
+    *key_size = ktask->out_size;
+
+    return skey;
 }

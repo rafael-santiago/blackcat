@@ -784,7 +784,7 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
                 break;
             case -1:
                 CUTE_ASSERT(pchain->key != NULL);
-                CUTE_ASSERT(pchain->key_size == 6);
+                CUTE_ASSERT(pchain->key_size != 6);
                 break;
             default:
                 CUTE_ASSERT(pchain->key != NULL);
