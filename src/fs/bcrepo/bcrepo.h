@@ -44,6 +44,11 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
 
 int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size);
 
+int bcrepo_roll_ball_of_wool(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                             const char *wpath);
+
+int bcrepo_unroll_ball_of_wool(const char *wpath, const char *rootpath);
+
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath);
 
 #endif

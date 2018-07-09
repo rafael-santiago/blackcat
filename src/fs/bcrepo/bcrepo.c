@@ -135,6 +135,285 @@ char *remove_go_ups_from_path(char *path, const size_t path_size);
 
 static kryptos_u8_t *random_printable_padding(size_t *size);
 
+static int bcrepo_mkdtree(const char *dirtree);
+
+int bcrepo_roll_ball_of_wool(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                             const char *wpath) {
+    bfs_catalog_relpath_ctx *fp = NULL;
+    bfs_catalog_ctx *cp = *catalog;
+    FILE *wp = NULL, *wpp = NULL;
+    int no_error = 1;
+    char filepath[4096];
+    kryptos_u8_t *data = NULL;
+    size_t data_size = 0;
+
+    if (bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1) != 1) {
+        return 0;
+    }
+
+    if ((wp = fopen(wpath, "wb")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", wpath);
+        no_error = 0;
+        goto bcrepo_roll_ball_of_wool_epilogue;
+    }
+
+#define roll_data(filepath, curr_path, wp, wpp, data, data_size, no_error) {\
+    if ((wpp = fopen(filepath, "rb")) == NULL) {\
+        fprintf(stderr, "ERROR: Uanble to read the file '%s'.\n", filepath);\
+        no_error = 0;\
+        goto bcrepo_roll_ball_of_wool_epilogue;\
+    }\
+    fseek(wpp, 0L, SEEK_END);\
+    data_size = (size_t) ftell(wpp);\
+    fseek(wpp, 0L, SEEK_SET);\
+    if ((data = (kryptos_u8_t *) kryptos_newseg(data_size)) == NULL) {\
+        fprintf(stderr, "ERROR: Not enough memory.\n");\
+        no_error = 0;\
+        goto bcrepo_roll_ball_of_wool_epilogue;\
+    }\
+    if (fread(data, 1, data_size, wpp) == -1) {\
+        fprintf(stderr, "ERROR: Unable to read data from file '%s'.\n", filepath);\
+        no_error = 0;\
+        goto bcrepo_roll_ball_of_wool_epilogue;\
+    }\
+    fclose(wpp);\
+    wpp = NULL;\
+    fprintf(wp, "%s,%d\n", curr_path, data_size);\
+    if (fwrite(data, 1, data_size, wp) == -1) {\
+        fprintf(stderr, "ERROR: Unable to write data to file '%s'.\n", wpath);\
+        no_error = 0;\
+        goto bcrepo_roll_ball_of_wool_epilogue;\
+    }\
+    kryptos_freeseg(data, data_size);\
+    data = NULL;\
+}
+
+    bcrepo_catalog_file(filepath, sizeof(filepath) - 1, rootpath);
+
+    roll_data(filepath, BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, wp, wpp, data, data_size, no_error)
+
+    for (fp = cp->files; fp != NULL; fp = fp->next) {
+        bcrepo_mkpath(filepath, sizeof(filepath) - 1, rootpath, rootpath_size, fp->path, fp->path_size);
+        roll_data(filepath, fp->path, wp, wpp, data, data_size, no_error)
+    }
+
+#undef roll_data
+
+    fclose(wp);
+    wp = NULL;
+
+bcrepo_roll_ball_of_wool_epilogue:
+
+    if (data != NULL) {
+        kryptos_freeseg(data, data_size);
+        data_size = 0;
+    }
+
+    if (wpp != NULL) {
+        fclose(wpp);
+    }
+
+    if (wp != NULL) {
+        fclose(wp);
+        remove(wpath);
+    }
+
+    cp = NULL;
+
+    return no_error;
+}
+
+int bcrepo_unroll_ball_of_wool(const char *wpath, const char *rootpath) {
+    int no_error = 1;
+    FILE *wool = NULL;
+    kryptos_u8_t *data = NULL, *wp_data = NULL, *wp = NULL, *wp_end = NULL, *off = NULL;
+    size_t data_size = 0, wp_data_size = 0;
+    char filepath[4096], temp[4096], oldcwd[4096], *rp = NULL;
+
+    if ((rp = bcrepo_get_rootpath()) != NULL) {
+        fprintf(stderr, "ERROR: Your are inside a previosly initialized repo.\n");
+        no_error = 0;
+        goto bcrepo_unroll_ball_of_wool_epilogue;
+    }
+
+    if ((wool = fopen(wpath, "rb")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to read the file '%s'.\n", wpath);
+        no_error = 0;
+        goto bcrepo_unroll_ball_of_wool_epilogue;
+    }
+
+    fseek(wool, 0L, SEEK_END);
+    wp_data_size = ftell(wool);
+    fseek(wool, 0L, SEEK_SET);
+
+    if ((wp_data = (kryptos_u8_t *) kryptos_newseg(wp_data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        no_error = 0;
+        wp_data_size = 0;
+        goto bcrepo_unroll_ball_of_wool_epilogue;
+    }
+
+    if (fread(wp_data, 1, wp_data_size, wool) == -1) {
+        fprintf(stderr, "ERROR: Unable to read data from file '%s'.\n", wpath);
+        no_error = 0;
+        goto bcrepo_unroll_ball_of_wool_epilogue;
+    }
+
+    fclose(wool);
+    wool = NULL;
+
+    if (rootpath != NULL) {
+        if (bcrepo_mkdtree(rootpath) != 0) { 
+            fprintf(stderr, "ERROR: Unable to create the directory path '%s'.\n", rootpath);
+            no_error = 0;
+            goto bcrepo_unroll_ball_of_wool_epilogue;
+        }
+        getcwd(oldcwd, sizeof(oldcwd) - 1);
+        if (chdir(rootpath) != 0) {
+            fprintf(stderr, "ERROR: Unable to change the current work directory.");\
+            no_error = 0;
+            goto bcrepo_unroll_ball_of_wool_epilogue;
+        }
+    }
+
+#define unroll_data(wp, wp_end, filepath, filepath_size, data, data_size, off, temp, temp_size, fp) {\
+    off = wp;\
+    while (wp != wp_end && *wp != ',') {\
+        wp++;\
+    }\
+    memset(filepath, 0, filepath_size);\
+    memcpy(filepath, off, wp - off);\
+    wp += 1;\
+    if (wp == wp_end) {\
+        no_error = 0;\
+        fprintf(stderr, "ERROR: Not enough data.\n");\
+        goto bcrepo_unroll_ball_of_wool_epilogue;\
+    }\
+    off = wp;\
+    while (wp != wp_end && *wp != '\n') {\
+        wp++;\
+    }\
+    memset(temp, 0, temp_size);\
+    memcpy(temp, off, wp - off);\
+    data_size = atoi(temp);\
+    wp += 1;\
+    if ((data = (kryptos_u8_t *)kryptos_newseg(data_size)) == NULL) {\
+        no_error = 0;\
+        fprintf(stderr, "ERROR: Not enough memory.\n");\
+        goto bcrepo_unroll_ball_of_wool_epilogue;\
+    }\
+    memcpy(data, wp, data_size);\
+    wp += data_size;\
+    off = &filepath[strlen(filepath) - 1];\
+    while (off != (kryptos_u8_t *)&filepath[0] && *off != '/') {\
+        off--;\
+    }\
+    if ((off - (kryptos_u8_t *)&filepath[0]) > 0) {\
+        memset(temp, 0, temp_size);\
+        memcpy(temp, filepath, off - (kryptos_u8_t *)&filepath[0]);\
+        if (bcrepo_mkdtree(temp) != 0) {\
+            fprintf(stderr, "ERROR: Unable to create the directory path '%s'.\n", temp);\
+            no_error = 0;\
+            goto bcrepo_unroll_ball_of_wool_epilogue;\
+        }\
+    }\
+    if ((fp = fopen(filepath, "wb")) == NULL) {\
+        fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", filepath);\
+        no_error = 0;\
+        goto bcrepo_unroll_ball_of_wool_epilogue;\
+    }\
+    if (fwrite(data, 1, data_size, fp) == -1) {\
+        fprintf(stderr, "ERROR: Unable to dump data to file '%s'.\n", filepath);\
+        no_error = 0;\
+        goto bcrepo_unroll_ball_of_wool_epilogue;\
+    }\
+    fclose(fp);\
+    fp = NULL;\
+    kryptos_freeseg(data, data_size);\
+    data = NULL;\
+}
+
+    wp = wp_data;
+    wp_end = wp + wp_data_size;
+
+    while (wp < wp_end) {
+        unroll_data(wp, wp_end, filepath, sizeof(filepath), data, data_size, off, temp, sizeof(temp), wool)
+    }
+
+#undef unroll_data
+
+bcrepo_unroll_ball_of_wool_epilogue:
+
+    if (rp != NULL) {
+        kryptos_freeseg(rp, strlen(rp));
+    }
+
+    if (rootpath != NULL) {
+        chdir(oldcwd);
+    }
+
+    if (data != NULL) {
+        kryptos_freeseg(data, data_size);
+        data_size = 0;
+    }
+
+    if (wp_data != NULL) {
+        kryptos_freeseg(wp_data, wp_data_size);
+        wp_data_size = 0;
+    }
+
+    if (wool != NULL)  {
+        fclose(wool);
+    }
+
+    return no_error;
+}
+
+static int bcrepo_mkdtree(const char *dirtree) {
+    mode_t oldmask;
+    const char *d, *d_end, *s;
+    char dir[4096];
+    char oldcwd[4096];
+    int exit_code = 0;
+    struct stat st;
+
+    if (stat(dirtree, &st) == 0) {
+        if (st.st_mode != S_IFDIR) {
+            return 0;
+        }
+        return 1;
+    }
+
+    oldmask = umask(0);
+
+    getcwd(oldcwd, sizeof(oldcwd) - 1);
+
+    d = dirtree;
+    d_end = d + strlen(d);
+
+    do {
+        s = d;
+        while (d != d_end && *d != '/') {
+            d++;
+        }
+
+        memset(dir, 0, sizeof(dir));
+        memcpy(dir, s, d - s);
+
+        exit_code = mkdir(dir, 0777);
+
+        if (exit_code == 0) {
+            exit_code = chdir(dir);
+            d++;
+        }
+    } while (d < d_end && exit_code == 0);
+
+    umask(oldmask);
+    chdir(oldcwd);
+
+    return exit_code;
+}
+
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath) {
     if (rootpath == NULL || buf == NULL || buf_size == 0) {
         return buf;
