@@ -137,7 +137,7 @@ static kryptos_u8_t *random_printable_padding(size_t *size);
 
 static int bcrepo_mkdtree(const char *dirtree);
 
-int bcrepo_roll_ball_of_wool(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
                              const char *wpath) {
     bfs_catalog_relpath_ctx *fp = NULL;
     bfs_catalog_ctx *cp = *catalog;
@@ -147,9 +147,7 @@ int bcrepo_roll_ball_of_wool(bfs_catalog_ctx **catalog, const char *rootpath, co
     kryptos_u8_t *data = NULL;
     size_t data_size = 0;
 
-    if (bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1) != 1) {
-        return 0;
-    }
+    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
 
     if ((wp = fopen(wpath, "wb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", wpath);
@@ -223,7 +221,7 @@ bcrepo_roll_ball_of_wool_epilogue:
     return no_error;
 }
 
-int bcrepo_unroll_ball_of_wool(const char *wpath, const char *rootpath) {
+int bcrepo_unpack(const char *wpath, const char *rootpath) {
     int no_error = 1;
     FILE *wool = NULL;
     kryptos_u8_t *data = NULL, *wp_data = NULL, *wp = NULL, *wp_end = NULL, *off = NULL;

@@ -34,7 +34,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_rm_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_lock_unlock_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_catalog_file_tests);
 CUTE_DECLARE_TEST_CASE(remove_go_ups_from_path_tests);
-CUTE_DECLARE_TEST_CASE(roll_unroll_ball_of_wool_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_pack_unpack_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -60,10 +60,10 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_add_tests);
     CUTE_RUN_TEST(bcrepo_lock_unlock_tests);
     CUTE_RUN_TEST(bcrepo_rm_tests);
-    CUTE_RUN_TEST(roll_unroll_ball_of_wool_tests);
+    CUTE_RUN_TEST(bcrepo_pack_unpack_tests);
 CUTE_TEST_CASE_END
 
-CUTE_TEST_CASE(roll_unroll_ball_of_wool_tests)
+CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     bfs_catalog_ctx *catalog = NULL;
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
@@ -220,11 +220,11 @@ CUTE_TEST_CASE(roll_unroll_ball_of_wool_tests)
 
     getcwd(oldcwd, sizeof(oldcwd) - 1);
 
-    CUTE_ASSERT(bcrepo_roll_ball_of_wool(&catalog, rootpath, rootpath_size, "../repo.bow") == 1);
+    CUTE_ASSERT(bcrepo_pack(&catalog, rootpath, rootpath_size, "../repo.bow") == 1);
 
     CUTE_ASSERT(chdir("..") == 0);
 
-    CUTE_ASSERT(bcrepo_unroll_ball_of_wool("repo.bow", "bow/unroll") == 1);
+    CUTE_ASSERT(bcrepo_unpack("repo.bow", "bow/unroll") == 1);
 
     data = open_text("bow/unroll/sensitive.txt", &data_size);
     CUTE_ASSERT(data != NULL);
@@ -247,14 +247,14 @@ CUTE_TEST_CASE(roll_unroll_ball_of_wool_tests)
 
     CUTE_ASSERT(chdir(oldcwd) == 0);
 
-    CUTE_ASSERT(bcrepo_unroll_ball_of_wool("../repo.bow", NULL) == 0);
+    CUTE_ASSERT(bcrepo_unpack("../repo.bow", NULL) == 0);
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
     remove("sensitive.txt");
     remove("plain.txt");
 
-    CUTE_ASSERT(bcrepo_unroll_ball_of_wool("../repo.bow", NULL) == 1);
+    CUTE_ASSERT(bcrepo_unpack("../repo.bow", NULL) == 1);
 
     remove("../repo.bow");
 

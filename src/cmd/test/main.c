@@ -185,6 +185,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     remove("s1.txt");
     remove("p.txt");
+    remove("unpack-test/bpack/etc/s2.txt");
+    remove("unpack-test/bpack/s1.txt");
+    remove("unpack-test/bpack/p.txt");
+    rmdir("unpack-test/bpack/etc");
+    rmdir("unpack-test/bpack");
+    rmdir("unpack-test");
+    remove("test.bpack");
 
     // INFO(Rafael): Wrong commands.
 
@@ -215,9 +222,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help unlock", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help show", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help help", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help pack", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack", "", NULL) == 0);
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -490,11 +499,55 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
+    // INFO(Rafael): Pack stuff.
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("pack", "GiveTheMuleWhatHeWants", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("pack test.bpack", "GIVETheMuleWhatHeWants", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("pack test.bpack", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    // INFO(Rafael): Unpack stuff (only failures).
+
+    CUTE_ASSERT(blackcat("unpack test.bpack", "GiveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("unpack test.bpack test/bpack", "GiveTheMuleWhatHeWants", NULL) != 0);
+
     // INFO(Rafael): Deinit stuff.
 
     CUTE_ASSERT(blackcat("deinit", "GiveTheMuleWhatHeWantS", NULL) != 0);
 
     CUTE_ASSERT(blackcat("deinit", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    // INFO(Rafael): Unpack stuff.
+
+    CUTE_ASSERT(blackcat("unpack test.bpack", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("status", "GIveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unpack test.bpack unpack-test/bpack", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(chdir("unpack-test/bpack") == 0);
+
+    CUTE_ASSERT(blackcat("status", "hjsdhashdhashdahsdjashjasjdahsdjajskdkjaskjdkasdkajksdkj", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "GiveTheMuleWhatHeWants", NULL) == 0);
+    remove("etc/s2.txt");
+    remove("s1.txt");
+    remove("p.txt");
+    rmdir("etc");
+    CUTE_ASSERT(chdir("../..") == 0);
+    rmdir("unpack-test/bpack");
+    rmdir("unpack-test");
+    remove("test.bpack");
 
     // INFO(Rafael): Invalid keyed twice init with invalid key confirmations.
 

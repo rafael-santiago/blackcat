@@ -16,6 +16,8 @@
 #include <cmd/unlock.h>
 #include <cmd/status.h>
 #include <cmd/show.h>
+#include <cmd/pack.h>
+#include <cmd/unpack.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -29,7 +31,9 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(lock_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(unlock_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(status_help),
-    BLACKCAT_COMMAND_TABLE_ENTRY(show_help)
+    BLACKCAT_COMMAND_TABLE_ENTRY(show_help),
+    BLACKCAT_COMMAND_TABLE_ENTRY(pack_help),
+    BLACKCAT_COMMAND_TABLE_ENTRY(unpack_help)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)
