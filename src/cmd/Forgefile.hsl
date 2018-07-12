@@ -40,11 +40,11 @@ blackcat-cmd.prologue() {
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
-    if (build_libkryptos() != 0) {
+    if (build("libkryptos") != 0) {
         hefesto.project.abort(1);
     }
 
-    if (build_libaccacia() != 0) {
+    if (build("libaccacia") != 0) {
         hefesto.project.abort(1);
     }
 

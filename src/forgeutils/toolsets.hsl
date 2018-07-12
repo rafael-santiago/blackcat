@@ -55,7 +55,7 @@ function get_codes(dirlist type list, deps type string) : result type list {
     result $codes;
 }
 
-function build_libkryptos() : result type int {
+local function build_libkryptos() : result type int {
     var libpath type string;
     var rootdir type string;
 
@@ -85,7 +85,7 @@ function build_libkryptos() : result type int {
     result $exit_code;
 }
 
-function build_libcutest() : result type int {
+local function build_libcutest() : result type int {
     var libpath type string;
     var rootdir type string;
 
@@ -111,7 +111,7 @@ function build_libcutest() : result type int {
     result $exit_code;
 }
 
-function build_libaccacia() : result type int {
+local function build_libaccacia() : result type int {
     var libpath type string;
     var rootdir type string;
 
@@ -135,6 +135,19 @@ function build_libaccacia() : result type int {
     }
 
     result $exit_code;
+}
+
+function build(libname type string) : result type int {
+    var func_addr type int;
+
+    $func_addr = hefesto.sys.get_func_addr("build_" + $libname);
+
+    if ($func_addr == 0) {
+        hefesto.sys.echo("BUILD ERROR: Unknown lib '" + $libname + "'.\n");
+        result 1;
+    }
+
+    result hefesto.sys.call_func_addr($func_addr);
 }
 
 local function get_toolset() : result type string {

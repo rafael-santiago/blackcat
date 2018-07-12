@@ -34,7 +34,7 @@ base-tests.prologue() {
     $ldflags = hefesto.sys.get_option("ldflags");
     $appname = get_appname();
 
-    if (build_libcutest() != 0) {
+    if (build("libcutest") != 0) {
         hefesto.project.abort(1);
     }
 

@@ -35,7 +35,7 @@ blackcat-cmd-tests.prologue() {
 
     $ldflags = get_cmd_objects($ldflags);
 
-    if (build_libcutest() != 0) {
+    if (build("libcutest") != 0) {
         hefesto.project.abort(1);
     }
 

@@ -24,7 +24,7 @@ fs-tests.preloading() {
 project fs-tests : toolset $curr_tool : $src, $inc, $cflags, $lib, $ldflags, $appname;
 
 fs-tests.prologue() {
-    if (build_libcutest() != 0) {
+    if (build("libcutest") != 0) {
         hefesto.project.abort(1);
     }
 
