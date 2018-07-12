@@ -9,6 +9,7 @@
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <keychain/keychain.h>
+#include <ctx/ctx.h>
 #include <fs/ctx/fsctx.h>
 #include <fs/strglob.h>
 #include <kryptos.h>
@@ -136,6 +137,95 @@ char *remove_go_ups_from_path(char *path, const size_t path_size);
 static kryptos_u8_t *random_printable_padding(size_t *size);
 
 static int bcrepo_mkdtree(const char *dirtree);
+
+int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
+                               const char *rootpath, const size_t rootpath_size,
+                               kryptos_u8_t *catalog_key, const size_t catalog_key_size,
+                               kryptos_u8_t **protlayer_key, size_t *protlayer_key_size,
+                               const char *protection_layer,
+                               blackcat_hash_processor catalog_hash_proc,
+                               blackcat_hash_processor key_hash_proc,
+                               blackcat_hash_processor protlayer_hash_proc,
+                               blackcat_encoder encoder) {
+    bfs_catalog_ctx *cp = *catalog;
+    kryptos_task_ctx t, *ktask = &t;
+    char filepath[4096];
+    int no_error = 1;
+
+    bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1);
+
+    cp->catalog_key_hash_algo = catalog_hash_proc;
+    cp->key_hash_algo = key_hash_proc;
+    cp->key_hash_algo_size = get_hash_size(get_hash_processor_name(key_hash_proc));
+
+    kryptos_task_init_as_null(ktask);
+
+    ktask->in = *protlayer_key;
+    ktask->in_size = *protlayer_key_size;
+
+    cp->key_hash_algo(&ktask, 1);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        fprintf(stderr, "ERROR: While trying to hash the user key.\n");
+        no_error = 0;
+        goto bcrepo_reset_repo_settings_epilogue;
+    }
+
+    kryptos_freeseg(cp->key_hash, cp->key_hash_size);
+
+    cp->key_hash = ktask->out;
+    cp->key_hash_size = ktask->out_size;
+
+    ktask->in = ktask->out = NULL;
+    ktask->in_size = ktask->out_size = 0;
+
+    cp->protlayer_key_hash_algo = protlayer_hash_proc;
+    cp->protlayer_key_hash_algo_size = get_hash_size(get_hash_processor_name(protlayer_hash_proc));
+    cp->protection_layer = (char *)protection_layer;
+
+    if (cp->protlayer != NULL) {
+        del_protlayer_chain_ctx(cp->protlayer);
+        cp->protlayer = NULL;
+    }
+
+    cp->encoder = encoder;
+
+    cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
+                                                     protlayer_key, protlayer_key_size,
+                                                     protlayer_hash_proc, cp->encoder);
+
+    if (cp->protlayer == NULL) {
+        fprintf(stderr, "ERROR: While reconstructing the protection layer.\n");
+        no_error = 0;
+        goto bcrepo_reset_repo_settings_epilogue;
+    }
+
+    if ((no_error = bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1)) != 1) {
+        fprintf(stderr, "ERROR: While locking the repo with the new settings.\n");
+        goto bcrepo_reset_repo_settings_epilogue;
+    }
+
+    bcrepo_mkpath(filepath, sizeof(filepath),
+                  BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE,
+                  BCREPO_CATALOG_FILE, BCREPO_CATALOG_FILE_SIZE);
+
+    if ((no_error = bcrepo_write(filepath, cp, catalog_key, catalog_key_size)) != 1) {
+        fprintf(stderr, "ERROR: While writing the repo new settings.\n");
+        goto bcrepo_reset_repo_settings_epilogue;
+    }
+
+bcrepo_reset_repo_settings_epilogue:
+
+    if (no_error == 0) {
+        // INFO(Rafael): Trying do not to let unencrypted files. However, it could happen depending on when the failure has
+        //               occurred.
+        bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
+    }
+
+    memset(catalog_key, 0, catalog_key_size);
+
+    return no_error;
+}
 
 int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
                              const char *wpath) {

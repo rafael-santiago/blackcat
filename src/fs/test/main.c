@@ -35,6 +35,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_lock_unlock_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_catalog_file_tests);
 CUTE_DECLARE_TEST_CASE(remove_go_ups_from_path_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_pack_unpack_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_reset_repo_settings_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -61,6 +62,223 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_lock_unlock_tests);
     CUTE_RUN_TEST(bcrepo_rm_tests);
     CUTE_RUN_TEST(bcrepo_pack_unpack_tests);
+    CUTE_RUN_TEST(bcrepo_reset_repo_settings_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "nao, sei... so sei que foi assim";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *pattern = NULL;
+    int o_files_nr = 0;
+    const char *sensitive = "I like pleasure spiked with pain\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Songbird sweet and sour Jane\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Pleasure spiked with pain\n"
+                            "That mother fucker always spiked with pain\n"
+                            "Looking in my own eyes \"hello\"\n"
+                            "I can't find the love I want\n"
+                            "Someone better slap me\n"
+                            "Before I start to rust\n"
+                            "Before I start to decompose\n"
+                            "Looking in my rear view mirror\n"
+                            "I can make it disappear\n"
+                            "I can make it disappear \"have no fear\"\n"
+                            "I like pleasure spiked with pain\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Songbird sweet and sour Jane\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Pleasure spiked with pain\n"
+                            "That mother fucker always spiked with pain\n"
+                            "Sitting in my kitchen hey girl\n"
+                            "I'm turning into dust again\n"
+                            "My melancholy baby\n"
+                            "The star of mazzy must\n"
+                            "Push her voice inside of me\n"
+                            "I'm overcoming gravity\n"
+                            "I'm overcoming gravity\n"
+                            "It's easy when you're sad to be\n"
+                            "It's easy when you're sad \"said 'bout me\"\n"
+                            "I like pleasure spiked with pain\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Songbird sweet and sour Jane\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Pleasure spiked with pain\n"
+                            "Just one note\n"
+                            "Could make me float\n"
+                            "Could make me float away\n"
+                            "One note from\n"
+                            "The song she wrote\n"
+                            "Could fuck me where I lay\n"
+                            "Just one note\n"
+                            "Could make me choke\n"
+                            "One note that's\n"
+                            "Not a lie\n"
+                            "Just one note\n"
+                            "Could cut my throat\n"
+                            "One could make me die\n"
+                            "I like pleasure spiked with pain\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Songbird sweet and sour Jane\n"
+                            "And music is my aeroplane\n"
+                            "It's my aeroplane\n"
+                            "Pleasure spiked with pain\n";
+    const char *plain = "A new day yesteday.";
+    char *data;
+    size_t data_size;
+    kryptos_u8_t *protkey;
+    size_t protkey_size;
+    char oldcwd[4096];
+    kryptos_u8_t *new_key;
+    size_t new_key_size;
+    kryptos_u8_t *new_protlayer_key;
+    size_t new_protlayer_key_size;
+
+    // INFO(Rafael): Bootstrapping the test repo.
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = "0.0.1";
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha-512");
+    catalog->key_hash_algo_size = get_hash_size("sha-512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->encoder = get_encoder("uuencode");
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+    CUTE_ASSERT(catalog->encoder != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha-224-blowfish-ctr,shacal1-ctr,gibberish-wrap/38-42,shacal1-ofb,mars-192-ctr,"
+                                "hmac-sha3-512-shacal2-cbc";
+
+    protkey = (kryptos_u8_t *) kryptos_newseg(9);
+    CUTE_ASSERT(protkey != NULL);
+    memcpy(protkey, "aeroplane", 9);
+    protkey_size = 9;
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer,
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          catalog->encoder);
+
+    CUTE_ASSERT(protkey == NULL);
+    CUTE_ASSERT(protkey_size == 0);
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+    CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
+
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+
+    pattern = "plain.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next);
+
+    // INFO(Rafael): The files must be decrypted and re-encrypted with the new key setting.
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1) == 1);
+
+    new_key_size = strlen("Sham time");
+    new_key = (kryptos_u8_t *)kryptos_newseg(new_key_size);
+    CUTE_ASSERT(new_key != NULL);
+    memcpy(new_key, "Sham time", new_key_size);
+
+    new_protlayer_key_size = strlen("That mother fucker always spiked with pain");
+    new_protlayer_key = (kryptos_u8_t *)kryptos_newseg(new_protlayer_key_size);
+    CUTE_ASSERT(new_protlayer_key != NULL);
+    memcpy(new_protlayer_key, "That mother fucker always spiked with pain", new_protlayer_key_size);
+
+    CUTE_ASSERT(bcrepo_reset_repo_settings(&catalog, rootpath, rootpath_size,
+                                           new_key, new_key_size,
+                                           &new_protlayer_key, &new_protlayer_key_size,
+                                           "hmac-tiger-blowfish-ofb,"
+                                           "gibberish-wrap/448-128,"
+                                           "rc6-128-cbc/96,"
+                                           "gibberish-wrap/101-11",
+                                           get_hash_processor("whirlpool"),
+                                           get_hash_processor("sha3-512"),
+                                           get_hash_processor("sha-384"),
+                                           get_encoder("base64")) == 1);
+
+    // INFO(Rafael): We reset the catalog's key for paranoia issues.
+
+    CUTE_ASSERT(memcmp(new_key, "Sham time", new_key_size) != 0);
+
+    kryptos_freeseg(new_protlayer_key, 0);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    CUTE_ASSERT(data_size != strlen(sensitive));
+    CUTE_ASSERT(memcmp(data, sensitive, strlen(sensitive)) != 0);
+
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1) == 1);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    CUTE_ASSERT(data_size == strlen(sensitive));
+    CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
+
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) != 1);
+
+    memcpy(new_key, "Sham time", new_key_size);
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, new_key, new_key_size) == 1);
+
+    kryptos_freeseg(new_key, new_key_size);
+
+    remove("sensitive.txt");
+    remove("plain.txt");
+
+    kryptos_freeseg(rootpath, rootpath_size);
+    catalog->protection_layer = catalog->bc_version = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
