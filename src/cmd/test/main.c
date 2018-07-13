@@ -181,6 +181,9 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     blackcat("deinit", "IThinkILostMyHeadache", NULL);
     blackcat("deinit", "PaperScratcher", NULL);
     blackcat("deinit", "StoneFree", NULL);
+    blackcat("deinit", "All Along The Watchtower", NULL);
+    blackcat("deinit", "Stang's Swang", NULL);
+    blackcat("deinit", "Gardenia", NULL);
     remove("etc/s2.txt");
     rmdir("etc");
     remove("s1.txt");
@@ -548,6 +551,102 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("unpack-test/bpack");
     rmdir("unpack-test");
     remove("test.bpack");
+
+    // INFO(Rafael): Setkey stuff.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike", "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
+
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "All Along The Watchtower", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "All Along The Watchtower", NULL) == 0);
+
+    // INFO(Rafael): Setting other parameters besides the keys.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=sha12 "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=cha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tig3r "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=yyencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=carmellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
+
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "All Along The Watchtower", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "All Along The Watchtower", NULL) == 0);
 
     // INFO(Rafael): Invalid keyed twice init with invalid key confirmations.
 
@@ -1312,6 +1411,140 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("deinit", "StoneFreE", NULL) != 0);
 
     CUTE_ASSERT(blackcat("deinit", "StoneFree", NULL) == 0);
+
+    // INFO(Rafael): Setkey stuff.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "Stang's Swang\nStang's Swang", "Rock-N-Roll'e\nRock-N-Roll'e") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "Stang's Swang", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "Stang's Swang", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "Stang's Swang", "Rock-N-Roll'e") == 0);
+    CUTE_ASSERT(blackcat("status", "Stang's Swang", "Rock-N-Roll'e") == 0);
+
+    CUTE_ASSERT(blackcat("setkey", "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") == 0);
+
+    CUTE_ASSERT(blackcat("status", "Stang's Swang", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "Gardenia", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "Gardenia", "Kylie") == 0);
+    CUTE_ASSERT(blackcat("lock", "Gardenia", "Kylie") == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "Gardenia", NULL) == 0);
+
+    // INFO(Rafael): Setting other parameters besides the keys.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "Stang's Swang\nStang's Swang", "Rock-N-Roll'e\nRock-N-Roll'e") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "Stang's Swang", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "Stang's Swang", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "Stang's Swang", "Rock-N-Roll'e") == 0);
+    CUTE_ASSERT(blackcat("status", "Stang's Swang", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=sha12 "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=cha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tig3r "
+                         "--encoder=uuencoder "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=yyencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=carmellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Suang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-iN-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nArdenia\nKylie\nKylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKrylie") != 0);
+
+    CUTE_ASSERT(blackcat("setkey "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") == 0);
+
+    CUTE_ASSERT(blackcat("status", "Stang's Swang", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "Gardenia", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "Gardenia", "Kylie") == 0);
+    CUTE_ASSERT(blackcat("lock", "Gardenia", "Kylie") == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "Gardenia", NULL) == 0);
 
     remove("etc/s2.txt");
     rmdir("etc");

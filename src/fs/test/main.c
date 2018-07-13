@@ -277,7 +277,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     remove("plain.txt");
 
     kryptos_freeseg(rootpath, rootpath_size);
-    catalog->protection_layer = catalog->bc_version = NULL;
+    catalog->bc_version = NULL;
     del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 

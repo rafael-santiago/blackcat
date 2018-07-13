@@ -35,7 +35,6 @@ int blackcat_cmd_init(void) {
         goto blackcat_cmd_init_epilogue;
     }
 
-
     BLACKCAT_GET_OPTION_OR_DIE(catalog_hash, "catalog-hash", blackcat_cmd_init_epilogue);
 
     if ((catalog_hash_proc = get_hash_processor(catalog_hash)) == NULL) {

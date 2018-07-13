@@ -151,6 +151,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     kryptos_task_ctx t, *ktask = &t;
     char filepath[4096];
     int no_error = 1;
+    size_t temp_size;
 
     bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1);
 
@@ -181,29 +182,40 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
 
     cp->protlayer_key_hash_algo = protlayer_hash_proc;
     cp->protlayer_key_hash_algo_size = get_hash_size(get_hash_processor_name(protlayer_hash_proc));
-    cp->protection_layer = (char *)protection_layer;
-
-    if (cp->protlayer != NULL) {
-        del_protlayer_chain_ctx(cp->protlayer);
-        cp->protlayer = NULL;
-    }
 
     cp->encoder = encoder;
 
-    cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
-                                                     protlayer_key, protlayer_key_size,
-                                                     protlayer_hash_proc, cp->encoder);
+    if (protection_layer != NULL) {
+        temp_size = strlen(protection_layer);
+        cp->protection_layer = (char *)kryptos_newseg(temp_size + 1);
 
-    if (cp->protlayer == NULL) {
-        fprintf(stderr, "ERROR: While reconstructing the protection layer.\n");
-        no_error = 0;
-        goto bcrepo_reset_repo_settings_epilogue;
+        if (cp->protection_layer == NULL) {
+            no_error = 0;
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto bcrepo_reset_repo_settings_epilogue;
+        }
+
+        memset(cp->protection_layer, 0, temp_size + 1);
+        memcpy(cp->protection_layer, protection_layer, temp_size);
+        temp_size = 0;
+
+        if (cp->protlayer != NULL) {
+            del_protlayer_chain_ctx(cp->protlayer);
+            cp->protlayer = NULL;
+        }
+
+        cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
+                                                         protlayer_key, protlayer_key_size,
+                                                         protlayer_hash_proc, cp->encoder);
+
+        if (cp->protlayer == NULL) {
+            fprintf(stderr, "ERROR: While reconstructing the protection layer.\n");
+            no_error = 0;
+            goto bcrepo_reset_repo_settings_epilogue;
+        }
     }
 
-    if ((no_error = bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1)) != 1) {
-        fprintf(stderr, "ERROR: While locking the repo with the new settings.\n");
-        goto bcrepo_reset_repo_settings_epilogue;
-    }
+    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
 
     bcrepo_mkpath(filepath, sizeof(filepath),
                   BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE,
