@@ -1,0 +1,57 @@
+.TH blackcat 1 "July 16, 2018" "version 0.0.1" "USER COMMANDS"
+.SH NAME
+blackcat \- a file encryptor
+.SH SYNOPSIS
+.B blackcat [\fIOPTIONS\fR]
+.SH DESCRIPTION
+\fIBlackcat\fR is a file encryptor tool that allows you protect files by creating secure repositories. Its usage
+is similar to a SCM tool.
+.PP
+This file encryptor gathers the most common modern symmetric algorithms. It is possible to define just one algorithm for the
+protection layer or even it is possible to cascade them. Currently you can count with more than one thousand encryption schemes.
+Including ciphers in \fICBC\fR, \fIOFB\fR and \fICTR\fR modes in flat encryption besides \fIHMAC\fR. You can also encode
+the encrypted data with \fIUUEncode\fR or \fIBase64\fR.
+.PP
+The basic using workflow is:
+
+- create a secure repository.
+
+- add protected or plain files to the its catalog.
+
+- edit the catalog by locking, unlocking or even removing all files from it or one by one.
+
+All of the workflow stages are driven by meaningful commands. You can also save the whole repository to transport
+it securely to another environment.
+
+A blackcat repository can be keyed alike or keyed twice. When keyed alike, all catalog operations require only one password.
+When keyed twice, most basic operations such as adding new files or checking the repository status will require only the
+first password. However, for more advanced operations such as locking and unlocking files, the two keys will be necessary.
+
+To learn more deeply about each implemented \fIblackcat\fR command you should read the user's manual probably installed in:
+
+\fI/usr/local/share/blackcat/doc/MANUAL\fR (or equivalent in your system).
+
+The author does not recommend use this tool to encrypt large files (up to 1 Gigabyte) for doing this task a disk
+encryptor would be a better choice instead of a file encryptor. \fIBlackcat\fR would be useful for a set of sensitive
+files that could be edited independently, thus you only let the essential decrypted secrets while editing them. In
+a worst scenario it would mitigate the risk of exposing all secrets to an eavesdropper.
+
+The application's package also include features to hide the repository from possible eavesdroppers hacking the system
+with some backdoor. You should read the manual in order to learn how to use it.
+
+.PP
+.SH EXIT STATUS
+If the execution succeeds \fIblackcat\fR returns zero, otherwise non zero values will be returned.
+
+.PP
+.SH
+SEE ALSO
+.TP
+\fI/usr/local/share/blackcat/doc\fR (or equivalent in your system)
+.PP
+.SH
+HOMEPAGE
+.TP
+https://github.com/rafael-santiago/blackcat
+.SH AUTHOR
+Rafael Santiago
