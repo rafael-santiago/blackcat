@@ -500,7 +500,7 @@ static int bcrepo_mkdtree(const char *dirtree) {
         memset(dir, 0, sizeof(dir));
         memcpy(dir, s, d - s);
 
-        exit_code = mkdir(dir, 0777);
+        exit_code = mkdir(dir, 0644);
 
         if (exit_code == 0) {
             exit_code = chdir(dir);
@@ -547,7 +547,7 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
         goto bcrepo_init_epilogue;
     }
 
-    if (mkdir(BCREPO_HIDDEN_DIR, 0777) != 0) {
+    if (mkdir(BCREPO_HIDDEN_DIR, 0644) != 0) {
         no_error = 0;
         fprintf(stderr, "ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
         goto bcrepo_init_epilogue;
