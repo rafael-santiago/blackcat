@@ -7,3 +7,6 @@
 [submodule "src/lib/accacia"]
 	path = src/lib/accacia
 	url = https://github.com/rafael-santiago/accacia
+[submodule "src/dev/icloak"]
+	path = src/dev/icloak
+	url = https://github.com/rafael-santiago/icloak

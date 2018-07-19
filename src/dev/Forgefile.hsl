@@ -1,0 +1,55 @@
+#
+#                          Copyright (C) 2018 by Rafael Santiago
+#
+# Use of this source code is governed by GPL-v2 license that can
+# be found in the COPYING file.
+#
+#
+
+include ../forgeutils/toolsets.hsl
+
+local var includes type list;
+local var cflags type list;
+local var libraries type list;
+local var ldflags type list;
+
+local var toolset_name type string;
+
+project blackcat-dev : toolset $toolset_name : "cdev.c", $includes, $cflags, $libraries, $ldflags, "blackcat";
+
+blackcat-dev.preloading() {
+    $toolset_name = get_lkm_toolset();
+}
+
+blackcat-dev.prologue() {
+    var option type list;
+
+    $option = hefesto.sys.get_option("clean");
+
+    if ($option.count() > 0) {
+        mkclean();
+    }
+
+    $includes.add_item(hefesto.sys.pwd());
+    $includes.add_item(hefesto.sys.make_path(hefesto.sys.pwd(), hefesto.sys.os_name()));
+
+    var rootpath type string;
+
+    $rootpath = hefesto.sys.make_path(hefesto.sys.pwd(), "icloak/src");
+
+    $includes.add_item($rootpath);
+    $includes.add_item(hefesto.sys.make_path($rootpath, "utils"));
+    $includes.add_item(hefesto.sys.make_path($rootpath, hefesto.sys.os_name()));
+
+    $rootpath = hefesto.sys.make_path($rootpath, "kook/src");
+
+    $includes.add_item($rootpath);
+    $includes.add_item(hefesto.sys.make_path($rootpath, "utils"));
+    $includes.add_item(hefesto.sys.make_path($rootpath, hefesto.sys.os_name()));
+}
+
+blackcat-dev.epilogue() {
+    if (hefesto.sys.last_forge_result() == 0) {
+        # TODO(Rafael): Run some test.
+    }
+}

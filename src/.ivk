@@ -1,1 +1,1 @@
---forgefiles=Forgefile.hsl --Forgefile-projects=blackcat
+--forgefiles=Forgefile.hsl --Forgefile-projects=blackcat --build-skip=icloak,kook

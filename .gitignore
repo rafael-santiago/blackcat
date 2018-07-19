@@ -2,3 +2,7 @@
 *bin
 *chsum-base
 *.a
+*.cmd
+*.mod.c
+*.kmod
+*.ko

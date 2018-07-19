@@ -11,6 +11,11 @@ include ~/toolsets/gcc/gcc-app.hsl
 include ~/toolsets/clang/clang-lib.hsl
 include ~/toolsets/gcc/gcc-app.hsl
 include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
+
+include on linux ~/toolsets/linux/linux-module.hsl
+include on freebsd ~/toolsets/freebsd/freebsd-module.hsl
+include on netbsd ~/toolsets/netbsd/netbsd-module.hsl
+
 include ~/fsutil.hsl
 
 function get_app_toolset() : result type string {
@@ -19,6 +24,17 @@ function get_app_toolset() : result type string {
 
 function get_lib_toolset() : result type string {
     result get_toolset() + "-c-lib";
+}
+
+function get_lkm_toolset() : result type string {
+    if (hefesto.sys.os_name() == "linux") {
+        result "linux-lkm";
+    } else if (hefesto.sys.os_name() == "freebsd") {
+        result "freebsd-kld";
+    } else if (hefesto.sys.os_name() == "netbsd") {
+        result "netbsd-module";
+    }
+    result "";
 }
 
 function get_codes(dirlist type list, deps type string) : result type list {
@@ -53,6 +69,40 @@ function get_codes(dirlist type list, deps type string) : result type list {
     hefesto.sys.byref($deps);
 
     result $codes;
+}
+
+function mkclean() : result type none {
+    var oldcwd type string;
+    $oldcwd = hefesto.sys.pwd();
+    mkclean_recur(lsdir());
+    hefesto.sys.cd($oldcwd);
+}
+
+local function mkclean_recur(dirlist type list) : result type none {
+    var d type int;
+
+    $d = 0;
+
+    while ($d < $dirlist.count()) {
+        if (hefesto.sys.cd($dirlist.item($d))) {
+            var objs type list;
+            $objs.ls(".*\\.o$");
+
+            var o type int;
+            $o = 0;
+            while ($o < $objs.count()) {
+                var filepath type string;
+                $filepath = $objs.item($o);
+                hefesto.sys.echo("Removing: " + $filepath + "\n");
+                hefesto.sys.rm($filepath);
+
+                $o = $o + 1;
+            }
+
+            mkclean_recur(lsdir());
+        }
+        $d = $d + 1;
+    }
 }
 
 local function build_libkryptos() : result type int {
