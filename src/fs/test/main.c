@@ -43,6 +43,10 @@ char *open_text(const char *filepath, size_t *data_size);
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
+    CUTE_ASSERT(save_text("aes", 3, "o/aes.o") == 1);
+    CUTE_ASSERT(save_text("des", 3, "o/des.o") == 1);
+    CUTE_ASSERT(save_text("mars", 4, "o/mars.o") == 1);
+    CUTE_ASSERT(save_text("...", 3, "o/ciphering_schemes.o") == 1);
     CUTE_RUN_TEST(remove_go_ups_from_path_tests);
     remove(".bcrepo/CATALOG");
     rmdir(".bcrepo");
@@ -63,6 +67,10 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_rm_tests);
     CUTE_RUN_TEST(bcrepo_pack_unpack_tests);
     CUTE_RUN_TEST(bcrepo_reset_repo_settings_tests);
+    remove("o/aes.o");
+    remove("o/des.o");
+    remove("o/mars.o");
+    remove("o/ciphering_schemes.o");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
