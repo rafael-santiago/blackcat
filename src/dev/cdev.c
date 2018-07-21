@@ -10,6 +10,8 @@
 
 #if defined(__linux__)
 
+#include <linux/cdev_init.h>
+#include <linux/cdev_deinit.h>
 #include <linux/init.h>
 #include <linux/module.h>
 
@@ -19,10 +21,11 @@ MODULE_DESCRIPTION("Blackcat char device");
 MODULE_VERSION(BLACKCAT_CDEV_VERSION);
 
 static int __init ini(void) {
-    return 0;
+    return cdev_init();
 }
 
 static void __exit finis(void) {
+    cdev_deinit();
 }
 
 module_init(ini);

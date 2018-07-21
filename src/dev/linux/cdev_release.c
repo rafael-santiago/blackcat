@@ -6,11 +6,10 @@
  *
  */
 
-#ifndef BLACKCAT_DEV_LINUX_CDEV_OPEN_H
-#define BLACKCAT_DEV_LINUX_CDEV_OPEN_H 1
+#include <linux/cdev_release.h>
+#include <defs/types.h>
 
-#include <linux/fs.h>
-
-int cdev_open(struct inode *ip, struct file *fp);
-
-#endif
+int cdev_release(struct inode *ip, struct file *fp) {
+    cdev_mtx_unlock(&g_cdev.lock);
+    return 0;
+}

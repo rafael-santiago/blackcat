@@ -6,11 +6,9 @@
  *
  */
 
-#ifndef BLACKCAT_CDEV_LINUX_CDEV_IOCTL_H
-#define BLACKCAT_CDEV_LINUX_CDEV_IOCTL_H 1
+#ifndef BLACKCAT_DEV_LINUX_DEINIT_H
+#define BLACKCAT_DEV_LINUX_DEINIT_H 1
 
-#include <linux/fs.h>
-
-long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param);
+void cdev_deinit(void);
 
 #endif

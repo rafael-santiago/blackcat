@@ -15,6 +15,10 @@ local var ldflags type list;
 
 local var toolset_name type string;
 
+# INFO(Rafael): The device will be tested in cmd's system tests only. Since this is pretty straightforward and once
+#               within the kernel it will stay resident until the next system's reboot, let's avoid complicating the
+#               whole build task including weird reboot steps.
+
 project blackcat-dev : toolset $toolset_name : "cdev.c", $includes, $cflags, $libraries, $ldflags, "blackcat";
 
 blackcat-dev.preloading() {
@@ -47,10 +51,4 @@ blackcat-dev.prologue() {
     $includes.add_item($rootpath);
     $includes.add_item(hefesto.sys.make_path($rootpath, "utils"));
     $includes.add_item(hefesto.sys.make_path($rootpath, hefesto.sys.os_name()));
-}
-
-blackcat-dev.epilogue() {
-    if (hefesto.sys.last_forge_result() == 0) {
-        # TODO(Rafael): Run some test.
-    }
 }

@@ -28,7 +28,6 @@ blackcat.prologue() {
     var subforges type list;
     $subforges.add_item("base");
     $subforges.add_item("fs");
-    $subforges.add_item("cmd");
 
     var blackcat_dev_supp type list;
     $blackcat_dev_supp.add_item("linux");
@@ -38,6 +37,8 @@ blackcat.prologue() {
     if ($blackcat_dev_supp.index_of(hefesto.sys.os_name()) > -1) {
         $subforges.add_item("dev");
     }
+
+    $subforges.add_item("cmd");
 
     $exit_code = forge_projects($subforges);
 }

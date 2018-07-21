@@ -49,14 +49,4 @@ static struct cdev_ctx g_cdev;
 #define CDEVNAME "blackcat"
 #define CDEVCLASS "bcd"
 
-#if defined(__linux__)
-# include <linux/ioctl.h>
-#elif defined(__FreeBSD__)
-# include <sys/ioccom.h>
-#endif
-
-#define BLACKCAT_IOC_MAGIC 'B'
-
-#define BLACKCAT_BURY_FOLDER _IOW(BLACKCAT_IOC_MAGIC, 0, unsigned char *)
-
 #endif

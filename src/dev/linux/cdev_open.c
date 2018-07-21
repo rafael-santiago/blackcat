@@ -7,8 +7,13 @@
  */
 
 #include <linux/cdev_open.h>
+#include <defs/types.h>
 #include <linux/slab.h>
 
 int cdev_open(struct inode *ip, struct file *fp) {
+    if (!cdev_mtx_trylock(&g_cdev.lock)) {
+        return -EBUSY;
+    }
+
     return 0;
 }
