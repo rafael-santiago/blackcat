@@ -55,7 +55,8 @@ static int blackcat_modcmd(modcmd_t cmd, void *args) {
 
 #elif defined(__FreeBSD__)
 
-#include <mod_quiesce.h>
+#include <freebsd/cdev_init.h>
+#include <freebsd/cdev_deinit.h>
 #include <sys/param.h>
 #include <sys/module.h>
 #include <sys/kernel.h>
@@ -66,12 +67,14 @@ static int blackcat_modevent(module_t mod __unused, int event, void *arg __unuse
 
     switch (event) {
         case MOD_LOAD:
+            error = cdev_init();
             break;
 
         case MOD_QUIESCE:
             break;
 
         case MOD_UNLOAD:
+            error = cdev_deinit();
             break;
 
         default:
@@ -81,6 +84,8 @@ static int blackcat_modevent(module_t mod __unused, int event, void *arg __unuse
 
     return error;
 }
+
+DEV_MODULE(blackcat, blackcat_modevent, NULL);
 
 #endif
 

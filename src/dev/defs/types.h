@@ -17,6 +17,7 @@
 # define cdev_mtx_unlock(m) mutex_unlock((m))
 # define cdev_mtx_deinit(m) mutex_destroy((m))
 #elif defined(__FreeBSD__)
+# include <sys/param.h>
 # include <sys/lock.h>
 # include <sys/mutex.h>
   typedef struct mtx cdev_mtx;
