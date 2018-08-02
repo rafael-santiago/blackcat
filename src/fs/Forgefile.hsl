@@ -42,6 +42,10 @@ libbfs.prologue() {
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    if (hefesto.sys.os_name() == "netbsd") {
+        $cflags.add_item("-std=c99");
+    }
+
     if (build("libkryptos") != 0) {
         hefesto.project.abort(1);
     }
