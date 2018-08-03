@@ -22,7 +22,7 @@
 static struct cdevsw blackcat_cdevsw = {
     .d_open = cdev_open,
     .d_close = cdev_close,
-    .d_iotcl = cdev_ioctl
+    .d_ioctl = cdev_ioctl
 };
 
 int cdev_init(void);
