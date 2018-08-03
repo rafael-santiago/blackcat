@@ -11,6 +11,7 @@
 #include <freebsd/cdev_ioctl.h>
 #include <freebsd/cdev_close.h>
 #include <freebsd/cdev_deinit.h>
+#include <icloak.h>
 #include <defs/types.h>
 #include <sys/param.h>
 #include <sys/module.h>

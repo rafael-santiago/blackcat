@@ -7,6 +7,7 @@
  */
 #include <netbsd/cdev_init.h>
 #include <netbsd/cdev_deinit.h>
+#include <icloak.h>
 
 int cdev_init(void) {
     int errno = 0;
