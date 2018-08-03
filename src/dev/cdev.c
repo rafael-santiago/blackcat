@@ -33,16 +33,23 @@ module_exit(finis);
 
 #elif defined(__NetBSD__)
 
+#include <netbsd/cdev_init.h>
+#include <netbsd/cdev_deinit.h>
+#include <sys/param.h>
 #include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/conf.h>
 
 static int blackcat_modcmd(modcmd_t cmd, void *args) {
     int error = 0;
 
     switch (cmd) {
         case MODULE_CMD_INIT:
+            error = cdev_init();
             break;
 
         case MODULE_CMD_FINI:
+            error = cdev_deinit();
             break;
 
         default:
@@ -52,6 +59,8 @@ static int blackcat_modcmd(modcmd_t cmd, void *args) {
 
     return error;
 }
+
+MODULE(MODULE_CLASS_MISC, blackcat, NULL);
 
 #elif defined(__FreeBSD__)
 

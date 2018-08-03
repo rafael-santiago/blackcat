@@ -6,19 +6,19 @@
  *
  */
 
-#include <freebsd/cdev_ioctl.h>
+#include <netbsd/cdev_ioctl.h>
 #include <defs/io.h>
 #include <icloak.h>
 
-int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __unused, struct thread *td __unused) {
-    int error = 0;
+int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
+    int errno = 0;
     size_t data_size;
     char temp[4096];
 
     switch (cmd) {
         case BLACKCAT_BURY_FOLDER:
         case BLACKCAT_DIG_UP_FOLDER:
-            if (data == NULL) {
+            if (u_addr == NULL) {
                 return EINVAL;
             }
 
@@ -28,19 +28,19 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
                 return EINVAL;
             }
 
-            memset(temp, 0, sizeof(data));
+            memset(temp, 0, sizeof(temp));
             memcpy(temp, (char *)data, data_size);
 
-            error = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(temp) :
+            errno = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(temp) :
                                                     icloak_show_file(temp);
 
             memset(temp, 0, data_size);
             break;
 
         default:
-            error = EINVAL;
+            errno = EINVAL;
             break;
     }
 
-    return error;
+    return errno;
 }
