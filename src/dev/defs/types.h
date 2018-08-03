@@ -27,7 +27,7 @@
 # define cdev_mtx_deinit(m) mtx_destroy((m))
 #elif defined(__NetBSD__)
 # include <sys/mutex.h>
-  typedef struct kmutex_t cdev_mtx;
+  typedef kmutex_t cdev_mtx;
 # define cdev_mtx_init(m) mutex_init((m), MUTEX_DEFAULT, IPL_NONE)
 # define cdev_mtx_trylock(m) mutex_tryenter((m))
 # define cdev_mtx_unlock(m) mutex_exit((m))

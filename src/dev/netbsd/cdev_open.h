@@ -13,7 +13,8 @@
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/conf.h>
 
-dev_type_close(cdev_open);
+dev_type_open(cdev_open);
 
 #endif
