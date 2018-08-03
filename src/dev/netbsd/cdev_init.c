@@ -19,11 +19,16 @@ int cdev_init(void) {
         cdev_mtx_deinit(&g_cdev.lock);
     }
 
+    // INFO(Rafael): This code is impossible to be executed here in NetBSD, so we will hide the module
+    //               through a specific ioctl call.
+
+    /*
     if (icloak_ko(CDEVNAME) != 0) {
         uprintf("/dev/blackcat: Unable to hide the kernel module.\n");
         cdev_deinit();
         return 1;
     }
+    */
 
     return errno;
 }
