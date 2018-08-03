@@ -11,7 +11,7 @@
 
 #if defined(__linux__)
 # include <linux/ioctl.h>
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
 # include <sys/ioccom.h>
 #endif
 
