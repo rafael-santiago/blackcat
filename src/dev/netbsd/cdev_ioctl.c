@@ -24,7 +24,7 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
 
             data_size = strlen((char *)u_addr);
 
-            if (data_size > sizeof(data) - 1) {
+            if (data_size > sizeof(temp) - 1) {
                 return EINVAL;
             }
 
