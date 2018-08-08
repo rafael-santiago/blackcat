@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/rm.h>
+#include <cmd/memory.h>
 #include <cmd/options.h>
 #include <cmd/session.h>
 #include <fs/bcrepo/bcrepo.h>

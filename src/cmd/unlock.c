@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/unlock.h>
+#include <cmd/memory.h>
 #include <cmd/session.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>

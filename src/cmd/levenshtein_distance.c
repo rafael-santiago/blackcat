@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/levenshtein_distance.h>
+#include <cmd/memory.h>
 #include <kryptos_memory.h>
 #include <string.h>
 

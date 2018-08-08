@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/exec.h>
+#include <cmd/memory.h>
 #include <cmd/defs.h>
 #include <cmd/options.h>
 #include <cmd/help.h>

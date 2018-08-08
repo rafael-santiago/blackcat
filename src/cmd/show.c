@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/show.h>
+#include <cmd/memory.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
