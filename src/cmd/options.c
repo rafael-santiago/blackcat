@@ -6,7 +6,6 @@
  *
  */
 #include <cmd/options.h>
-#include <cmd/memory.h>
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>

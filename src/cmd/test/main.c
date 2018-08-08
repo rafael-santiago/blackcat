@@ -6,7 +6,6 @@
  *
  */
 #include <cutest.h>
-#include <cmd/memory.h>
 #include <cmd/options.h>
 #include <cmd/version.h>
 #include <cmd/levenshtein_distance.h>
@@ -52,12 +51,10 @@ CUTE_DECLARE_TEST_CASE(get_blackcat_version_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_clear_options_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poking_tests);
 CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
-CUTE_DECLARE_TEST_CASE(blackcat_cmd_memset_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
 
 CUTE_TEST_CASE(blackcat_cmd_tests_entry)
-    CUTE_RUN_TEST(blackcat_cmd_memset_tests);
     CUTE_RUN_TEST(blackcat_set_argc_argv_tests);
     CUTE_RUN_TEST(blackcat_get_command_tests);
     CUTE_RUN_TEST(blackcat_get_option_tests);
@@ -68,13 +65,6 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(levenshtein_distance_tests);
     // INFO(Rafael): If all is okay, time to poke this shit.
     CUTE_RUN_TEST(blackcat_poking_tests);
-CUTE_TEST_CASE_END
-
-CUTE_TEST_CASE(blackcat_cmd_memset_tests)
-    char s[10];
-    CUTE_ASSERT(blackcat_cmd_memset(s, 'A', sizeof(s) / sizeof(s[0])) == &s[0]);
-    // INFO(Rafael): If also tests the overwrite done by us in cmd application, in order to mitigate timing attacks.
-    CUTE_ASSERT(memcmp(s, "AAAAAAAAAA", sizeof(s) / sizeof(s[0])) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(levenshtein_distance_tests)

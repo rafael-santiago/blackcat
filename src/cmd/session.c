@@ -6,7 +6,6 @@
  *
  */
 #include <cmd/session.h>
-#include <cmd/memory.h>
 #include <cmd/options.h>
 #include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>

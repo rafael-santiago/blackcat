@@ -6,7 +6,6 @@
  *
  */
 #include <cmd/unpack.h>
-#include <cmd/memory.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <stdio.h>
