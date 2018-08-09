@@ -19,5 +19,6 @@
 
 #define BLACKCAT_BURY_FOLDER _IOW(BLACKCAT_IOC_MAGIC, 0, unsigned char *)
 #define BLACKCAT_DIG_UP_FOLDER _IOW(BLACKCAT_IOC_MAGIC, 1, unsigned char *)
+#define BLACKCAT_SCAN_HOOK _IO(BLACKCAT_IOC_MAGIC, 2)
 
 #endif
