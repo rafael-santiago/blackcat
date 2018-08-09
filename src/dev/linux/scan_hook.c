@@ -11,6 +11,7 @@
 #include <linux/unistd.h>
 
 int scan_hook(void) {
+    // TODO(Rafael): Try to make this function also detect memory patching.
     void *kallsyms_lookup_name_p;
     unsigned long **sys_ent;
     void *sys_read = NULL, *sys_write = NULL, *sys_ioctl = NULL;
