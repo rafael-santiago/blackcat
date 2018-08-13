@@ -68,10 +68,10 @@ int blackcat_cmd_paranoid_help(void) {
 }
 
 static int dig_up_repo(void) {
-    int errno;
+    int err;
 
-    if ((errno = do_ioctl(BLACKCAT_DIG_UP_FOLDER)) != 0) {
-        switch (errno) {
+    if ((err = do_ioctl(BLACKCAT_DIG_UP_FOLDER)) != 0) {
+        switch (err) {
             case ENODEV:
                 fprintf(stdout, "ERROR: Unable to dig up the repo. The kernel module is not currently loaded.\n");
                 break;
@@ -82,14 +82,14 @@ static int dig_up_repo(void) {
         }
     }
 
-    return errno;
+    return err;
 }
 
 static int bury_repo(void) {
-    int errno;
+    int err;
 
-    if ((errno = do_ioctl(BLACKCAT_BURY_FOLDER)) != 0) {
-        switch(errno) {
+    if ((err = do_ioctl(BLACKCAT_BURY_FOLDER)) != 0) {
+        switch(err) {
             case ENODEV:
                 fprintf(stdout, "ERROR: Unable to bury the repo. The kernel module is not currently loaded.\n");
                 break;
@@ -100,7 +100,7 @@ static int bury_repo(void) {
         }
     }
 
-    return errno;
+    return err;
 }
 
 static int find_hooks(void) {
