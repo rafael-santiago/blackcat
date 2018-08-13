@@ -21,6 +21,9 @@
 #include <cmd/pack.h>
 #include <cmd/unpack.h>
 #include <cmd/setkey.h>
+#if !defined(_WIN32)
+# include <cmd/paranoid.h>
+#endif
 #include <cmd/levenshtein_distance.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +45,9 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(show),
     BLACKCAT_COMMAND_TABLE_ENTRY(pack),
     BLACKCAT_COMMAND_TABLE_ENTRY(unpack),
+#if !defined(_WIN32)
+    BLACKCAT_COMMAND_TABLE_ENTRY(paranoid),
+#endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey)
 DECL_BLACKCAT_COMMAND_TABLE_END
 

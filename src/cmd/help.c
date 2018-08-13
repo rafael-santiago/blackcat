@@ -19,6 +19,9 @@
 #include <cmd/pack.h>
 #include <cmd/unpack.h>
 #include <cmd/setkey.h>
+#if !defined(_WIN32)
+# include <cmd/paranoid.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -35,6 +38,9 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(show_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(pack_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(unpack_help),
+#if !defined(_WIN32)
+    BLACKCAT_COMMAND_TABLE_ENTRY(paranoid_help),
+#endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey_help)
 DECL_BLACKCAT_COMMAND_TABLE_END
 

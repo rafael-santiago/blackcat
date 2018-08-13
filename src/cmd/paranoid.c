@@ -25,18 +25,21 @@ static int bury_repo(void);
 
 static int find_hooks(void);
 
-static int no_history(void);
+static int disable_history(void);
+
+static int enable_history(void);
 
 static int clear_history(void);
 
 static int do_ioctl(unsigned long cmd);
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
-    { "--bury-repo",     bury_repo     },
-    { "--dig-up-repo",   dig_up_repo   },
-    { "--find-hooks",    find_hooks    },
-    { "--no-history",    no_history    },
-    { "--clear-history", clear_history }
+    { "--bury-repo",       bury_repo       },
+    { "--dig-up-repo",     dig_up_repo     },
+    { "--find-hooks",      find_hooks      },
+    { "--disable-history", disable_history },
+    { "--enable-history",  enable_history  },
+    { "--clear-history",   clear_history   }
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands)
@@ -60,26 +63,117 @@ int blackcat_cmd_paranoid(void) {
 
 int blackcat_cmd_paranoid_help(void) {
     fprintf(stdout, "use: blackcat paranoid [--bury-repo | --dig-up-repo | "
-                    "--find-hooks | --no-history | --clear-history]\n");
+                    "--find-hooks | --disable-history | --enable-history | --clear-history]\n");
     return 0;
 }
 
 static int dig_up_repo(void) {
-    return do_ioctl(BLACKCAT_DIG_UP_FOLDER);
+    int errno;
+
+    if ((errno = do_ioctl(BLACKCAT_DIG_UP_FOLDER)) != 0) {
+        switch (errno) {
+            case ENODEV:
+                fprintf(stdout, "ERROR: Unable to dig up the repo. The kernel module is not currently loaded.\n");
+                break;
+
+            default:
+                fprintf(stdout, "ERROR: When trying to dig up the repo.\n");
+                break;
+        }
+    }
+
+    return errno;
 }
 
 static int bury_repo(void) {
-    return do_ioctl(BLACKCAT_BURY_FOLDER);
+    int errno;
+
+    if ((errno = do_ioctl(BLACKCAT_BURY_FOLDER)) != 0) {
+        switch(errno) {
+            case ENODEV:
+                fprintf(stdout, "ERROR: Unable to bury the repo. The kernel module is not currently loaded.\n");
+                break;
+
+            default:
+                fprintf(stdout, "ERROR: When trying to bury the repo.\n");
+                break;
+        }
+    }
+
+    return errno;
 }
 
 static int find_hooks(void) {
-    // TODO(Rafael): Implement this feature inside the char device and request the scan through an ioctl from here.
-    return 1;
+    int err;
+
+    if ((err = do_ioctl(BLACKCAT_SCAN_HOOK)) != 0) {
+        switch (err) {
+            case ENODEV:
+                fprintf(stdout, "ERROR: The hook finder cannot be started. The kernel module is not currently loaded.\n");
+                break;
+
+            default:
+                fprintf(stdout, "WARN: The system seems hooked. "
+                                "You should not edit sensible data here and also should burn this machine.\n");
+                break;
+        }
+    }
+
+    return err;
 }
 
-static int no_history(void) {
-    // TODO(Rafael): Try to implement it independent of the current user shell.
-    return 1;
+static int enable_history(void) {
+    int err = 1;
+    char *shell = getenv("SHELL");
+
+    if (shell == NULL) {
+        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
+        goto enable_history_epilogue;
+    }
+
+    if (strstr(shell, "/bash") != NULL) {
+        err = system("set -o history");
+    } else if (strstr(shell, "/sh") != NULL) {
+        err = system("unset HISTSIZE");
+    } else if (strstr(shell, "/ksh") != NULL) {
+        // TODO(Rafael): Implement.
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
+        err = system("set history = 500");
+    } else {
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    }
+
+enable_history_epilogue:
+
+    return err;
+}
+
+static int disable_history(void) {
+    int err = 1;
+    char *shell = getenv("SHELL");
+
+    if (shell == NULL) {
+        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
+        goto disable_history_epilogue;
+    }
+
+    if (strstr(shell, "/bash") != NULL) {
+        err = system("set +o history");
+    } else if (strstr(shell, "/sh") != NULL) {
+        err = system("export HISTSIZE=0");
+    } else if (strstr(shell, "/ksh") != NULL) {
+        // TODO(Rafael): Implement.
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
+        err = system("unset history");
+    } else {
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    }
+
+disable_history_epilogue:
+
+    return err;
 }
 
 static int clear_history(void) {
@@ -99,7 +193,7 @@ static int do_ioctl(unsigned long cmd) {
     }
 
     if ((err = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
-        goto do_ioctl;
+        goto do_ioctl_epilogue;
     }
 
     rp = session->rootpath;
@@ -119,7 +213,7 @@ static int do_ioctl(unsigned long cmd) {
 
     err = ioctl(dev, cmd, pattern);
 
-do_ioctl:
+do_ioctl_epilogue:
 
     memset(pattern, 0, sizeof(pattern));
 
