@@ -25,6 +25,9 @@
 # include <cmd/paranoid.h>
 #endif
 #include <cmd/levenshtein_distance.h>
+#if !defined(_WIN32)
+# include <sys/mman.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -61,6 +64,17 @@ int blackcat_exec(int argc, char **argv) {
     int err = EINVAL;
 
     blackcat_set_argc_argv(argc, argv);
+
+#if !defined(_WIN32)
+    if (blackcat_get_bool_option("no-swap", 0) == 1) {
+        // WARN(Rafael): If the user suspend the machine this will be useless.
+        if ((err = mlockall(MCL_CURRENT | MCL_FUTURE)) != 0) {
+            perror("mlock()");
+            fprintf(stderr, "ERROR: While applying RAM locking.\n");
+            return err;
+        }
+    }
+#endif
 
     if (blackcat_get_bool_option("set-high-priority", 0) == 1) {
         // WARN(Rafael): Yes, it is a paranoid care. This only seeks to mitigate the preemption, there is no guarantee.

@@ -1067,7 +1067,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     // INFO(Rafael): Lock and Unlock all at once.
 
-    CUTE_ASSERT(blackcat("lock", "PaperScratcher-", NULL) != 0);
+    CUTE_ASSERT(blackcat("lock --no-swap", "PaperScratcher-", NULL) != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
@@ -1095,7 +1095,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
 
-    CUTE_ASSERT(blackcat("unlock", "PaperScratcher-", NULL) != 0);
+    CUTE_ASSERT(blackcat("unlock --no-swap", "PaperScratcher-", NULL) != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
