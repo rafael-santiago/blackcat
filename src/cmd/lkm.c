@@ -16,6 +16,10 @@
 #elif defined(__FreeBSD__)
 # include <sys/param.h>
 # include <sys/linker.h>
+#elif defined(__NetBSD__)
+# include <sys/module.h>
+# include <prop/proplib.h>
+# include <string.h>
 #endif
 
 #define BLACKCAT_LKM_PATH_ENV "BLACKCAT_LKM_PATH"
@@ -81,6 +85,38 @@ static int do_load(void) {
         fprintf(stderr, "ERROR: Unable to load the blackcat's LKM.\n");
     }
 #elif defined(__NetBSD__)
+   char *modpath, *props_str;
+   modctl_load_t mcl;
+   prop_dictionary_t props;
+
+   if ((modpath = blackcat_get_argv(0)) == NULL) {
+        modpath = getenv(BLACKCAT_LKM_PATH_ENV);
+   }
+
+   if (modpath == NULL) {
+        fprintf(stderr, "ERROR: Unable to find blackcat`s LKM.\n");
+        goto do_load_epilogue;
+   }
+
+   props = prop_dictionary_create();
+   props_str = prop_dictionary_externalize(props);
+   prop_object_release(props);
+
+   if (props_str == NULL) {
+        fprintf(stderr, "ERROR: NULL prop str.\n");
+        goto do_load_epilogue;
+   }
+
+   mcl.ml_filename = modpath;
+   mcl.ml_flags = 0;
+   mcl.ml_props = props_str;
+   mcl.ml_propslen = strlen(props_str);
+
+   if ((err = modctl(MODCTL_LOAD, &mcl)) != 0) {
+        fprintf(stderr, "ERROR: Unable to load the blackcat`s LKM.\n");
+   }
+
+   free(props_str);
 #else
     fprintf(stderr, "ERROR: No support for this platform.\n");
 #endif
