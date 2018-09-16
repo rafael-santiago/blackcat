@@ -13,7 +13,12 @@
 #include <stdio.h>
 #if defined(__linux__)
 # include <sys/syscall.h>
+#elif defined(__FreeBSD__)
+# include <sys/param.h>
+# include <sys/linker.h>
 #endif
+
+#define BLACKCAT_LKM_PATH_ENV "BLACKCAT_LKM_PATH"
 
 static int do_load(void);
 
@@ -38,7 +43,7 @@ static int do_load(void) {
     char *modpath;
 
     if ((modpath = blackcat_get_argv(0)) == NULL) {
-        modpath = getenv("BLACKCAT_LKM_PATH");
+        modpath = getenv(BLACKCAT_LKM_PATH_ENV);
     }
 
     if (modpath == NULL) {
@@ -61,6 +66,20 @@ static int do_load(void) {
 
     close(fd);
 #elif defined(__FreeBSD__)
+    char *modpath;
+
+    if ((modpath = blackcat_get_argv(0)) == NULL) {
+        modpath = getenv(BLACKCAT_LKM_PATH_ENV);
+    }
+
+    if (modpath == NULL) {
+        fprintf(stderr, "ERROR: Unable to find blackcat's LKM.\n");
+        goto do_load_epilogue;
+    }
+
+    if ((err = kldload(modpath)) != 0) {
+        fprintf(stderr, "ERROR: Unable to load the blackcat's LKM.\n");
+    }
 #elif defined(__NetBSD__)
 #else
     fprintf(stderr, "ERROR: No support for this platform.\n");
@@ -70,3 +89,5 @@ do_load_epilogue:
 
     return err;
 }
+
+#undef BLACKCAT_LKM_PATH_ENV
