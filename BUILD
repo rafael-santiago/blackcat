@@ -1,0 +1,49 @@
+BUILD
+=====
+
+The build of this application is also based on another tool of mine
+<https://github.com/rafael-santiago/hefesto>. If you want to build
+the application by running the whole tests you need 'Hefesto',
+otherwise you are on your own and you do not need this document
+for any help.
+
+Now, supposing that you have installed 'Hefesto' in your build
+environment. You need to clone another repo of mine called 'Helios'
+so execute the following commands:
+
+------------------------------------------------------------------------
+you@Hellfire:~/src# git clone https://github.com/rafael-santiago/helios
+you@Hellfire:~/src# cd helios
+you@Hellfire:~/src/helios# hefesto --install=forge-bootstrapper,\
+> lnx-module-toolset,freebsd-module-toolset,netbsd-module-toolset,\
+> gnu-c-toolset,clang-c-toolset,c-dep-scanner
+you@Hellfire:~/src/helios# cd ..
+you@Hellfire:~/src# rm -rf helios
+you@Hellfire:~/src# _
+------------------------------------------------------------------------
+
+You need (of course) to clone this repo:
+
+-------------------------------------------------------------------------------------
+you@Hellfire:~/src# git clone https://github.com/rafael-santiago/blackcat --recursive
+you@Hellfire:~/src# _
+-------------------------------------------------------------------------------------
+
+Now it is only about launching the build:
+
+-----------------------------------------
+you@Hellfire:~/src# cd blackcat/src
+you@Hellfire:~/src/blackcat/src# hefesto
+-----------------------------------------
+
+Go walk your dog, because it can take a while at the first time. Once
+well-succeeded you can use the binary under 'blackcat/bin'. However, I would
+advise you to install it and make 'blackcat' accessible for the entire system.
+
+To install:
+
+--------------------------------------------------
+you@Hellfire:~/src/blackcat/src# hefesto --install
+--------------------------------------------------
+
+You done here, now you should read the file 'MANUAL'.
