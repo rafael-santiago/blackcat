@@ -123,6 +123,7 @@ static int do_load(void) {
             if ((err = ioctl(fd, BLACKCAT_MODHIDE)) != 0) {
                 fprintf(stderr, "ERROR: Unable to hide the blackcat's LKM.\n");
             }
+            close(fd);
         } else {
             fprintf(stderr, "WARN: Unable to open /dev/"CDEVNAME". The LKM can be unloaded.\n");
         }
