@@ -38,7 +38,7 @@ you@Hellfire:~/src/blackcat/src# hefesto
 
 Go walk your dog, because it can take a while at the first time. Once
 well-succeeded you can use the binary under 'blackcat/bin'. However, I would
-advise you to install it and make 'blackcat' accessible for the entire system.
+recommend you to install it and make 'blackcat' accessible for the entire system.
 
 To install:
 
