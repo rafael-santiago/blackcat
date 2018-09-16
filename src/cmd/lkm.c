@@ -17,10 +17,12 @@
 # include <sys/param.h>
 # include <sys/linker.h>
 #elif defined(__NetBSD__)
+# include <dev/defs/types.h>
+# include <dev/defs/io.h>
 # include <sys/module.h>
 # include <prop/proplib.h>
 # include <string.h>
-# include <cdev/defs/types.h>
+# include <sys/ioctl.h>
 #endif
 
 #define BLACKCAT_LKM_PATH_ENV "BLACKCAT_LKM_PATH"
