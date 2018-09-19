@@ -1612,9 +1612,11 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         // INFO(Rafael): Module loading tests.
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__)
         CUTE_ASSERT(blackcat("lkm --load ../../dev/blackcat.ko", "", NULL) == 0);
-#else
+#elif defined(__FreeBSD__)
+        CUTE_ASSERT(blackcat("lkm --load ../../dev/blackcat.ko", "", NULL) == 0);
+#elif defined(__NetBSD__)
         CUTE_ASSERT(blackcat("lkm --load ../../dev/blackcat.kmod", "", NULL) == 0);
 #endif
 
@@ -1750,9 +1752,11 @@ static int check_blackcat_lkm_hiding(void) {
     found = fread(&b, 1, sizeof(b), fp) > 0;
 
     pclose(fp);
-#elif defined(__FreeBSD__)
-#endif
+
     return found == 0;
+#elif defined(__FreeBSD__)
+    return kldfind("blackcat.kld") == -1;
+#endif
 }
 
 static int try_unload_blackcat_lkm(void) {

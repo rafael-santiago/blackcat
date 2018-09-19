@@ -87,8 +87,10 @@ static int do_load(void) {
         goto do_load_epilogue;
     }
 
-    if ((err = kldload(modpath)) != 0) {
+    if (kldload(modpath) == -1) {
         fprintf(stderr, "ERROR: Unable to load the blackcat's LKM.\n");
+    } else {
+        err = 0;
     }
 #elif defined(__NetBSD__)
     char *modpath, *props_str;
