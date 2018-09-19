@@ -47,9 +47,9 @@ struct cdev_ctx {
     cdev_mtx lock;
 };
 
-static struct cdev_ctx g_cdev;
-
 #endif
+
+struct cdev_ctx *g_cdev(void);
 
 #define CDEVNAME "blackcat"
 #define CDEVCLASS "bcd"

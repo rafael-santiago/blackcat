@@ -14,9 +14,9 @@
 #include <linux/fs.h>
 
 void cdev_deinit(void) {
-    cdev_mtx_deinit(&g_cdev.lock);
-    device_destroy(g_cdev.device_class, MKDEV(g_cdev.major_nr, 0));
-    class_unregister(g_cdev.device_class);
-    class_destroy(g_cdev.device_class);
-    unregister_chrdev(g_cdev.major_nr, CDEVNAME);
+    cdev_mtx_deinit(&g_cdev()->lock);
+    device_destroy(g_cdev()->device_class, MKDEV(g_cdev()->major_nr, 0));
+    class_unregister(g_cdev()->device_class);
+    class_destroy(g_cdev()->device_class);
+    unregister_chrdev(g_cdev()->major_nr, CDEVNAME);
 }

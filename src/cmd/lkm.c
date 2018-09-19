@@ -41,6 +41,7 @@ int blackcat_cmd_lkm(void) {
 
 int blackcat_cmd_lkm_help(void) {
     fprintf(stdout, "use: blackcat lkm --load [<path>]\n");
+    return 0;
 }
 
 static int do_load(void) {
@@ -49,7 +50,7 @@ static int do_load(void) {
     int fd;
     char *modpath;
 
-    if ((modpath = blackcat_get_argv(0)) == NULL) {
+    if ((modpath = blackcat_get_argv(1)) == NULL) {
         modpath = getenv(BLACKCAT_LKM_PATH_ENV);
     }
 
@@ -65,8 +66,10 @@ static int do_load(void) {
 
 #define init_lnx_lkm(fd) syscall(__NR_finit_module, fd, "", 0)
 
-    if ((err = init_lnx_lkm(fd)) != 0) {
+    if (init_lnx_lkm(fd) != 0) {
         fprintf(stderr, "ERROR: Unable to load the blackcat's LKM.\n");
+    } else {
+        err = 0;
     }
 
 #undef init_lnx_lkm

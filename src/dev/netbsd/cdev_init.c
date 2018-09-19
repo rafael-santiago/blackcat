@@ -13,10 +13,10 @@ int cdev_init(void) {
     int errno = 0;
     int bmajor = -1, cmajor = 210;
 
-    cdev_mtx_init(&g_cdev.lock);
+    cdev_mtx_init(&g_cdev()->lock);
 
     if ((errno = devsw_attach(CDEVNAME, NULL, &bmajor, &blackcat_cdevsw, &cmajor)) != 0) {
-        cdev_mtx_deinit(&g_cdev.lock);
+        cdev_mtx_deinit(&g_cdev()->lock);
     }
 
     // INFO(Rafael): This code is impossible to be executed here in NetBSD, so we will hide the module

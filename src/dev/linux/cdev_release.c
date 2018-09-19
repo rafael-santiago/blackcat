@@ -10,6 +10,6 @@
 #include <defs/types.h>
 
 int cdev_release(struct inode *ip, struct file *fp) {
-    cdev_mtx_unlock(&g_cdev.lock);
+    cdev_mtx_unlock(&g_cdev()->lock);
     return 0;
 }

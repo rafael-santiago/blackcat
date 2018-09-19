@@ -30,12 +30,12 @@ static struct cdevsw blackcat_cdevsw = {
 int cdev_init(void) {
     int error = 0;
 
-    cdev_mtx_init(&g_cdev.lock);
+    cdev_mtx_init(&g_cdev()->lock);
 
-    g_cdev.device = make_dev(&blackcat_cdevsw, 0, UID_ROOT, GID_WHEEL, 0666, CDEVNAME);
+    g_cdev()->device = make_dev(&blackcat_cdevsw, 0, UID_ROOT, GID_WHEEL, 0666, CDEVNAME);
 
-    if (g_cdev.device == NULL) {
-        cdev_mtx_deinit(&g_cdev.lock);
+    if (g_cdev()->device == NULL) {
+        cdev_mtx_deinit(&g_cdev()->lock);
         error = EFAULT;
     }
 

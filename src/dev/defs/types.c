@@ -6,10 +6,10 @@
  *
  */
 
-#include <freebsd/cdev_close.h>
 #include <defs/types.h>
 
-int cdev_close(struct cdev *dev __unused, int flags __unused, int devtype __unused, struct thread *td __unused) {
-    cdev_mtx_unlock(&g_cdev()->lock);
-    return 0;
+static struct cdev_ctx g_cdev_data;
+
+struct cdev_ctx *g_cdev(void) {
+    return &g_cdev_data;
 }

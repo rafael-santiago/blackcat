@@ -10,6 +10,6 @@
 #include <netbsd/cdev_init.h>
 
 int cdev_deinit(void) {
-    cdev_mtx_deinit(&g_cdev.lock);
+    cdev_mtx_deinit(&g_cdev()->lock);
     return devsw_detach(NULL, &blackcat_cdevsw);
 }

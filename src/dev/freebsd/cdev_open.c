@@ -10,7 +10,7 @@
 #include <defs/types.h>
 
 int cdev_open(struct cdev *dev __unused, int flags __unused, int devtype __unused, struct thread *td) {
-    if (!cdev_mtx_trylock(&g_cdev.lock)) {
+    if (!cdev_mtx_trylock(&g_cdev()->lock)) {
         return EBUSY;
     }
 

@@ -15,12 +15,12 @@
 #include <sys/systm.h>
 
 int cdev_deinit(void) {
-    if (g_cdev.device == NULL) {
+    if (g_cdev()->device == NULL) {
         return EFAULT;
     }
 
-    cdev_mtx_deinit(&g_cdev.lock);
-    destroy_dev(g_cdev.device);
+    cdev_mtx_deinit(&g_cdev()->lock);
+    destroy_dev(g_cdev()->device);
 
     return 0;
 }

@@ -10,6 +10,6 @@
 #include <defs/types.h>
 
 int cdev_close(dev_t dev __unused, int flag __unused, int mode __unused, struct lwp *lp __unused) {
-    cdev_mtx_unlock(&g_cdev.lock);
+    cdev_mtx_unlock(&g_cdev()->lock);
     return 0;
 }
