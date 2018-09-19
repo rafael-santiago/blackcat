@@ -1599,11 +1599,16 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
     if (CUTE_GET_OPTION("no-dev") == NULL && CUTE_GET_OPTION("blackcat-dev-tests")) {
 
+#if !defined(__NetBSD__)
         if ((fd = open("/dev/blackcat", O_RDONLY)) > -1) {
             close(fd);
             printf("== Test skipped. You can run device tests once before rebooting your system.\n");
             return 0;
         }
+#else
+	printf("WARN: You can run device tests once before rebooting.\n"
+               "      Subsequent runnings will fail.\n");
+#endif
 
         // INFO(Rafael): Module loading tests.
 
@@ -1729,8 +1734,12 @@ unsigned char *get_file_data(const char *filepath, size_t *data_size) {
 
 static int check_blackcat_lkm_hiding(void) {
     int found = 1;
-#if defined(__linux__)
+#if defined(__linux__) || defined(__NetBSD__)
+# if defined(__linux__)
     FILE *fp = popen("lsmod | grep blackcat", "r");
+# else
+    FILE *fp = popen("modstat | grep blackcat", "r");
+#endif
     char b;
 
     if (fp == NULL) {
@@ -1742,7 +1751,6 @@ static int check_blackcat_lkm_hiding(void) {
 
     pclose(fp);
 #elif defined(__FreeBSD__)
-#elif defined(__NetBSD__)
 #endif
     return found == 0;
 }

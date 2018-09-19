@@ -78,7 +78,7 @@ static int do_load(void) {
 #elif defined(__FreeBSD__)
     char *modpath;
 
-    if ((modpath = blackcat_get_argv(0)) == NULL) {
+    if ((modpath = blackcat_get_argv(1)) == NULL) {
         modpath = getenv(BLACKCAT_LKM_PATH_ENV);
     }
 
@@ -96,7 +96,7 @@ static int do_load(void) {
     prop_dictionary_t props;
     int fd;
 
-    if ((modpath = blackcat_get_argv(0)) == NULL) {
+    if ((modpath = blackcat_get_argv(1)) == NULL) {
         modpath = getenv(BLACKCAT_LKM_PATH_ENV);
     }
 
