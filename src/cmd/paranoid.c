@@ -50,7 +50,7 @@ int blackcat_cmd_paranoid(void) {
     char *sub_command;
     size_t c;
 
-    while (exit_code == 0 || (sub_command = blackcat_get_argv(arg++)) != NULL) {
+    while (exit_code == 0 && (sub_command = blackcat_get_argv(arg++)) != NULL) {
         for (c = 0; c < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands); c++) {
             if (strcmp(sub_command, GET_BLACKCAT_COMMAND_NAME(g_blackcat_paranoid_commands, c)) == 0) {
                 exit_code = GET_BLACKCAT_COMMAND_TEXT(g_blackcat_paranoid_commands, c)();
@@ -196,20 +196,25 @@ static int do_ioctl(unsigned long cmd) {
         goto do_ioctl_epilogue;
     }
 
+    if (session->rootpath_size >= sizeof(pattern)) {
+        err = EFAULT;
+        goto do_ioctl_epilogue;
+    }
+
     rp = session->rootpath;
-    rp_end = rp + session->rootpath_size;
+    rp_end = session->rootpath + session->rootpath_size;
 
 #ifndef _WIN32
-    while (rp_end != rp && *rp != '/') {
+    while (rp_end != rp && *rp_end != '/') {
 #else
-    while (rp_end != rp && *rp != '/' && *rp != '\\') {
+    while (rp_end != rp && *rp_end != '/' && *rp_end != '\\') {
 #endif
         rp_end--;
     }
 
     memset(pattern, 0, sizeof(pattern));
 
-    sprintf(pattern, "*%s*", rp_end);
+    sprintf(pattern, "*%s*", rp_end + (rp_end != rp));
 
     err = ioctl(dev, cmd, pattern);
 

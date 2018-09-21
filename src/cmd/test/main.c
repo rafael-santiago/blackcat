@@ -29,6 +29,10 @@ static int check_blackcat_lkm_hiding(void);
 
 static int try_unload_blackcat_lkm(void);
 
+static int repo_is_hidden(void);
+
+static int test_env_housekeeping(void);
+
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
 
@@ -187,24 +191,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     // INFO(Rafael): Just housekeeping.
 
-    blackcat("deinit", "GiveTheMuleWhatHeWants", NULL);
-    blackcat("deinit", "IThinkILostMyHeadache", NULL);
-    blackcat("deinit", "PaperScratcher", NULL);
-    blackcat("deinit", "StoneFree", NULL);
-    blackcat("deinit", "All Along The Watchtower", NULL);
-    blackcat("deinit", "Stang's Swang", NULL);
-    blackcat("deinit", "Gardenia", NULL);
-    remove("etc/s2.txt");
-    rmdir("etc");
-    remove("s1.txt");
-    remove("p.txt");
-    remove("unpack-test/bpack/etc/s2.txt");
-    remove("unpack-test/bpack/s1.txt");
-    remove("unpack-test/bpack/p.txt");
-    rmdir("unpack-test/bpack/etc");
-    rmdir("unpack-test/bpack");
-    rmdir("unpack-test");
-    remove("test.bpack");
+    test_env_housekeeping();
 
     // INFO(Rafael): Wrong commands.
 
@@ -1620,23 +1607,67 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(blackcat("lkm --load ../../dev/blackcat.kmod", "", NULL) == 0);
 #endif
 
+        // INFO(Rafael): Checking if the module hiding is okay.
+
         CUTE_ASSERT(check_blackcat_lkm_hiding() != 0);
 
+        // INFO(Rafael): Even being hidden, let's check if is impossible to unload this.
+
         CUTE_ASSERT(try_unload_blackcat_lkm() != 0);
-/*
+
+        test_env_housekeeping();
+
         CUTE_ASSERT(blackcat("init "
                              "--catalog-hash=sha3-384 "
                              "--key-hash=tiger "
                              "--protection-layer-hash=sha-512 "
                              "--protection-layer=aes-128-cbc,rc5-ofb/256,3des-ctr,hmac-whirlpool-noekeon-cbc,shacal2-ctr",
-                             "Or19Well84\nOr19Well84", "Zzzz\nZzzz") == 0);
+                             "Or19Well84\nOr19Well84", "LeGuin\nLeGuin") == 0);
 
         CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
         CUTE_ASSERT(create_file("s2.txt", sensitive2, strlen(sensitive2)) == 1);
         CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
 
+        // INFO(Rafael): Testing the tasks bury and dig-up from paranoid sub-command.
+
+        CUTE_ASSERT(blackcat("paranoid --bury-repo", "", NULL) != 0);
+
+        CUTE_ASSERT(blackcat("paranoid --bury-repo", "Or19Well84", NULL) == 0);
+
+        CUTE_ASSERT(repo_is_hidden() == 1);
+
+        /*
+        CUTE_ASSERT(blackcat("add s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add s2.txt", "Or19Well84", "LeGuin") == 0);
+
+        CUTE_ASSERT(blackcat("lock", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock", "Or19Well84", "LeGuin") == 0);
+
+        CUTE_ASSERT(blackcat("lock s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock p.txt", "Or19Well84", "LeGuin") == 0);
+
+        CUTE_ASSERT(blackcat("unlock s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock p.txt", "Or19Well84", "LeGuin") == 0);
+
+        CUTE_ASSERT(blackcat("rm s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("rm s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("rm p.txt", "Or19Well84", "LeGuin") == 0);
+        */
+
+        CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "", NULL) != 0);
+
+        CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "Or19Well84", NULL) == 0);
+
+        CUTE_ASSERT(repo_is_hidden() == 0);
+
         CUTE_ASSERT(blackcat("deinit", "Or19Well84", NULL) == 0);
-*/
+
+        remove("s1.txt");
+        remove("s2.txt");
+        remove("p.txt");
     } else {
         printf("== Test skipped.\n");
     }
@@ -1769,4 +1800,44 @@ static int try_unload_blackcat_lkm(void) {
         "modunload blackcat.kmod";
 #endif
     return system(cmdline);
+}
+
+static int repo_is_hidden(void) {
+    int is_hidden;
+    FILE *fp = popen("ls ../test", "r");
+    char b;
+
+    if (fp == NULL) {
+        printf("PANIC: Unable to access pipe.\n");
+        return 0;
+    }
+
+    is_hidden = (fread(&b, 1, sizeof(b), fp) == 0);
+
+    pclose(fp);
+
+    return is_hidden;
+}
+
+static int test_env_housekeeping(void) {
+    blackcat("deinit", "GiveTheMuleWhatHeWants", NULL);
+    blackcat("deinit", "IThinkILostMyHeadache", NULL);
+    blackcat("deinit", "PaperScratcher", NULL);
+    blackcat("deinit", "StoneFree", NULL);
+    blackcat("deinit", "All Along The Watchtower", NULL);
+    blackcat("deinit", "Stang's Swang", NULL);
+    blackcat("deinit", "Gardenia", NULL);
+    blackcat("deinit", "Or19Well84", NULL);
+    remove("etc/s2.txt");
+    rmdir("etc");
+    remove("s1.txt");
+    remove("s2.txt");
+    remove("p.txt");
+    remove("unpack-test/bpack/etc/s2.txt");
+    remove("unpack-test/bpack/s1.txt");
+    remove("unpack-test/bpack/p.txt");
+    rmdir("unpack-test/bpack/etc");
+    rmdir("unpack-test/bpack");
+    rmdir("unpack-test");
+    remove("test.bpack");
 }
