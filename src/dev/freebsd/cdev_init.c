@@ -39,11 +39,13 @@ int cdev_init(void) {
         error = EFAULT;
     }
 
+/*
     if (icloak_ko(CDEVNAME) != 0) {
         uprintf("/dev/blackcat: Unable to hide the kernel module.\n");
         cdev_deinit();
         return 1;
     }
+*/
 
     return error;
 }

@@ -158,23 +158,16 @@ static int bdup_handler(unsigned long cmd,
                  const char *pattern, const size_t pattern_size) {
     int no_error = 1;
     bfs_catalog_ctx *cp = *catalog;
-    bfs_catalog_relpath_ctx *files = NULL, *fp;
-    int rl = 0;
+    bfs_catalog_relpath_ctx *fp;
 
-    if (pattern != NULL) {
-        get_file_list(&files, NULL, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
-    } else {
-        files = cp->files;
+    if (cp == NULL) {
+        return 0;
     }
 
-    for (fp = files; fp != NULL && no_error; fp = fp->next) {
-        no_error = (do_ioctl(cmd, fp->path, fp->path_size) == 0);
-    }
-
-bdup_handler_epilogue:
-
-    if (files != NULL && files != cp->files) {
-        del_bfs_catalog_relpath_ctx(fp);
+    for (fp = cp->files; fp != NULL && no_error; fp = fp->next) {
+        if (pattern == NULL || strglob(fp->path, pattern) == 1) {
+            no_error = (do_ioctl(cmd, fp->path, fp->path_size) == 0);
+        }
     }
 
     return no_error;
@@ -535,17 +528,11 @@ static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size)
     rp = path;
     rp_end = path + path_size;
 
-#ifndef _WIN32
     while (rp_end != rp && *rp_end != '/') {
-#else
-    while (rp_end != rp && *rp_end != '/' && *rp_end != '\\') {
-#endif
         rp_end--;
     }
 
-    err = ioctl(dev, cmd, rp_end);
-
-do_ioctl_epilogue:
+    err = ioctl(dev, cmd, rp_end + (*rp_end == '/'));
 
     if (dev > -1) {
         close(dev);
