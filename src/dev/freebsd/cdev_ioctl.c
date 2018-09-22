@@ -17,8 +17,8 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
     char temp[4096];
 
     switch (cmd) {
-        case BLACKCAT_BURY_FOLDER:
-        case BLACKCAT_DIG_UP_FOLDER:
+        case BLACKCAT_BURY:
+        case BLACKCAT_DIG_UP:
             if (data == NULL) {
                 return EINVAL;
             }
@@ -32,8 +32,8 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
             memset(temp, 0, sizeof(data));
             memcpy(temp, (char *)data, data_size);
 
-            error = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(temp) :
-                                                    icloak_show_file(temp);
+            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(temp) :
+                                             icloak_show_file(temp);
 
             memset(temp, 0, data_size);
             break;

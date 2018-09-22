@@ -19,8 +19,8 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
     char temp[4096];
 
     switch (cmd) {
-        case BLACKCAT_BURY_FOLDER:
-        case BLACKCAT_DIG_UP_FOLDER:
+        case BLACKCAT_BURY:
+        case BLACKCAT_DIG_UP:
             if (u_addr == NULL) {
                 return EINVAL;
             }
@@ -34,8 +34,8 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
             memset(temp, 0, sizeof(temp));
             memcpy(temp, (char *)u_addr, data_size);
 
-            errno = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(temp) :
-                                                    icloak_show_file(temp);
+            errno = (cmd == BLACKCAT_BURY) ? icloak_hide_file(temp) :
+                                             icloak_show_file(temp);
 
             memset(temp, 0, data_size);
             break;

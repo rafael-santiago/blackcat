@@ -19,9 +19,9 @@
 
 #define BLACKCAT_DEVPATH "/dev/" CDEVNAME
 
-static int dig_up_repo(void);
+static int dig_up(void);
 
-static int bury_repo(void);
+static int bury(void);
 
 static int find_hooks(void);
 
@@ -34,8 +34,8 @@ static int clear_history(void);
 static int do_ioctl(unsigned long cmd);
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
-    { "--bury-repo",       bury_repo       },
-    { "--dig-up-repo",     dig_up_repo     },
+    { "--bury",            bury            },
+    { "--dig-up",          dig_up          },
     { "--find-hooks",      find_hooks      },
     { "--disable-history", disable_history },
     { "--enable-history",  enable_history  },
@@ -44,9 +44,10 @@ DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands)
 
+static int arg = 0;
+
 int blackcat_cmd_paranoid(void) {
     int exit_code = 0;
-    int arg = 0;
     char *sub_command;
     size_t c;
 
@@ -67,40 +68,80 @@ int blackcat_cmd_paranoid_help(void) {
     return 0;
 }
 
-static int dig_up_repo(void) {
-    int err;
+static int dig_up(void) {
+    int exit_code = EINVAL;
+    char *dig_up_param;
+    blackcat_exec_session_ctx *session = NULL;
+    int dig_up_nr = 0, a;
 
-    if ((err = do_ioctl(BLACKCAT_DIG_UP_FOLDER)) != 0) {
-        switch (err) {
-            case ENODEV:
-                fprintf(stdout, "ERROR: Unable to dig up the repo. The kernel module is not currently loaded.\n");
-                break;
-
-            default:
-                fprintf(stdout, "ERROR: When trying to dig up the repo.\n");
-                break;
-        }
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+        goto dig_up_epilogue;
     }
 
-    return err;
+    if ((dig_up_param = blackcat_get_argv(arg + 1)) != NULL) {
+        dig_up_param = remove_go_ups_from_path(dig_up_param, strlen(dig_up_param) + 1);
+    }
+
+    BLACKCAT_CONSUME_USER_OPTIONS(a,
+                                  dig_up_param,
+                                  {
+                                    dig_up_nr += bcrepo_dig_up(&session->catalog, session->rootpath, session->rootpath_size,
+                                                               (dig_up_param != NULL) ? dig_up_param : "*",
+                                                               (dig_up_param != NULL) ? strlen(dig_up_param) : 1);
+                                  });
+
+    if (dig_up_nr > 0) {
+        fprintf(stdout, "%d file(s) shown.\n", dig_up_nr);
+    } else {
+        fprintf(stdout, "File(s) not found.\n");
+        exit_code = ENOENT;
+    }
+
+dig_up_epilogue:
+
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
+    }
+
+    return exit_code;
 }
 
-static int bury_repo(void) {
-    int err;
+static int bury(void) {
+    int exit_code = EINVAL;
+    char *bury_param;
+    blackcat_exec_session_ctx *session = NULL;
+    int bury_nr = 0, a;
 
-    if ((err = do_ioctl(BLACKCAT_BURY_FOLDER)) != 0) {
-        switch(err) {
-            case ENODEV:
-                fprintf(stdout, "ERROR: Unable to bury the repo. The kernel module is not currently loaded.\n");
-                break;
-
-            default:
-                fprintf(stdout, "ERROR: When trying to bury the repo.\n");
-                break;
-        }
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+        goto bury_epilogue;
     }
 
-    return err;
+    if ((bury_param = blackcat_get_argv(arg + 1)) != NULL) {
+        bury_param = remove_go_ups_from_path(bury_param, strlen(bury_param) + 1);
+    }
+
+    BLACKCAT_CONSUME_USER_OPTIONS(a,
+                                  bury_param,
+                                  {
+                                    bury_nr += bcrepo_bury(&session->catalog, session->rootpath, session->rootpath_size,
+                                                           (bury_param != NULL) ? bury_param : "*",
+                                                           (bury_param != NULL) ? strlen(bury_param) : 1);
+                                  });
+
+    if (bury_nr > 0) {
+        fprintf(stdout, "%d file(s) hidden.\n", bury_nr);
+    } else {
+        fprintf(stdout, "File(s) not found.\n");
+        exit_code = ENOENT;
+    }
+
+bury_epilogue:
+
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
+    }
+
+    return exit_code;
 }
 
 static int find_hooks(void) {
@@ -185,8 +226,6 @@ static int do_ioctl(unsigned long cmd) {
     int dev;
     int err = 0;
     blackcat_exec_session_ctx *session = NULL;
-    char pattern[4096];
-    char *rp, *rp_end;
 
     if ((dev = open(BLACKCAT_DEVPATH, O_WRONLY)) == -1) {
         return ENODEV;
@@ -196,31 +235,9 @@ static int do_ioctl(unsigned long cmd) {
         goto do_ioctl_epilogue;
     }
 
-    if (session->rootpath_size >= sizeof(pattern)) {
-        err = EFAULT;
-        goto do_ioctl_epilogue;
-    }
-
-    rp = session->rootpath;
-    rp_end = session->rootpath + session->rootpath_size;
-
-#ifndef _WIN32
-    while (rp_end != rp && *rp_end != '/') {
-#else
-    while (rp_end != rp && *rp_end != '/' && *rp_end != '\\') {
-#endif
-        rp_end--;
-    }
-
-    memset(pattern, 0, sizeof(pattern));
-
-    sprintf(pattern, "*%s*", rp_end + (rp_end != rp));
-
-    err = ioctl(dev, cmd, pattern);
+    err = ioctl(dev, cmd);
 
 do_ioctl_epilogue:
-
-    memset(pattern, 0, sizeof(pattern));
 
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);

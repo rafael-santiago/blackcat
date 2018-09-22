@@ -12,6 +12,8 @@
 #include <ctx/ctx.h>
 #include <fs/ctx/fsctx.h>
 #include <fs/strglob.h>
+#include <dev/defs/io.h>
+#include <dev/defs/types.h>
 #include <kryptos.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -19,7 +21,10 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
 #define BCREPO_CATALOG_KEY_HASH_ALGO            "key-hash-algo: "
@@ -39,6 +44,8 @@
 #define BCREPO_CATALOG_FILE_SIZE 7
 
 #define BCREPO_RECUR_LEVEL_LIMIT 1024
+
+#define BLACKCAT_DEVPATH "/dev/" CDEVNAME
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
@@ -137,6 +144,53 @@ char *remove_go_ups_from_path(char *path, const size_t path_size);
 static kryptos_u8_t *random_printable_padding(size_t *size);
 
 static int bcrepo_mkdtree(const char *dirtree);
+
+static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size);
+
+static int bdup_handler(unsigned long cmd,
+                 bfs_catalog_ctx **catalog,
+                 const char *rootpath, const size_t rootpath_size,
+                 const char *pattern, const size_t pattern_size);
+
+static int bdup_handler(unsigned long cmd,
+                 bfs_catalog_ctx **catalog,
+                 const char *rootpath, const size_t rootpath_size,
+                 const char *pattern, const size_t pattern_size) {
+    int no_error = 1;
+    bfs_catalog_ctx *cp = *catalog;
+    bfs_catalog_relpath_ctx *files = NULL, *fp;
+    int rl = 0;
+
+    if (pattern != NULL) {
+        get_file_list(&files, NULL, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
+    } else {
+        files = cp->files;
+    }
+
+    for (fp = files; fp != NULL && no_error; fp = fp->next) {
+        no_error = (do_ioctl(cmd, fp->path, fp->path_size) == 0);
+    }
+
+bdup_handler_epilogue:
+
+    if (files != NULL && files != cp->files) {
+        del_bfs_catalog_relpath_ctx(fp);
+    }
+
+    return no_error;
+}
+
+int bcrepo_bury(bfs_catalog_ctx **catalog,
+                  const char *rootpath, const size_t rootpath_size,
+                  const char *pattern, const size_t pattern_size) {
+    return bdup_handler(BLACKCAT_BURY, catalog, rootpath, rootpath_size, pattern, pattern_size);
+}
+
+int bcrepo_dig_up(bfs_catalog_ctx **catalog,
+                  const char *rootpath, const size_t rootpath_size,
+                  const char *pattern, const size_t pattern_size) {
+    return bdup_handler(BLACKCAT_DIG_UP, catalog, rootpath, rootpath_size, pattern, pattern_size);
+}
 
 int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                const char *rootpath, const size_t rootpath_size,
@@ -467,6 +521,37 @@ bcrepo_unroll_ball_of_wool_epilogue:
     }
 
     return no_error;
+}
+
+static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size) {
+    int dev;
+    int err = 0;
+    const char *rp, *rp_end;
+
+    if ((dev = open(BLACKCAT_DEVPATH, O_WRONLY)) == -1) {
+        return ENODEV;
+    }
+
+    rp = path;
+    rp_end = path + path_size;
+
+#ifndef _WIN32
+    while (rp_end != rp && *rp_end != '/') {
+#else
+    while (rp_end != rp && *rp_end != '/' && *rp_end != '\\') {
+#endif
+        rp_end--;
+    }
+
+    err = ioctl(dev, cmd, rp_end);
+
+do_ioctl_epilogue:
+
+    if (dev > -1) {
+        close(dev);
+    }
+
+    return err;
 }
 
 static int bcrepo_mkdtree(const char *dirtree) {

