@@ -156,7 +156,7 @@ static int bdup_handler(unsigned long cmd,
                  bfs_catalog_ctx **catalog,
                  const char *rootpath, const size_t rootpath_size,
                  const char *pattern, const size_t pattern_size) {
-    int no_error = 1;
+    int count = 0;
     bfs_catalog_ctx *cp = *catalog;
     bfs_catalog_relpath_ctx *fp;
 
@@ -164,13 +164,17 @@ static int bdup_handler(unsigned long cmd,
         return 0;
     }
 
-    for (fp = cp->files; fp != NULL && no_error; fp = fp->next) {
+    for (fp = cp->files; fp != NULL; fp = fp->next) {
         if (pattern == NULL || strglob(fp->path, pattern) == 1) {
-            no_error = (do_ioctl(cmd, fp->path, fp->path_size) == 0);
+            if (do_ioctl(cmd, fp->path, fp->path_size) == 0) {
+                count += 1;
+            } else {
+                perror("do_ioctl()");
+            }
         }
     }
 
-    return no_error;
+    return count;
 }
 
 int bcrepo_bury(bfs_catalog_ctx **catalog,
@@ -534,9 +538,7 @@ static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size)
 
     err = ioctl(dev, cmd, rp_end + (*rp_end == '/'));
 
-    if (dev > -1) {
-        close(dev);
-    }
+    close(dev);
 
     return err;
 }

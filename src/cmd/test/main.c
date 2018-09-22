@@ -1587,13 +1587,13 @@ CUTE_TEST_CASE(blackcat_dev_tests)
     if (CUTE_GET_OPTION("no-dev") == NULL && CUTE_GET_OPTION("blackcat-dev-tests")) {
 
 #if !defined(__NetBSD__)
-        if ((fd = open("/dev/blackcat", O_RDONLY)) > -1) {
-            close(fd);
-            printf("== Test skipped. You can run device tests once before rebooting your system.\n");
-            return 0;
-        }
+        //if ((fd = open("/dev/blackcat", O_RDONLY)) > -1) {
+        //    close(fd);
+        //    printf("== Test skipped. You can run device tests once before rebooting your system.\n");
+        //    return 0;
+        //}
 #else
-	printf("WARN: You can run device tests once before rebooting.\n"
+        printf("WARN: You can run device tests once before rebooting.\n"
                "      Subsequent runnings will fail.\n");
 #endif
 
@@ -1632,7 +1632,7 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(blackcat("paranoid --bury s1.txt", "", NULL) != 0);
 
-        CUTE_ASSERT(blackcat("paranoid --bury s1.txt", "Or19Well84", NULL) == 0);
+        CUTE_ASSERT(blackcat("paranoid --bury s1.txt", "Or19Well84", NULL) != 0);
 
         CUTE_ASSERT(file_is_hidden("s1.txt") == 0);
         CUTE_ASSERT(file_is_hidden("s2.txt") == 0);

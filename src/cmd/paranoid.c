@@ -44,12 +44,11 @@ DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands)
 
-static int arg = 0;
-
 int blackcat_cmd_paranoid(void) {
     int exit_code = 0;
     char *sub_command;
     size_t c;
+    int arg = 0;
 
     while (exit_code == 0 && (sub_command = blackcat_get_argv(arg++)) != NULL) {
         for (c = 0; c < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands); c++) {
@@ -78,7 +77,7 @@ static int dig_up(void) {
         goto dig_up_epilogue;
     }
 
-    if ((dig_up_param = blackcat_get_argv(arg + 1)) != NULL) {
+    if ((dig_up_param = blackcat_get_argv(1)) != NULL) {
         dig_up_param = remove_go_ups_from_path(dig_up_param, strlen(dig_up_param) + 1);
     }
 
@@ -92,6 +91,7 @@ static int dig_up(void) {
 
     if (dig_up_nr > 0) {
         fprintf(stdout, "%d file(s) shown.\n", dig_up_nr);
+        exit_code = 0;
     } else {
         fprintf(stdout, "File(s) not found.\n");
         exit_code = ENOENT;
@@ -116,7 +116,7 @@ static int bury(void) {
         goto bury_epilogue;
     }
 
-    if ((bury_param = blackcat_get_argv(arg + 1)) != NULL) {
+    if ((bury_param = blackcat_get_argv(1)) != NULL) {
         bury_param = remove_go_ups_from_path(bury_param, strlen(bury_param) + 1);
     }
 
@@ -130,6 +130,7 @@ static int bury(void) {
 
     if (bury_nr > 0) {
         fprintf(stdout, "%d file(s) hidden.\n", bury_nr);
+        exit_code = 0;
     } else {
         fprintf(stdout, "File(s) not found.\n");
         exit_code = ENOENT;

@@ -29,7 +29,7 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
                 return EINVAL;
             }
 
-            memset(temp, 0, sizeof(data));
+            memset(temp, 0, sizeof(temp));
             memcpy(temp, (char *)data, data_size);
 
             error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(temp) :
