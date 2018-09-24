@@ -15,8 +15,7 @@
 
 int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
     int errno = 0;
-    size_t data_size;
-    char temp[4096];
+    struct blackcat_devio_ctx *devio;
 
     switch (cmd) {
         case BLACKCAT_BURY:
@@ -25,19 +24,12 @@ int cdev_ioctl(dev_t dev, u_long cmd, void *u_addr, int flag, struct lwp *lp) {
                 return EINVAL;
             }
 
-            data_size = strlen((char *)u_addr);
+            devio = (struct blackcat_devio_ctx *)u_addr;
 
-            if (data_size > sizeof(temp) - 1) {
-                return EINVAL;
-            }
+            errno = (cmd == BLACKCAT_BURY) ? icloak_hide_file(devio->data) :
+                                             icloak_show_file(devio->data);
 
-            memset(temp, 0, sizeof(temp));
-            memcpy(temp, (char *)u_addr, data_size);
-
-            errno = (cmd == BLACKCAT_BURY) ? icloak_hide_file(temp) :
-                                             icloak_show_file(temp);
-
-            memset(temp, 0, data_size);
+            devio = NULL;
             break;
 
         case BLACKCAT_SCAN_HOOK:
