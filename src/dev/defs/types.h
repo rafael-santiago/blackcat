@@ -9,7 +9,7 @@
 #ifndef BLACKCAT_DEV_DEFS_TYPES_H
 #define BLACKCAT_DEV_DEFS_TYPES_H 1
 
-#if !defined(BLACKCAT_CMD_PARANOID_H)
+#if !defined(BLACKCAT_CMD_PARANOID_H) && !defined(BLACKCAT_FS_BCREPO_BCREPO_H)
 
 # if defined(__linux__)
 #  include <linux/mutex.h>

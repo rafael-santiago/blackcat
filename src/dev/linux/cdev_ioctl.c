@@ -15,8 +15,7 @@
 
 long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
     int error = 0;
-    size_t data_size;
-    char data[4096];
+    struct blackcat_devio_ctx devio;
 
     switch (cmd) {
         case BLACKCAT_BURY:
@@ -25,22 +24,15 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
                 return -EFAULT;
             }
 
-            data_size = strlen((unsigned char *)user_param);
-
-            if (data_size > sizeof(data)) {
-                return -EINVAL;
-            }
-
-            memset(data, 0, sizeof(data));
-
-            if (copy_from_user(data, (unsigned char *)user_param, data_size) != 0) {
+            if (copy_from_user(&devio,
+                               (struct blackcat_devio_ctx *)user_param, sizeof(struct blackcat_devio_ctx)) != 0) {
                 return -EFAULT;
             }
 
-            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(data) :
-                                             icloak_show_file(data);
+            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(devio.data) :
+                                             icloak_show_file(devio.data);
 
-            memset(data, 0, sizeof(data));
+            memset(&devio, 0, sizeof(struct blackcat_devio_ctx));
             break;
 
         case BLACKCAT_SCAN_HOOK:
