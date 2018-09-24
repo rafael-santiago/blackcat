@@ -1581,7 +1581,10 @@ CUTE_TEST_CASE(blackcat_dev_tests)
                        "Well, who knows, who knows,' he replied. 'Dostoevsky's dead,' said the citizeness, "
                        "but somehow not very confidently. 'I protest!' Behemoth exclaimed hotly. 'Dostoevsky is immortal!\n\n"
                        "manuscripts don't burn\n\n";
-    unsigned char *plain = "README\n";
+    // For all those kind of boring & pedantic people reading this piece of code, "p" is from "p"arangaricutirimirruaru not from "p"lain...
+    unsigned char *p = "README\n"; 
+    unsigned char *data;
+    size_t data_size;
     int fd;
 
     if (CUTE_GET_OPTION("no-dev") == NULL && CUTE_GET_OPTION("blackcat-dev-tests")) {
@@ -1626,7 +1629,7 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
         CUTE_ASSERT(create_file("s2.txt", sensitive2, strlen(sensitive2)) == 1);
-        CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+        CUTE_ASSERT(create_file("p.txt", p, strlen(p)) == 1);
 
         // INFO(Rafael): Testing the tasks bury and dig-up from paranoid sub-command.
 
@@ -1652,16 +1655,57 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(blackcat("unlock", "Or19Well84", "LeGuin") == 0);
 
         CUTE_ASSERT(blackcat("lock s1.txt", "Or19Well84", "LeGuin") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+        kryptos_freeseg(data, data_size);
+
         CUTE_ASSERT(blackcat("lock s2.txt", "Or19Well84", "LeGuin") == 0);
+
+        data = get_file_data("s2.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+        kryptos_freeseg(data, data_size);
+
         CUTE_ASSERT(blackcat("lock p.txt", "Or19Well84", "LeGuin") == 0);
 
+        data = get_file_data("p.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(memcmp(data, p, strlen(p)) != 0);
+        kryptos_freeseg(data, data_size);
+
         CUTE_ASSERT(blackcat("unlock s1.txt", "Or19Well84", "LeGuin") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(sensitive1));
+        CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+        kryptos_freeseg(data, data_size);
+
         CUTE_ASSERT(blackcat("unlock s2.txt", "Or19Well84", "LeGuin") == 0);
+
+        data = get_file_data("s2.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(sensitive2));
+        CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+        kryptos_freeseg(data, data_size);
+
         CUTE_ASSERT(blackcat("unlock p.txt", "Or19Well84", "LeGuin") == 0);
+
+        data = get_file_data("p.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(p));
+        CUTE_ASSERT(memcmp(data, p, data_size) == 0);
+        kryptos_freeseg(data, data_size);
 
         CUTE_ASSERT(blackcat("rm s1.txt", "Or19Well84", "LeGuin") == 0);
         CUTE_ASSERT(blackcat("rm s2.txt", "Or19Well84", "LeGuin") == 0);
         CUTE_ASSERT(blackcat("rm p.txt", "Or19Well84", "LeGuin") == 0);
+
+        CUTE_ASSERT(blackcat("add s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add s2.txt", "Or19Well84", "LeGuin") == 0);
 
         CUTE_ASSERT(blackcat("paranoid --dig-up s1.txt", "", NULL) != 0);
 
@@ -1672,10 +1716,6 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(file_is_hidden("p.txt") == 0);
 
         CUTE_ASSERT(blackcat("paranoid --bury", "Or19Well84", NULL) == 0);
-
-        CUTE_ASSERT(blackcat("add s1.txt", "Or19Well84", "LeGuin") == 0);
-        CUTE_ASSERT(blackcat("add p.txt", "Or19Well84", "LeGuin") == 0);
-        CUTE_ASSERT(blackcat("add s2.txt", "Or19Well84", "LeGuin") == 0);
 
         CUTE_ASSERT(file_is_hidden("s1.txt") == 1);
         CUTE_ASSERT(file_is_hidden("s2.txt") == 1);
