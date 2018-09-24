@@ -145,7 +145,7 @@ static kryptos_u8_t *random_printable_padding(size_t *size);
 
 static int bcrepo_mkdtree(const char *dirtree);
 
-static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size);
+static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size);
 
 static int bdup_handler(unsigned long cmd,
                  bfs_catalog_ctx **catalog,
@@ -520,10 +520,11 @@ bcrepo_unroll_ball_of_wool_epilogue:
     return no_error;
 }
 
-static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size) {
+static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size) {
     int dev;
     int err = 0;
-    const char *rp, *rp_end;
+    const unsigned char *rp, *rp_end;
+    struct blackcat_devio_ctx devio;
 
     if ((dev = open(BLACKCAT_DEVPATH, O_WRONLY)) == -1) {
         return ENODEV;
@@ -536,7 +537,13 @@ static int do_ioctl(unsigned long cmd, const char *path, const size_t path_size)
         rp_end--;
     }
 
-    err = ioctl(dev, cmd, rp_end + (*rp_end == '/'));
+    devio.data = (unsigned char *)rp_end + (*rp_end == '/');
+    devio.data_size = strlen(devio.data);
+
+    err = ioctl(dev, cmd, &devio);
+
+    devio.data = NULL;
+    devio.data_size = 0;
 
     close(dev);
 

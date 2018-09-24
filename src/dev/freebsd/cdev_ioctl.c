@@ -13,8 +13,7 @@
 
 int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __unused, struct thread *td __unused) {
     int error = 0;
-    size_t data_size;
-    char temp[4096];
+    struct blackcat_devio_ctx *devio;
 
     switch (cmd) {
         case BLACKCAT_BURY:
@@ -23,19 +22,12 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
                 return EINVAL;
             }
 
-            data_size = strlen((char *)data);
+            devio = (struct blackcat_devio_ctx *)data;
 
-            if (data_size > sizeof(temp) - 1) {
-                return EINVAL;
-            }
+            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(devio->data) :
+                                             icloak_show_file(devio->data);
 
-            memset(temp, 0, sizeof(temp));
-            memcpy(temp, (char *)data, data_size);
-
-            error = (cmd == BLACKCAT_BURY) ? icloak_hide_file(temp) :
-                                             icloak_show_file(temp);
-
-            memset(temp, 0, data_size);
+            devio = NULL;
             break;
 
         case BLACKCAT_SCAN_HOOK:

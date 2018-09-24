@@ -1587,11 +1587,11 @@ CUTE_TEST_CASE(blackcat_dev_tests)
     if (CUTE_GET_OPTION("no-dev") == NULL && CUTE_GET_OPTION("blackcat-dev-tests")) {
 
 #if !defined(__NetBSD__)
-        //if ((fd = open("/dev/blackcat", O_RDONLY)) > -1) {
-        //    close(fd);
-        //    printf("== Test skipped. You can run device tests once before rebooting your system.\n");
-        //    return 0;
-        //}
+        if ((fd = open("/dev/blackcat", O_RDONLY)) > -1) {
+            close(fd);
+            printf("== Test skipped. You can run device tests once before rebooting your system.\n");
+            return 0;
+        }
 #else
         printf("WARN: You can run device tests once before rebooting.\n"
                "      Subsequent runnings will fail.\n");
@@ -1609,11 +1609,11 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         // INFO(Rafael): Checking if the module hiding is okay.
 
-//        CUTE_ASSERT(check_blackcat_lkm_hiding() != 0);
+        CUTE_ASSERT(check_blackcat_lkm_hiding() != 0);
 
         // INFO(Rafael): Even being hidden, let's check if is impossible to unload this.
 
-//        CUTE_ASSERT(try_unload_blackcat_lkm() != 0);
+        CUTE_ASSERT(try_unload_blackcat_lkm() != 0);
 
         test_env_housekeeping();
 
@@ -1648,30 +1648,34 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(file_is_hidden("s2.txt") == 0);
         CUTE_ASSERT(file_is_hidden("p.txt") == 0);
 
-        //CUTE_ASSERT(blackcat("lock", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("unlock", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock", "Or19Well84", "LeGuin") == 0);
 
-        //CUTE_ASSERT(blackcat("lock s1.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("lock s2.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("lock p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("lock p.txt", "Or19Well84", "LeGuin") == 0);
 
-        //CUTE_ASSERT(blackcat("unlock s1.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("unlock s2.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("unlock p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("unlock p.txt", "Or19Well84", "LeGuin") == 0);
 
-        //CUTE_ASSERT(blackcat("rm s1.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("rm s2.txt", "Or19Well84", "LeGuin") == 0);
-        //CUTE_ASSERT(blackcat("rm p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("rm s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("rm s2.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("rm p.txt", "Or19Well84", "LeGuin") == 0);
 
         CUTE_ASSERT(blackcat("paranoid --dig-up s1.txt", "", NULL) != 0);
 
-        CUTE_ASSERT(blackcat("paranoid --dig-up-repo s1.txt", "Or19Well84", NULL) == 0);
+        CUTE_ASSERT(blackcat("paranoid --dig-up s1.txt", "Or19Well84", NULL) == 0);
 
         CUTE_ASSERT(file_is_hidden("s1.txt") == 0);
         CUTE_ASSERT(file_is_hidden("s2.txt") == 0);
         CUTE_ASSERT(file_is_hidden("p.txt") == 0);
 
         CUTE_ASSERT(blackcat("paranoid --bury", "Or19Well84", NULL) == 0);
+
+        CUTE_ASSERT(blackcat("add s1.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add p.txt", "Or19Well84", "LeGuin") == 0);
+        CUTE_ASSERT(blackcat("add s2.txt", "Or19Well84", "LeGuin") == 0);
 
         CUTE_ASSERT(file_is_hidden("s1.txt") == 1);
         CUTE_ASSERT(file_is_hidden("s2.txt") == 1);

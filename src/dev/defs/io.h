@@ -15,10 +15,15 @@
 # include <sys/ioccom.h>
 #endif
 
+struct blackcat_devio_ctx {
+    unsigned char *data;
+    size_t data_size;
+};
+
 #define BLACKCAT_IOC_MAGIC 'B'
 
-#define BLACKCAT_BURY _IOW(BLACKCAT_IOC_MAGIC, 0, unsigned char *)
-#define BLACKCAT_DIG_UP _IOW(BLACKCAT_IOC_MAGIC, 1, unsigned char *)
+#define BLACKCAT_BURY _IOW(BLACKCAT_IOC_MAGIC, 0, struct blackcat_devio_ctx *)
+#define BLACKCAT_DIG_UP _IOW(BLACKCAT_IOC_MAGIC, 1, struct blackcat_devio_ctx *)
 #define BLACKCAT_SCAN_HOOK _IO(BLACKCAT_IOC_MAGIC, 2)
 #if defined(__NetBSD__)
 # define BLACKCAT_MODHIDE _IO(BLACKCAT_IOC_MAGIC, 3)
