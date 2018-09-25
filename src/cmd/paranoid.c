@@ -16,12 +16,17 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #define BLACKCAT_DEVPATH "/dev/" CDEVNAME
 
 static int dig_up(void);
 
 static int bury(void);
+
+static int bury_repo(void);
+
+static int dig_up_repo(void);
 
 static int find_hooks(void);
 
@@ -31,11 +36,15 @@ static int enable_history(void);
 
 static int clear_history(void);
 
-static int do_ioctl(unsigned long cmd);
+static int do_ioctl(unsigned long cmd, ...);
+
+static int br_dgur_handler(unsigned long cmd);
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
     { "--bury",            bury            },
     { "--dig-up",          dig_up          },
+    { "--bury-repo",       bury_repo       },
+    { "--dig-up-repo",     dig_up_repo     },
     { "--find-hooks",      find_hooks      },
     { "--disable-history", disable_history },
     { "--enable-history",  enable_history  },
@@ -62,9 +71,29 @@ int blackcat_cmd_paranoid(void) {
 }
 
 int blackcat_cmd_paranoid_help(void) {
-    fprintf(stdout, "use: blackcat paranoid [--bury-repo | --dig-up-repo | "
+    fprintf(stdout, "use: blackcat paranoid [--bury | --bury-repo | --dig-up | --dig-up-repo | "
                     "--find-hooks | --disable-history | --enable-history | --clear-history]\n");
     return 0;
+}
+
+static int bury_repo(void) {
+    int exit_code = br_dgur_handler(BLACKCAT_BURY);
+
+    if (exit_code != 0) {
+        fprintf(stderr, "ERROR: While trying to hide repo.\n");
+    }
+
+    return exit_code;
+}
+
+static int dig_up_repo(void) {
+    int exit_code = br_dgur_handler(BLACKCAT_DIG_UP);
+
+    if (exit_code != 0) {
+        fprintf(stderr, "ERROR: While trying to show repo.\n");
+    }
+
+    return exit_code;
 }
 
 static int dig_up(void) {
@@ -147,6 +176,11 @@ bury_epilogue:
 
 static int find_hooks(void) {
     int err;
+    blackcat_exec_session_ctx *session = NULL;
+
+    if ((err = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+        goto find_hooks_epilogue;
+    }
 
     if ((err = do_ioctl(BLACKCAT_SCAN_HOOK)) != 0) {
         switch (err) {
@@ -159,6 +193,12 @@ static int find_hooks(void) {
                                 "You should not edit sensible data here and also should burn this machine.\n");
                 break;
         }
+    }
+
+find_hooks_epilogue:
+
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
     }
 
     return err;
@@ -223,25 +263,63 @@ static int clear_history(void) {
     return 1;
 }
 
-static int do_ioctl(unsigned long cmd) {
+static int br_dgur_handler(unsigned long cmd) {
+    int exit_code = 1;
+    blackcat_exec_session_ctx *session = NULL;
+    unsigned char temp[4096];
+    char *rp_end;
+
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+        goto br_dgur_handler_epilogue;
+    }
+
+    rp_end = session->rootpath + session->rootpath_size;
+
+    while (rp_end != session->rootpath && *rp_end != '/') {
+        rp_end--;
+    }
+
+    sprintf(temp, "*%s*", rp_end + (*rp_end == '/'));
+
+    exit_code = do_ioctl(cmd, temp);
+
+    memset(temp, 0, sizeof(temp));
+
+br_dgur_handler_epilogue:
+
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
+    }
+
+    return exit_code;
+}
+
+static int do_ioctl(unsigned long cmd, ...) {
     int dev;
     int err = 0;
-    blackcat_exec_session_ctx *session = NULL;
+    unsigned char *data = (unsigned char *)&cmd + sizeof(cmd);
+    struct blackcat_devio_ctx devio, *devio_p = NULL;
+    va_list vl;
 
     if ((dev = open(BLACKCAT_DEVPATH, O_WRONLY)) == -1) {
         return ENODEV;
     }
 
-    if ((err = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
-        goto do_ioctl_epilogue;
+    if (cmd == BLACKCAT_BURY || cmd == BLACKCAT_DIG_UP) {
+        va_start(vl, cmd);
+        if (data != NULL) {
+            devio.data = va_arg(vl, unsigned char *);
+            devio.data_size = strlen(devio.data);
+            devio_p = &devio;
+        }
     }
 
-    err = ioctl(dev, cmd);
+    err = ioctl(dev, cmd, devio_p);
 
-do_ioctl_epilogue:
-
-    if (session != NULL) {
-        del_blackcat_exec_session_ctx(session);
+    if (devio_p != NULL) {
+        va_end(vl);
+        devio_p->data = NULL;
+        devio_p->data_size = 0;
     }
 
     if (dev > -1) {

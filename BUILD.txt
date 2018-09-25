@@ -36,12 +36,12 @@ you@Hellfire:~/src# cd blackcat/src
 you@Hellfire:~/src/blackcat/src# hefesto
 -----------------------------------------
 
-Go walk your dog, because it can take a while at the first time. Once
+Go walk your dog, because it can take a while at first time. Once
 well-succeeded you can use the binary under 'blackcat/bin'. However, I would
-recommend you to install it and make 'blackcat' accessible for the entire system.
+recommend you to install it and make 'blackcat' accessible in the entire system.
 
-If you do not have the sources of your operating system in order to compiler the
-device driver or simply do not want it, use the build option  '--no-dev'.
+If you do not have the sources of your operating system in order to compile the
+device driver or simply you do not want it, use the build option  '--no-dev'.
 
 --------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --no-dev
@@ -53,4 +53,4 @@ To install:
 you@Hellfire:~/src/blackcat/src# hefesto --install
 --------------------------------------------------
 
-You done here, now you should read the file 'MANUAL'.
+You done here, now you should read the file 'MANUAL.txt'.

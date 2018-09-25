@@ -1727,6 +1727,22 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(file_is_hidden("s2.txt") == 0);
         CUTE_ASSERT(file_is_hidden("p.txt") == 0);
 
+        // INFO(Rafael): Now verifying the entire repo burying and digging up.
+
+        CUTE_ASSERT(blackcat("paranoid --bury-repo", "Rainbirds", NULL) != 0);
+
+        CUTE_ASSERT(blackcat("paranoid --bury-repo", "Or19Well84", NULL) == 0);
+
+        CUTE_ASSERT(file_is_hidden("../test") == 1);
+
+        // TODO(Rafael): Checking basic file operations under this condition.
+
+        CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "Metropolis", NULL) != 0);
+
+        CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "Or19Well84", NULL) == 0);
+
+        CUTE_ASSERT(file_is_hidden("../test") == 0);
+
         CUTE_ASSERT(blackcat("deinit", "Or19Well84", NULL) == 0);
 
         remove("s1.txt");
