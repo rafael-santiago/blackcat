@@ -224,9 +224,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help help", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help pack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help paranoid", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack", "", NULL) == 0);
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);

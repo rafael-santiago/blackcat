@@ -2607,3 +2607,5 @@ random_printable_padding_epilogue:
 #undef BCREPO_CATALOG_FILE_SIZE
 
 #undef BCREPO_RECUR_LEVEL_LIMIT
+
+#undef BLACKCAT_DEVPATH

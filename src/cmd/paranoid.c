@@ -328,3 +328,5 @@ static int do_ioctl(unsigned long cmd, ...) {
 
     return err;
 }
+
+#undef BLACKCAT_DEVPATH
