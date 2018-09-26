@@ -287,7 +287,7 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
 
 #define roll_data(filepath, curr_path, wp, wpp, data, data_size, no_error) {\
     if ((wpp = fopen(filepath, "rb")) == NULL) {\
-        fprintf(stderr, "ERROR: Uanble to read the file '%s'.\n", filepath);\
+        fprintf(stderr, "ERROR: Unable to read the file '%s'.\n", filepath);\
         no_error = 0;\
         goto bcrepo_roll_ball_of_wool_epilogue;\
     }\
