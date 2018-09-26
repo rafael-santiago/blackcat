@@ -1,0 +1,169 @@
+Blackcat user's guide
+=====================
+
+Abstract: In this document you will find basic information about how to use blackcat in order to
+          protect your data.
+
+Wtf is this?
+============
+
+Talking about cryptography, I am paranoid. I have been spending some years studying a little this
+subject and more a study more paranoid I become. This tool is merely a file encryptor with my own
+paranoid cares about how to actually encrypt data stored in a filesystem.
+
+I hate letting all files unencrypted when using encrypting tools based on storage devices. If you
+are paranoid like me maybe you will like the way of blackcat works.
+
+The general approach of this tool is provide you a way of protecting an entire directory and its
+sub-directories. Due to it I have designed the application to work similarly as a SCM tool,
+excluding all version control stuff, of course.
+
+OK, you do not know what a SCM tool is. Forget about the concepts. I will try to introduce you the
+basic usage workflow.
+
+The usage workflow
+==================
+
+Basically you need to create a directory into your filesystem or use a pre-existent one. For this
+time we will be using a new one.
+
+Thus, I will create a new one here:
+
+    root@RedBarn:~/# mkdir sphinx
+    root@RedBarn:~/# cd sphinx
+    root@RedBarn:~/sphinx# _
+
+Now we need to turn the sphinx directory into a blackcat repo. A blackcat repo is a directory
+where blackcat is able to work by locking and unlocking files among other additional operations
+(more on that later). The act of turning a ordinary directory as a blackcat repo is called
+initialization, initialisation or for short 'init'.
+
+Blackcat works based on commands. All time you call blackcat you also need to specify what you
+want from it. Thus, the first argument of the command line is always your intention a.k.a. the
+command. If those command expects additional parameters you need to pass them too.
+
+Let's init the sphinx directory:
+
+    root@RedBarn:~/sphinx# blackcat init \
+    > --catalog-hash=sha3-512 --key-hash=sha-384 --protection-layer-hash=whirlpool \
+    > --protection-layer=aes-256-cbc
+    root@RedBarn:~/sphinx# _
+
+Two distinct passwords will be asked to you and after it the ordinary directory will become a
+blackcat repo.
+
+Blackcat is a unix-like tool, if it stays quiet after a command it means that the command worked.
+We do not like to set fireworks when a thing works, neither celebrate with tons of exclamations!!
+This is... w
+            e i
+                r
+                 d .
+                    .
+                    .
+
+After running a well-succeeded init command in an ordinary directory a sub-directory called .bcrepo
+will be created. This directory stores the catalog data. You should not edit it on your own. For
+example, do you have the habit of poking your cat's sandbox with your nose? So...
+
+Maybe you are curious about the options present in the command init.
+
+    --catalog-hash -> Specifies the hash function used by the catalog password (the first key).
+
+    --key-hash     -> Specifies the hash function used by the user encryption key (the second key).
+
+    --protection-layer-hash -> Specifies the hash function used internally by the protection
+                               processors (key crunching, got it?).
+
+    --protection-layer -> Specifies the algorithm or the sequence of the cascading. Yes, you can
+                          specify more than one. This protection layer will be used to encrypt
+                          the sensible data inside the current repository. When you specify more
+                          than one cipher they need to be separated by commas.
+
+Blackcat verifies if the combination of those three hashing algorithms are considered strong. If
+not the init command will fail and you will be warned.
+
+Blackcat uses the following algorithm naming convention:
+
+                            <algorithm>-<bit-size-if-it-has-one>-<mode>
+
+Blackcat also implements HMACs and (in this case) the naming convention is:
+
+                hmac-<hash-algorithm>-<algorithm>-<bit-size-if-it-has-one>-<mode>
+
+Until now, blackcat only implements the following encryption operation modes: cbc, ctr, ofb.
+The application counts with more than one thousand encryption schemes to be used in your
+protection layer.
+
+If you do not need a barrier of two passwords you can force blackcat to use only one key. It can
+be done by specifying the option flag '--keyed-alike'. By default a blackcat repo is "keyed-twice".
+
+Now we got a directory where some files or whole files stored under it can be encrypted. However is
+also possible put files without cataloging it. When you catalog a file, blackcat will track this.
+The application will inform you the status of the file besides, of course, encrypt and decrypt the
+related data.
+
+The way of add a file to the repo's catalog is through the command 'add':
+
+    root@RedBarn:~/sphinx# blackcat add my-secret-spell.txt
+    root@RedBarn:~/sphinx# blackcat add src/p-equals-to-np-final-proof.bf
+    root@RedBarn:~/sphinx# blackcat add backyard/*.conf cat-memes/*.gif cat-memes/*.jpeg
+    root@RedBarn:~/sphinx# blackcat add YOU_SHALL_NOT_PASS_DISCLAIMER --plain
+
+Before adding, the repo's password will be asked. Once added to the catalog the files can be protected.
+If you run the command 'status' you will see that all files added are currently "unlocked".
+
+As you can see, even sub-directories inside the blackcat repo are automatically considered if some
+file inside them are added to the repo's catalog.
+
+The '--plain' option flag indicates to blackcat that the added file(s) must not be protected. Only
+indexed.
+
+The simplest way of checking the status of the indexed files is as follows:
+
+    root@RedBarn:~/sphinx# blackcat status
+
+The 'status' command also can be called passing a glob pattern, in cases where you have tons of files
+added to catalog, a glob can be useful.
+
+The color code used in blackcat's status report is the same of semaphores:
+
+    - Red (stop, no one will pass there, the file data is currently locked).
+    - Yellow (attention, eavesdroppers can roam freely there, you should
+              lock it if you are not using the file anymore).
+    - Green (go, anyone can pass, it is free).
+
+If for some reason you have added a wrong file to the catalog or that file is not relevant anymore.
+Use the command 'rm':
+
+    root@RedBarn:~/sphinx# blackcat rm cat-memes/*.gif
+
+If you want to lock all indexed files, use the 'lock' command:
+
+    root@RedBarn:~/sphinx# blackcat lock
+
+After typing the password(s), if correct, all non plain files will be locked.
+
+The 'lock' command also accepts glob patterns.
+
+In order to unlock a file use the 'unlock' command:
+
+    root@RedBarn:~/sphinx# blackcat unlock src/p-equals-to-np-final-proof.bf
+
+The 'unlock' command also accepts glob patterns.
+
+A good practice is always run a 'blackcat lock' when you have just finished of accessing the repo.
+Just saying, however, the data is yours and you are totally free to do anything do you want with it.
+
+When you are not lazy and only unlock the relevant data of your repo, you are leaking the minimal
+possible of the repo, if someone is silent downloading your files, this data disclore will be a
+catastrophe, for sure, but not so huge as it could be. If you are paranoid about your data, it
+is pretty good possibility.
+
+Now you know all basic usage workflow:
+
+    -> Initialize a repository.
+    -> Add files to the repository's catalog.
+    -> Remove them when necessary.
+    -> Lock & Unlock your sensible data.
+
+Let's move to more advanced features.
