@@ -147,46 +147,23 @@ static int bcrepo_mkdtree(const char *dirtree);
 
 static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size);
 
-static int bdup_handler(unsigned long cmd,
+static int bdup_handle(unsigned long cmd,
                  bfs_catalog_ctx **catalog,
                  const char *rootpath, const size_t rootpath_size,
                  const char *pattern, const size_t pattern_size);
 
-static int bdup_handler(unsigned long cmd,
-                 bfs_catalog_ctx **catalog,
-                 const char *rootpath, const size_t rootpath_size,
-                 const char *pattern, const size_t pattern_size) {
-    int count = 0;
-    bfs_catalog_ctx *cp = *catalog;
-    bfs_catalog_relpath_ctx *fp;
-
-    if (cp == NULL) {
-        return 0;
-    }
-
-    for (fp = cp->files; fp != NULL; fp = fp->next) {
-        if (pattern == NULL || strglob(fp->path, pattern) == 1) {
-            if (do_ioctl(cmd, fp->path, fp->path_size) == 0) {
-                count += 1;
-            } else {
-                perror("do_ioctl()");
-            }
-        }
-    }
-
-    return count;
-}
+static int bstat(const char *pathname, struct stat *buf);
 
 int bcrepo_bury(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size) {
-    return bdup_handler(BLACKCAT_BURY, catalog, rootpath, rootpath_size, pattern, pattern_size);
+    return bdup_handle(BLACKCAT_BURY, catalog, rootpath, rootpath_size, pattern, pattern_size);
 }
 
 int bcrepo_dig_up(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size) {
-    return bdup_handler(BLACKCAT_DIG_UP, catalog, rootpath, rootpath_size, pattern, pattern_size);
+    return bdup_handle(BLACKCAT_DIG_UP, catalog, rootpath, rootpath_size, pattern, pattern_size);
 }
 
 int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
@@ -520,6 +497,44 @@ bcrepo_unroll_ball_of_wool_epilogue:
     return no_error;
 }
 
+static int bstat(const char *pathname, struct stat *buf) {
+    int err = -1, fd;
+
+    if ((err = stat(pathname, buf)) != 0) {
+        if ((fd = open(pathname, O_RDONLY)) > -1) {
+            err = fstat(fd, buf);
+            close(fd);
+        }
+    }
+
+    return err;
+}
+
+static int bdup_handle(unsigned long cmd,
+                 bfs_catalog_ctx **catalog,
+                 const char *rootpath, const size_t rootpath_size,
+                 const char *pattern, const size_t pattern_size) {
+    int count = 0;
+    bfs_catalog_ctx *cp = *catalog;
+    bfs_catalog_relpath_ctx *fp;
+
+    if (cp == NULL) {
+        return 0;
+    }
+
+    for (fp = cp->files; fp != NULL; fp = fp->next) {
+        if (pattern == NULL || strglob(fp->path, pattern) == 1) {
+            if (do_ioctl(cmd, fp->path, fp->path_size) == 0) {
+                count += 1;
+            } else {
+                perror("do_ioctl()");
+            }
+        }
+    }
+
+    return count;
+}
+
 static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size) {
     int dev;
     int err = 0;
@@ -558,7 +573,7 @@ static int bcrepo_mkdtree(const char *dirtree) {
     int exit_code = 0;
     struct stat st;
 
-    if (stat(dirtree, &st) == 0) {
+    if (bstat(dirtree, &st) == 0) {
         if (st.st_mode != S_IFDIR) {
             return 0;
         }
@@ -1313,7 +1328,7 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
     files_p = *files;
 
-    if (stat(filepath, &st) == 0) {
+    if (bstat(filepath, &st) == 0) {
         // INFO(Rafael): We are only interested in regular files and directories.
         if (st.st_mode & S_IFREG) {
             // INFO(Rafael): However, only regular files are really relevant for us.

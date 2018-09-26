@@ -158,7 +158,7 @@ Just saying, however, the data is yours and you are totally free to do anything 
 When you are not lazy and only unlock the relevant data of your repo, you are leaking the minimal
 secrecy possible from the repo, if someone is silent downloading your files, this data disclosure
 will be a catastrophe, for sure, but not so huge as it could be. If you are paranoid about your
-data, it is a pretty good feature.
+data, it is a pretty good feature (but only explored if you apply some usage care).
 
 Now you know all basic usage workflow:
 

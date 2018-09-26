@@ -38,7 +38,7 @@ static int clear_history(void);
 
 static int do_ioctl(unsigned long cmd, ...);
 
-static int br_dgur_handler(unsigned long cmd);
+static int br_dgur_handle(unsigned long cmd);
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
     { "--bury",            bury            },
@@ -77,7 +77,7 @@ int blackcat_cmd_paranoid_help(void) {
 }
 
 static int bury_repo(void) {
-    int exit_code = br_dgur_handler(BLACKCAT_BURY);
+    int exit_code = br_dgur_handle(BLACKCAT_BURY);
 
     if (exit_code != 0) {
         fprintf(stderr, "ERROR: While trying to hide repo.\n");
@@ -87,7 +87,7 @@ static int bury_repo(void) {
 }
 
 static int dig_up_repo(void) {
-    int exit_code = br_dgur_handler(BLACKCAT_DIG_UP);
+    int exit_code = br_dgur_handle(BLACKCAT_DIG_UP);
 
     if (exit_code != 0) {
         fprintf(stderr, "ERROR: While trying to show repo.\n");
@@ -263,14 +263,14 @@ static int clear_history(void) {
     return 1;
 }
 
-static int br_dgur_handler(unsigned long cmd) {
+static int br_dgur_handle(unsigned long cmd) {
     int exit_code = 1;
     blackcat_exec_session_ctx *session = NULL;
     unsigned char temp[4096];
     char *rp_end;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
-        goto br_dgur_handler_epilogue;
+        goto br_dgur_handle_epilogue;
     }
 
     rp_end = session->rootpath + session->rootpath_size;
@@ -285,7 +285,7 @@ static int br_dgur_handler(unsigned long cmd) {
 
     memset(temp, 0, sizeof(temp));
 
-br_dgur_handler_epilogue:
+br_dgur_handle_epilogue:
 
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
