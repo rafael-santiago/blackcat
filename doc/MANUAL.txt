@@ -53,7 +53,7 @@ Two distinct passwords will be asked to you and after it the previous ordinary/f
 become a blackcat repo.
 
 Blackcat is a unix-like tool, if it stays quiet after a command it means that the command has worked.
-We do not like to set fireworks when a thing works, neither celebrate with tons of exclamations!!
+We do not like to set fireworks when a thing works, neither celebrate with tons of exclamations!!!!!!
 This is... w
             e i
                 r
@@ -168,3 +168,139 @@ Now you know all basic usage workflow:
     -> Locking & unlocking your sensible data.
 
 Let's move to more advanced features.
+
+With so many encryption schemes, how can I remember the exact name of one?
+==========================================================================
+
+Blackcat implements a command called 'show'. With the 'show' command you can list some capabilities
+present in your blackcat's copy. Since blackcat is an encrypting tool its capabilities are related
+to ciphers, hmacs schemes, hashes and also encoders. The command will list the exact name of how a
+specific algorithm/scheme is internally recognized by blackcat.
+
+Let's show all implemented encoders:
+
+    root@RedBarn:~/sphinx# blackcat show encoders
+    uuencode
+    base64
+    root@RedBarn:~/sphinx# _
+
+Further on I will show you how to use encoding algorithms in blackcat. By now you should only know
+that they exist.
+
+When you need to initialize a repo it is necessary to indicate three hashing algorithms, if you want
+to see the menu before picking one:
+
+    root@RedBarn:~/sphinx# blackcat show hashes
+    sha-224
+    sha-256
+    (...)
+    root@RedBarn:~/sphinx# _
+
+HMACs can be used in a protection layer, listing all currently available:
+
+    root@RedBarn:~/sphinx# blackcat show hmacs
+    hmac-sha-224-aes-128-cbc
+    hmac-sha-256-aes-128-cbc
+    hmac-sha-384-aes-128-cbc
+    hmac-sha-512-aes-128-cbc
+    hmac-sha3-224-aes-128-cbc
+    hmac-sha3-256-aes-128-cbc
+    hmac-sha3-384-aes-128-cbc
+    hmac-sha3-512-aes-128-cbc
+    hmac-tiger-aes-128-cbc
+    hmac-whirlpool-aes-128-cbc
+    hmac-sha-224-aes-192-cbc
+    hmac-sha-256-aes-192-cbc
+    hmac-sha-384-aes-192-cbc
+    hmac-sha-512-aes-192-cbc
+    hmac-sha3-224-aes-192-cbc
+    hmac-sha3-256-aes-192-cbc
+    hmac-sha3-384-aes-192-cbc
+    hmac-sha3-512-aes-192-cbc
+    hmac-tiger-aes-192-cbc
+    hmac-whirlpool-aes-192-cbc
+    hmac-sha-224-aes-256-cbc
+    hmac-sha-256-aes-256-cbc
+    hmac-sha-384-aes-256-cbc
+    hmac-sha-512-aes-256-cbc
+    hmac-sha3-224-aes-256-cbc
+    hmac-sha3-256-aes-256-cbc
+    hmac-sha3-384-aes-256-cbc
+    hmac-sha3-512-aes-256-cbc
+    hmac-tiger-aes-256-cbc
+    hmac-whirlpool-aes-256-cbc
+    hmac-sha-224-des-cbc
+    hmac-sha-256-des-cbc
+    hmac-sha-384-des-cbc
+    hmac-sha-512-des-cbc
+    hmac-sha3-224-des-cbc
+    (...)
+    root@RedBarn:~/sphinx# _
+
+
+In order to list all ciphers (including the HMAC schemes):
+
+    root@RedBarn:~/sphinx# blackcat show ciphers
+    arc4
+    seal
+    rabbit
+    aes-128-cbc
+    aes-192-cbc
+    aes-256-cbc
+    des-cbc
+    3des-cbc
+    3des-ede-cbc
+    idea-cbc
+    rc2-cbc
+    rc5-cbc
+    rc6-128-cbc
+    rc6-192-cbc
+    rc6-256-cbc
+    feal-cbc
+    cast5-cbc
+    camellia-128-cbc
+    camellia-192-cbc
+    camellia-256-cbc
+    safer-k64-cbc
+    blowfish-cbc
+    serpent-cbc
+    tea-cbc
+    xtea-cbc
+    misty1-cbc
+    mars-128-cbc
+    mars-192-cbc
+    mars-256-cbc
+    present-80-cbc
+    present-128-cbc
+    shacal1-cbc
+    shacal2-cbc
+    noekeon-cbc
+    noekeon-d-cbc
+    aes-128-ofb
+    aes-192-ofb
+    aes-256-ofb
+    des-ofb
+    (...)
+    gibberish-wrap
+    root@RedBarn:~/sphinx# _
+
+I know: "Wtf is 'gibberish-wrap'?!". It is not actually a cipher. It is just about a way of
+wrapping the sensible data with pseudo-random bytes. The gibberish-wrap expects two arguments:
+
+    1. how many bytes will wrap the data more left.
+    2. how many bytes will wrap the data more rigth.
+
+This is the way of indicating a practical 'gibberish wrapping':
+
+            gibberish-wrap/723-636
+
+By the way, some implemented ciphers also need additional parameters that you need to specify in
+the same way of how is specified in 'gibberish-wrap'. The general idea is:
+
+            <algorith-name-that-need-additional-params>/<p_0>-<p_1>-...-<p_n>
+
+For example:
+
+            'hmac-rc6-192-cbc/512'
+
+In the case of RC6 you are specifying the rounds total.
