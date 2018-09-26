@@ -71,7 +71,7 @@ int blackcat_exec(int argc, char **argv) {
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
         // WARN(Rafael): If the user suspend the machine this will be useless.
         if ((err = mlockall(MCL_CURRENT | MCL_FUTURE)) != 0) {
-            perror("mlock()");
+            perror("mlockall()");
             fprintf(stderr, "ERROR: While applying RAM locking.\n");
             return err;
         }
