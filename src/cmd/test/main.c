@@ -1795,8 +1795,6 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         CUTE_ASSERT(blackcat("add p.txt", "Or19Well84", "LeGuin") == 0);
         CUTE_ASSERT(blackcat("add s2.txt", "Or19Well84", "LeGuin") == 0);
 
-        // --------
-
         CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "Metropolis", NULL) != 0);
 
         CUTE_ASSERT(blackcat("paranoid --dig-up-repo", "Or19Well84", NULL) == 0);
