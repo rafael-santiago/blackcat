@@ -1737,7 +1737,7 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(file_is_hidden("../test") == 1);
 
-        // TODO(Rafael): Checking basic file operations under this condition.
+        // INFO(Rafael): Checking basic file operations under this condition.
 
         CUTE_ASSERT(blackcat("lock", "Or19Well84", "LeGuin") == 0);
         CUTE_ASSERT(blackcat("unlock", "Or19Well84", "LeGuin") == 0);
