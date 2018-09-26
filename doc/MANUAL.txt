@@ -288,7 +288,7 @@ I know: "Wtf is 'gibberish-wrap'?!". It is not actually a cipher. It is just abo
 wrapping the sensible data with pseudo-random bytes. The gibberish-wrap expects two arguments:
 
     1. how many bytes will wrap the data more left.
-    2. how many bytes will wrap the data more rigth.
+    2. how many bytes will wrap the data more right.
 
 This is the way of indicating a practical 'gibberish wrapping':
 
@@ -297,7 +297,7 @@ This is the way of indicating a practical 'gibberish wrapping':
 By the way, some implemented ciphers also need additional parameters that you need to specify in
 the same way of how is specified in 'gibberish-wrap'. The general idea is:
 
-            <algorith-name-that-need-additional-params>/<p_0>-<p_1>-...-<p_n>
+            <algorithm-with-additional-parameters>/<p_0>-<p_1>-...-<p_n>
 
 For example:
 
