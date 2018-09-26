@@ -301,6 +301,6 @@ the same way of how is specified in 'gibberish-wrap'. The general idea is:
 
 For example:
 
-            'hmac-rc6-192-cbc/512'
+            hmac-rc6-192-cbc/512
 
 In the case of RC6 you are specifying the rounds total.
