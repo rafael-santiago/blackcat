@@ -360,6 +360,6 @@ verdict of it as an absolute truth.
 
 This command only will work with the device driver previously loaded. Bear in mind that if
 you have a rootkit installed into your system you have failed a bunch while user/admin.
-Stop reading this and go burn that machine immediately and read more about best practices
+Stop reading this and go burn that machine immediately and learn more about best practices
 related to information security.
 
