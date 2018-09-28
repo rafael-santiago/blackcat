@@ -1801,6 +1801,20 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(file_is_hidden("../test") == 0);
 
+        // INFO(Rafael): Disable and enable history.
+
+        CUTE_ASSERT(blackcat("paranoid --disable-history", "", "") == 0);
+
+        CUTE_ASSERT(blackcat("paranoid --enable-history", "", "") == 0);
+
+        // INFO(Rafael): Find hooks test.
+
+        CUTE_ASSERT(blackcat("paranoid --find-hooks", "sjdasjd", NULL) != 0);
+
+        CUTE_ASSERT(blackcat("paranoid --find-hooks", "Or19Well84", NULL) == 0);
+
+        // TODO(Rafael): Hook read and write (exit code != 0).
+
         CUTE_ASSERT(blackcat("deinit", "Or19Well84", NULL) == 0);
 
         remove("s1.txt");
