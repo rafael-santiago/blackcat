@@ -304,3 +304,62 @@ For example:
             hmac-rc6-192-cbc/512
 
 In the case of RC6 you are specifying the rounds total.
+
+Paranoid practices
+==================
+
+It is not a good practice to use blackcat with your shell history enabled. The problem is that
+some eavesdropper can track what files you have been editing and also some details about the
+initialization of some repository. Actually this is not a failure, since the details of the
+protection layer can offer a shortcut from impossible to an inviable brute force attack. However
+if we can avoid giving some clue about the protection layer to the attacker, why not?
+
+The way of disabling the bash history is:
+
+    root@RedBarn:~/sphinx# blackcat paranoid --disable-history
+    root@RedBarn:~/sphinx# _
+
+After executing this command the shell history will be disable and all your subsequent command
+will not be recorded.
+
+In order to activate the shell history again:
+
+    root@RedBarn:~/sphinx# blackcat paranoid --enable-history
+    root@RedBarn:~/sphinx# _
+
+Blackcat also counts with a device driver that helps us with our paranoid worries. The support
+device driver is available for FreeBSD, Linux and NetBSD.
+
+This device driver offers the possibility of detecting hooks that could be used in order to log
+your passwords and also some nice 'incantations' to hide your file and/or repository.
+
+The blackcat device driver should be loaded through the kernel module called 'blackcat.ko'
+(FreeBSD and Linux), 'blackcat.kmod' (NetBSD). The way of loading it is:
+
+    root@RedBarn:~/sphinx# blackcat lkm --load <path to the kernel module>
+
+Once loaded it cannot be unloaded unless you reboot your machine. They will stay resident, this
+property is necessary otherwise an intruder could be able to silent unload it and hacking you.
+Now your blackcat has some kernel mode powers, let's learn how to use them.
+
+As I start saying before, in most of cases, encryption systems are exploited by side-channel
+attacks or even exploring bad practices followed by the users. The brute force for civilians
+is expensive, so they will try to find some failure in your workflow usage.
+
+When they are unable to guess a password because that password seems not be lousy as the
+majority and you take into consideration all good practices, the can try to log it directly
+from your machine. Usually some hooking is done in some syscalls, to detect this kind of
+attack you can run the command 'paranoid' with its sub-command '--find-hooks':
+
+    root@RedBarn:~/sphinx# blackcat paranoid --find-hooks
+    root@RedBarn:~/sphinx# _
+
+If '--find-hooks' has found some bad stuff you will be informed. Notice that some methods
+such as memory patching until now are not considered by the scanner. Do not take the
+verdict of it as an absolute truth.
+
+This command only will work with the device driver previously loaded. Bear in mind that if
+you have a rootkit installed into your system you have failed a bunch while user/admin.
+Stop reading this and go burn that machine immediately and read more about best practices
+related to information security.
+
