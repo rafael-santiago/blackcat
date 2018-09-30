@@ -61,7 +61,7 @@ This is... w
                     .
                     .
 
-After running a well-succeeded init command in an ordinary directory a sub-directory called .bcrepo
+After running a well succeeded init command in an ordinary directory a sub-directory called .bcrepo
 will be created. This directory stores the catalog data. You should not edit it on your own. For
 example, do you have the habit of poking your cat's sandbox with your nose? So...
 
@@ -342,15 +342,17 @@ If you have defined the environment variable 'BLACKCAT_LKM_PATH' the path to the
 should be omitted from the command line. The environment variable must store the path to the
 kernel module, of course.
 
-Once loaded the lkm cannot be unloaded unless you reboot your machine. They will stay resident,
-this property is necessary otherwise an intruder could be able to silent unload it and hacking
+You can also use the native loader of your operating system (insmod/modprobe, kldload, modload).
+
+Once loaded the lkm cannot be unloaded unless you reboot your machine. It will stay resident.
+This property is necessary, otherwise an intruder could be able to silent unload it and hacking
 you. Now that your blackcat has some kernel mode powers, let's learn how to use them.
 
 As I start saying before, in most of cases, encryption systems are exploited by side-channel
 attacks or even exploting bad practices followed by users. The brute force for civilians
 is expensive, so they will try to find some failure in your workflow usage.
 
-When they are unable to guess a password because that password seems not be lousy as the
+When they are unable to guess a password because that password seems not be as lousy as the
 majority and you take into consideration all good practices, they can try to log it directly
 from your machine. Usually some hooking is done in some syscalls. You can detect this kind of
 attack by running the command 'paranoid' with its sub-command '--find-hooks':
@@ -364,14 +366,14 @@ verdict of it as an absolute truth.
 
 This command only will work with the device driver previously loaded. Bear in mind that if
 you have a rootkit installed into your system you have failed a bunch while user/admin.
-Stop reading this and go burn that machine immediately and learn more about best practices
+Stop reading this and go burn this machine immediately and learn more about best practices
 related to information security.
 
-Supposing that you are editing your sensible date into a system and silent someone is connected
+Supposing that you are editing your sensible data into a system and silent someone is connected
 probing your filesystem, downloading everything that looks interesting. What about a mechanism
 that makes the sensible data invisible to an external attacker?
 
-So you can hide specific files into a repository or you also can hide the entire repository.
+So you can hide specific files into a repository or even the entire repository.
 
 Hiding a specific file:
 
@@ -390,8 +392,8 @@ sub-command '--dig-up':
     root@RedBarn:~/sphinx# blackcat paranoid --dig-up etc/grandma-cake-recipe.txt
     root@RedBarn:~/sphinx# _
 
-The sub-command '--dig-up' also supports globs, but in this case you should to pass
-the exact glob used with '--bury', otherwise the file will stay invisible.
+The sub-command '--dig-up' also supports globs, but in this case you should pass the
+exact glob used with '--bury', otherwise the file will stay invisible.
 
 A good thing to do is create a repository with a crazy name, harder to guess about and
 make it entirely invisible through the sub-command '--bury-repo':
@@ -411,3 +413,30 @@ Again, those paranoid commands are not a kind of silver bullet against your slop
 when talking about information security. If your system is so hacked that it has
 screen loggers, rootkits and so on, you should re-think if computers are tools that you
 really should be able to use without harming yourself and other people.
+
+The problem of using encryption tools in modern operating systems is the possibility of
+leaking some sensible information (e.g.: keys) to secondary storage devices. How does it
+can happen? Simple, as instance, if your system decides to swap the data into the RAM to
+the disk, the key will be recorded in disk and someone (smart enough) would be able to
+recover this information using it to access your repo.
+
+Blackcat offers two ways of mitigating this cumbersome property:
+
+    1. Giving to the blackcat process a high priority, with it the process will use
+       more time of CPU before being scheduled for next execution.
+
+    2. Disabling the swap through Posix's mlockall.
+
+In order to give a high priority to blackcat you should use the flag '--set-high-priority':
+
+    root@RedBarn:~/sphinx# blackcat <some command> <args> --set-high-priority
+    root@RedBarn:~/sphinx# _
+
+In order to disable memory swap use the flag '--no-swap':
+
+    root@RedBarn:~/sphinx# blackcat <some command> <args> --no-swap
+    root@RedBarn:~/sphinx# _
+
+When using '--no-swap', any memory allocated by the application will stay in memory even
+during a swap operation. However, you must avoid suspending or hibernating your system, in
+this case, your current session will be saved to some point into your disk.
