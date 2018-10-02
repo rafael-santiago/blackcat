@@ -311,8 +311,8 @@ Paranoid practices
 It is not a good practice to use blackcat with your shell history enabled. The problem is that
 some eavesdropper can track what files you have been editing and also some details about the
 initialization of some repository. Actually this is not a failure, since the details of the
-protection layer can offer a shortcut from impossible to an infeasible brute force attack. However
-if we can avoid giving some clue about the protection layer to the attacker, why not?
+protection layer can offer a shortcut from the impossible to the infeasible brute force attack.
+However if we can avoid giving some clue about the protection layer to the attacker, why not?
 
 The way of disabling the shell history is:
 
@@ -437,6 +437,6 @@ In order to disable memory swap use the flag '--no-swap':
     root@RedBarn:~/sphinx# blackcat <some command> <args> --no-swap
     root@RedBarn:~/sphinx# _
 
-When using '--no-swap', any memory allocated by the application will stay in memory even
+When using '--no-swap', any memory allocated by the application will stay in RAM even
 during a swap operation. However, you must avoid suspending or hibernating your system, in
 this case, your current session will be saved to some point into your disk.
