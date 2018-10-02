@@ -1,0 +1,47 @@
+#
+#                          Copyright (C) 2018 by Rafael Santiago
+#
+# Use of this source code is governed by GPL-v2 license that can
+# be found in the COPYING file.
+#
+#
+
+include ../../../forgeutils/toolsets.hsl
+
+local var lkm_curr_toolset type string;
+
+local var lkm_includes type list;
+local var lkm_cflags type list;
+local var lkm_libraries type list;
+local var lkm_ldflags type list;
+
+project hdev : toolset $lkm_curr_toolset : "hdev.c", $lkm_includes, $lkm_cflags, $lkm_libraries, $lkm_ldflags, "hook";
+
+hdev.preloading() {
+    $lkm_curr_toolset = get_lkm_toolset();
+}
+
+hdev.prologue() {
+    var option type list;
+
+    $option = hefesto.sys.get_option("build-skip");
+
+    if ($option.index_of("hdev") > -1) {
+        hefesto.sys.echo("BUILD INFO: kook build was skipped.\n");
+        hefesto.project.abort(0);
+    }
+
+    $option = hefesto.sys.get_option("clean");
+
+    if ($option.count() > 0) {
+        mkclean();
+    }
+
+    $lkm_includes.add_item(hefesto.sys.pwd());
+
+    var kook_root type string;
+    $kook_root = hefesto.sys.make_path(hefesto.sys.make_path(hefesto.sys.pwd(), "kook"), "src");
+
+    $lkm_includes.add_item($kook_root);
+    $lkm_includes.add_item(hefesto.sys.make_path($kook_root, hefesto.sys.os_name()));
+}

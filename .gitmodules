@@ -10,3 +10,6 @@
 [submodule "src/dev/icloak"]
 	path = src/dev/icloak
 	url = https://github.com/rafael-santiago/icloak
+[submodule "src/cmd/test/kook"]
+	path = src/cmd/test/hdev/kook
+	url = https://github.com/rafael-santiago/kook

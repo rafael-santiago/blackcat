@@ -33,6 +33,10 @@ static int file_is_hidden(const char *filepath);
 
 static int test_env_housekeeping(void);
 
+static int syshook(void);
+
+static int clear_syshook(void);
+
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
 
@@ -1813,7 +1817,15 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(blackcat("paranoid --find-hooks", "Or19Well84", NULL) == 0);
 
-        // TODO(Rafael): Hook read and write (exit code != 0).
+        // INFO(Rafael): Hook read and write (exit code != 0).
+
+        CUTE_ASSERT(syshook() == 0);
+
+        CUTE_ASSERT(blackcat("paranoid --find-hooks", "Or19Well84", NULL) != 0);
+
+        CUTE_ASSERT(clear_syshook() == 0);
+
+        CUTE_ASSERT(blackcat("paranoid --find-hooks", "Or19Well84", NULL) == 0);
 
         CUTE_ASSERT(blackcat("deinit", "Or19Well84", NULL) == 0);
 
@@ -1999,4 +2011,28 @@ static int test_env_housekeeping(void) {
     rmdir("unpack-test/bpack");
     rmdir("unpack-test");
     remove("test.bpack");
+}
+
+static int syshook(void) {
+#if defined(__linux__)
+    return system("insmod hdev/hook.ko");
+#elif defined(__FreeBSD__)
+    return system("kldload hdev/hook.ko");
+#elif defined(__NetBSD__)
+    return system("modload hdev/hook.kmod");
+#else
+    return 1;
+#endif
+}
+
+static int clear_syshook(void) {
+#if defined(__linux__)
+    return system("rmmod hook");
+#elif defined(__FreeBSD__)
+    return system("kldunload hook");
+#elif defined(__NetBSD__)
+    return system("modunload hook");
+#else
+    return 1;
+#endif
 }

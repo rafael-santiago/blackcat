@@ -18,6 +18,10 @@ include on netbsd ~/toolsets/netbsd/netbsd-module.hsl
 
 include ~/fsutil.hsl
 
+function blackcat_rootdir() : result type string {
+    result hefesto.sys.env("BLACKCAT_ROOTDIR");
+}
+
 function get_app_toolset() : result type string {
     result get_toolset() + "-c-app";
 }
@@ -182,6 +186,35 @@ local function build_libaccacia() : result type int {
             $exit_code = hefesto.sys.run("hefesto");
             hefesto.sys.cd($oldcwd);
         }
+    }
+
+    result $exit_code;
+}
+
+local function build_hdev() : result type int {
+    var option type list;
+
+    $option = hefesto.sys.get_option("no-dev");
+
+    if ($option.count() == 0) {
+        result 0;
+    }
+
+    $option = hefesto.sys.get_option("blackcat-dev-tests");
+
+    if ($option.count() == 0) {
+        result 0;
+    }
+
+    var exit_code type int;
+    var old_cwd type string;
+    $old_cwd = hefesto.sys.pwd();
+
+    $exit_code = 1;
+
+    if (hefesto.sys.cd("hdev")) {
+        $exit_code = hefesto.sys.run("hefesto");
+        hefesto.sys.cd($old_cwd);
     }
 
     result $exit_code;

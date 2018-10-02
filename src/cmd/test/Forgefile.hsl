@@ -26,6 +26,8 @@ blackcat-cmd-tests.preloading() {
 }
 
 blackcat-cmd-tests.prologue() {
+    build("hdev");
+
     $src.ls(".*\\.c$");
 
     $includes = hefesto.sys.get_option("includes");
