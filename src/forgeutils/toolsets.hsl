@@ -196,7 +196,7 @@ local function build_hdev() : result type int {
 
     $option = hefesto.sys.get_option("no-dev");
 
-    if ($option.count() == 0) {
+    if ($option.count() > 0) {
         result 0;
     }
 
