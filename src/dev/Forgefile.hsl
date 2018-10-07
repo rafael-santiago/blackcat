@@ -15,6 +15,8 @@ local var ldflags type list;
 
 local var toolset_name type string;
 
+local var reverse_pattern type string;
+
 # INFO(Rafael): The device will be tested in cmd's system tests only. Since this is pretty straightforward and once
 #               within the kernel it will stay resident until the next system's reboot, let's avoid complicating the
 #               whole build task including weird reboot steps.
@@ -74,6 +76,14 @@ blackcat-dev.prologue() {
             hefesto.project.abort($exit_code);
         }
 
+        $reverse_pattern = ", cmajor = " + $dev_major;
+
         hefesto.sys.replace_in_file("netbsd/cdev_init.c", "CDEV_MAJOR_NR", $dev_major);
+    }
+}
+
+blackcat-dev.epilogue() {
+    if (hefesto.sys.os_name() == "netbsd") {
+        hefesto.sys.replace_in_file("netbsd/cdev_init.c", $reverse_pattern, "CDEV_MAJOR_NR");
     }
 }
