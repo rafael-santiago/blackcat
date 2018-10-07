@@ -140,6 +140,8 @@ static int hook_pread(struct thread *td, void *args) {
 
 #include <sys/module.h>
 #include <sys/syscall.h>
+#include <sys/syscallargs.h>
+#include <kook.h>
 
 void *sys_write_p = NULL, *sys_writev_p = NULL, *sys_pwrite_p = NULL,
      *sys_read_p = NULL, *sys_readv_p = NULL, *sys_pread_p = NULL;
