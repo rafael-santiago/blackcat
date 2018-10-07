@@ -47,6 +47,12 @@ device driver or simply you do not want it, use the build option  '--no-dev'.
 you@Hellfire:~/src/blackcat/src# hefesto --no-dev
 --------------------------------------------------
 
+In NetBSD you need to create the device node and also define by yourself the
+major number of the device. The default number is 210 if you want to define
+a different one use the build option --dev-major=<number>. In this case,
+if a previous /dev/blackcat node exists, it will be deleted and a new node
+will be created.
+
 To install:
 
 --------------------------------------------------

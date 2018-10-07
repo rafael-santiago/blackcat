@@ -11,7 +11,7 @@
 
 int cdev_init(void) {
     int errno = 0;
-    int bmajor = -1, cmajor = 210;
+    int bmajor = -1, cmajor = CDEV_MAJOR_NR;
 
     cdev_mtx_init(&g_cdev()->lock);
 

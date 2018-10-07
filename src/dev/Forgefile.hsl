@@ -51,4 +51,29 @@ blackcat-dev.prologue() {
     $includes.add_item($rootpath);
     $includes.add_item(hefesto.sys.make_path($rootpath, "utils"));
     $includes.add_item(hefesto.sys.make_path($rootpath, hefesto.sys.os_name()));
+
+    if (hefesto.sys.os_name() == "netbsd") {
+        $option = hefesto.sys.get_option("dev-major");
+
+        var dev_major type string;
+
+        $dev_major = "210";
+
+        if ($option.count() > 0) {
+            $dev_major = $option.item(0);
+        }
+
+        hefesto.sys.rm("/dev/blackcat");
+
+        var exit_code type int;
+
+        $exit_code = hefesto.sys.run("mknod /dev/blackcat c " + $dev_major + " 0");
+
+        if ($exit_code != 0) {
+            hefesto.sys.echo("ERROR: Unable to create the device node.\n");
+            hefesto.project.abort($exit_code);
+        }
+
+        hefesto.sys.replace_in_file("netbsd/cdev_init.c", "CDEV_MAJOR_NR", $dev_major);
+    }
 }
