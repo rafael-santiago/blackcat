@@ -138,4 +138,80 @@ static int hook_pread(struct thread *td, void *args) {
 
 #elif defined(__NetBSD__)
 
+#include <sys/module.h>
+#include <sys/syscall.h>
+
+void *sys_write_p = NULL, *sys_writev_p = NULL, *sys_pwrite_p = NULL,
+     *sys_read_p = NULL, *sys_readv_p = NULL, *sys_pread_p = NULL;
+
+static int hook_write(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_writev(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_pwrite(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_read(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_readv(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_pread(struct lwp *lp, const void *args, register_t *rp);
+
+static int hook_modcmd(modcmd_t cmd, void *args);
+
+MODULE(MODULE_CLASS_DRIVER, hook, NULL);
+
+static int hook_modcmd(modcmd_t cmd, void *args) {
+    int errno = 0;
+
+    switch (cmd) {
+        case MODULE_CMD_INIT:
+            kook(SYS_read, hook_read, &sys_read_p);
+            kook(SYS_readv, hook_readv, &sys_readv_p);
+            kook(SYS_pread, hook_pread, &sys_pread_p);
+            kook(SYS_write, hook_write, &sys_write_p);
+            kook(SYS_writev, hook_writev, &sys_writev_p);
+            kook(SYS_pwrite, hook_pwrite, &sys_pwrite_p);
+            break;
+
+        case MODULE_CMD_FINI:
+            kook(SYS_read, sys_read_p, NULL);
+            kook(SYS_readv, sys_readv_p, NULL);
+            kook(SYS_pread, sys_pread_p, NULL);
+            kook(SYS_write, sys_write_p, NULL);
+            kook(SYS_writev, sys_writev_p, NULL);
+            kook(SYS_pwrite, sys_pwrite_p, NULL);
+            break;
+
+        default:
+            errno = EOPNOTSUPP;
+            break;
+    }
+
+    return errno;
+}
+
+static int hook_write(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_write(lp, args, rp);
+}
+
+static int hook_writev(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_writev(lp, args, rp);
+}
+
+static int hook_pwrite(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_pwrite(lp, args, rp);
+}
+
+static int hook_read(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_read(lp, args, rp);
+}
+
+static int hook_readv(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_readv(lp, args, rp);
+}
+
+static int hook_pread(struct lwp *lp, const void *args, register_t *rp) {
+    return sys_pread(lp, args, rp);
+}
+
 #endif
