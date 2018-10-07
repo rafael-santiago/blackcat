@@ -84,6 +84,6 @@ blackcat-dev.prologue() {
 
 blackcat-dev.epilogue() {
     if (hefesto.sys.os_name() == "netbsd") {
-        hefesto.sys.replace_in_file("netbsd/cdev_init.c", $reverse_pattern, "CDEV_MAJOR_NR");
+        hefesto.sys.replace_in_file("netbsd/cdev_init.c", $reverse_pattern, ", cmajor = CDEV_MAJOR_NR");
     }
 }
