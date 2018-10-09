@@ -27,7 +27,7 @@ hdev.prologue() {
     $option = hefesto.sys.get_option("build-skip");
 
     if ($option.index_of("hdev") > -1) {
-        hefesto.sys.echo("BUILD INFO: kook build was skipped.\n");
+        hefesto.sys.echo("BUILD INFO: hdev build was skipped.\n");
         hefesto.project.abort(0);
     }
 
