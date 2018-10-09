@@ -38,7 +38,7 @@ where blackcat is able to work on by locking and unlocking files among other add
 (more on that later). The act of turning an ordinary directory as a blackcat repo is called
 initialization, initialisation or for short 'init'.
 
-Blackcat works based on commands. All time you call blackcat you also need to specify what you are
+Blackcat works based on commands. When you call blackcat you also need to specify what you are
 intending to do. Thus, the first argument of the command line is always your intention a.k.a. the
 command. If that command expects additional parameters you need to pass them too.
 
@@ -440,3 +440,67 @@ In order to disable memory swap use the flag '--no-swap':
 When using '--no-swap', any memory allocated by the application will stay in RAM even
 during a swap operation. However, you must avoid suspending or hibernating your system, in
 this case, your current session will be saved to some point into your disk.
+
+Encoding your stuff after encrypting
+====================================
+
+Until now only the two most known encoding algorithms are available: 'uuencode' and 'base64'.
+
+Enconding data could be useful for some applications, imagine you are versioning the data
+with some SCM and hosting those data somewhere (a way of making a private repo without
+paying a single dollar for it, err... but do not tell anyone that I told you...); the encoding
+algorithm will let the repository more friendly for the web.
+
+Here goes a 'init' command passing the encoder:
+
+    root@RedBarn:~/sphinx# blackcat init \
+    > --catalog-hash=sha3-384 \
+    > --key-hash=whirlpool \
+    > --protection-layer-hash=sha-512 \
+    > --protection-layer=aes-128-cbc \
+    > --encoder=uuencode
+    root@RedBarn:~/sphinx# _
+
+As you can see this section also could be titled 'Saving some bucks'.
+
+Changing your keys
+==================
+
+Maybe change your repo key(s) would be a best practice. The command 'setkey' offers you
+this possibility.
+
+Supposing you have a 'keyed-twice' repo and you want to redefine the two passwords:
+
+    root@RedBarn:~/sphinx# blackcat setkey
+    (The two current passwords will be asked and so the two new passwords and them confirmations
+     will be asked too)
+    root@RedBarn:~/sphinx# _
+
+If from now on you want to use only one password:
+
+    root@RedBarn:~/sphinx# blackcat setkey --keyed-alike
+    (The two current passwords will be asked and so the new password and its confirmation
+     will be asked)
+    root@RedBarn:~/sphinx# _
+
+With the 'setkey' command is also possible to reconfigure other repository properties. All
+property defined during its initialization ('init') can be redefined with 'setkey'.
+
+The way of changing a property is by expliciting it through command line. If some repo property
+was informed it will be redefined too. The properties are the same options recognized by 'init'
+command: '--catalog-hash', '--key-hash', '--protection-layer-hash', '--protection-layer' and
+'--encoder'.
+
+A way of reseting the repository:
+
+    root@RedBarn:~/sphinx# blackcat setkey --keyed-alike \
+    > --catalog-hash=whirlpool \
+    > --key-hash=sha-512 \
+    > --protection-layer-hash=tiger \
+    > --encoder=uuencode \
+    > --protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc
+    (Guess what?)
+    root@RedBarn:~/sphinx# _
+
+How can I redefine those properties without redefining the key(s)? Simple, type the current
+key(s) anyway. Wow.
