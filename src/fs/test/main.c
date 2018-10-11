@@ -1025,6 +1025,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
     catalog->bc_version = "0.0.1";
     catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha3-512");
     catalog->key_hash_algo_size = get_hash_size("sha3-512");
@@ -1291,6 +1292,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
 
     catalog.bc_version = "0.0.1";
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
+    catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
     catalog.hmac_scheme = get_hmac_catalog_scheme("hmac-sha3-256-tea-ofb");
     catalog.key_hash_algo = get_hash_processor("sha-224");
     catalog.key_hash_algo_size = get_hash_size("sha-224");

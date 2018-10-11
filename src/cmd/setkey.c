@@ -156,7 +156,7 @@ int blackcat_cmd_setkey(void) {
         new_key_size[2] = 0;
     }
 
-    new_key[2] = (kryptos_u8_t *)kryptos_newseg(5);
+    new_key[2] = (kryptos_u8_t *)kryptos_newseg(4);
 
     if (new_key[2] == NULL) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
@@ -164,8 +164,8 @@ int blackcat_cmd_setkey(void) {
     }
 
     if (protection_layer != NULL) {
-        new_key_size[2] = 5;
-        memcpy(new_key[2], "dunha", 5);
+        new_key_size[2] = 4;
+        memcpy(new_key[2], "meow", 4);
 
         p_layer = add_composite_protlayer_to_chain(p_layer,
                                                    protection_layer, &new_key[2], &new_key_size[2],

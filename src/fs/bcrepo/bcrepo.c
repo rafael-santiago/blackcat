@@ -154,6 +154,10 @@ static int bdup_handle(unsigned long cmd,
 
 static int bstat(const char *pathname, struct stat *buf);
 
+static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
+                           blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
+                           const ssize_t size);
+
 int bcrepo_bury(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size) {
@@ -184,6 +188,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1);
 
     cp->catalog_key_hash_algo = catalog_hash_proc;
+    cp->catalog_key_hash_algo_size = get_hash_size(get_hash_processor_name(catalog_hash_proc));
     cp->key_hash_algo = key_hash_proc;
     cp->key_hash_algo_size = get_hash_size(get_hash_processor_name(key_hash_proc));
 
@@ -1688,6 +1693,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     }
 
     catalog->catalog_key_hash_algo = catalog_key_hash_algo;
+    catalog->catalog_key_hash_algo_size = get_hash_size(key_hash_algo);
 
     hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
 
@@ -1860,6 +1866,65 @@ static int root_dir_reached(const char *cwd) {
 #endif
 }
 
+static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
+                           blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
+                           const ssize_t size) {
+    size_t k, hs;
+    kryptos_u8_t *kp = NULL, *kp_end;
+    kryptos_task_ctx t, *ktask = &t;
+
+    if (hash == NULL || hash_size == NULL || size <= 0 ||
+            (hs = hash_size()) == 0 || (kp = kryptos_newseg(size)) == NULL) {
+        goto bckdf_epilogue;
+    }
+
+    kp_end = kp + size;
+
+    k = 0;
+
+    kryptos_task_init_as_null(ktask);
+
+    ktask->in = (kryptos_u8_t *)key;
+    ktask->in_size = key_size;
+
+    while (kp < kp_end) {
+        hash(&ktask, 0);
+
+        if (!kryptos_last_task_succeed(ktask)) {
+            kryptos_freeseg(kp, size);
+            kp = NULL;
+            goto bckdf_epilogue;
+        }
+
+        *kp = ktask->out[key[k] % hs];
+
+        if (ktask->in != key) {
+            kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+        }
+
+        ktask->in = ktask->out;
+        ktask->in_size = ktask->out_size;
+
+        k = (k + 1) % key_size;
+        kp += 1;
+    }
+
+    kp -= size;
+
+bckdf_epilogue:
+
+    kp_end = NULL;
+    k = hs = 0;
+
+    if (ktask->in != key) {
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+    }
+
+    kryptos_task_init_as_null(ktask);
+
+    return kp;
+}
+
 static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
                                                   const kryptos_u8_t *key, const size_t key_size,
                                                   bfs_catalog_ctx *catalog) {
@@ -1874,7 +1939,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     p_layer.key = NULL;
 
     kryptos_task_init_as_null(ktask);
-
+/*
     ktask->in = (kryptos_u8_t *) key;
     ktask->in_size = key_size;
 
@@ -1887,6 +1952,11 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     p_layer.key = ktask->out;
     p_layer.key_size = ktask->out_size;
+*/
+    p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
+    p_layer.key = bckdf(key, key_size,
+                        catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
+                        p_layer.key_size);
     p_layer.mode = catalog->hmac_scheme->mode;
 
     ktask->in = kryptos_pem_get_data(BCREPO_PEM_CATALOG_DATA_HDR, *data, *data_size, &ktask->in_size);
@@ -1910,7 +1980,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    p_layer.key_size = 0;
+    //p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
 decrypt_catalog_data_epilogue:
@@ -1938,7 +2008,7 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
     kryptos_task_init_as_null(ktask);
 
     catalog->hmac_scheme = get_random_hmac_catalog_scheme();
-
+/*
     ktask->in = (kryptos_u8_t *) key;
     ktask->in_size = key_size;
 
@@ -1951,6 +2021,11 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     p_layer.key = ktask->out;
     p_layer.key_size = ktask->out_size;
+*/
+    p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
+    p_layer.key = bckdf(key, key_size,
+                        catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
+                        p_layer.key_size);
     p_layer.mode = catalog->hmac_scheme->mode;
 
     kryptos_task_set_in(ktask, *data, *data_size);
@@ -1966,7 +2041,7 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    p_layer.key_size = 0;
+    //p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
     result = ktask->result;

@@ -181,6 +181,7 @@ int blackcat_cmd_init(void) {
 
     catalog->bc_version = (char *) get_blackcat_version();
     catalog->catalog_key_hash_algo = catalog_hash_proc;
+    catalog->catalog_key_hash_algo_size = get_hash_size(catalog_hash);
     catalog->key_hash_algo = key_hash_proc;
     catalog->key_hash_algo_size = get_hash_size(key_hash);
 

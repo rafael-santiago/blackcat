@@ -101,7 +101,7 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
     fgets(line, sizeof(line), stdin);
     //fprintf(stdout, "\n");
 
-    size = strlen(line);
+    size = strlen(line) - 1;
 
     key = (kryptos_u8_t *) kryptos_newseg(size);
     kp = key;

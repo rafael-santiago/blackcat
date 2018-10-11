@@ -87,6 +87,8 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_hmac_catalog_scheme(const
 
 const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_scheme(void);
 
+size_t get_hmac_key_size(blackcat_cipher_processor hmac);
+
 kryptos_u8_t *blackcat_get_avail_ciphers(size_t *size);
 
 kryptos_u8_t *blackcat_get_avail_hmacs(size_t *size);
@@ -228,7 +230,7 @@ static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
     register_ciphering_scheme( 16, "hmac-sha-224-aes-128-cbc", hmac_sha224_aes128, NULL, CBC),
     register_ciphering_scheme( 16, "hmac-sha-256-aes-128-cbc", hmac_sha256_aes128, NULL, CBC),
     register_ciphering_scheme( 16, "hmac-sha-384-aes-128-cbc", hmac_sha384_aes128, NULL, CBC),
-    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-cbc", hmac_sha384_aes128, NULL, CBC),
+    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-cbc", hmac_sha512_aes128, NULL, CBC),
     register_ciphering_scheme( 16, "hmac-sha3-224-aes-128-cbc", hmac_sha3_224_aes128, NULL, CBC),
     register_ciphering_scheme( 16, "hmac-sha3-256-aes-128-cbc", hmac_sha3_256_aes128, NULL, CBC),
     register_ciphering_scheme( 16, "hmac-sha3-384-aes-128-cbc", hmac_sha3_384_aes128, NULL, CBC),
@@ -548,7 +550,7 @@ static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
     register_ciphering_scheme( 16, "hmac-sha-224-aes-128-ofb", hmac_sha224_aes128, NULL, OFB),
     register_ciphering_scheme( 16, "hmac-sha-256-aes-128-ofb", hmac_sha256_aes128, NULL, OFB),
     register_ciphering_scheme( 16, "hmac-sha-384-aes-128-ofb", hmac_sha384_aes128, NULL, OFB),
-    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-ofb", hmac_sha384_aes128, NULL, OFB),
+    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-ofb", hmac_sha512_aes128, NULL, OFB),
     register_ciphering_scheme( 16, "hmac-sha3-224-aes-128-ofb", hmac_sha3_224_aes128, NULL, OFB),
     register_ciphering_scheme( 16, "hmac-sha3-256-aes-128-ofb", hmac_sha3_256_aes128, NULL, OFB),
     register_ciphering_scheme( 16, "hmac-sha3-384-aes-128-ofb", hmac_sha3_384_aes128, NULL, OFB),
@@ -868,7 +870,7 @@ static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
     register_ciphering_scheme( 16, "hmac-sha-224-aes-128-ctr", hmac_sha224_aes128, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha-256-aes-128-ctr", hmac_sha256_aes128, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha-384-aes-128-ctr", hmac_sha384_aes128, NULL, CTR),
-    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-ctr", hmac_sha384_aes128, NULL, CTR),
+    register_ciphering_scheme( 16, "hmac-sha-512-aes-128-ctr", hmac_sha512_aes128, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha3-224-aes-128-ctr", hmac_sha3_224_aes128, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha3-256-aes-128-ctr", hmac_sha3_256_aes128, NULL, CTR),
     register_ciphering_scheme( 16, "hmac-sha3-384-aes-128-ctr", hmac_sha3_384_aes128, NULL, CTR),
@@ -1200,7 +1202,7 @@ static struct blackcat_hmac_catalog_algorithms_ctx g_blackcat_hmac_catalog_schem
     register_ciphering_scheme("hmac-sha-224-aes-128-cbc", hmac_sha224_aes128, CBC),
     register_ciphering_scheme("hmac-sha-256-aes-128-cbc", hmac_sha256_aes128, CBC),
     register_ciphering_scheme("hmac-sha-384-aes-128-cbc", hmac_sha384_aes128, CBC),
-    register_ciphering_scheme("hmac-sha-512-aes-128-cbc", hmac_sha384_aes128, CBC),
+    register_ciphering_scheme("hmac-sha-512-aes-128-cbc", hmac_sha512_aes128, CBC),
     register_ciphering_scheme("hmac-sha3-224-aes-128-cbc", hmac_sha3_224_aes128, CBC),
     register_ciphering_scheme("hmac-sha3-256-aes-128-cbc", hmac_sha3_256_aes128, CBC),
     register_ciphering_scheme("hmac-sha3-384-aes-128-cbc", hmac_sha3_384_aes128, CBC),
@@ -1420,7 +1422,7 @@ static struct blackcat_hmac_catalog_algorithms_ctx g_blackcat_hmac_catalog_schem
     register_ciphering_scheme("hmac-sha-224-aes-128-ofb", hmac_sha224_aes128, OFB),
     register_ciphering_scheme("hmac-sha-256-aes-128-ofb", hmac_sha256_aes128, OFB),
     register_ciphering_scheme("hmac-sha-384-aes-128-ofb", hmac_sha384_aes128, OFB),
-    register_ciphering_scheme("hmac-sha-512-aes-128-ofb", hmac_sha384_aes128, OFB),
+    register_ciphering_scheme("hmac-sha-512-aes-128-ofb", hmac_sha512_aes128, OFB),
     register_ciphering_scheme("hmac-sha3-224-aes-128-ofb", hmac_sha3_224_aes128, OFB),
     register_ciphering_scheme("hmac-sha3-256-aes-128-ofb", hmac_sha3_256_aes128, OFB),
     register_ciphering_scheme("hmac-sha3-384-aes-128-ofb", hmac_sha3_384_aes128, OFB),
@@ -1640,7 +1642,7 @@ static struct blackcat_hmac_catalog_algorithms_ctx g_blackcat_hmac_catalog_schem
     register_ciphering_scheme("hmac-sha-224-aes-128-ctr", hmac_sha224_aes128, CTR),
     register_ciphering_scheme("hmac-sha-256-aes-128-ctr", hmac_sha256_aes128, CTR),
     register_ciphering_scheme("hmac-sha-384-aes-128-ctr", hmac_sha384_aes128, CTR),
-    register_ciphering_scheme("hmac-sha-512-aes-128-ctr", hmac_sha384_aes128, CTR),
+    register_ciphering_scheme("hmac-sha-512-aes-128-ctr", hmac_sha512_aes128, CTR),
     register_ciphering_scheme("hmac-sha3-224-aes-128-ctr", hmac_sha3_224_aes128, CTR),
     register_ciphering_scheme("hmac-sha3-256-aes-128-ctr", hmac_sha3_256_aes128, CTR),
     register_ciphering_scheme("hmac-sha3-384-aes-128-ctr", hmac_sha3_384_aes128, CTR),

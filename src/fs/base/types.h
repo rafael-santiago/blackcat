@@ -33,7 +33,7 @@ typedef struct bfs_catalog {
     char *bc_version;
     const struct blackcat_hmac_catalog_algorithms_ctx *hmac_scheme;
     blackcat_hash_processor key_hash_algo, protlayer_key_hash_algo, catalog_key_hash_algo;
-    blackcat_hash_size_func key_hash_algo_size, protlayer_key_hash_algo_size;
+    blackcat_hash_size_func key_hash_algo_size, protlayer_key_hash_algo_size, catalog_key_hash_algo_size;
     blackcat_encoder encoder;
     kryptos_u8_t *key_hash;
     size_t key_hash_size;

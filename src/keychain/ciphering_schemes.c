@@ -211,6 +211,22 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_schem
     return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
 }
 
+size_t get_hmac_key_size(blackcat_cipher_processor hmac) {
+    size_t h, key_size = 0;
+
+    if (!is_hmac_processor(hmac)) {
+        return 0;
+    }
+
+    for (h = 0; key_size == 0 && h < g_blackcat_ciphering_schemes_nr; h++) {
+        if (g_blackcat_ciphering_schemes[h].processor == hmac) {
+            key_size = (size_t)g_blackcat_ciphering_schemes[h].key_size;
+        }
+    }
+
+    return key_size;
+}
+
 blackcat_encoder get_encoder(const char *name) {
     size_t e;
 
