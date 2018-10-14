@@ -1,0 +1,135 @@
+#
+#                          Copyright (C) 2018 by Rafael Santiago
+#
+# Use of this source code is governed by GPL-v2 license that can
+# be found in the COPYING file.
+#
+#
+
+include ~/fsutil.hsl
+
+function installer() : result type none {
+    var option type list;
+    var err type int;
+    var task type string;
+
+    $option = hefesto.sys.get_option("uninstall");
+
+    if ($option.count() > 0) {
+        $task = "uninstall";
+    } else {
+        $task = "install";
+    }
+
+    $err = hefesto.sys.call_func_addr(hefesto.sys.get_func_addr("do_" + $task));
+
+    var s_msg type list;
+    $s_msg.add_item("Installed.\n");
+    $s_msg.add_item("Uninstalled.\n");
+
+    var e_msg type list;
+    $e_msg.add_item("Unable to install.\n");
+    $e_msg.add_item("Unable to uninstall.\n");
+
+    var m_idx type int;
+
+    if ($task == "uninstall") {
+        $m_idx = 1;
+    } else {
+        $m_idx = 0;
+    }
+
+    if ($err == 0) {
+        hefesto.sys.echo("INFO: " + $s_msg.item($m_idx));
+    } else {
+        hefesto.sys.echo("ERROR: " + $e_msg.item($m_idx));
+    }
+
+    hefesto.project.abort($err);
+}
+
+local function do_install() : result type int {
+    var src type list;
+    var dest type list;
+
+    if (hefesto.sys.os_name() == "netbsd") {
+        $src.add_item("dev/blackcat.kmod");
+    } else if (hefesto.sys.os_name() == "linux" || hefesto.sys.os_name() == "freebsd") {
+        $src.add_item("dev/blackcat.ko");
+    }
+
+    $src.add_item("../doc/MANUAL.txt");
+    $src.add_item("../etc/man/blackcat.1");
+    $src.add_item("../bin/blackcat");
+
+    $dest.add_item("/usr/local/share/blackcat/lkm");
+    $dest.add_item("/usr/local/share/blackcat/doc");
+    $dest.add_item("/usr/local/man/man1");
+    $dest.add_item("/usr/local/bin");
+
+    var f type int;
+
+    $f = 0;
+
+    while ($f < $src.count()) {
+        var dpath type string;
+        $dpath = $dest.item($f);
+        if (isdir($dpath) == 0) {
+            mktree($dpath);
+        }
+        var fname type string;
+        $fname = $src.item($f);
+        $fname = filenamefrompath($fname);
+        $dpath = hefesto.sys.make_path($dest.item($f), $fname);
+        if (hefesto.sys.cp($src.item($f), $dpath) != 1) {
+            hefesto.sys.echo("ERROR: while creating '" + $dpath + "'\n");
+            #do_uninstall();
+            result 1;
+        }
+        $f = $f + 1;
+    }
+
+    result 0;
+}
+
+function do_uninstall() : result type int {
+    var src type list;
+
+    if (hefesto.sys.os_name() == "netbsd") {
+        $src.add_item("/usr/local/share/blackcat/lkm/blackcat.kmod");
+    } else if (hefesto.sys.os_name() == "freebsd" || hefesto.sys.os_name() == "linux") {
+        $src.add_item("/usr/local/share/blackcat/lkm/blackcat.ko");
+    }
+    $src.add_item("/usr/local/share/blackcat/doc/MANUAL.txt");
+
+    $src.add_item("/usr/local/share/blackcat");
+    $src.add_item("/usr/local/share/blackcat/doc");
+    $src.add_item("/usr/local/share/blackcat/lkm");
+
+    $src.add_item("/usr/local/man/man1/blackcat.1");
+    $src.add_item("/usr/local/bin/blackcat");
+
+    var s type int;
+
+    $s = 0;
+
+    while ($s < $src.count()) {
+        var path type string;
+        $path = $src.item($s);
+        if (isdir($path)) {
+            rmtree($path);
+        } else {
+            if (hefesto.sys.rm($path) != 0) {
+                hefesto.sys.echo("ERROR: Unable to remove the file '" + $path + "'. Do it on your own.\n");
+            }
+        }
+        $s = $s + 1;
+    }
+
+    if (hefesto.sys.os_name() == "netbsd" || hefesto.sys.os_name() == "linux" || hefesto.sys.os_name() == "freebsd") {
+        hefesto.sys.echo("INFO: If you have ran the blackcat's LKM you must reboot your system to remove " +
+                         "it from your kernel.\n");
+    }
+
+    result 0;
+}

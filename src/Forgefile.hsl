@@ -8,16 +8,27 @@
 
 include ~/toolsets/null/null.hsl
 include ~/toolsets/utils/forge_projects.hsl
+include forgeutils/installer.hsl
 
 var exit_code type int;
 
 project blackcat : toolset "no-tool-any-set" : $exit_code;
 
 blackcat.prologue() {
+    var option type list;
+    $option = hefesto.sys.get_option("install");
+
+    if ($option.count() == 0) {
+        $option = hefesto.sys.get_option("uninstall");
+    }
+
+    if ($option.count() > 0) {
+        installer();
+    }
+
     # INFO(Rafael): This is useful in order to find artifacts from some submodules.
     hefesto.sys.setenv("BLACKCAT_ROOTDIR", hefesto.sys.pwd());
 
-    var option type list;
     $option = hefesto.sys.get_option("forge-anyway");
 
     if ($option.count() > 0) {
