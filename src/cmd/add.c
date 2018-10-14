@@ -20,8 +20,11 @@ int blackcat_cmd_add(void) {
     blackcat_exec_session_ctx *session = NULL;
     char temp[4096];
     int a;
+    int lock = 0;
 
-    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+    lock = blackcat_get_bool_option("lock", 0);
+
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, lock)) != 0) {
         goto blackcat_cmd_add_epilogue;
     }
 
@@ -49,8 +52,12 @@ int blackcat_cmd_add(void) {
                          session->catalog, session->key[0], session->key_size[0])) {
             fprintf(stdout, "%d file(s) added.\n", add_nr);
             exit_code = 0;
-            if (blackcat_get_bool_option("lock", 0)) {
+            if (lock) {
                 add_nr = 0;
+
+                add_param = blackcat_get_argv(0);
+                add_param = remove_go_ups_from_path(add_param, strlen(add_param) + 1);
+
                 BLACKCAT_CONSUME_USER_OPTIONS(a,
                                               add_param,
                                               {
@@ -59,6 +66,7 @@ int blackcat_cmd_add(void) {
                                                                       (add_param != NULL) ? add_param : "*",
                                                                       (add_param != NULL) ? strlen(add_param) : 1);
                                               })
+
                 if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
                                                      session->catalog, session->key[0], session->key_size[0])) {
                     fprintf(stdout, "%d file(s) encrypted.\n", add_nr);
