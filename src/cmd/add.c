@@ -49,6 +49,23 @@ int blackcat_cmd_add(void) {
                          session->catalog, session->key[0], session->key_size[0])) {
             fprintf(stdout, "%d file(s) added.\n", add_nr);
             exit_code = 0;
+            if (blackcat_get_bool_option("lock", 0)) {
+                add_nr = 0;
+                BLACKCAT_CONSUME_USER_OPTIONS(a,
+                                              add_param,
+                                              {
+                                                add_nr += bcrepo_lock(&session->catalog, session->rootpath,
+                                                                      session->rootpath_size,
+                                                                      (add_param != NULL) ? add_param : "*",
+                                                                      (add_param != NULL) ? strlen(add_param) : 1);
+                                              })
+                if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
+                                                     session->catalog, session->key[0], session->key_size[0])) {
+                    fprintf(stdout, "%d file(s) encrypted.\n", add_nr);
+                } else {
+                    fprintf(stderr, "WARN: File(s) added but no encrypted. Try to execute a lock by yourself.\n");
+                }
+            }
         } else {
             fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
             exit_code = EFAULT;
@@ -68,7 +85,7 @@ blackcat_cmd_add_epilogue:
 }
 
 int blackcat_cmd_add_help(void) {
-    fprintf(stdout, "use: blackcat add <relative file path | glob pattern> [--plain]\n");
+    fprintf(stdout, "use: blackcat add <relative file path | glob pattern> [--plain | --lock]\n");
     return 0;
 }
 

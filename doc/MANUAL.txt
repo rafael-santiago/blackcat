@@ -105,7 +105,7 @@ related data.
 
 The way of adding a file to the repo's catalog is through the command 'add':
 
-    root@RedBarn:~/sphinx# blackcat add my-secret-spell.txt
+    root@RedBarn:~/sphinx# blackcat add my-secret-spell.txt --lock
     root@RedBarn:~/sphinx# blackcat add src/p-equals-to-np-final-proof.bf
     root@RedBarn:~/sphinx# blackcat add backyard/*.conf cat-memes/*.gif cat-memes/*.jpeg
     root@RedBarn:~/sphinx# blackcat add --plain YOU_SHALL_NOT_PASS_DISCLAIMER
@@ -115,6 +115,8 @@ If you run the command 'status' you will see that all files added are currently 
 
 As you can see, even sub-directories inside the blackcat repo are automatically considered (if some
 file inside them have added to the repo's catalog).
+
+The '--lock' option flag encrypts all files added by the current add command.
 
 The '--plain' option flag indicates to blackcat that the added file(s) must not be protected. Only
 indexed.
