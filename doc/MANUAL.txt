@@ -581,6 +581,6 @@ In this case, use the cloud but encrypt what is relevant to you. Also put a bunc
 for screwing up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone
 should do the same, just for making the web more "friendly" again.
 
-Use crypto is a way of saying: if you want to apply your tracking policy over me you will need to do it
-more directly buddy and if you want to track stupid people, nice but not me, because I am using crypto.
-Your fishing net must be thinner for catch me up.
+Using crypto is a way of saying: if you want to apply your tracking policy over me you will need to do
+it more directly buddy and if you want to track stupid people, nice but not me, because I am using
+crypto. Your fishing net must be thinner for catch me up.
