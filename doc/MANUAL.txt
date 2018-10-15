@@ -15,10 +15,10 @@ I hate letting all files unencrypted when using encrypting tools based on storag
 are paranoid like me, maybe you will like the way of how blackcat works.
 
 The general approach of this tool is provide you a way of protecting an entire directory and its
-sub-directories. Due to it, I have designed the application to work similarly as a SCM tool,
+sub-directories. Due to it, I have designed the application to work similarly as a scm tool,
 excluding all version control stuff, of course.
 
-OK, you do not know what a SCM tool is. Forget about the concepts. I will try to introduce you the
+OK, you do not know what a scm tool is. Forget about the concepts. I will try to introduce you the
 basic usage workflow even so.
 
 The usage workflow
@@ -449,7 +449,7 @@ Encoding your stuff after encrypting
 Until now only the two most known encoding algorithms are available: 'uuencode' and 'base64'.
 
 Enconding data could be useful for some applications, imagine you are versioning the data
-with some SCM and hosting those data somewhere (a way of making a private repo without
+with some scm and hosting those data somewhere (a way of making a private repo without
 paying a single dollar for it, err... but do not tell anyone that I told you...); the encoding
 algorithm will let the repository more friendly for the web.
 
@@ -506,3 +506,77 @@ A way of reseting the repository:
 
 How can I redefine those properties without redefining the key(s)? Simple, type the current
 key(s) anyway. Wow.
+
+Transfering your data to another environment
+============================================
+
+It seems obvious, because you can easily zip/tar your repository and you done, however, blackcat
+also offers you a more structured way of doing this. You can pack the entire repo into a single
+file and after unpack this file, re-creating also the structure from the previous packed repo.
+
+In order to pack execute the following command:
+
+    root@RedBarn:~/sphinx# blackcat pack packed-sphinx.bc
+    root@RedBarn:~/sphinx# _
+
+After running the command above the file 'packed-sphinx.bc' will be created and now you are
+able to save, send your repo just by using this single flat file.
+
+When you pack a repo all unlocked data is previously locked before packing all stuff. Do not
+worry about it.
+
+Supposing you want to restore a repo from a previous packed data:
+
+    root@RedBarn:~/# blackcat unpack packed-sphinx.bc sphinx
+    root@RedBarn:~/# cd sphinx
+    root@RedBarn:~/sphinx# Ya hey! ;)
+
+So during the 'unpack' command you need to specify the packed file and the directory path were the
+repository will be re-created.
+
+Cool off
+========
+
+Maybe you have heard from someone that knows somebody that have told about the existence of software
+able to guess up the used encryption algorithm just by scanning the software used for performing the
+encryption. 'Wooow!!'... joking...
+
+Those software just scan the executable text trying to find some algorithm constant which behaves like
+a signature. Pretty boring. It is useless and do not offer any risk for well implemented crypto, since
+modern encryption takes into consideration the Kasiski's principles. Thus even knowing the used
+algorithm, if the attacker does not know the key, the attack must be infeasible to her/him.
+
+Of course that blackcat has all constants of all implemented algorithms in its text. What an attacker
+should do is to perform a brute force against the first key and if there is a second key they must to
+guess up the algorithm(s) (when more than one the right used sequence is necessary).
+
+This tends to be a little bit hard because
+
+        "if you don't know where you are going, any road " + may + " get you there"
+
+What the best way of knowing that this specific road is not the right road? Simple, find the end of it.
+If at the end you did not find anything. It is time to go back and try another road.
+
+Nice, for the first time Alice was the attacker. Eve was revenged! ;)
+
+Few tips for not being a tracked average sheep out there
+========================================================
+
+The nice stuff about blackcat is to add to your workflow the possibility of using strong data protection
+with few easy command primitives. It does not require any special container for you data, mounting it,
+etc; an ordinary directory becomes protected and you can easily encrypt and decrypt independent files
+or file groups. Init it, add and just go.
+
+If you like automating your work, adding blackcat to your state of things is pretty easy.
+
+For example, is straightforward to integrate blackcat with some scm tool. The nice part is that you
+can host a private repository without paying for your privacy. I find privacy is basic, it is a
+right and you should not pay for it. In my opinion it is shameful.
+
+Nowadays everyone likes to send data to the cloud. However, if you have sensible stuff or very personal
+data you should encrypt it. Do not be fool, believing that all your data is securely stored and that
+no one would be able to access it. Systems are full of bugs and people in majority tends to be crooked.
+Moreover, some systems just like to eavesdrop you because we are profitable while users. In this case,
+use the cloud but encrypt what is relevant to you. Also put a bunch of false clues just for screwing
+up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone should do the
+same, just for making the web more "friendly" again.
