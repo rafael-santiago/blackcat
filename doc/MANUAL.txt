@@ -547,10 +547,10 @@ modern encryption takes into consideration the Kasiski's principles. Thus even k
 algorithm, if the attacker does not know the key, the attack must be infeasible to her/him.
 
 Of course that blackcat has all constants of all implemented algorithms in its text. What an attacker
-should do is to perform a brute force against the first key and if there is a second key they must to
-guess up the algorithm(s) (when more than one the right used sequence is necessary).
+should do is to perform a brute force against the first key and if there is a second key they must
+guess up the algorithm(s) (when more than one, the right used sequence is necessary, too).
 
-This tends to be a little bit hard because
+It tends to be a little bit hard because
 
         "if you don't know where you are going, any road " + may + " get you there"
 
@@ -569,14 +569,18 @@ or file groups. Init it, add and just go.
 
 If you like automating your work, adding blackcat to your state of things is pretty easy.
 
-For example, is straightforward to integrate blackcat with some scm tool. The nice part is that you
+For example, it is straightforward to integrate blackcat with some scm tool. The nice part is that you
 can host a private repository without paying for your privacy. I find privacy is basic, it is a
 right and you should not pay for it. In my opinion it is shameful.
 
 Nowadays everyone likes to send data to the cloud. However, if you have sensible stuff or very personal
 data you should encrypt it. Do not be fool, believing that all your data is securely stored and that
 no one would be able to access it. Systems are full of bugs and people in majority tends to be crooked.
-Moreover, some systems just like to eavesdrop you because we are profitable while users. In this case,
-use the cloud but encrypt what is relevant to you. Also put a bunch of false clues just for screwing
-up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone should do the
-same, just for making the web more "friendly" again.
+Moreover, some systems/companies just like to eavesdrop us because we are profitable while users.
+In this case, use the cloud but encrypt what is relevant to you. Also put a bunch of false clues just
+for screwing up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone
+should do the same, just for making the web more "friendly" again.
+
+Use crypto is a way of saying: if you want to apply your tracking policy over me you will need to do it
+more directly buddy and if you want to track stupid people, nice but not me, because I am using crypto.
+Your fishing net must be thinner for catch me up.
