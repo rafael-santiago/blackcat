@@ -187,6 +187,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                        "Well, who knows, who knows,' he replied. 'Dostoevsky's dead,' said the citizeness, "
                        "but somehow not very confidently. 'I protest!' Behemoth exclaimed hotly. 'Dostoevsky is immortal!\n\n"
                        "manuscripts don't burn\n\n";
+    unsigned char *sensitive3 = "Tears from the sky, in pools of pain... Tonight, I gonna go and dancing in the rain.\n";
     unsigned char *plain = "README\n";
     unsigned char *data;
     size_t data_size;
@@ -229,9 +230,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help pack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help paranoid", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm", "", NULL) == 0);
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -294,6 +296,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
 
     //INFO(Rafael): Adding s1 and s2 to the repo's catalog.
 
@@ -305,6 +308,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) != 0);
     CUTE_ASSERT(blackcat("add p.txt --plain", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt --lock", "GiveTheMuleWhatHeWants", NULL) == 0);
 
     // INFO(Rafael): Getting the current repo's status.
 
@@ -353,6 +357,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
     CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -449,6 +458,12 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(data != NULL);
     CUTE_ASSERT(data_size == strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
@@ -548,6 +563,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("etc/s2.txt");
     remove("s1.txt");
     remove("p.txt");
+    remove("s3.txt");
     rmdir("etc");
     CUTE_ASSERT(chdir("../..") == 0);
     rmdir("unpack-test/bpack");
@@ -2007,6 +2023,7 @@ static int test_env_housekeeping(void) {
     rmdir("etc");
     remove("s1.txt");
     remove("s2.txt");
+    remove("s3.txt");
     remove("p.txt");
     remove("unpack-test/bpack/etc/s2.txt");
     remove("unpack-test/bpack/s1.txt");

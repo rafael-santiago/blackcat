@@ -799,9 +799,14 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
     }
 
     if (force) {
-        if (get_entry_from_relpath_ctx(cp->files, pattern) != NULL) {
-            cp->files = del_file_from_relpath_ctx(cp->files, pattern);
-            rm_nr++;
+        fp = cp->files;
+        while (fp != NULL) {
+            if (strglob(fp->path, pattern) == 1) {
+                cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
+                rm_nr++;
+            } else {
+                fp = fp->next;
+            }
         }
     }
 
