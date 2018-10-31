@@ -39,6 +39,7 @@ blackcat.prologue() {
     var subforges type list;
     $subforges.add_item("base");
     $subforges.add_item("fs");
+    $subforges.add_item("net");
 
     $option = hefesto.sys.get_option("no-dev");
 
