@@ -127,17 +127,4 @@ void del_bnt_channel_rule_ctx(bnt_channel_rule_ctx *rules) {
     }
 }
 
-static bnt_channel_rule_ctx *get_bnt_channel_rule_tail(bnt_channel_rule_ctx *rules) {
-    bnt_channel_rule_ctx *tp;
-
-    if (rules == NULL) {
-        return NULL;
-    }
-
-    for (tp = rules; tp->next != NULL; tp = tp->next)
-        ;
-
-    return tp;
-}
-
 #undef new_bnt_channel_rule_ctx
