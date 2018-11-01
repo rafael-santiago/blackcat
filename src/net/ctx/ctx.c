@@ -40,6 +40,7 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
         hp = rules;
         cp = rules->tail;
         new_bnt_channel_rule_ctx(cp->next);
+        cp->next->last = cp;
         cp = cp->next;
     }
 
@@ -72,13 +73,16 @@ bnt_channel_rule_ctx *del_bnt_channel_rule(bnt_channel_rule_ctx *rules, const ch
 
     if (tp == rules) {
         hp = tp->next;
-        hp->head = hp;
+        if (hp != NULL) {
+            hp->head = hp;
+        }
     } else {
         hp = rules;
         tp->last->next = tp->next;
+        tp->next->last = tp->last;
     }
 
-    if (hp->tail == tp) {
+    if (hp != NULL && hp->tail == tp) {
         hp->tail = tp->last;
     }
 
@@ -91,6 +95,10 @@ bnt_channel_rule_ctx *del_bnt_channel_rule(bnt_channel_rule_ctx *rules, const ch
 
 bnt_channel_rule_ctx *get_bnt_channel_rule(const char *ruleid, bnt_channel_rule_ctx *rules) {
     bnt_channel_rule_ctx *rp;
+
+    if (ruleid == NULL) {
+        return NULL;
+    }
 
     for (rp = rules; rp != NULL; rp = rp->next) {
         if (strcmp(rp->ruleid, ruleid) == 0) {
@@ -114,6 +122,8 @@ void del_bnt_channel_rule_ctx(bnt_channel_rule_ctx *rules) {
         memset(&p->assertion, 0, sizeof(p->assertion));
 
         del_protlayer_chain_ctx(p->pchain);
+
+        free(p);
     }
 }
 
