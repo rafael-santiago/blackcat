@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <termios.h>
 
@@ -17,6 +18,10 @@ static char *g_blackcat_cmd = NULL;
 static char **g_blackcat_argv = NULL;
 
 static int g_blackcat_argc = 0;
+
+static struct termios old, new;
+
+static void getuserkey_sigint_watchdog(int signo);
 
 char *blackcat_get_option(const char *option, char *default_option) {
     char temp[4096];
@@ -80,8 +85,11 @@ char *blackcat_get_argv(const int v) {
     return &g_blackcat_argv[v][0];
 }
 
+static void getuserkey_sigint_watchdog(int signo) {
+    tcsetattr(STDOUT_FILENO, TCSAFLUSH, &old);
+}
+
 kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
-    struct termios old, new;
     kryptos_u8_t *key = NULL, *kp;
     char line[65535], *lp, *lp_end;
     size_t size;
@@ -97,6 +105,9 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
     if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &new) != 0) {
         goto blackcat_getuserkey_epilogue;
     }
+
+    signal(SIGINT, getuserkey_sigint_watchdog);
+    signal(SIGTERM, getuserkey_sigint_watchdog);
 
     fgets(line, sizeof(line), stdin);
     //fprintf(stdout, "\n");
