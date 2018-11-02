@@ -16,14 +16,16 @@ int blackcat_netdb_add(const char *rule_id,
                        const char *target,
                        const char *pchain,
                        const char *encoder,
-                       char *error);
+                       char *error,
+                       const kryptos_u8_t *key,
+                       const size_t key_size);
 
-int blackcat_netdb_drop(const char *rule_id);
+int blackcat_netdb_drop(const char *rule_id, const kryptos_u8_t *key, const size_t key_size);
 
 int blackcat_netdb_load(const char *filepath);
 
-int blackcat_netdb_unload(const char *filepath);
+int blackcat_netdb_unload(void);
 
-bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id);
+bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u8_t *key, const size_t key_size);
 
 #endif
