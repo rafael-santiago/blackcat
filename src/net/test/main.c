@@ -1,15 +1,173 @@
+/*
+ *                          Copyright (C) 2018 by Rafael Santiago
+ *
+ * Use of this source code is governed by GPL-v2 license that can
+ * be found in the COPYING file.
+ *
+ */
 #include <cutest.h>
 #include <net/ctx/ctx.h>
+#include <net/db/db.h>
 #include <keychain/ciphering_schemes.h>
 #include <string.h>
+#include <errno.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_net_tests_entry);
 CUTE_DECLARE_TEST_CASE(ctx_tests);
+CUTE_DECLARE_TEST_CASE(net_db_io_tests);
 
 CUTE_MAIN(blackcat_net_tests_entry);
 
 CUTE_TEST_CASE(blackcat_net_tests_entry)
     CUTE_RUN_TEST(ctx_tests);
+    CUTE_RUN_TEST(net_db_io_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(net_db_io_tests)
+    char error[1024];
+    bnt_channel_rule_ctx *rule;
+    kryptos_u8_t *rule_key = NULL;
+    size_t rule_key_size = 0;
+
+    remove("stub.io");
+    CUTE_ASSERT(blackcat_netdb_load("stub.io") == 0);
+
+    CUTE_ASSERT(blackcat_netdb_add(NULL,
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "(inval)",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "af_inet",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "socket",
+                                   "sha-227",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "ae5-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuenc0de",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   NULL,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   NULL,
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule.0",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == 0);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule.1",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   "uuencode",
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == 0);
+
+    CUTE_ASSERT(blackcat_netdb_unload() == 0);
+
+    CUTE_ASSERT(blackcat_netdb_load("stub.io") == 0);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rule.0", "OnBattleshipHil", strlen("OnBattleshipHil")) == EFAULT);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rude.0", "OnBattleshipHill", strlen("OnBattleshipHill")) == ENOENT);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rule.0", "OnBattleshipHill", strlen("OnBattleshipHill")) == 0);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rule.0", "OnBattleshipHill", strlen("OnBattleshipHill")) == ENOENT);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rule.1", "OnBattleshipHill", strlen("OnBattleshipHill")) == 0);
+    CUTE_ASSERT(blackcat_netdb_drop("sock-rule.1", "OnBattleshipHill", strlen("OnBattleshipHill")) == ENOENT);
+
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule.3",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   NULL,
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == 0);
+
+    rule_key_size = 3;
+    rule_key = (kryptos_u8_t *)kryptos_newseg(rule_key_size);
+    CUTE_ASSERT(rule_key != NULL);
+    memcpy(rule_key, "boo", 3);
+
+    rule = blackcat_netdb_select("sock-rule.3", "OnBattleshipHill", strlen("OnBattleshipHill"), &rule_key, &rule_key_size);
+
+    CUTE_ASSERT(rule_key_size == 0 && rule_key == NULL);
+
+    CUTE_ASSERT(rule != NULL);
+
+    del_bnt_channel_rule_ctx(rule);
+
+    CUTE_ASSERT(blackcat_netdb_unload() == 0);
+
+    remove("stub.io");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(ctx_tests)

@@ -26,6 +26,7 @@ int blackcat_netdb_load(const char *filepath);
 
 int blackcat_netdb_unload(void);
 
-bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u8_t *key, const size_t key_size);
+bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u8_t *key, const size_t key_size,
+                                            kryptos_u8_t **rule_key, size_t *rule_key_size);
 
 #endif

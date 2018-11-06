@@ -18,9 +18,14 @@
 
 #define BCNETDB_DATA "BCNETDB DATA"
 
-static kryptos_u8_t *g_netdb_buffer = NULL;
+struct netdb_ctx {
+    kryptos_u8_t filepath[4096];
+    kryptos_u8_t *buf;
+    size_t buf_size;
+    // TODO(Rafael): Add a mutex here and lock the file.
+};
 
-static size_t g_netdb_buffer_size = 0;
+static struct netdb_ctx g_netdb = { "", NULL, 0 };
 
 static const struct blackcat_hmac_catalog_algorithms_ctx *g_hmac = NULL;
 
@@ -50,7 +55,7 @@ int blackcat_netdb_add(const char *rule_id,
     size_t buf_size;
     int err = EINVAL;
 
-    if (rule_id == NULL || rule_type == NULL || hash == NULL || pchain == NULL || error == NULL) {
+    if (rule_id == NULL || rule_type == NULL || hash == NULL || pchain == NULL || error == NULL || key == NULL) {
         goto blackcat_netdb_add_epilogue;
     }
 
@@ -141,19 +146,19 @@ static int netdb_flush_data(const kryptos_u8_t *data, const size_t data_size) {
         return EFAULT;
     }
 
-    if (g_netdb_buffer != NULL) {
-        kryptos_freeseg(g_netdb_buffer, g_netdb_buffer_size);
-        g_netdb_buffer = NULL;
+    if (g_netdb.buf != NULL) {
+        kryptos_freeseg(g_netdb.buf, g_netdb.buf_size);
+        g_netdb.buf = NULL;
     }
 
-    g_netdb_buffer_size = 0;
+    g_netdb.buf_size = 0;
 
-    if (kryptos_pem_put_data(&g_netdb_buffer, &g_netdb_buffer_size,
+    if (kryptos_pem_put_data(&g_netdb.buf, &g_netdb.buf_size,
                              BCNETDB_HMAC_SCHEME, g_hmac->name, strlen(g_hmac->name)) != kKryptosSuccess) {
         return EFAULT;
     }
 
-    if (kryptos_pem_put_data(&g_netdb_buffer, &g_netdb_buffer_size,
+    if (kryptos_pem_put_data(&g_netdb.buf, &g_netdb.buf_size,
                              BCNETDB_DATA, data, data_size) != kKryptosSuccess) {
         return EFAULT;
     }
@@ -168,24 +173,40 @@ static int netdb_write(const char *buf, const size_t buf_size, const kryptos_u8_
     kryptos_u8_t *old_netdb_buffer = NULL;
     size_t old_netdb_buffer_size = 0;
 
-    if ((err = netdb_decrypt_buffer(key, key_size)) == 0) {
+    if (g_netdb.buf_size > 0) {
+        if ((err = netdb_decrypt_buffer(key, key_size)) == 0) {
 
-        if ((data = kryptos_pem_get_data(BCNETDB_DATA, g_netdb_buffer, g_netdb_buffer_size, &data_size)) == NULL) {
-            goto netdb_write_epilogue;
+            if ((data = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &data_size)) == NULL) {
+                goto netdb_write_epilogue;
+            }
+
+            if (*data == 0) {
+                memset(data, 0, data_size);
+                data_size = 0;
+            }
+
+            if ((data = kryptos_realloc(data, data_size + buf_size)) == NULL) {
+                err = ENOMEM;
+                goto netdb_write_epilogue;
+            }
+
+            memcpy(data + data_size, buf, buf_size);
+            data_size += buf_size;
         }
-
-        if ((data = kryptos_realloc(data, data_size + buf_size)) == NULL) {
+    } else {
+        if ((data = (kryptos_u8_t *) kryptos_newseg(buf_size + 1)) == NULL) {
             err = ENOMEM;
             goto netdb_write_epilogue;
         }
-
-        memcpy(data + data_size, buf, buf_size);
-        data_size += buf_size;
-
-        if ((err = netdb_flush_data(data, data_size)) == 0) {
-            err = netdb_encrypt_buffer(key, key_size);
-        }
+        memset(data, 0, buf_size + 1);
+        memcpy(data, (kryptos_u8_t *)buf, buf_size);
+        data_size = buf_size;
     }
+
+    if ((err = netdb_flush_data(data, data_size)) == 0) {
+        err = netdb_encrypt_buffer(key, key_size);
+    }
+
 
 netdb_write_epilogue:
 
@@ -202,10 +223,13 @@ static int netdb_buffer_handler(const kryptos_u8_t *key, const size_t key_size, 
     kryptos_task_ctx t, *ktask = &t;
     blackcat_protlayer_chain_ctx p_layer;
     int err = EFAULT;
+    FILE *db = NULL;
+
+    kryptos_task_init_as_null(ktask);
 
     memset(&p_layer, 0, sizeof(blackcat_protlayer_chain_ctx));
 
-    if (g_netdb_buffer == NULL) {
+    if (g_netdb.buf == NULL) {
         goto netdb_write_epilogue;
     }
 
@@ -218,7 +242,7 @@ static int netdb_buffer_handler(const kryptos_u8_t *key, const size_t key_size, 
 
     p_layer.mode = g_hmac->mode;
 
-    ktask->in = kryptos_pem_get_data(BCNETDB_DATA, g_netdb_buffer, g_netdb_buffer_size, &ktask->in_size);
+    ktask->in = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &ktask->in_size);
     ktask->action = action;
 
     g_hmac->processor(&ktask, &p_layer);
@@ -227,18 +251,29 @@ static int netdb_buffer_handler(const kryptos_u8_t *key, const size_t key_size, 
         goto netdb_write_epilogue;
     }
 
-    g_netdb_buffer = ktask->out;
-    g_netdb_buffer_size = ktask->out_size;
-
     if (action == kKryptosDecrypt) {
         g_hmac = get_random_hmac_catalog_scheme();
     }
 
-    err = netdb_flush_data(ktask->out, ktask->out_size);
+    if (netdb_flush_data(ktask->out, ktask->out_size) == 0) {
+        if (action == kKryptosEncrypt) {
+            if ((db = fopen(g_netdb.filepath, "w")) == NULL) {
+                goto netdb_write_epilogue;
+            }
+
+            fprintf(db, "%s", g_netdb.buf);
+        }
+
+        err = 0;
+    }
+
+netdb_write_epilogue:
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_OUT | KRYPTOS_TASK_IV);
 
-netdb_write_epilogue:
+    if (db != NULL) {
+        fclose(db);
+    }
 
     if (p_layer.key != NULL) {
         kryptos_freeseg(p_layer.key, p_layer.key_size);
@@ -251,39 +286,54 @@ netdb_write_epilogue:
 
 int blackcat_netdb_drop(const char *rule_id, const kryptos_u8_t *key, const size_t key_size) {
     int err = EFAULT;
-    kryptos_u8_t *entry_head = NULL, *entry_tail = NULL, *end, *newdb = NULL;
-    size_t data_size = 0, newdb_size;
+    kryptos_u8_t *entry_head = NULL, *entry_tail = NULL, *end, *newdb = NULL, *temp;
+    size_t data_size = 0, newdb_size, temp_size;
     char needle[1024];
 
     if ((err = netdb_decrypt_buffer(key, key_size)) == 0) {
+        if (strlen(rule_id) > sizeof(needle) - 1) {
+            err = EINVAL;
+            goto blackcat_netdb_drop_epilogue;
+        }
+
         sprintf(needle, "%s: ", rule_id);
 
-        if ((entry_head = strstr(g_netdb_buffer, needle)) != NULL) {
-            end = g_netdb_buffer + g_netdb_buffer_size;
+        temp = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &temp_size);
+
+        if (temp == NULL) {
+            err = ENOMEM;
+        }
+
+        if (temp != NULL && (entry_head = strstr(temp, needle)) != NULL) {
+            end = temp + temp_size;
             entry_tail = entry_head;
             while (entry_tail != end && *entry_tail != '\n') {
                 entry_tail++;
             }
 
-            newdb_size = g_netdb_buffer_size - (entry_tail - entry_head);
+            newdb_size = temp_size - (entry_tail - entry_head);
             newdb = (kryptos_u8_t *) kryptos_newseg(newdb_size + 1);
             if (newdb == NULL) {
                 err = ENOMEM;
-                goto blackcat_netdb_drop_epilogue;
+            } else {
+                memset(newdb, '\n', newdb_size + 1);
+                memcpy(newdb, temp, entry_head - temp);
+                memcpy(newdb + (entry_head - temp), entry_tail + 1, end - entry_tail + 1);
+                err = netdb_flush_data(newdb, newdb_size);
             }
-
-            memset(newdb, 0, newdb_size + 1);
-            memcpy(newdb, g_netdb_buffer, entry_head - g_netdb_buffer);
-            memcpy(newdb + (entry_head - g_netdb_buffer), entry_tail + 1, end - entry_tail + 1);
-
-            kryptos_freeseg(g_netdb_buffer, g_netdb_buffer_size);
-            g_netdb_buffer = newdb;
-            g_netdb_buffer_size = newdb_size;
-
-            err = netdb_encrypt_buffer(key, key_size);
+        } else {
+            err = ENOENT;
         }
-    } else {
-        err = ENOENT;
+
+        if (temp != NULL) {
+            kryptos_freeseg(temp, temp_size);
+        }
+
+        if (newdb != NULL) {
+            kryptos_freeseg(newdb, newdb_size);
+        }
+
+        netdb_encrypt_buffer(key, key_size);
     }
 
 blackcat_netdb_drop_epilogue:
@@ -295,54 +345,178 @@ int blackcat_netdb_load(const char *filepath) {
     FILE *db = NULL;
     kryptos_u8_t *hmac_scheme = NULL;
     size_t hmac_scheme_size = 0;
+    size_t filepath_size;
 
     blackcat_netdb_unload();
 
     if ((db = fopen(filepath, "r")) == NULL) {
-        return ENOENT;
+        if ((db = fopen(filepath, "w")) == NULL) {
+            return ENOENT;
+        }
+        fclose(db);
+        g_hmac = get_random_hmac_catalog_scheme();
+        filepath_size = strlen(filepath);
+        memset(g_netdb.filepath, 0, sizeof(g_netdb.filepath));
+        memcpy(g_netdb.filepath, filepath, filepath_size % (sizeof(g_netdb.filepath) - 1));
+        return 0;
     }
 
     fseek(db, 0L, SEEK_END);
-    g_netdb_buffer_size = ftell(db);
+    g_netdb.buf_size = ftell(db);
     fseek(db, 0L, SEEK_SET);
 
-    if ((g_netdb_buffer = (kryptos_u8_t *) kryptos_newseg(g_netdb_buffer_size + 1)) == NULL) {
+    if ((g_netdb.buf = (kryptos_u8_t *) kryptos_newseg(g_netdb.buf_size + 1)) == NULL) {
         return ENOMEM;
     }
 
-    memset(g_netdb_buffer, 0, g_netdb_buffer_size + 1);
+    memset(g_netdb.buf, 0, g_netdb.buf_size + 1);
 
-    fread(g_netdb_buffer, g_netdb_buffer_size, sizeof(kryptos_u8_t), db);
+    fread(g_netdb.buf, g_netdb.buf_size, sizeof(kryptos_u8_t), db);
 
     fclose(db);
 
-    hmac_scheme = kryptos_pem_get_data(BCNETDB_HMAC_SCHEME, g_netdb_buffer, g_netdb_buffer_size, &hmac_scheme_size);
+    hmac_scheme = kryptos_pem_get_data(BCNETDB_HMAC_SCHEME, g_netdb.buf, g_netdb.buf_size, &hmac_scheme_size);
+
+    g_hmac = get_hmac_catalog_scheme(hmac_scheme);
 
     if (g_hmac == NULL) {
         return EFAULT;
     }
 
-    g_hmac = get_hmac_catalog_scheme(hmac_scheme);
-
     kryptos_freeseg(hmac_scheme, hmac_scheme_size);
+
+    filepath_size = strlen(filepath);
+    memset(g_netdb.filepath, 0, sizeof(g_netdb.filepath));
+    memcpy(g_netdb.filepath, filepath, filepath_size % (sizeof(g_netdb.filepath) - 1));
 
     return 0;
 }
 
 int blackcat_netdb_unload(void) {
-    if (g_netdb_buffer != NULL) {
-        kryptos_freeseg(g_netdb_buffer, g_netdb_buffer_size);
+    if (g_netdb.buf != NULL) {
+        kryptos_freeseg(g_netdb.buf, g_netdb.buf_size);
     }
 
-    g_netdb_buffer = NULL;
-    g_netdb_buffer_size = 0;
+    memset(g_netdb.filepath, 0, sizeof(g_netdb.filepath));
+    g_netdb.buf = NULL;
+    g_netdb.buf_size = 0;
     g_hmac = NULL;
 
     return 0;
 }
 
-bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u8_t *key, const size_t key_size) {
-    return NULL;
+static void parse_netdb_entry(const char *buf, const char *buf_end,
+                              char **rule_id, char **hash, struct bnt_channel_rule_assertion *assertion,
+                              char **protection_layer, char **encoder) {
+    int state = 0;
+    void *data[6];
+    const int state_nr = sizeof(data) / sizeof(data[0]);
+    size_t data_size;
+    const char *bp, *bp_end;
+
+    data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = NULL;
+    assertion = NULL;
+
+    for (bp = buf; bp != buf_end; bp = bp_end + 1) {
+        bp_end = bp;
+        while (bp_end != buf_end && *bp_end != ' ') {
+            bp_end++;
+        }
+
+        if (bp_end == buf_end) {
+            continue;
+        }
+
+        if (state >= state_nr) {
+            break;
+        }
+
+        // TODO(Rafael): Parse assertion for non-socket based rules.
+
+        data_size = bp_end - bp - (state == 0);
+        if ((data[state] = (kryptos_u8_t *) kryptos_newseg(data_size + 1)) != NULL) {
+            memset(data[state], 0, data_size + 1);
+            memcpy(data[state], bp, data_size);
+        }
+
+        state += 1;
+    }
+
+    if (strcmp(data[1], "socket") == 0) {
+        *rule_id = data[0];
+        *hash = data[2];
+        *protection_layer = data[3];
+        *encoder = data[4];
+    } else {
+        *rule_id = data[0];
+        *hash = data[2];
+        *protection_layer = data[4];
+        *encoder = data[5];
+    }
+
+    kryptos_freeseg(data[1], strlen(data[1]));
+}
+
+bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u8_t *key, const size_t key_size,
+                                            kryptos_u8_t **rule_key, size_t *rule_key_size) {
+    kryptos_u8_t *temp = NULL, *temp_head, *temp_tail, *temp_end;
+    size_t temp_size;
+    char needle[1024];
+    bnt_channel_rule_ctx *rule = NULL;
+    char *rule_name = NULL, *hash = NULL, *protection_layer = NULL, *encoder = NULL;
+    struct bnt_channel_rule_assertion assertion;
+
+    if (netdb_decrypt_buffer(key, key_size) == 0) {
+        if (strlen(rule_id) > sizeof(needle) - 1) {
+            goto blackcat_netdb_select_epilogue;
+        }
+
+        sprintf(needle, "%s: ", rule_id);
+
+        if ((temp = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &temp_size)) != NULL) {
+            if ((temp_head = strstr(temp, needle)) != NULL) {
+                temp_tail = temp_head;
+                temp_end = temp + temp_size;
+                while (temp_tail != temp_end && *temp_tail != '\n') {
+                    temp_tail++;
+                }
+            }
+        }
+
+        netdb_encrypt_buffer(key, key_size);
+
+        if (temp_head != NULL) {
+            parse_netdb_entry(temp_head, temp_tail,
+                              &rule_name, &hash, &assertion, &protection_layer, &encoder);
+
+            rule = add_bnt_channel_rule(rule, rule_name, assertion, protection_layer, rule_key, rule_key_size,
+                                        get_hash_processor(hash), get_encoder(encoder));
+        }
+    }
+
+blackcat_netdb_select_epilogue:
+
+    if (rule_name != NULL) {
+        kryptos_freeseg(rule_name, strlen(rule_name));
+    }
+
+    if (hash != NULL) {
+        kryptos_freeseg(hash, strlen(hash));
+    }
+
+    if (protection_layer != NULL) {
+        kryptos_freeseg(protection_layer, strlen(protection_layer));
+    }
+
+    if (encoder != NULL) {
+        kryptos_freeseg(encoder, strlen(encoder));
+    }
+
+    if (temp != NULL) {
+        kryptos_freeseg(temp, temp_size);
+    }
+
+    return rule;
 }
 
 #undef BCNETDB_HMAC_SCHEME
