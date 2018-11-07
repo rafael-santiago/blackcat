@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <sys/file.h>
 
 #define BCNETDB_HMAC_SCHEME "BCNETDB HMAC SCHEME"
 
@@ -20,12 +21,13 @@
 
 struct netdb_ctx {
     kryptos_u8_t filepath[4096];
+    FILE *db;
     kryptos_u8_t *buf;
     size_t buf_size;
     // TODO(Rafael): Add a mutex here and lock the file.
 };
 
-static struct netdb_ctx g_netdb = { "", NULL, 0 };
+static struct netdb_ctx g_netdb = { "", NULL, NULL, 0 };
 
 static const struct blackcat_hmac_catalog_algorithms_ctx *g_hmac = NULL;
 
@@ -349,6 +351,16 @@ int blackcat_netdb_load(const char *filepath) {
 
     blackcat_netdb_unload();
 
+    if ((g_netdb.db = fopen(filepath, "a")) == NULL) {
+        return ENOENT;
+    }
+
+    if (flock(fileno(g_netdb.db), LOCK_EX) != 0) {
+        fclose(g_netdb.db);
+        g_netdb.db = NULL;
+        return EFAULT;
+    }
+
     if ((db = fopen(filepath, "r")) == NULL) {
         if ((db = fopen(filepath, "w")) == NULL) {
             return ENOENT;
@@ -377,7 +389,11 @@ int blackcat_netdb_load(const char *filepath) {
 
     hmac_scheme = kryptos_pem_get_data(BCNETDB_HMAC_SCHEME, g_netdb.buf, g_netdb.buf_size, &hmac_scheme_size);
 
-    g_hmac = get_hmac_catalog_scheme(hmac_scheme);
+    if (hmac_scheme != NULL) {
+        g_hmac = get_hmac_catalog_scheme(hmac_scheme);
+    } else {
+        g_hmac = get_random_hmac_catalog_scheme();
+    }
 
     if (g_hmac == NULL) {
         return EFAULT;
@@ -395,11 +411,17 @@ int blackcat_netdb_load(const char *filepath) {
 int blackcat_netdb_unload(void) {
     if (g_netdb.buf != NULL) {
         kryptos_freeseg(g_netdb.buf, g_netdb.buf_size);
+        g_netdb.buf = NULL;
+        g_netdb.buf_size = 0;
+    }
+
+    if (g_netdb.db != NULL) {
+        flock(fileno(g_netdb.db), LOCK_UN);
+        fclose(g_netdb.db);
+        g_netdb.db = NULL;
     }
 
     memset(g_netdb.filepath, 0, sizeof(g_netdb.filepath));
-    g_netdb.buf = NULL;
-    g_netdb.buf_size = 0;
     g_hmac = NULL;
 
     return 0;
