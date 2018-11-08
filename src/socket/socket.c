@@ -263,15 +263,18 @@ ssize_t write(int fd, const void *buf, size_t count) {
 
 __bcsck_prologue(return -1)
 
-    if (getsockname(fd, &addr, &addrl) != 0) {
-        err = g_bcsck_handle.libc_write(fd, buf, count);
-    } else {
+    if (getsockname(fd, &addr, &addrl) == 0) {
         bcsck_encrypt(buf, count, obuf, obuf_size, return -1);
+    } else {
+        obuf = (kryptos_u8_t *)buf;
+        obuf_size = count;
+    }
 
-        if ((err = g_bcsck_handle.libc_write(fd, obuf, obuf_size)) != -1) {
-            err = count;
-        }
+    if ((err = g_bcsck_handle.libc_write(fd, obuf, obuf_size)) != -1) {
+        err = count;
+    }
 
+    if (obuf != buf) {
         kryptos_freeseg(obuf, obuf_size);
         obuf = NULL;
         obuf_size = 0;
