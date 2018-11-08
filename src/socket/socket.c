@@ -234,7 +234,7 @@ __bcsck_prologue(return -1)
     iov.iov_base = obuf;
     iov.iov_len = obuf_size;
 
-    if ((err = sendmsg(sockfd, &omsg, flags)) != -1) {
+    if ((err = g_bcsck_handle.libc_sendmsg(sockfd, &omsg, flags)) != -1) {
         err = ibuf_size;
     }
 
