@@ -37,25 +37,29 @@ blackcat.prologue() {
     }
 
     var subforges type list;
-    $subforges.add_item("base");
-    $subforges.add_item("fs");
-    $subforges.add_item("net");
-    $subforges.add_item("socket");
+    $subforges = hefesto.sys.get_option("modules");
 
-    $option = hefesto.sys.get_option("no-dev");
+    if ($subforges.count() == 0) {
+        $subforges.add_item("base");
+        $subforges.add_item("fs");
+        $subforges.add_item("net");
+        $subforges.add_item("socket");
 
-    if ($option.count() == 0 || hefesto.sys.os_name() == "windows") {
-        var blackcat_dev_supp type list;
-        $blackcat_dev_supp.add_item("linux");
-        $blackcat_dev_supp.add_item("netbsd");
-        $blackcat_dev_supp.add_item("freebsd");
+        $option = hefesto.sys.get_option("no-dev");
 
-        if ($blackcat_dev_supp.index_of(hefesto.sys.os_name()) > -1) {
-            $subforges.add_item("dev");
+        if ($option.count() == 0 || hefesto.sys.os_name() == "windows") {
+            var blackcat_dev_supp type list;
+            $blackcat_dev_supp.add_item("linux");
+            $blackcat_dev_supp.add_item("netbsd");
+            $blackcat_dev_supp.add_item("freebsd");
+
+            if ($blackcat_dev_supp.index_of(hefesto.sys.os_name()) > -1) {
+                $subforges.add_item("dev");
+            }
         }
-    }
 
-    $subforges.add_item("cmd");
+        $subforges.add_item("cmd");
+    }
 
     $exit_code = forge_projects($subforges);
 }
