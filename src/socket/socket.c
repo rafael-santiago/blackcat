@@ -98,30 +98,237 @@ __bcsck_prologue(return -1)
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
+    kryptos_u8_t *obuf = NULL, *rbuf = NULL;
+    size_t obuf_size = 0, rbuf_size = 0;
+    ssize_t bytes_nr;
 __bcsck_prologue(return - 1)
-    return -1;
+
+    if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
+        errno = ENOMEM;
+        bytes_nr = -1;
+        goto recv_epilogue;
+    }
+
+    if ((rbuf_size = g_bcsck_handle.libc_recv(sockfd, rbuf, 0xFFFF, flags)) == -1) {
+        bytes_nr = -1;
+        goto recv_epilogue;
+    }
+
+    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recv_epilogue; });
+
+    if (obuf_size > len) {
+        errno = EFAULT;
+        bytes_nr = -1;
+        goto recv_epilogue;
+    }
+
+    memcpy(buf, obuf, obuf_size);
+    bytes_nr = obuf_size;
+
+recv_epilogue:
+
+    if (rbuf != NULL) {
+        kryptos_freeseg(rbuf, 0xFFFF);
+        rbuf = NULL;
+        rbuf_size = 0;
+    }
+
+    if (obuf != NULL) {
+        kryptos_freeseg(obuf, obuf_size);
+        obuf = NULL;
+        obuf_size = 0;
+    }
+
+    return bytes_nr;
 }
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen) {
+    kryptos_u8_t *obuf = NULL, *rbuf = NULL;
+    size_t obuf_size = 0, rbuf_size = 0;
+    ssize_t bytes_nr;
+
 __bcsck_prologue(return -1)
-    return -1;
+
+    if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
+        errno = ENOMEM;
+        bytes_nr = -1;
+        goto recvfrom_epilogue;
+    }
+
+    if ((rbuf_size = g_bcsck_handle.libc_recvfrom(sockfd, rbuf, 0xFFFF, flags, src_addr, addrlen)) == -1) {
+        bytes_nr = -1;
+        goto recvfrom_epilogue;
+    }
+
+    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recvfrom_epilogue; });
+
+    if (obuf_size > len) {
+        errno = EFAULT;
+        bytes_nr = -1;
+        goto recvfrom_epilogue;
+    }
+
+    memcpy(buf, obuf, obuf_size);
+    bytes_nr = obuf_size;
+
+recvfrom_epilogue:
+
+    if (rbuf != NULL) {
+        kryptos_freeseg(rbuf, 0xFFFF);
+        rbuf = NULL;
+        rbuf_size = 0;
+    }
+
+    if (obuf != NULL) {
+        kryptos_freeseg(obuf, obuf_size);
+        obuf = NULL;
+        obuf_size = 0;
+    }
+
+    return bytes_nr;
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
+    kryptos_u8_t *rbuf = NULL, *obuf = NULL, *ob, *ob_end;
+    size_t rbuf_size = 0, obuf_size = 0, ob_size, temp_size;
+    ssize_t bytes_nr;
+    size_t iov_c;
+    struct msghdr rmsg;
+    struct iovec iov;
+
 __bcsck_prologue(return -1)
-    return -1;
+
+    if (msg == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
+        errno = ENOMEM;
+        bytes_nr = -1;
+        goto recvmsg_epilogue;
+    }
+
+    rmsg.msg_name = msg->msg_name;
+    rmsg.msg_namelen = msg->msg_namelen;
+    rmsg.msg_iov = &iov;
+    rmsg.msg_iovlen = 1;
+    rmsg.msg_control = msg->msg_control;
+    rmsg.msg_controllen = msg->msg_controllen;
+
+    iov.iov_base = rbuf;
+    iov.iov_len = 0xFFFF;
+
+    if ((rbuf_size = g_bcsck_handle.libc_recvmsg(sockfd, &rmsg, flags)) == -1) {
+        errno = EFAULT;
+        bytes_nr = -1;
+        goto recvmsg_epilogue;
+    }
+
+    memset(&rmsg, 0, sizeof(rmsg));
+    memset(&iov, 0, sizeof(iov));
+
+    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
+
+    bytes_nr = 0;
+
+    for (iov_c = 0; iov_c < msg->msg_iovlen; iov_c++) {
+        bytes_nr += msg->msg_iov[iov_c].iov_len;
+    }
+
+    if (obuf_size > bytes_nr) {
+        // INFO(Rafael): The message will not fit into the user's data ancillary stuff.
+        bytes_nr = -1;
+        errno = EFAULT;
+        goto recvmsg_epilogue;
+    }
+
+    ob = obuf;
+    ob_end = ob + obuf_size;
+    temp_size = obuf_size;
+
+    for (iov_c = 0; ob < ob_end && iov_c < msg->msg_iovlen; iov_c++) {
+        ob_size = MIN(msg->msg_iov[iov_c].iov_len, temp_size);
+        memcpy(msg->msg_iov[iov_c].iov_base, ob, ob_size);
+        ob += ob_size;
+        temp_size -= ob_size;
+    }
+
+    temp_size = 0;
+
+recvmsg_epilogue:
+
+    if (rbuf != NULL) {
+        kryptos_freeseg(rbuf, rbuf_size);
+        rbuf = NULL;
+        rbuf_size = 0;
+    }
+
+    if (obuf != NULL) {
+        kryptos_freeseg(obuf, obuf_size);
+        obuf = NULL;
+        obuf_size = 0;
+    }
+
+    return bytes_nr;
 }
 
 ssize_t read(int fd, void *buf, size_t count) {
+    kryptos_u8_t *rbuf = NULL, *obuf = NULL;
+    ssize_t rbuf_size = 0, obuf_size = 0;
+    ssize_t bytes_nr;
+    struct sockaddr addr;
+    socklen_t addrl;
+
 __bcsck_prologue(return -1)
-    return -1;
+
+    if (getsockname(fd, &addr, &addrl) == 0) {
+        if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
+            errno = ENOMEM;
+            bytes_nr = -1;
+            goto read_epilogue;
+        }
+
+        if ((rbuf_size = g_bcsck_handle.libc_read(fd, rbuf, 0xFFFF)) == -1) {
+            bytes_nr = -1;
+            goto read_epilogue;
+        }
+
+        bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto read_epilogue; });
+
+        if (obuf_size > count) {
+            errno = EFAULT;
+            bytes_nr = -1;
+        }
+
+        memcpy(buf, obuf, obuf_size);
+        bytes_nr = obuf_size;
+    } else {
+        bytes_nr = g_bcsck_handle.libc_read(fd, buf, count);
+    }
+
+read_epilogue:
+
+    if (rbuf != NULL) {
+        kryptos_freeseg(rbuf, rbuf_size);
+        rbuf = NULL;
+        rbuf_size = 0;
+    }
+
+    if (obuf != NULL) {
+        kryptos_freeseg(obuf, obuf_size);
+        obuf = NULL;
+        obuf_size = 0;
+    }
+
+    return bytes_nr;
 }
 
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     kryptos_u8_t *obuf;
     size_t obuf_size;
-    ssize_t err;
+    ssize_t bytes_nr;
 
 __bcsck_prologue(return -1)
 
@@ -131,12 +338,13 @@ __bcsck_prologue(return -1)
         // INFO(Rafael): The effective message became too long. The user application will caught it
         //               retrying with a short buffer and hopefully we will got the encrypted data flowing
         //               to its destination at the next time.
-        err = -EMSGSIZE;
+        errno = EMSGSIZE;
+        bytes_nr = -1;
         goto send_epilogue;
     }
 
-    if ((err = g_bcsck_handle.libc_send(sockfd, obuf, obuf_size, flags)) != -1) {
-        err = len;
+    if ((bytes_nr = g_bcsck_handle.libc_send(sockfd, obuf, obuf_size, flags)) != -1) {
+        bytes_nr = len;
     }
 
 send_epilogue:
@@ -145,14 +353,14 @@ send_epilogue:
     obuf = NULL;
     obuf_size = 0;
 
-    return err;
+    return bytes_nr;
 }
 
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
     kryptos_u8_t *obuf;
     size_t obuf_size;
-    ssize_t err;
+    ssize_t bytes_nr;
 
 __bcsck_prologue(return -1)
 
@@ -162,12 +370,13 @@ __bcsck_prologue(return -1)
         // INFO(Rafael): The effective message became too long. The user application will caught it
         //               retrying with a short buffer and hopefully we will got the encrypted data flowing
         //               to its destination at the next time.
-        err = -EMSGSIZE;
+        errno = EMSGSIZE;
+        bytes_nr = -1;
         goto sendto_epilogue;
     }
 
-    if ((err = g_bcsck_handle.libc_sendto(sockfd, obuf, obuf_size, flags, dest_addr, addrlen)) != -1) {
-        err = len;
+    if ((bytes_nr = g_bcsck_handle.libc_sendto(sockfd, obuf, obuf_size, flags, dest_addr, addrlen)) != -1) {
+        bytes_nr = len;
     }
 
 sendto_epilogue:
@@ -176,13 +385,13 @@ sendto_epilogue:
     obuf = NULL;
     obuf_size = 0;
 
-    return err;
+    return bytes_nr;
 }
 
 ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags) {
     kryptos_u8_t *obuf, *ibuf, *ib;
     size_t obuf_size, ibuf_size;
-    ssize_t err;
+    ssize_t bytes_nr;
     size_t iov_c, iov_len;
     struct msghdr omsg;
     struct iovec iov;
@@ -190,6 +399,7 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 __bcsck_prologue(return -1)
 
     if (msg == NULL) {
+        errno = EINVAL;
         return -1;
     }
 
@@ -220,7 +430,8 @@ __bcsck_prologue(return -1)
         // INFO(Rafael): The effective message became too long. The user application will caught it
         //               retrying with a short buffer and hopefully we will got the encrypted data flowing
         //               to its destination at the next time.
-        err = -EMSGSIZE;
+        errno = EMSGSIZE;
+        bytes_nr = -1;
         goto sendmsg_epilogue;
     }
 
@@ -234,8 +445,8 @@ __bcsck_prologue(return -1)
     iov.iov_base = obuf;
     iov.iov_len = obuf_size;
 
-    if ((err = g_bcsck_handle.libc_sendmsg(sockfd, &omsg, flags)) != -1) {
-        err = ibuf_size;
+    if ((bytes_nr = g_bcsck_handle.libc_sendmsg(sockfd, &omsg, flags)) != -1) {
+        bytes_nr = ibuf_size;
     }
 
     memset(&msg, 0, sizeof(msg));
@@ -251,13 +462,13 @@ sendmsg_epilogue:
     obuf = NULL;
     obuf_size = 0;
 
-    return err;
+    return bytes_nr;
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
     kryptos_u8_t *obuf;
     size_t obuf_size;
-    ssize_t err;
+    ssize_t bytes_nr;
     struct sockaddr addr;
     socklen_t addrl;
 
@@ -270,8 +481,8 @@ __bcsck_prologue(return -1)
         obuf_size = count;
     }
 
-    if ((err = g_bcsck_handle.libc_write(fd, obuf, obuf_size)) != -1) {
-        err = count;
+    if ((bytes_nr = g_bcsck_handle.libc_write(fd, obuf, obuf_size)) != -1) {
+        bytes_nr = count;
     }
 
     if (obuf != buf) {
@@ -280,7 +491,7 @@ __bcsck_prologue(return -1)
         obuf_size = 0;
     }
 
-    return err;
+    return bytes_nr;
 }
 
 static void bcsck_init(void) {
