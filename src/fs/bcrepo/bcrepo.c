@@ -1066,7 +1066,7 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     kryptos_freeseg(data, data_size);
     data = NULL;
 
-    // INFO(Rafael): This step of the implemented data wiping is based on the suggestions given by Bruce Schneier's
+    // INFO(Rafael): This step of the implemented data wiping is based on the suggestions given by Bruce Schneier
     //               in his book Applied Cryptography [228 pp.].
 
     bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);

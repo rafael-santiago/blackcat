@@ -1,8 +1,8 @@
 Blackcat user's guide
 =====================
 
-Abstract: In this document you will find basic information about how to use blackcat in order to
-          protect your data.
+(obvious) Abstract: In this document you will find basic information about how to use the blackcat
+                    command line tool and its subsystems.
 
 Wtf is this?
 ============
@@ -14,8 +14,8 @@ paranoid cares about how to actually encrypt data stored in a filesystem.
 I hate letting all files unencrypted when using encrypting tools based on storage devices. If you
 are paranoid like me, maybe you will like the way of how blackcat works.
 
-The general approach of this tool is provide you a way of protecting an entire directory and its
-sub-directories. Due to it, I have designed the application to work similarly as a scm tool,
+The general approach of this tool is to provide you a way of protecting an entire directory and
+its sub-directories. Due to it, I have designed the application to work similarly as a scm tool,
 excluding all version control stuff, of course.
 
 OK, you do not know what a scm tool is. Forget about the concepts. I will try to introduce you the
@@ -563,7 +563,7 @@ Few tips for not being a tracked average sheep out there
 ========================================================
 
 The nice stuff about blackcat is to add to your workflow the possibility of using strong data protection
-with few easy command primitives. It does not require any special container for you data, mounting it,
+with few easy command primitives. It does not require any special container for your data, mounting it,
 etc; an ordinary directory becomes protected and you can easily encrypt and decrypt independent files
 or file groups. Init it, add and just go.
 

@@ -32,10 +32,22 @@ libbcsck.prologue() {
     $lib = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    var option type list;
+    $option = hefesto.sys.get_option("no-thread-safe");
+
+    if ($option.count() > 0) {
+        $cflags.del_item("-DBCSCK_THREAD_SAFE=1");
+    }
+
     if (hefesto.sys.os_name() == "netbsd") {
         $cflags.add_item("-std=c99");
     } else if (hefesto.sys.os_name() == "linux") {
         $ldflags.add_item("-ldl");
+        if ($cflags.index_of("-DBCSCK_THREAD_SAFE=1") > -1) {
+            $ldflags.add_item("-pthread");
+        }
+    } else if (hefesto.sys.os_name() == "minix") {
+        $cflags.del_item("-DBCSCK_THREAD_SAFE=1");
     }
 
     var dirlist type list;

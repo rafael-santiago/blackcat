@@ -13,6 +13,9 @@
 #include <kryptos.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#if defined(BCSCK_THREAD_SAFE)
+# include <pthread.h>
+#endif
 #include <errno.h>
 
 #ifndef RTLD_NEXT
@@ -32,12 +35,80 @@ struct bcsck_handle_ctx {
     ssize_t (*libc_sendmsg)(int sockfd, const struct msghdr *msg, int flags);
     ssize_t (*libc_write)(int fd, const void *buf, size_t count);
     bnt_channel_rule_ctx *rule;
+#if defined(BCSCK_THREAD_SAFE)
+    pthread_mutex_t mtx_recv_func, mtx_recvfrom_func, mtx_recvmsg_func, mtx_read_func,
+                    mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func;
+#endif
     int libc_loaded;
 };
 
+#if defined(BCSCK_THREAD_SAFE)
+
+static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
+                                                  0, 0, 0, 0, 0, 0, 0, 0 };
+
+#define __bcsck_prologue(return_stmt) {\
+    if (g_bcsck_handle.rule == NULL) {\
+        if (bcsck_read_rule() != 0) {\
+            return_stmt;\
+        }\
+    }\
+    if (!g_bcsck_handle.libc_loaded) {\
+        g_bcsck_handle.libc_connect = dlsym(RTLD_NEXT, "connect");\
+        g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
+        g_bcsck_handle.libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
+        g_bcsck_handle.libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
+        g_bcsck_handle.libc_read = dlsym(RTLD_NEXT, "read");\
+        g_bcsck_handle.libc_send = dlsym(RTLD_NEXT, "send");\
+        g_bcsck_handle.libc_sendto = dlsym(RTLD_NEXT, "sendto");\
+        g_bcsck_handle.libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
+        g_bcsck_handle.libc_write = dlsym(RTLD_NEXT, "write");\
+        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_connect != NULL) &&\
+                                     (g_bcsck_handle.libc_recv != NULL) &&\
+                                     (g_bcsck_handle.libc_recvfrom != NULL) &&\
+                                     (g_bcsck_handle.libc_recvmsg != NULL) &&\
+                                     (g_bcsck_handle.libc_read != NULL) &&\
+                                     (g_bcsck_handle.libc_send != NULL) &&\
+                                     (g_bcsck_handle.libc_sendto != NULL) &&\
+                                     (g_bcsck_handle.libc_sendmsg != NULL) &&\
+                                     (g_bcsck_handle.libc_write != NULL) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recv_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recvfrom_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recvmsg_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_read_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_send_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_sendto_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_sendmsg_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_write_func, NULL) == 0);\
+    }\
+    if (!g_bcsck_handle.libc_loaded) {\
+        return_stmt;\
+    }\
+}
+
+#define __bcsck_epilogue {\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_recv_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_recvfrom_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_recvmsg_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_read_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_send_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_sendto_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_sendmsg_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_write_func);\
+}
+
+#define __bcsck_enter(sock_func) {\
+    pthread_mutex_lock(&g_bcsck_handle.mtx_ ## sock_func ## _func);\
+}
+
+#define __bcsck_leave(sock_func) {\
+    pthread_mutex_unlock(&g_bcsck_handle.mtx_ ## sock_func ## _func);\
+}
+
+#else
+
 static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0 };
 
-// TODO(Rafael): Make it thread safe.
 #define __bcsck_prologue(return_stmt) {\
     if (g_bcsck_handle.rule == NULL) {\
         if (bcsck_read_rule() != 0) {\
@@ -69,6 +140,14 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
+#define __bcsck_epilogue {};
+
+#define __bcsck_enter(sock_func) {};
+
+#define __bcsck_leave(sock_func) {};
+
+#endif // defined(BCSCK_THREAD_SAFE)
+
 #define bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, esc_stmt) {\
     if ((obuf = blackcat_encrypt_data(g_bcsck_handle.rule->pchain,\
                                       (kryptos_u8_t *)ibuf, ibuf_size, &obuf_size)) == NULL) {\
@@ -90,6 +169,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 
 static void __attribute__((constructor)) bcsck_init(void);
 
+static void __attribute__((destructor)) bcsck_deinit(void);
+
 static int bcsck_read_rule(void);
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
@@ -102,6 +183,8 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     size_t obuf_size = 0, rbuf_size = 0;
     ssize_t bytes_nr;
 __bcsck_prologue(return - 1)
+
+__bcsck_enter(recv)
 
     if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
         errno = ENOMEM;
@@ -139,6 +222,8 @@ recv_epilogue:
         obuf_size = 0;
     }
 
+__bcsck_leave(recv)
+
     return bytes_nr;
 }
 
@@ -149,6 +234,8 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
     ssize_t bytes_nr;
 
 __bcsck_prologue(return -1)
+
+__bcsck_enter(recvfrom)
 
     if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
         errno = ENOMEM;
@@ -186,6 +273,8 @@ recvfrom_epilogue:
         obuf_size = 0;
     }
 
+__bcsck_leave(recvfrom)
+
     return bytes_nr;
 }
 
@@ -203,6 +292,8 @@ __bcsck_prologue(return -1)
         errno = EINVAL;
         return -1;
     }
+
+__bcsck_enter(recvmsg)
 
     if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
         errno = ENOMEM;
@@ -271,6 +362,8 @@ recvmsg_epilogue:
         obuf_size = 0;
     }
 
+__bcsck_leave(recvmsg)
+
     return bytes_nr;
 }
 
@@ -282,6 +375,8 @@ ssize_t read(int fd, void *buf, size_t count) {
     socklen_t addrl;
 
 __bcsck_prologue(return -1)
+
+__bcsck_enter(read)
 
     if (getsockname(fd, &addr, &addrl) == 0) {
         if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
@@ -322,6 +417,8 @@ read_epilogue:
         obuf_size = 0;
     }
 
+__bcsck_leave(read)
+
     return bytes_nr;
 }
 
@@ -332,7 +429,9 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 
 __bcsck_prologue(return -1)
 
-    bcsck_encrypt(buf, len, obuf, obuf_size, return -1);
+__bcsck_enter(send)
+
+    bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -353,6 +452,8 @@ send_epilogue:
     obuf = NULL;
     obuf_size = 0;
 
+__bcsck_leave(send)
+
     return bytes_nr;
 }
 
@@ -364,7 +465,9 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 __bcsck_prologue(return -1)
 
-    bcsck_encrypt(buf, len, obuf, obuf_size, return -1);
+__bcsck_enter(sendto)
+
+    bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -385,6 +488,8 @@ sendto_epilogue:
     obuf = NULL;
     obuf_size = 0;
 
+__bcsck_leave(sendto)
+
     return bytes_nr;
 }
 
@@ -403,6 +508,8 @@ __bcsck_prologue(return -1)
         return -1;
     }
 
+__bcsck_enter(sendmsg)
+
     ibuf_size = 0;
 
     for (iov_c = 0; iov_c < msg->msg_iovlen; iov_c++) {
@@ -410,7 +517,8 @@ __bcsck_prologue(return -1)
     }
 
     if ((ibuf = (kryptos_u8_t *) kryptos_newseg(ibuf_size)) == NULL) {
-        return -1;
+        bytes_nr = -1;
+        goto sendmsg_epilogue;
     }
 
     ib = ibuf;
@@ -421,10 +529,8 @@ __bcsck_prologue(return -1)
         ib += iov_len;
     }
 
-    bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, { kryptos_freeseg(ibuf, ibuf_size);
-                                                      ibuf = NULL;
-                                                      ibuf_size = 0;
-                                                      return -1; });
+    bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, { bytes_nr = -1;
+                                                      goto sendmsg_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -454,13 +560,19 @@ __bcsck_prologue(return -1)
 
 sendmsg_epilogue:
 
-    kryptos_freeseg(ibuf, ibuf_size);
-    ibuf = NULL;
-    ibuf_size = 0;
+    if (ibuf != NULL) {
+        kryptos_freeseg(ibuf, ibuf_size);
+        ibuf = NULL;
+        ibuf_size = 0;
+    }
 
-    kryptos_freeseg(obuf, obuf_size);
-    obuf = NULL;
-    obuf_size = 0;
+    if (obuf != NULL) {
+        kryptos_freeseg(obuf, obuf_size);
+        obuf = NULL;
+        obuf_size = 0;
+    }
+
+__bcsck_leave(sendmsg)
 
     return bytes_nr;
 }
@@ -474,8 +586,10 @@ ssize_t write(int fd, const void *buf, size_t count) {
 
 __bcsck_prologue(return -1)
 
+__bcsck_enter(write)
+
     if (getsockname(fd, &addr, &addrl) == 0) {
-        bcsck_encrypt(buf, count, obuf, obuf_size, return -1);
+        bcsck_encrypt(buf, count, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
     } else {
         obuf = (kryptos_u8_t *)buf;
         obuf_size = count;
@@ -485,17 +599,25 @@ __bcsck_prologue(return -1)
         bytes_nr = count;
     }
 
-    if (obuf != buf) {
+write_epilogue:
+
+    if (obuf != NULL && obuf != buf) {
         kryptos_freeseg(obuf, obuf_size);
         obuf = NULL;
         obuf_size = 0;
     }
+
+__bcsck_leave(write)
 
     return bytes_nr;
 }
 
 static void bcsck_init(void) {
 __bcsck_prologue(return)
+}
+
+static void bcsck_deinit(void) {
+__bcsck_epilogue
 }
 
 static int bcsck_read_rule(void) {
@@ -618,6 +740,9 @@ bcsck_read_rule_epilogue:
 }
 
 #undef __bcsck_prologue
+#undef __bcsck_epilogue
+#undef __bcsck_enter
+#undef __bcsck_leave
 #undef bcsck_encrypt
 #undef bcsck_decrypt
 

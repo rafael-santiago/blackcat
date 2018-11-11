@@ -62,7 +62,20 @@ you@Hellfire:~/src/blackcat/src# hefesto --modules=base,fs,cmd
 The blackcat's modules are some sub-directories under the toplevel src
 directory.
 
-To install:
+If you want to build the socket module as a no thread safe library,
+just use the option '--no-thread-safe':
+
+---------------------------------------------------------------------------
+you@Hellfire:~/src/blackcat/src# hefesto --modules=socket --no-thread-safe
+---------------------------------------------------------------------------
+
+or simply
+
+----------------------------------------------------------
+you@Hellfire:~/src/blackcat/src# hefesto --no-thread-safe
+----------------------------------------------------------
+
+In order to install:
 
 --------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --install
