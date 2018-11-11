@@ -356,6 +356,8 @@ __bcsck_enter(recvmsg)
         goto recvmsg_epilogue;
     }
 
+    bytes_nr = obuf_size;
+
     ob = obuf;
     ob_end = ob + obuf_size;
     temp_size = obuf_size;
