@@ -56,9 +56,27 @@ int blackcat_netdb_add(const char *rule_id,
     char *buf;
     size_t buf_size;
     int err = EINVAL;
+    bnt_channel_rule_ctx *rule = NULL;
 
     if (rule_id == NULL || rule_type == NULL || hash == NULL || pchain == NULL || error == NULL || key == NULL) {
         goto blackcat_netdb_add_epilogue;
+    }
+
+    if ((temp_key = (kryptos_u8_t *) kryptos_newseg(8)) == NULL) {
+        sprintf(error, "ERROR: no memory!\n");
+        err = ENOMEM;
+        goto blackcat_netdb_add_epilogue;
+    }
+
+    temp_key_size = 8;
+
+    if ((rule = blackcat_netdb_select(rule_id, key, key_size, &temp_key, &temp_key_size)) != NULL) {
+        sprintf(error, "ERROR: The rule '%s' already exists.\n", rule_id);
+        goto blackcat_netdb_add_epilogue;
+    }
+
+    if (temp_key != NULL) {
+        kryptos_freeseg(temp_key, temp_key_size);
     }
 
     if (strcmp(rule_type, "socket") != 0 &&
@@ -139,6 +157,10 @@ int blackcat_netdb_add(const char *rule_id,
     kryptos_freeseg(buf, buf_size);
 
 blackcat_netdb_add_epilogue:
+
+    if (rule != NULL) {
+        del_bnt_channel_rule_ctx(rule);
+    }
 
     return err;
 }

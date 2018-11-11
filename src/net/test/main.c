@@ -152,6 +152,16 @@ CUTE_TEST_CASE(net_db_io_tests)
                                    "OnBattleshipHill",
                                    strlen("OnBattleshipHill")) == 0);
 
+    CUTE_ASSERT(blackcat_netdb_add("sock-rule.3",
+                                   "socket",
+                                   "sha-224",
+                                   NULL,
+                                   "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                   NULL,
+                                   error,
+                                   "OnBattleshipHill",
+                                   strlen("OnBattleshipHill")) == EINVAL);
+
     rule_key_size = 3;
     rule_key = (kryptos_u8_t *)kryptos_newseg(rule_key_size);
     CUTE_ASSERT(rule_key != NULL);
