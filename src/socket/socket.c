@@ -87,6 +87,16 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 }
 
 #define __bcsck_epilogue {\
+    g_bcsck_handle.libc_loaded = 0;\
+    g_bcsck_handle.libc_connect = NULL;\
+    g_bcsck_handle.libc_recv = NULL;\
+    g_bcsck_handle.libc_recvfrom = NULL;\
+    g_bcsck_handle.libc_recvmsg = NULL;\
+    g_bcsck_handle.libc_read = NULL;\
+    g_bcsck_handle.libc_send = NULL;\
+    g_bcsck_handle.libc_sendto = NULL;\
+    g_bcsck_handle.libc_sendmsg = NULL;\
+    g_bcsck_handle.libc_write = NULL;\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_recv_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_recvfrom_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_recvmsg_func);\
@@ -140,7 +150,18 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define __bcsck_epilogue {};
+#define __bcsck_epilogue {\
+    g_bcsck_handle.libc_loaded = 0;\
+    g_bcsck_handle.libc_connect = NULL;\
+    g_bcsck_handle.libc_recv = NULL;\
+    g_bcsck_handle.libc_recvfrom = NULL;\
+    g_bcsck_handle.libc_recvmsg = NULL;\
+    g_bcsck_handle.libc_read = NULL;\
+    g_bcsck_handle.libc_send = NULL;\
+    g_bcsck_handle.libc_sendto = NULL;\
+    g_bcsck_handle.libc_sendmsg = NULL;\
+    g_bcsck_handle.libc_write = NULL;\
+}
 
 #define __bcsck_enter(sock_func) {};
 
