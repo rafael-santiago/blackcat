@@ -87,6 +87,7 @@ char *blackcat_get_argv(const int v) {
 
 static void getuserkey_sigint_watchdog(int signo) {
     tcsetattr(STDOUT_FILENO, TCSAFLUSH, &old);
+    exit(1);
 }
 
 kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
