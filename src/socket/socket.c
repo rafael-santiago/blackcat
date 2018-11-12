@@ -23,7 +23,7 @@
 #endif
 
 struct bcsck_handle_ctx {
-    int (*libc_connect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+    int (*libc_socket)(int domain, int type, int protocol);
     ssize_t (*libc_recv)(int sockfd, void *buf, size_t len, int flags);
     ssize_t (*libc_recvfrom)(int sockfd, void *buf, size_t len, int flags,
                              struct sockaddr *src_addr, socklen_t *addrlen);
@@ -37,7 +37,8 @@ struct bcsck_handle_ctx {
     bnt_channel_rule_ctx *rule;
 #if defined(BCSCK_THREAD_SAFE)
     pthread_mutex_t mtx_recv_func, mtx_recvfrom_func, mtx_recvmsg_func, mtx_read_func,
-                    mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func;
+                    mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func,
+                    mtx_socket_func;
 #endif
     int libc_loaded;
 };
@@ -45,7 +46,7 @@ struct bcsck_handle_ctx {
 #if defined(BCSCK_THREAD_SAFE)
 
 static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
-                                                  0, 0, 0, 0, 0, 0, 0, 0 };
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
     if (g_bcsck_handle.rule == NULL) {\
@@ -54,7 +55,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
         }\
     }\
     if (!g_bcsck_handle.libc_loaded) {\
-        g_bcsck_handle.libc_connect = dlsym(RTLD_NEXT, "connect");\
+        g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
         g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
         g_bcsck_handle.libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
         g_bcsck_handle.libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
@@ -63,7 +64,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
         g_bcsck_handle.libc_sendto = dlsym(RTLD_NEXT, "sendto");\
         g_bcsck_handle.libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
         g_bcsck_handle.libc_write = dlsym(RTLD_NEXT, "write");\
-        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_connect != NULL) &&\
+        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_socket != NULL) &&\
                                      (g_bcsck_handle.libc_recv != NULL) &&\
                                      (g_bcsck_handle.libc_recvfrom != NULL) &&\
                                      (g_bcsck_handle.libc_recvmsg != NULL) &&\
@@ -79,7 +80,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_send_func, NULL) == 0) &&\
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_sendto_func, NULL) == 0) &&\
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_sendmsg_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_write_func, NULL) == 0);\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_write_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_socket_func, NULL) == 0);\
     }\
     if (!g_bcsck_handle.libc_loaded) {\
         return_stmt;\
@@ -88,7 +90,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 
 #define __bcsck_epilogue {\
     g_bcsck_handle.libc_loaded = 0;\
-    g_bcsck_handle.libc_connect = NULL;\
+    g_bcsck_handle.libc_socket = NULL;\
     g_bcsck_handle.libc_recv = NULL;\
     g_bcsck_handle.libc_recvfrom = NULL;\
     g_bcsck_handle.libc_recvmsg = NULL;\
@@ -105,6 +107,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     pthread_mutex_destroy(&g_bcsck_handle.mtx_sendto_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_sendmsg_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_write_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_socket_func);\
 }
 
 #define __bcsck_enter(sock_func) {\
@@ -126,7 +129,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
         }\
     }\
     if (!g_bcsck_handle.libc_loaded) {\
-        g_bcsck_handle.libc_connect = dlsym(RTLD_NEXT, "connect");\
+        g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
         g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
         g_bcsck_handle.libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
         g_bcsck_handle.libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
@@ -135,7 +138,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
         g_bcsck_handle.libc_sendto = dlsym(RTLD_NEXT, "sendto");\
         g_bcsck_handle.libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
         g_bcsck_handle.libc_write = dlsym(RTLD_NEXT, "write");\
-        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_connect != NULL) &&\
+        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_socket != NULL) &&\
                                      (g_bcsck_handle.libc_recv != NULL) &&\
                                      (g_bcsck_handle.libc_recvfrom != NULL) &&\
                                      (g_bcsck_handle.libc_recvmsg != NULL) &&\
@@ -152,7 +155,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 
 #define __bcsck_epilogue {\
     g_bcsck_handle.libc_loaded = 0;\
-    g_bcsck_handle.libc_connect = NULL;\
+    g_bcsck_handle.libc_socket = NULL;\
     g_bcsck_handle.libc_recv = NULL;\
     g_bcsck_handle.libc_recvfrom = NULL;\
     g_bcsck_handle.libc_recvmsg = NULL;\
@@ -194,16 +197,26 @@ static void __attribute__((destructor)) bcsck_deinit(void);
 
 static int bcsck_read_rule(void);
 
-int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
-__bcsck_prologue(return -1)
-    return -1;
+int socket(int domain, int type, int protocol) {
+    int err = -1;
+
+__bcsck_enter(socket)
+
+__bcsck_prologue(goto socket_epilogue)
+
+    err = g_bcsck_handle.libc_socket(domain, type, protocol);
+
+socket_epilogue:
+
+__bcsck_leave(socket)
+
+    return err;
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     kryptos_u8_t *obuf = NULL, *rbuf = NULL;
     size_t obuf_size = 0, rbuf_size = 0;
     ssize_t bytes_nr;
-__bcsck_prologue(return - 1)
 
 __bcsck_enter(recv)
 
@@ -253,8 +266,6 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
     kryptos_u8_t *obuf = NULL, *rbuf = NULL;
     size_t obuf_size = 0, rbuf_size = 0;
     ssize_t bytes_nr;
-
-__bcsck_prologue(return -1)
 
 __bcsck_enter(recvfrom)
 
@@ -306,8 +317,6 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
     size_t iov_c;
     struct msghdr rmsg;
     struct iovec iov;
-
-__bcsck_prologue(return -1)
 
     if (msg == NULL) {
         errno = EINVAL;
@@ -397,8 +406,6 @@ ssize_t read(int fd, void *buf, size_t count) {
     struct sockaddr addr;
     socklen_t addrl;
 
-__bcsck_prologue(return -1)
-
 __bcsck_enter(read)
 
     if (getsockname(fd, &addr, &addrl) == 0) {
@@ -450,8 +457,6 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     size_t obuf_size;
     ssize_t bytes_nr;
 
-__bcsck_prologue(return -1)
-
 __bcsck_enter(send)
 
     bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
@@ -485,8 +490,6 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
     kryptos_u8_t *obuf;
     size_t obuf_size;
     ssize_t bytes_nr;
-
-__bcsck_prologue(return -1)
 
 __bcsck_enter(sendto)
 
@@ -606,8 +609,6 @@ ssize_t write(int fd, const void *buf, size_t count) {
     ssize_t bytes_nr;
     struct sockaddr addr;
     socklen_t addrl;
-
-__bcsck_prologue(return -1)
 
 __bcsck_enter(write)
 
