@@ -186,10 +186,10 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define BCSCK_DBPATH "BSCK_DBPATH"
-#define BCSCK_DBKEY  "BSCK_DBKEY"
-#define BCSCK_SKEY   "BSCK_SKEY"
-#define BCSCK_RULE   "BSCK_RULE"
+#define BCSCK_DBPATH "BCSCK_DBPATH"
+#define BCSCK_DBKEY  "BCSCK_DBKEY"
+#define BCSCK_SKEY   "BCSCK_SKEY"
+#define BCSCK_RULE   "BCSCK_RULE"
 
 static void __attribute__((constructor)) bcsck_init(void);
 

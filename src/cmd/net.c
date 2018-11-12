@@ -9,13 +9,15 @@
 #include <cmd/defs.h>
 #include <cmd/options.h>
 #include <net/db/db.h>
-#include <kryptos_memory.h>
+#include <net/ctx/ctx.h>
+#include <kryptos.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
 
 #define BLACKCAT_NET_DB_HOME "BLACKCAT_NET_DB_HOME"
+#define BLACKCAT_BCSCK_LIB_HOME "BLACKCAT_BCSCK_LIB_HOME"
 
 static int add_rule(void);
 
@@ -143,5 +145,196 @@ add_rule_epilogue:
 }
 
 static int run(void) {
-    return 0;
+    char *rule, *db_path, *bcsck_lib_path;
+    kryptos_u8_t *key = NULL, *temp = NULL, *db_key = NULL, *enc_key = NULL, *enc_db_key = NULL;
+    size_t key_size, temp_size, db_key_size, cmdline_size = 0, enc_key_size, enc_db_key_size;
+    char cmdline[4096], *cp;
+    int err = EINVAL;
+    bnt_channel_rule_ctx *rule_entry = NULL;
+    size_t a;
+    kryptos_task_ctx t, *ktask = &t;
+
+    kryptos_task_init_as_null(ktask);
+
+    BLACKCAT_GET_OPTION_OR_DIE(rule, "rule", run_epilogue);
+
+    if ((bcsck_lib_path = blackcat_get_option("bcsck-lib-path", getenv(BLACKCAT_BCSCK_LIB_HOME))) == NULL) {
+        fprintf(stderr, "ERROR: NULL bcsck library path.\n");
+        goto run_epilogue;
+    }
+
+    if ((db_path = blackcat_get_option("db-path", getenv(BLACKCAT_NET_DB_HOME))) == NULL) {
+        fprintf(stderr, "ERROR: NULL net database path.\n");
+        goto run_epilogue;
+    }
+
+    fprintf(stdout, "Netdb key: ");
+    if ((db_key = blackcat_getuserkey(&db_key_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL key.\n");
+        goto run_epilogue;
+    }
+
+    if ((err = blackcat_netdb_load(db_path)) == 0) {
+        if ((temp = (kryptos_u8_t *) kryptos_newseg(8)) == NULL) {
+            err = ENOMEM;
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto run_epilogue;
+        }
+        temp_size = 8;
+        rule_entry = blackcat_netdb_select(rule, db_key, db_key_size, &temp, &temp_size);
+        if (rule_entry == NULL) {
+            err = ENOENT;
+            fprintf(stderr, "ERROR: The rule '%s' seems not exist.\n", rule);
+            goto run_epilogue;
+        }
+        del_bnt_channel_rule_ctx(rule_entry);
+        rule_entry = NULL;
+    }
+
+    fprintf(stdout, "Enter with the session key: ");
+    if ((key = blackcat_getuserkey(&key_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL key.\n");
+        goto run_epilogue;
+    }
+
+    fprintf(stdout, "Confirm the session key: ");
+    if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL key.\n");
+        goto run_epilogue;
+    }
+
+    if (key_size != temp_size || memcmp(key, temp, key_size) != 0) {
+        fprintf(stderr, "ERROR: The session key does not match with its confirmation.\n");
+        goto run_epilogue;
+    }
+
+    kryptos_freeseg(temp, temp_size);
+    temp = NULL;
+    temp_size = 0;
+
+    a = 1;
+    while ((temp = blackcat_get_argv(a++)) != NULL && *temp == '-' && *(temp + 1) == '-')
+        ;
+
+    if (temp == NULL) {
+        fprintf(stderr, "ERROR: NULL command. There is nothing to run.\n");
+        goto run_epilogue;
+    }
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, key, key_size);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        err = EFAULT;
+        goto run_epilogue;
+    }
+
+    enc_key = ktask->out;
+    enc_key_size = ktask->out_size;
+    ktask->out = NULL;
+    ktask->out_size = 0;
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, db_key, db_key_size);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        err = EFAULT;
+        goto run_epilogue;
+    }
+
+    enc_db_key = ktask->out;
+    enc_db_key_size = ktask->out_size;
+    ktask->out = NULL;
+    ktask->out_size = 0;
+
+    cmdline_size = sizeof(cmdline);
+    memset(cmdline, 0, cmdline_size);
+    sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_DBKEY=%s BCSCK_SKEY=%s BCSCK_RULE=%s ",
+                    bcsck_lib_path, db_path, db_key, key, rule);
+    cmdline_size -= strlen(cmdline);
+    cp = &cmdline[0] + (sizeof(cmdline) - cmdline_size);
+
+    do {
+        temp_size = strlen(temp);
+        if (temp_size + 1 > cmdline_size - 1) {
+            memcpy(cp, temp, temp_size);
+            *(cp + temp_size) = ' ';
+            cmdline_size -= temp_size + 1;
+            cp += temp_size + 1;
+        }
+    } while((temp = blackcat_get_argv(a++)) != NULL);
+
+    if (key != NULL) {
+        kryptos_freeseg(key, key_size);
+        key = NULL;
+        key_size = 0;
+    }
+
+    if (enc_key != NULL) {
+        kryptos_freeseg(enc_key, enc_key_size);
+        enc_key = NULL;
+        enc_key_size = 0;
+    }
+
+    if (db_key != NULL) {
+        kryptos_freeseg(db_key, db_key_size);
+        db_key = NULL;
+        db_key_size = 0;
+    }
+
+    if (enc_db_key != NULL) {
+        kryptos_freeseg(enc_db_key, enc_db_key_size);
+        enc_db_key = NULL;
+        enc_db_key_size = 0;
+    }
+
+    err = 0;
+    system(cmdline);
+
+run_epilogue:
+
+    if (key != NULL) {
+        kryptos_freeseg(key, key_size);
+        key = NULL;
+        key_size = 0;
+    }
+
+    if (rule_entry != NULL) {
+        del_bnt_channel_rule_ctx(rule_entry);
+        rule_entry = NULL;
+    }
+
+    if (db_key != NULL) {
+        kryptos_freeseg(db_key, db_key_size);
+        db_key = NULL;
+        db_key_size = 0;
+    }
+
+    if (enc_key != NULL) {
+        kryptos_freeseg(enc_key, enc_key_size);
+        enc_key = NULL;
+        enc_key_size = 0;
+    }
+
+    if (db_key != NULL) {
+        kryptos_freeseg(db_key, db_key_size);
+        db_key = NULL;
+        db_key_size = 0;
+    }
+
+    if (temp != NULL) {
+        kryptos_freeseg(temp, temp_size);
+        temp = NULL;
+        temp_size = 0;
+    }
+
+    if (cmdline_size > 0) {
+        memset(cmdline, 0, sizeof(cmdline));
+        cmdline_size = 0;
+    }
+
+    return err;
 }
+
+#undef BLACKCAT_NET_DB_HOME
+#undef BLACKCAT_BCSCK_LIB_HOME
