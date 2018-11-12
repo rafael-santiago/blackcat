@@ -234,6 +234,12 @@ static int run(void) {
     ktask->out = NULL;
     ktask->out_size = 0;
 
+    if (key != NULL) {
+        kryptos_freeseg(key, key_size);
+        key = NULL;
+        key_size = 0;
+    }
+
     kryptos_task_set_encode_action(ktask);
     kryptos_run_encoder(base64, ktask, db_key, db_key_size);
 
@@ -247,10 +253,23 @@ static int run(void) {
     ktask->out = NULL;
     ktask->out_size = 0;
 
+    if (db_key != NULL) {
+        kryptos_freeseg(db_key, db_key_size);
+        db_key = NULL;
+        db_key_size = 0;
+    }
+
     cmdline_size = sizeof(cmdline);
+
+    if (cmdline_size < strlen(bcsck_lib_path) + strlen(db_path) + enc_db_key_size + enc_key_size + strlen(rule)) {
+        fprintf(stderr, "ERROR: The command line is too long.\n");
+        err = EFAULT;
+        goto run_epilogue;
+    }
+
     memset(cmdline, 0, cmdline_size);
     sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_DBKEY=%s BCSCK_SKEY=%s BCSCK_RULE=%s ",
-                    bcsck_lib_path, db_path, db_key, key, rule);
+                    bcsck_lib_path, db_path, enc_db_key, enc_key, rule);
     cmdline_size -= strlen(cmdline);
     cp = &cmdline[0] + (sizeof(cmdline) - cmdline_size);
 
@@ -264,22 +283,10 @@ static int run(void) {
         }
     } while((temp = blackcat_get_argv(a++)) != NULL);
 
-    if (key != NULL) {
-        kryptos_freeseg(key, key_size);
-        key = NULL;
-        key_size = 0;
-    }
-
     if (enc_key != NULL) {
         kryptos_freeseg(enc_key, enc_key_size);
         enc_key = NULL;
         enc_key_size = 0;
-    }
-
-    if (db_key != NULL) {
-        kryptos_freeseg(db_key, db_key_size);
-        db_key = NULL;
-        db_key_size = 0;
     }
 
     if (enc_db_key != NULL) {
