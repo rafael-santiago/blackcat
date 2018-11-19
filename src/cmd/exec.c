@@ -24,6 +24,7 @@
 #if !defined(_WIN32)
 # include <cmd/lkm.h>
 # include <cmd/paranoid.h>
+# include <cmd/net.h>
 #endif
 #include <cmd/levenshtein_distance.h>
 #if !defined(_WIN32)
@@ -52,6 +53,7 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
 #if !defined(_WIN32)
     BLACKCAT_COMMAND_TABLE_ENTRY(lkm),
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid),
+    BLACKCAT_COMMAND_TABLE_ENTRY(net),
 #endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey)
 DECL_BLACKCAT_COMMAND_TABLE_END

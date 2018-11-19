@@ -30,7 +30,7 @@ DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_net_commands)
 
-int blackcat_net_cmd(void) {
+int blackcat_cmd_net(void) {
     char *sub_command;
     size_t c;
     int (*cmd_text)(void);
@@ -54,7 +54,7 @@ int blackcat_net_cmd(void) {
     return (cmd_text != NULL) ? cmd_text() : EINVAL;
 }
 
-int blackcat_net_cmd_help(void) {
+int blackcat_cmd_net_help(void) {
     fprintf(stdout, "use: blackcat net [--add-rule | --run]\n");
     return 0;
 }
@@ -76,6 +76,8 @@ static int add_rule(void) {
 
     if (strcmp(rule_type, "socket") != 0) {
         BLACKCAT_GET_OPTION_OR_DIE(target, "target", add_rule_epilogue);
+    } else {
+        target = NULL;
     }
 
     BLACKCAT_GET_OPTION_OR_DIE(pchain, "protection-layer", add_rule_epilogue);
@@ -102,7 +104,7 @@ static int add_rule(void) {
     }
 
     if (first_access) {
-        fprintf(stdout, "Confirm the netdb key: ");
+        fprintf(stdout, "\nConfirm the netdb key: ");
 
         if ((cp_key = blackcat_getuserkey(&cp_key_size)) == NULL) {
             fprintf(stderr, "ERROR: NULL key.\n");
@@ -122,7 +124,7 @@ static int add_rule(void) {
     if ((err = blackcat_netdb_load(db_path)) == 0) {
         err = blackcat_netdb_add(rule_id, rule_type, hash, target, pchain, encoder, error, key, key_size);
         if (err != 0) {
-            fprintf(stderr, "%s\n", err);
+            fprintf(stderr, "%s\n", error);
         }
         blackcat_netdb_unload();
     }
@@ -191,13 +193,13 @@ static int run(void) {
         rule_entry = NULL;
     }
 
-    fprintf(stdout, "Enter with the session key: ");
+    fprintf(stdout, "\nEnter with the session key: ");
     if ((key = blackcat_getuserkey(&key_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL key.\n");
         goto run_epilogue;
     }
 
-    fprintf(stdout, "Confirm the session key: ");
+    fprintf(stdout, "\nConfirm the session key: ");
     if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL key.\n");
         goto run_epilogue;
@@ -212,7 +214,7 @@ static int run(void) {
     temp = NULL;
     temp_size = 0;
 
-    a = 1;
+    a = 0;
     while ((temp = blackcat_get_argv(a++)) != NULL && *temp == '-' && *(temp + 1) == '-')
         ;
 
@@ -275,7 +277,7 @@ static int run(void) {
 
     do {
         temp_size = strlen(temp);
-        if (temp_size + 1 > cmdline_size - 1) {
+        if (temp_size + 1 < cmdline_size - 1) {
             memcpy(cp, temp, temp_size);
             *(cp + temp_size) = ' ';
             cmdline_size -= temp_size + 1;

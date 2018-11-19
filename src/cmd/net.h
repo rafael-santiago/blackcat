@@ -8,8 +8,8 @@
 #ifndef BLACKCAT_CMD_NET_H
 #define BLACKCAT_CMD_NET_H 1
 
-int blackcat_net_cmd(void);
+int blackcat_cmd_net(void);
 
-int blackcat_net_cmd_help(void);
+int blackcat_cmd_net_help(void);
 
 #endif

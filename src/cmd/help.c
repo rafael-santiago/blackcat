@@ -22,6 +22,7 @@
 #if !defined(_WIN32)
 # include <cmd/paranoid.h>
 # include <cmd/lkm.h>
+# include <cmd/net.h>
 #endif
 #include <string.h>
 #include <stdio.h>
@@ -42,6 +43,7 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
 #if !defined(_WIN32)
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(lkm_help),
+    BLACKCAT_COMMAND_TABLE_ENTRY(net_help),
 #endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey_help)
 DECL_BLACKCAT_COMMAND_TABLE_END
