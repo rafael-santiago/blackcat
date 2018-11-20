@@ -674,6 +674,7 @@ static int bcsck_read_rule(void) {
     fprintf(stdout, "Netdb key: ");
     if ((db_key = blackcat_getuserkey(&db_key_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL Netdb key.\n");
+        fflush(stderr);
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
@@ -687,6 +688,7 @@ static int bcsck_read_rule(void) {
     fprintf(stdout, "Session key: ");
     if ((session_key = blackcat_getuserkey(&session_key_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL session key.\n");
+        fflush(stderr);
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
@@ -700,6 +702,7 @@ static int bcsck_read_rule(void) {
     fprintf(stdout, "Confirm the session key: ");
     if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL session key confirmation.\n");
+        fflush(stderr);
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
@@ -710,6 +713,7 @@ static int bcsck_read_rule(void) {
 
     if (temp_size != session_key_size && memcmp(session_key, temp, session_key_size) != 0) {
         fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+        fflush(stderr);
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
@@ -724,7 +728,8 @@ static int bcsck_read_rule(void) {
     }
 
     if (g_bcsck_handle.rule == NULL) {
-        fprintf(stderr, "ERROR: The specified rule seems not exist.\n");
+        fprintf(stderr, "ERROR: The specified rule seems not exist or the Netdb password is wrong.\n");
+        fflush(stderr);
         err = EFAULT;
     }
 

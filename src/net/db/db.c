@@ -513,6 +513,7 @@ bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u
     struct bnt_channel_rule_assertion assertion;
 
     if (netdb_decrypt_buffer(key, key_size) == 0) {
+
         if (strlen(rule_id) > sizeof(needle) - 1) {
             goto blackcat_netdb_select_epilogue;
         }
