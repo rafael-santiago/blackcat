@@ -43,6 +43,7 @@ libbbase.prologue() {
     $dirlist.add_item("../keychain/encoder");
     $dirlist.add_item("../keychain/steganography");
     $dirlist.add_item("../ctx");
+    $dirlist.add_item("../kbd");
 
     $src = get_codes($dirlist, $deps);
 }

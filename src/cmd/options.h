@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <kryptos.h>
+#include <kbd/kbd.h>
 
 char *blackcat_get_option(const char *option, char *default_option);
 
@@ -20,8 +21,6 @@ char *blackcat_get_command(void);
 void blackcat_set_argc_argv(int argc, char **argv);
 
 char *blackcat_get_argv(const int v);
-
-kryptos_u8_t *blackcat_getuserkey(size_t *key_size);
 
 #define BLACKCAT_GET_OPTION_OR_DIE(option, cute_option, esc_label) {\
     if ((option = blackcat_get_option(cute_option, NULL)) == NULL) {\

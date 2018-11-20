@@ -10,9 +10,12 @@
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
 #include <keychain/processor.h>
+#include <kbd/kbd.h>
 #include <kryptos.h>
+#include <accacia.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <stdio.h>
 #if defined(BCSCK_THREAD_SAFE)
 # include <pthread.h>
 #endif
@@ -187,8 +190,6 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 }
 
 #define BCSCK_DBPATH "BCSCK_DBPATH"
-#define BCSCK_DBKEY  "BCSCK_DBKEY"
-#define BCSCK_SKEY   "BCSCK_SKEY"
 #define BCSCK_RULE   "BCSCK_RULE"
 
 static void __attribute__((constructor)) bcsck_init(void);
@@ -649,74 +650,81 @@ static int bcsck_read_rule(void) {
     char *db_path = NULL;
     int err = 0;
     size_t session_key_size = 0, temp_size = 0, db_size = 0, db_path_size = 0, db_key_size = 0;
-    kryptos_task_ctx t, *ktask = &t;
-
-    kryptos_task_init_as_null(ktask);
 
     if ((db_path = getenv(BCSCK_DBPATH)) == NULL) {
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
 
+    setenv(BCSCK_DBPATH, " ", 1);
+    unsetenv(BCSCK_DBPATH);
+
     db_path_size = strlen(db_path);
-
-    if ((temp = getenv(BCSCK_DBKEY)) == NULL) {
-        err = EFAULT;
-        goto bcsck_read_rule_epilogue;
-    }
-
-    temp_size = strlen(temp);
-
-    kryptos_task_set_decode_action(ktask);
-    kryptos_run_encoder(base64, ktask, temp, temp_size);
-
-    if (kryptos_last_task_succeed(ktask)) {
-        db_key = ktask->out;
-        db_key_size = ktask->out_size;
-    } else {
-        err = EFAULT;
-        goto bcsck_read_rule_epilogue;
-    }
-
-    memset(temp, 0, temp_size);
-    temp = NULL;
-    temp_size = 0;
 
     if ((rule_id = getenv(BCSCK_RULE)) == NULL) {
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
 
-    if ((temp = getenv(BCSCK_SKEY)) == NULL) {
+    setenv(BCSCK_RULE, " ", 1);
+    unsetenv(BCSCK_RULE);
+
+    accacia_savecursorposition();
+
+    fprintf(stdout, "Netdb key: ");
+    if ((db_key = blackcat_getuserkey(&db_key_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL Netdb key.\n");
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
 
-    temp_size = strlen(temp);
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
 
-    kryptos_task_set_decode_action(ktask);
-    kryptos_run_encoder(base64, ktask, temp, temp_size);
+    accacia_savecursorposition();
 
-    if (kryptos_last_task_succeed(ktask)) {
-        session_key = ktask->out;
-        session_key_size = ktask->out_size;
-    } else {
+    fprintf(stdout, "Session key: ");
+    if ((session_key = blackcat_getuserkey(&session_key_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL session key.\n");
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
 
-    memset(temp, 0, temp_size);
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    accacia_savecursorposition();
+
+    fprintf(stdout, "Confirm the session key: ");
+    if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL session key confirmation.\n");
+        err = EFAULT;
+        goto bcsck_read_rule_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    if (temp_size != session_key_size && memcmp(session_key, temp, session_key_size) != 0) {
+        fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+        err = EFAULT;
+        goto bcsck_read_rule_epilogue;
+    }
+
+    kryptos_freeseg(temp, temp_size);
     temp = NULL;
     temp_size = 0;
 
-    kryptos_task_init_as_null(ktask);
-
-    if ((err = blackcat_netdb_load(db_path)) == 0) {
+    if ((err = blackcat_netdb_load(db_path, 0)) == 0) {
         g_bcsck_handle.rule = blackcat_netdb_select(rule_id, db_key, db_key_size, &session_key, &session_key_size);
         err = blackcat_netdb_unload();
     }
 
     if (g_bcsck_handle.rule == NULL) {
+        fprintf(stderr, "ERROR: The specified rule seems not exist.\n");
         err = EFAULT;
     }
 
@@ -742,22 +750,13 @@ bcsck_read_rule_epilogue:
         session_key_size = 0;
     }
 
-    if (db_path != NULL) {
-        memset(db_path, 0, db_path_size);
-        db_path_size = 0;
-    }
-
     db_key = temp = session_key = rule_id = NULL;
     db_path = NULL;
 
     setenv(BCSCK_DBPATH, " ", 1);
-    setenv(BCSCK_DBKEY, " ", 1);
-    setenv(BCSCK_SKEY, " ", 1);
     setenv(BCSCK_RULE, " ", 1);
 
     unsetenv(BCSCK_DBPATH);
-    unsetenv(BCSCK_DBKEY);
-    unsetenv(BCSCK_SKEY);
     unsetenv(BCSCK_RULE);
 
     return err;
@@ -771,6 +770,4 @@ bcsck_read_rule_epilogue:
 #undef bcsck_decrypt
 
 #undef BCSCK_DBPATH
-#undef BCSCK_DBKEY
-#undef BCSCK_SKEY
 #undef BCSCK_RULE

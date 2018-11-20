@@ -22,7 +22,7 @@ int blackcat_netdb_add(const char *rule_id,
 
 int blackcat_netdb_drop(const char *rule_id, const kryptos_u8_t *key, const size_t key_size);
 
-int blackcat_netdb_load(const char *filepath);
+int blackcat_netdb_load(const char *filepath, const int lock);
 
 int blackcat_netdb_unload(void);
 

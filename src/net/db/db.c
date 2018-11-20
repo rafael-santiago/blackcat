@@ -365,7 +365,7 @@ blackcat_netdb_drop_epilogue:
     return err;
 }
 
-int blackcat_netdb_load(const char *filepath) {
+int blackcat_netdb_load(const char *filepath, const int lock) {
     FILE *db = NULL;
     kryptos_u8_t *hmac_scheme = NULL;
     size_t hmac_scheme_size = 0;
@@ -373,14 +373,16 @@ int blackcat_netdb_load(const char *filepath) {
 
     blackcat_netdb_unload();
 
-    if ((g_netdb.db = fopen(filepath, "a")) == NULL) {
-        return ENOENT;
-    }
+    if (lock) {
+        if ((g_netdb.db = fopen(filepath, "a")) == NULL) {
+            return ENOENT;
+        }
 
-    if (flock(fileno(g_netdb.db), LOCK_EX) != 0) {
-        fclose(g_netdb.db);
-        g_netdb.db = NULL;
-        return EFAULT;
+        if (flock(fileno(g_netdb.db), LOCK_EX) != 0) {
+            fclose(g_netdb.db);
+            g_netdb.db = NULL;
+            return EFAULT;
+        }
     }
 
     if ((db = fopen(filepath, "r")) == NULL) {

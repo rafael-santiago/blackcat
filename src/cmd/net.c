@@ -9,8 +9,6 @@
 #include <cmd/defs.h>
 #include <cmd/options.h>
 #include <net/db/db.h>
-#include <net/ctx/ctx.h>
-#include <kryptos.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -121,7 +119,7 @@ static int add_rule(void) {
         cp_key_size = 0;
     }
 
-    if ((err = blackcat_netdb_load(db_path)) == 0) {
+    if ((err = blackcat_netdb_load(db_path, 1)) == 0) {
         err = blackcat_netdb_add(rule_id, rule_type, hash, target, pchain, encoder, error, key, key_size);
         if (err != 0) {
             fprintf(stderr, "%s\n", error);
@@ -148,15 +146,11 @@ add_rule_epilogue:
 
 static int run(void) {
     char *rule, *db_path, *bcsck_lib_path;
-    kryptos_u8_t *key = NULL, *temp = NULL, *db_key = NULL, *enc_key = NULL, *enc_db_key = NULL;
-    size_t key_size, temp_size, db_key_size, cmdline_size = 0, enc_key_size, enc_db_key_size;
+    char *temp = NULL;
+    size_t temp_size, db_key_size, cmdline_size = 0;
     char cmdline[4096], *cp;
     int err = EINVAL;
-    bnt_channel_rule_ctx *rule_entry = NULL;
     size_t a;
-    kryptos_task_ctx t, *ktask = &t;
-
-    kryptos_task_init_as_null(ktask);
 
     BLACKCAT_GET_OPTION_OR_DIE(rule, "rule", run_epilogue);
 
@@ -170,50 +164,6 @@ static int run(void) {
         goto run_epilogue;
     }
 
-    fprintf(stdout, "Netdb key: ");
-    if ((db_key = blackcat_getuserkey(&db_key_size)) == NULL) {
-        fprintf(stderr, "ERROR: NULL key.\n");
-        goto run_epilogue;
-    }
-
-    if ((err = blackcat_netdb_load(db_path)) == 0) {
-        if ((temp = (kryptos_u8_t *) kryptos_newseg(8)) == NULL) {
-            err = ENOMEM;
-            fprintf(stderr, "ERROR: Not enough memory.\n");
-            goto run_epilogue;
-        }
-        temp_size = 8;
-        rule_entry = blackcat_netdb_select(rule, db_key, db_key_size, &temp, &temp_size);
-        if (rule_entry == NULL) {
-            err = ENOENT;
-            fprintf(stderr, "ERROR: The rule '%s' seems not exist.\n", rule);
-            goto run_epilogue;
-        }
-        del_bnt_channel_rule_ctx(rule_entry);
-        rule_entry = NULL;
-    }
-
-    fprintf(stdout, "\nEnter with the session key: ");
-    if ((key = blackcat_getuserkey(&key_size)) == NULL) {
-        fprintf(stderr, "ERROR: NULL key.\n");
-        goto run_epilogue;
-    }
-
-    fprintf(stdout, "\nConfirm the session key: ");
-    if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
-        fprintf(stderr, "ERROR: NULL key.\n");
-        goto run_epilogue;
-    }
-
-    if (key_size != temp_size || memcmp(key, temp, key_size) != 0) {
-        fprintf(stderr, "ERROR: The session key does not match with its confirmation.\n");
-        goto run_epilogue;
-    }
-
-    kryptos_freeseg(temp, temp_size);
-    temp = NULL;
-    temp_size = 0;
-
     a = 0;
     while ((temp = blackcat_get_argv(a++)) != NULL && *temp == '-' && *(temp + 1) == '-')
         ;
@@ -223,55 +173,17 @@ static int run(void) {
         goto run_epilogue;
     }
 
-    kryptos_task_set_encode_action(ktask);
-    kryptos_run_encoder(base64, ktask, key, key_size);
-
-    if (!kryptos_last_task_succeed(ktask)) {
-        err = EFAULT;
-        goto run_epilogue;
-    }
-
-    enc_key = ktask->out;
-    enc_key_size = ktask->out_size;
-    ktask->out = NULL;
-    ktask->out_size = 0;
-
-    if (key != NULL) {
-        kryptos_freeseg(key, key_size);
-        key = NULL;
-        key_size = 0;
-    }
-
-    kryptos_task_set_encode_action(ktask);
-    kryptos_run_encoder(base64, ktask, db_key, db_key_size);
-
-    if (!kryptos_last_task_succeed(ktask)) {
-        err = EFAULT;
-        goto run_epilogue;
-    }
-
-    enc_db_key = ktask->out;
-    enc_db_key_size = ktask->out_size;
-    ktask->out = NULL;
-    ktask->out_size = 0;
-
-    if (db_key != NULL) {
-        kryptos_freeseg(db_key, db_key_size);
-        db_key = NULL;
-        db_key_size = 0;
-    }
-
     cmdline_size = sizeof(cmdline);
 
-    if (cmdline_size < strlen(bcsck_lib_path) + strlen(db_path) + enc_db_key_size + enc_key_size + strlen(rule)) {
+    if (cmdline_size < strlen(bcsck_lib_path) + strlen(db_path) + strlen(rule)) {
         fprintf(stderr, "ERROR: The command line is too long.\n");
         err = EFAULT;
         goto run_epilogue;
     }
 
     memset(cmdline, 0, cmdline_size);
-    sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_DBKEY=%s BCSCK_SKEY=%s BCSCK_RULE=%s ",
-                    bcsck_lib_path, db_path, enc_db_key, enc_key, rule);
+    sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
+                    bcsck_lib_path, db_path, rule);
     cmdline_size -= strlen(cmdline);
     cp = &cmdline[0] + (sizeof(cmdline) - cmdline_size);
 
@@ -285,57 +197,10 @@ static int run(void) {
         }
     } while((temp = blackcat_get_argv(a++)) != NULL);
 
-    if (enc_key != NULL) {
-        kryptos_freeseg(enc_key, enc_key_size);
-        enc_key = NULL;
-        enc_key_size = 0;
-    }
-
-    if (enc_db_key != NULL) {
-        kryptos_freeseg(enc_db_key, enc_db_key_size);
-        enc_db_key = NULL;
-        enc_db_key_size = 0;
-    }
-
     err = 0;
     system(cmdline);
 
 run_epilogue:
-
-    if (key != NULL) {
-        kryptos_freeseg(key, key_size);
-        key = NULL;
-        key_size = 0;
-    }
-
-    if (rule_entry != NULL) {
-        del_bnt_channel_rule_ctx(rule_entry);
-        rule_entry = NULL;
-    }
-
-    if (db_key != NULL) {
-        kryptos_freeseg(db_key, db_key_size);
-        db_key = NULL;
-        db_key_size = 0;
-    }
-
-    if (enc_key != NULL) {
-        kryptos_freeseg(enc_key, enc_key_size);
-        enc_key = NULL;
-        enc_key_size = 0;
-    }
-
-    if (db_key != NULL) {
-        kryptos_freeseg(db_key, db_key_size);
-        db_key = NULL;
-        db_key_size = 0;
-    }
-
-    if (temp != NULL) {
-        kryptos_freeseg(temp, temp_size);
-        temp = NULL;
-        temp_size = 0;
-    }
 
     if (cmdline_size > 0) {
         memset(cmdline, 0, sizeof(cmdline));
