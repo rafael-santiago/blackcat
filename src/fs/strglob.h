@@ -5,8 +5,8 @@
  * the terms of the GNU General Public License version 2.
  *
  */
-#ifndef PIG_STRGLOB_H
-#define PIG_STRGLOB_H 1
+#ifndef BLACKCAT_FS_STRGLOB_H
+#define BLACKCAT_FS_STRGLOB_H 1
 
 int strglob(const char *str, const char *pattern);
 
