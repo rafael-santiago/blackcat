@@ -8,6 +8,7 @@
 #include <cmd/setkey.h>
 #include <cmd/options.h>
 #include <cmd/session.h>
+#include <cmd/checkpoint.h>
 #include <keychain/ciphering_schemes.h>
 #include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
@@ -187,7 +188,9 @@ int blackcat_cmd_setkey(void) {
                                    new_key[0], new_key_size[0], &new_key[1], &new_key_size[1],
                                    protection_layer,
                                    catalog_hash_proc, key_hash_proc, protection_layer_hash_proc,
-                                   encoder_proc) != 1) {
+                                   encoder_proc,
+                                   blackcat_checkpoint,
+                                   session) != 1) {
         exit_code = EFAULT;
         goto blackcat_cmd_setkey_epilogue;
     }

@@ -226,7 +226,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     CUTE_ASSERT(catalog->files->tail == catalog->files->next);
 
     // INFO(Rafael): The files must be decrypted and re-encrypted with the new key setting.
-    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1) == 1);
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
 
     new_key_size = strlen("Sham time");
     new_key = (kryptos_u8_t *)kryptos_newseg(new_key_size);
@@ -248,7 +248,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                            get_hash_processor("whirlpool"),
                                            get_hash_processor("sha3-512"),
                                            get_hash_processor("sha-384"),
-                                           get_encoder("base64")) == 1);
+                                           get_encoder("base64"), NULL, NULL) == 1);
 
     // INFO(Rafael): We reset the catalog's key for paranoia issues.
 
@@ -264,7 +264,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
 
     kryptos_freeseg(data, data_size);
 
-    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1) == 1);
+    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
 
     data = open_text("sensitive.txt", &data_size);
     CUTE_ASSERT(data != NULL);
@@ -446,7 +446,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
 
     getcwd(oldcwd, sizeof(oldcwd) - 1);
 
-    CUTE_ASSERT(bcrepo_pack(&catalog, rootpath, rootpath_size, "../repo.bow") == 1);
+    CUTE_ASSERT(bcrepo_pack(&catalog, rootpath, rootpath_size, "../repo.bow", NULL, NULL) == 1);
 
     CUTE_ASSERT(chdir("..") == 0);
 
@@ -684,7 +684,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     CUTE_ASSERT(catalog->files->tail == catalog->files->next);
 
     pattern = "*";
-    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), NULL, NULL) == 1);
 
     CUTE_ASSERT(catalog->files->status == kBfsFileStatusLocked);
     CUTE_ASSERT(catalog->files->next->status == kBfsFileStatusPlain);
@@ -702,7 +702,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     free(data);
 
     pattern = "*";
-    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), NULL, NULL) == 1);
 
     data = open_text("sensitive.txt", &data_size);
     CUTE_ASSERT(data != NULL && data_size > 0);
@@ -824,7 +824,7 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     CUTE_ASSERT(catalog->files->tail == catalog->files->head);
 
     pattern = "sensitive.txt";
-    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern)) == 1);
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), NULL, NULL) == 1);
 
     pattern = "main.c";
     CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);

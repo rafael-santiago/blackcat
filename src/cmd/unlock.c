@@ -8,6 +8,7 @@
 #include <cmd/unlock.h>
 #include <cmd/session.h>
 #include <cmd/options.h>
+#include <cmd/checkpoint.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <string.h>
 #include <stdio.h>
@@ -41,7 +42,8 @@ int blackcat_cmd_unlock(void) {
                                     unlock_nr += bcrepo_unlock(&session->catalog,
                                                                session->rootpath, session->rootpath_size,
                                                                (unlock_param != NULL) ? unlock_param : "*",
-                                                               (unlock_param != NULL) ? strlen(unlock_param) : 1);
+                                                               (unlock_param != NULL) ? strlen(unlock_param) : 1,
+                                                               blackcat_checkpoint, session);
                                   })
 
     if (unlock_param == NULL) {
@@ -50,14 +52,8 @@ int blackcat_cmd_unlock(void) {
     }
 
     if (unlock_nr > 0) {
-        if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
-                         session->catalog, session->key[0], session->key_size[0])) {
-            fprintf(stdout, "%d file(s) decrypted.\n", unlock_nr);
-            exit_code = 0;
-        } else {
-            fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
-            exit_code = EFAULT;
-        }
+        fprintf(stdout, "%d file(s) decrypted.\n", unlock_nr);
+        exit_code = 0;
     } else {
         fprintf(stdout, "File(s) not found.\n");
         exit_code = ENOENT;

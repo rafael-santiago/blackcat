@@ -11,6 +11,8 @@
 #include <basedefs/defs.h>
 #include <fs/base/types.h>
 
+typedef int (*bfs_checkpoint_func)(void *ckpt_args);
+
 char *remove_go_ups_from_path(char *path, const size_t path_size);
 
 int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
@@ -35,18 +37,22 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
 
 int bcrepo_lock(bfs_catalog_ctx **catalog,
                 const char *rootpath, const size_t rootpath_size,
-                const char *pattern, const size_t pattern_size);
+                const char *pattern, const size_t pattern_size,
+                bfs_checkpoint_func ckpt,
+                void *ckpt_args);
 
 int bcrepo_unlock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
-                  const char *pattern, const size_t pattern_size);
+                  const char *pattern, const size_t pattern_size,
+                  bfs_checkpoint_func ckpt,
+                  void *ckpt_args);
 
 int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
 
 int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const kryptos_u8_t *key, const size_t key_size);
 
 int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
-                             const char *wpath);
+                             const char *wpath, bfs_checkpoint_func ckpt, void *ckpt_args);
 
 int bcrepo_unpack(const char *wpath, const char *rootpath);
 
@@ -58,7 +64,9 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
                                blackcat_hash_processor protlayer_hash_proc,
-                               blackcat_encoder encoder);
+                               blackcat_encoder encoder,
+                               bfs_checkpoint_func ckpt,
+                               void *ckpt_args);
 
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath);
 

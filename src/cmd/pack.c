@@ -8,6 +8,7 @@
 #include <cmd/pack.h>
 #include <cmd/session.h>
 #include <cmd/options.h>
+#include <cmd/checkpoint.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <stdio.h>
 #include <errno.h>
@@ -31,7 +32,8 @@ int blackcat_cmd_pack(void) {
         goto blackcat_cmd_pack_epilogue;
     }
 
-    if (bcrepo_pack(&session->catalog, session->rootpath, session->rootpath_size, pack_param) != 1) {
+    if (bcrepo_pack(&session->catalog, session->rootpath, session->rootpath_size, pack_param,
+                    blackcat_checkpoint, session) != 1) {
         exit_code = EFAULT;
         goto blackcat_cmd_pack_epilogue;
     }

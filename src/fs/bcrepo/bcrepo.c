@@ -100,17 +100,23 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer,
-                              bfs_file_status_t *f_st);
+                              bfs_file_status_t *f_st,
+                              bfs_checkpoint_func ckpt,
+                              void *ckpt_args);
 
 static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer,
-                              bfs_file_status_t *f_st);
+                              bfs_file_status_t *f_st,
+                              bfs_checkpoint_func ckpt,
+                              void *ckpt_args);
 
 typedef int (*unl_processor)(const char *rootpath, const size_t rootpath_size,
                              const char *path, const size_t path_size,
                              const blackcat_protlayer_chain_ctx *protlayer,
-                             bfs_file_status_t *f_st);
+                             bfs_file_status_t *f_st,
+                             bfs_checkpoint_func ckpt,
+                             void *ckpt_args);
 
 typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_ctx *protlayer,
                                                  kryptos_u8_t *in, size_t in_size, size_t *out_size);
@@ -121,7 +127,9 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
 
 static int unl_handle(bfs_catalog_ctx **catalog,
                       const char *rootpath, const size_t rootpath_size,
-                      const char *pattern, const size_t pattern_size, unl_processor proc);
+                      const char *pattern, const size_t pattern_size, unl_processor proc,
+                      bfs_checkpoint_func ckpt,
+                      void *ckpt_args);
 
 static kryptos_u8_t *bcrepo_read_file_data(const char *rootpath, const size_t rootpath_size,
                                            const char *path, const size_t path_size, size_t *size);
@@ -178,14 +186,16 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
                                blackcat_hash_processor protlayer_hash_proc,
-                               blackcat_encoder encoder) {
+                               blackcat_encoder encoder,
+                               bfs_checkpoint_func ckpt,
+                               void *ckpt_args) {
     bfs_catalog_ctx *cp = *catalog;
     kryptos_task_ctx t, *ktask = &t;
     char filepath[4096];
     int no_error = 1;
     size_t temp_size;
 
-    bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1);
+    bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
 
     cp->catalog_key_hash_algo = catalog_hash_proc;
     cp->catalog_key_hash_algo_size = get_hash_size(get_hash_processor_name(catalog_hash_proc));
@@ -248,7 +258,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
         }
     }
 
-    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
+    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
 
     bcrepo_mkpath(filepath, sizeof(filepath),
                   BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE,
@@ -264,7 +274,7 @@ bcrepo_reset_repo_settings_epilogue:
     if (no_error == 0) {
         // INFO(Rafael): Trying do not to let unencrypted files. However, it could happen depending on when the failure has
         //               occurred.
-        bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
+        bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
     }
 
     memset(catalog_key, 0, catalog_key_size);
@@ -273,7 +283,7 @@ bcrepo_reset_repo_settings_epilogue:
 }
 
 int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
-                             const char *wpath) {
+                             const char *wpath, bfs_checkpoint_func ckpt, void *ckpt_args) {
     bfs_catalog_relpath_ctx *fp = NULL;
     bfs_catalog_ctx *cp = *catalog;
     FILE *wp = NULL, *wpp = NULL;
@@ -282,7 +292,7 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     kryptos_u8_t *data = NULL;
     size_t data_size = 0;
 
-    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1);
+    bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
 
     if ((wp = fopen(wpath, "wb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", wpath);
@@ -756,15 +766,19 @@ bcrepo_deinit_epilogue:
 
 int bcrepo_lock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
-                  const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_encrypt);
+                  const char *pattern, const size_t pattern_size,
+                  bfs_checkpoint_func ckpt,
+                  void *ckpt_args) {
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_encrypt, ckpt, ckpt_args);
 }
 
 
 int bcrepo_unlock(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
-                  const char *pattern, const size_t pattern_size) {
-    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_decrypt);
+                  const char *pattern, const size_t pattern_size,
+                  bfs_checkpoint_func ckpt,
+                  void *ckpt_args) {
+    return unl_handle(catalog, rootpath, rootpath_size, pattern, pattern_size, unl_handle_decrypt, ckpt, ckpt_args);
 }
 
 int bcrepo_rm(bfs_catalog_ctx **catalog,
@@ -789,7 +803,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
         }
 
         if (fpp->status == kBfsFileStatusLocked &&
-            bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size) != 1) {
+            bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size, NULL, NULL) != 1) {
             fprintf(stderr, "WARN: Unable to unlock the file '%s'.\n", fpp->path);
         }
 
@@ -1096,12 +1110,17 @@ bfs_data_wiping_epilogue:
 static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer,
-                              bfs_file_status_t *f_st) {
+                              bfs_file_status_t *f_st,
+                              bfs_checkpoint_func ckpt,
+                              void *ckpt_args) {
 
     int no_error = unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_encrypt_data);
 
     if (no_error) {
         *f_st = kBfsFileStatusLocked;
+        if (ckpt != NULL) {
+            no_error = ckpt(ckpt_args);
+        }
     }
 
     return no_error;
@@ -1110,12 +1129,17 @@ static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
 static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
                               const char *path, const size_t path_size,
                               const blackcat_protlayer_chain_ctx *protlayer,
-                              bfs_file_status_t *f_st) {
+                              bfs_file_status_t *f_st,
+                              bfs_checkpoint_func ckpt,
+                              void *ckpt_args) {
 
     int no_error = unl_handle_meta_proc(rootpath, rootpath_size, path, path_size, protlayer, blackcat_decrypt_data);
 
     if (no_error) {
         *f_st = kBfsFileStatusUnlocked;
+        if (ckpt != NULL) {
+            no_error = ckpt(ckpt_args);
+        }
     }
 
     return no_error;
@@ -1123,7 +1147,9 @@ static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
 
 static int unl_handle(bfs_catalog_ctx **catalog,
                       const char *rootpath, const size_t rootpath_size,
-                      const char *pattern, const size_t pattern_size, unl_processor proc) {
+                      const char *pattern, const size_t pattern_size, unl_processor proc,
+                      bfs_checkpoint_func ckpt,
+                      void *ckpt_args) {
     int proc_nr = 0;
     bfs_catalog_ctx *cp;
     bfs_catalog_relpath_ctx *files = NULL, *fp, *fpp;
@@ -1163,7 +1189,9 @@ static int unl_handle(bfs_catalog_ctx **catalog,
                                                                 fpp->path,
                                                                 fpp->path_size,
                                                                 cp->protlayer,
-                                                                &fpp->status));
+                                                                &fpp->status,
+                                                                ckpt,
+                                                                ckpt_args));
         }
     } else {
         for (fp = files; fp != NULL; fp = fp->next) {
@@ -1172,7 +1200,9 @@ static int unl_handle(bfs_catalog_ctx **catalog,
                                                                fp->path,
                                                                fp->path_size,
                                                                cp->protlayer,
-                                                               &fp->status));
+                                                               &fp->status,
+                                                               ckpt,
+                                                               ckpt_args));
         }
     }
 

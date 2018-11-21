@@ -8,6 +8,7 @@
 #include <cmd/add.h>
 #include <cmd/session.h>
 #include <cmd/options.h>
+#include <cmd/checkpoint.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <string.h>
 #include <stdio.h>
@@ -64,14 +65,14 @@ int blackcat_cmd_add(void) {
                                                 add_nr += bcrepo_lock(&session->catalog, session->rootpath,
                                                                       session->rootpath_size,
                                                                       (add_param != NULL) ? add_param : "*",
-                                                                      (add_param != NULL) ? strlen(add_param) : 1);
+                                                                      (add_param != NULL) ? strlen(add_param) : 1,
+                                                                      blackcat_checkpoint, session);
                                               })
 
-                if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
-                                                     session->catalog, session->key[0], session->key_size[0])) {
+                if (add_nr > 0) {
                     fprintf(stdout, "%d file(s) encrypted.\n", add_nr);
                 } else {
-                    fprintf(stderr, "WARN: File(s) added but no encrypted. Try to execute a lock by yourself.\n");
+                    fprintf(stderr, "WARN: File(s) added but not encrypted. Try to execute a lock by yourself.\n");
                 }
             }
         } else {
