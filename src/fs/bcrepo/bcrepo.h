@@ -70,6 +70,8 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
 
 char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath);
 
+char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath);
+
 int bcrepo_bury(bfs_catalog_ctx **catalog,
                 const char *rootpath, const size_t rootpath_size,
                 const char *pattern, const size_t pattern_size);
@@ -77,5 +79,7 @@ int bcrepo_bury(bfs_catalog_ctx **catalog,
 int bcrepo_dig_up(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
                   const char *pattern, const size_t pattern_size);
+
+int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size);
 
 #endif

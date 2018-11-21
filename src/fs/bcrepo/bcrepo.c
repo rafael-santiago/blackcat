@@ -42,6 +42,8 @@
 #define BCREPO_HIDDEN_DIR_SIZE 7
 #define BCREPO_CATALOG_FILE "CATALOG"
 #define BCREPO_CATALOG_FILE_SIZE 7
+#define BCREPO_RESCUE_FILE "rescue"
+#define BCREPO_RESCUE_FILE_SIZE 6
 
 #define BCREPO_RECUR_LEVEL_LIMIT 1024
 
@@ -165,6 +167,10 @@ static int bstat(const char *pathname, struct stat *buf);
 static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
                            blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
                            const ssize_t size);
+
+static int create_rescue_file(const char *rootpath, const kryptos_u8_t *data, const size_t data_size);
+
+char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath);
 
 int bcrepo_bury(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,
@@ -512,6 +518,33 @@ bcrepo_unroll_ball_of_wool_epilogue:
     return no_error;
 }
 
+static int create_rescue_file(const char *rootpath, const kryptos_u8_t *data, const size_t data_size) {
+    char rescue_filepath[4096];
+    FILE *rp;
+    struct stat st;
+
+    bcrepo_rescue_file(rescue_filepath, sizeof(rescue_filepath), rootpath);
+
+    if (bstat(rescue_filepath, &st) == 0) {
+        fprintf(stderr, "ERROR: Error while creating a rescue file. You must remove the file '%s' manually.\n",
+                         rescue_filepath);
+        return 0;
+    }
+
+    if ((rp = fopen(rescue_filepath, "wb")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to create the rescue file.\n");
+        return 0;
+    }
+
+    fprintf(rp, "%s,%ld\n", data, data_size);
+    fwrite(data, 1, data_size, rp);
+
+    fclose(rp);
+
+    return 1;
+}
+
+
 static int bstat(const char *pathname, struct stat *buf) {
     int err = -1, fd;
 
@@ -634,6 +667,18 @@ char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath
         return buf;
     }
     sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    return buf;
+}
+
+char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath) {
+    if (rootpath == NULL || buf == NULL || buf_size == 0) {
+        return buf;
+    }
+    memset(buf, 0, buf_size);
+    if ((strlen(rootpath) + BCREPO_HIDDEN_DIR_SIZE + BCREPO_RESCUE_FILE_SIZE) >= buf_size - 1) {
+        return buf;
+    }
+    sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
     return buf;
 }
 
@@ -960,6 +1005,10 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
         goto unl_handle_meta_proc_epilogue;
     }
 
+    if ((no_error = create_rescue_file(rootpath, in, in_size)) == 0) {
+        goto unl_handle_meta_proc_epilogue;
+    }
+
     if (dproc == blackcat_encrypt_data) {
         // INFO(Rafael): Let's to apply some data wiping over the plain data laying on the current file system
         //               before encrypting it.
@@ -1121,6 +1170,10 @@ static int unl_handle_encrypt(const char *rootpath, const size_t rootpath_size,
         if (ckpt != NULL) {
             no_error = ckpt(ckpt_args);
         }
+
+        if (no_error) {
+            no_error = bcrepo_remove_rescue_file(rootpath, rootpath_size);
+        }
     }
 
     return no_error;
@@ -1140,7 +1193,12 @@ static int unl_handle_decrypt(const char *rootpath, const size_t rootpath_size,
         if (ckpt != NULL) {
             no_error = ckpt(ckpt_args);
         }
+
+        if (no_error) {
+            no_error = bcrepo_remove_rescue_file(rootpath, rootpath_size);
+        }
     }
+
 
     return no_error;
 }
@@ -1506,6 +1564,28 @@ bcrepo_validate_key_epilogue:
     kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
 
     return is_valid;
+}
+
+int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) {
+    char rescue_filepath[4096];
+    int no_error = 0;
+    FILE *fp;
+    size_t rescue_file_size;
+
+    // INFO(Rafael): Erasing the current rescue file.
+
+    bcrepo_rescue_file(rescue_filepath, sizeof(rescue_filepath), rootpath);
+
+    if ((fp = fopen(rescue_filepath, "rb")) != NULL) {
+        fseek(fp, 0L, SEEK_END);
+        rescue_file_size = ftell(fp);
+        fclose(fp);
+        bfs_data_wiping(rootpath, rootpath_size, BCREPO_RESCUE_FILE, BCREPO_RESCUE_FILE_SIZE, rescue_file_size);
+        rescue_file_size = 0;
+        no_error = (remove(rescue_filepath) == 0);
+    }
+
+    return no_error;
 }
 
 int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
