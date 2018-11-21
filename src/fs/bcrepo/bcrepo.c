@@ -168,7 +168,8 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
                            blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
                            const ssize_t size);
 
-static int create_rescue_file(const char *rootpath, const kryptos_u8_t *data, const size_t data_size);
+static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
+                              const kryptos_u8_t *data, const size_t data_size);
 
 char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath);
 
@@ -518,10 +519,16 @@ bcrepo_unroll_ball_of_wool_epilogue:
     return no_error;
 }
 
-static int create_rescue_file(const char *rootpath, const kryptos_u8_t *data, const size_t data_size) {
-    char rescue_filepath[4096];
+static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
+                              const kryptos_u8_t *data, const size_t data_size) {
+    char rescue_filepath[4096], fullpath[4096];
     FILE *rp;
     struct stat st;
+
+    if (bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size) == 0) {
+        fprintf(stderr, "ERROR: The rescue file path is too long.\n");
+        return 0;
+    }
 
     bcrepo_rescue_file(rescue_filepath, sizeof(rescue_filepath), rootpath);
 
@@ -536,9 +543,8 @@ static int create_rescue_file(const char *rootpath, const kryptos_u8_t *data, co
         return 0;
     }
 
-    fprintf(rp, "%s,%ld\n", data, data_size);
+    fprintf(rp, "%s,%ld\n", fullpath, data_size);
     fwrite(data, 1, data_size, rp);
-
     fclose(rp);
 
     return 1;
@@ -1005,7 +1011,7 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
         goto unl_handle_meta_proc_epilogue;
     }
 
-    if ((no_error = create_rescue_file(rootpath, in, in_size)) == 0) {
+    if ((no_error = create_rescue_file(rootpath, rootpath_size, path, path_size, in, in_size)) == 0) {
         goto unl_handle_meta_proc_epilogue;
     }
 
@@ -1570,7 +1576,8 @@ int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) 
     char rescue_filepath[4096];
     int no_error = 0;
     FILE *fp;
-    size_t rescue_file_size;
+    size_t rescue_file_size, temp_size;
+    char temp[4096];
 
     // INFO(Rafael): Erasing the current rescue file.
 
@@ -1580,7 +1587,9 @@ int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) 
         fseek(fp, 0L, SEEK_END);
         rescue_file_size = ftell(fp);
         fclose(fp);
-        bfs_data_wiping(rootpath, rootpath_size, BCREPO_RESCUE_FILE, BCREPO_RESCUE_FILE_SIZE, rescue_file_size);
+        sprintf(temp, "%s/%s", rootpath, BCREPO_HIDDEN_DIR);
+        temp_size = strlen(temp);
+        bfs_data_wiping(temp, temp_size, BCREPO_RESCUE_FILE, BCREPO_RESCUE_FILE_SIZE, rescue_file_size);
         rescue_file_size = 0;
         no_error = (remove(rescue_filepath) == 0);
     }

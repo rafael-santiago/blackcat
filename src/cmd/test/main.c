@@ -560,6 +560,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
 
     CUTE_ASSERT(blackcat("deinit", "GiveTheMuleWhatHeWants", NULL) == 0);
+
     remove("etc/s2.txt");
     remove("s1.txt");
     remove("p.txt");
@@ -569,6 +570,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("unpack-test/bpack");
     rmdir("unpack-test");
     remove("test.bpack");
+    remove("s3.txt");
 
     // INFO(Rafael): Setkey stuff.
 
