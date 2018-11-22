@@ -171,7 +171,113 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size);
 
-char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath);
+int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size) {
+    FILE *fp = NULL;
+    int no_error = 0;
+    char rescue_file_hdr[8192], rescue_filepath[4096];
+    char filepath[4096], *rp, *rp_end;
+    bfs_catalog_relpath_ctx *file;
+    size_t data_size, filepath_size;
+    kryptos_u8_t *data = NULL;
+
+    bcrepo_rescue_file(rescue_filepath, sizeof(rescue_filepath), rootpath);
+
+    if ((fp = fopen(rescue_filepath, "rb")) == NULL) {
+        fprintf(stderr, "ERROR: The repo seems clean, there is nothing to restore here.\n", rescue_filepath);
+        goto bcrepo_restore_epilogue;
+    }
+
+    memset(rescue_file_hdr, 0, sizeof(rescue_file_hdr));
+    fgets(rescue_file_hdr, sizeof(rescue_file_hdr) - 1, fp);
+
+    rp = &rescue_file_hdr[0];
+    rp_end = rp + strlen(rescue_file_hdr);
+    rp_end -= 1;
+    *rp_end = 0;
+
+    while (rp != rp_end && *rp != ',') {
+        rp++;
+    }
+
+    if (*rp != ',') {
+        fprintf(stderr, "ERROR: The rescue file seems corrupted.\n");
+        goto bcrepo_restore_epilogue;
+    }
+
+    filepath_size = (rp - &rescue_file_hdr[0]);
+
+    if (filepath_size > sizeof(filepath)) {
+        fprintf(stderr, "ERROR: The file path is too long to be restored.\n");
+        goto bcrepo_restore_epilogue;
+    }
+
+    memset(filepath, 0, sizeof(filepath));
+    memcpy(filepath, rescue_file_hdr, filepath_size);
+
+    data_size = strtoul(rp + 1, NULL, 10);
+
+    rp = &filepath[0] + rootpath_size;
+
+    if ((file = get_entry_from_relpath_ctx(catalog->files, rp)) == NULL) {
+        fprintf(stderr, "ERROR: There is nothing to restore.\n");
+        bcrepo_remove_rescue_file(rootpath, rootpath_size); // INFO(Rafael): MUaAhauahuahauhauah!
+        goto bcrepo_restore_epilogue;
+    }
+
+    if ((data = (kryptos_u8_t *) kryptos_newseg(data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to perform a restore.\n");
+        goto bcrepo_restore_epilogue;
+    }
+
+    if (fread(data, 1, data_size, fp) != data_size) {
+        fprintf(stderr, "ERROR: Unable to get the exact previous amount of bytes to restore.\n"
+                        "TIP: If the rescue file was edited, give up and remove it on your own otherwise "
+                        "your repo will remain locked.\n");
+        goto bcrepo_restore_epilogue;
+    }
+
+    fclose(fp);
+
+    if ((fp = fopen(filepath, "wb")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to re-create the file '%s'.\n", filepath);
+        goto bcrepo_restore_epilogue;
+    }
+
+    if ((fwrite(data, 1, data_size, fp)) != data_size) {
+        fprintf(stderr, "ERROR: Unable to write the exact previous amount of bytes to conclude the restore process.\n"
+                        "TIP: If the file is really important restore it by hand, otherwise give up and remove the rescue "
+                        "file because your repo will remain locked.\n");
+        goto bcrepo_restore_epilogue;
+    }
+
+    fclose(fp);
+
+    fp = NULL;
+
+    no_error = 1;
+
+bcrepo_restore_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (data != NULL) {
+        kryptos_freeseg(data, data_size);
+        data_size = 0;
+        data = NULL;
+    }
+
+    if (no_error) {
+        no_error = bcrepo_remove_rescue_file(rootpath, rootpath_size);
+        if (no_error == 0) {
+            fprintf(stderr, "WARN: Remove the rescue file on your own. Btw, if it is plain, you should apply some data wiping,"
+                            " just saying.\n");
+        }
+    }
+
+    return no_error;
+}
 
 int bcrepo_bury(bfs_catalog_ctx **catalog,
                   const char *rootpath, const size_t rootpath_size,

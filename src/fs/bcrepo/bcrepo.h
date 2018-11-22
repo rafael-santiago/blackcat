@@ -82,4 +82,6 @@ int bcrepo_dig_up(bfs_catalog_ctx **catalog,
 
 int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size);
 
+int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size);
+
 #endif
