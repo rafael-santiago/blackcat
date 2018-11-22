@@ -192,6 +192,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     unsigned char *data;
     size_t data_size;
     unsigned char *k1, *k2;
+    FILE *fp;
+    char cwd[4096];
 
 
     // INFO(Rafael): Just housekeeping.
@@ -231,9 +233,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help paranoid", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help setkey", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help undo", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo", "", NULL) == 0);
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -1565,6 +1569,49 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("lock", "Gardenia", "Kylie") == 0);
 
     CUTE_ASSERT(blackcat("deinit", "Gardenia", NULL) == 0);
+
+    remove("etc/s2.txt");
+    rmdir("etc");
+    remove("s1.txt");
+    remove("p.txt");
+
+    // INFO(Rafael): undo test.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "Talking head\nTalking head", "Who knows\nWho knows") == 0);
+
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "Talking head", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "Talking head", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "Talking head", "Who knows") == 0);
+    CUTE_ASSERT(blackcat("status", "Talking head", NULL) == 0);
+
+    fp = fopen(".bcrepo/rescue", "wb");
+    CUTE_ASSERT(fp != NULL);
+
+    CUTE_ASSERT(getcwd(cwd, sizeof(cwd) - 1) != NULL);
+    fprintf(fp, "%s/etc/s2.txt,53\nthe quick lazy fox is fed up with this stupid phrase.", cwd);
+    fclose(fp);
+
+    CUTE_ASSERT(blackcat("undo", "Talking mad", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("undo", "Talking head", NULL) == 0);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 53);
+    CUTE_ASSERT(memcmp(data, "the quick lazy fox is fed up with this stupid phrase.", 53) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit", "Talking head", NULL) == 0);
 
     remove("etc/s2.txt");
     rmdir("etc");
