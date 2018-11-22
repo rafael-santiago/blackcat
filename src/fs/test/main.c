@@ -228,6 +228,15 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
 
     fp = fopen(".bcrepo/rescue", "wb");
     CUTE_ASSERT(fp != NULL);
+    fprintf(fp, "%s/malicious-alien-101.txt,3\nboo", rootpath);
+    fclose(fp);
+
+    CUTE_ASSERT(bcrepo_restore(catalog, rootpath, rootpath_size) == 0);
+    fp = fopen(".bcrepo/rescue", "rb");
+    CUTE_ASSERT(fp == NULL);
+
+    fp = fopen(".bcrepo/rescue", "wb");
+    CUTE_ASSERT(fp != NULL);
     fprintf(fp, "%s/sensitive.txt,3\nboo", rootpath);
     fclose(fp);
 
@@ -239,6 +248,9 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     CUTE_ASSERT(data_size != strlen(sensitive) && data_size == 3);
     CUTE_ASSERT(memcmp(data, sensitive, data_size) != 0 && memcmp(data, "boo", 3) == 0);
     kryptos_freeseg(data, data_size);
+
+    fp = fopen(".bcrepo/rescue", "rb");
+    CUTE_ASSERT(fp == NULL);
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 

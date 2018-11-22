@@ -6,3 +6,4 @@
 *.mod.c
 *.kmod
 *.ko
+*.so
