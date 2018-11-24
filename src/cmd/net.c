@@ -64,7 +64,6 @@ int blackcat_cmd_net_help(void) {
 
 static int drop_rule(void) {
     char *rule_id, *db_path;
-    char error[1024];
     int err = EINVAL;
     kryptos_u8_t *ndb_key = NULL;
     size_t ndb_key_size;
