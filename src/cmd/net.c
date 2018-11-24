@@ -9,6 +9,8 @@
 #include <cmd/defs.h>
 #include <cmd/options.h>
 #include <net/db/db.h>
+#include <kbd/kbd.h>
+#include <accacia.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -21,9 +23,12 @@ static int add_rule(void);
 
 static int run(void);
 
+static int drop_rule(void);
+
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
-    { "--add-rule", add_rule },
-    { "--run",      run      }
+    { "--add-rule",  add_rule  },
+    { "--run",       run       },
+    { "--drop-rule", drop_rule }
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_net_commands)
@@ -55,6 +60,50 @@ int blackcat_cmd_net(void) {
 int blackcat_cmd_net_help(void) {
     fprintf(stdout, "use: blackcat net [--add-rule | --run]\n");
     return 0;
+}
+
+static int drop_rule(void) {
+    char *rule_id, *db_path;
+    char error[1024];
+    int err = EINVAL;
+    kryptos_u8_t *ndb_key = NULL;
+    size_t ndb_key_size;
+
+    BLACKCAT_GET_OPTION_OR_DIE(rule_id, "rule", drop_rule_epilogue);
+
+    if ((db_path = blackcat_get_option("db-path", getenv(BLACKCAT_NET_DB_HOME))) == NULL) {
+        fprintf(stderr, "ERROR: NULL net database path.\n");
+        goto drop_rule_epilogue;
+    }
+
+    accacia_savecursorposition();
+
+    fprintf(stdout, "Netdb key: ");
+    if ((ndb_key = blackcat_getuserkey(&ndb_key_size)) == NULL) {
+        fprintf(stderr, "ERROR: NULL Netdb key.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto drop_rule_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    if ((err = blackcat_netdb_load(db_path, 1)) == 0) {
+        err = blackcat_netdb_drop(rule_id, ndb_key, ndb_key_size);
+        blackcat_netdb_unload();
+    }
+
+drop_rule_epilogue:
+
+    if (ndb_key != NULL) {
+        kryptos_freeseg(ndb_key, ndb_key_size);
+        ndb_key = NULL;
+        ndb_key_size = 0;
+    }
+
+    return err;
 }
 
 static int add_rule(void) {
