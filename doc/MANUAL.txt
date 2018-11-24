@@ -534,6 +534,22 @@ Supposing you want to restore a repo from a previous packed data:
 So during the 'unpack' command you need to specify the packed file and the directory path were the
 repository will be re-created.
 
+Undo
+====
+
+No program is perfect. In cases of abnormal termination, it is possible to recover the file that was
+being processed at the moment blackcat has aborted. The command is pretty simple:
+
+    root@RedBarn:~/sphinx# blackcat undo
+    root@RedBarn:~/sphinx# _
+
+Blackcat generates a checkpoint at every file processing (encrypting and decrypting).
+
+In cases when blackcat does not exit normally you should immediately execute an 'undo'.
+
+When there is some file to be recovered you will not be able to process any other file before
+executing an 'undo' command.
+
 Cool off
 ========
 
