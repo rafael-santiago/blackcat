@@ -52,11 +52,6 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
                                                   0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
-    if (g_bcsck_handle.rule == NULL) {\
-        if (bcsck_read_rule() != 0) {\
-            return_stmt;\
-        }\
-    }\
     if (!g_bcsck_handle.libc_loaded) {\
         g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
         g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
@@ -88,6 +83,11 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
     if (!g_bcsck_handle.libc_loaded) {\
         return_stmt;\
+    }\
+    if (g_bcsck_handle.rule == NULL) {\
+        if (bcsck_read_rule() != 0) {\
+            return_stmt;\
+        }\
     }\
 }
 
@@ -126,11 +126,6 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
-    if (g_bcsck_handle.rule == NULL) {\
-        if (bcsck_read_rule() != 0) {\
-            return_stmt;\
-        }\
-    }\
     if (!g_bcsck_handle.libc_loaded) {\
         g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
         g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
@@ -153,6 +148,11 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
     if (!g_bcsck_handle.libc_loaded) {\
         return_stmt;\
+    }\
+    if (g_bcsck_handle.rule == NULL) {\
+        if (bcsck_read_rule() != 0) {\
+            return_stmt;\
+        }\
     }\
 }
 
@@ -638,7 +638,10 @@ __bcsck_leave(write)
 }
 
 static void bcsck_init(void) {
-__bcsck_prologue(return)
+__bcsck_prologue({
+                    exit(1);
+                    printf("ERROR: during libbcsck.so initializing. Aborted.\n");
+                 })
 }
 
 static void bcsck_deinit(void) {
@@ -711,7 +714,7 @@ static int bcsck_read_rule(void) {
     accacia_delline();
     fflush(stdout);
 
-    if (temp_size != session_key_size && memcmp(session_key, temp, session_key_size) != 0) {
+    if (temp_size != session_key_size || memcmp(session_key, temp, session_key_size) != 0) {
         fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
         fflush(stderr);
         err = EFAULT;
