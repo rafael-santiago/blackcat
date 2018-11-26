@@ -639,8 +639,8 @@ __bcsck_leave(write)
 
 static void bcsck_init(void) {
 __bcsck_prologue({
-                    exit(1);
                     printf("ERROR: during libbcsck.so initializing. Aborted.\n");
+                    exit(1);
                  })
 }
 
