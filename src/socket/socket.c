@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #if defined(BCSCK_THREAD_SAFE)
 # include <pthread.h>
 #endif
@@ -406,10 +409,12 @@ ssize_t read(int fd, void *buf, size_t count) {
     ssize_t bytes_nr;
     struct sockaddr addr;
     socklen_t addrl;
+    struct stat st;
+    int is_sock = 0;
 
-__bcsck_enter(read)
-
-    if (getsockname(fd, &addr, &addrl) == 0) {
+    if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
+        // WARN(Rafael): Otherwise you will get a deadlock.
+        __bcsck_enter(read)
         if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
             errno = ENOMEM;
             bytes_nr = -1;
@@ -448,7 +453,9 @@ read_epilogue:
         obuf_size = 0;
     }
 
-__bcsck_leave(read)
+    if (is_sock) {
+        __bcsck_leave(read)
+    }
 
     return bytes_nr;
 }
@@ -610,10 +617,12 @@ ssize_t write(int fd, const void *buf, size_t count) {
     ssize_t bytes_nr;
     struct sockaddr addr;
     socklen_t addrl;
+    struct stat st;
+    int is_sock = 0;
 
-__bcsck_enter(write)
-
-    if (getsockname(fd, &addr, &addrl) == 0) {
+    if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
+        // WARN(Rafael): Otherwise you will get a deadlock.
+        __bcsck_enter(write)
         bcsck_encrypt(buf, count, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
     } else {
         obuf = (kryptos_u8_t *)buf;
@@ -632,7 +641,9 @@ write_epilogue:
         obuf_size = 0;
     }
 
-__bcsck_leave(write)
+    if (is_sock) {
+        __bcsck_leave(write)
+    }
 
     return bytes_nr;
 }
