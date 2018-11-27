@@ -1,0 +1,63 @@
+#
+#                          Copyright (C) 2018 by Rafael Santiago
+#
+# Use of this source code is governed by GPL-v2 license that can
+# be found in the COPYING file.
+#
+#
+
+include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
+include ../../../forgeutils/toolsets.hsl
+
+local var curr_toolset type string;
+
+local var src type list;
+local var includes type list;
+local var cflags type list;
+local var libraries type list;
+local var ldflags type list;
+
+local var appname type string;
+
+project ntool : toolset $curr_toolset : $src, $includes, $cflags, $libraries, $ldflags, $appname;
+
+ntool.preloading() {
+    $curr_toolset = get_app_toolset();
+}
+
+ntool.prologue() {
+    var option type list;
+
+    $option = hefesto.sys.get_option("build-skip");
+
+    if ($option.index_of("ntool") > -1) {
+        hefesto.sys.echo("BUILD INFO: ntool build was skipped.\n");
+        hefesto.project.abort(0);
+    }
+    $src.ls(".*\\.c$");
+
+    $includes = hefesto.sys.get_option("includes");
+    $cflags = hefesto.sys.get_option("cflags");
+    $libraries = hefesto.sys.get_option("libraries");
+    $ldflags = hefesto.sys.get_option("ldflags");
+
+    if (hefesto.sys.os_name() == "linux") {
+        $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "freebsd") {
+        $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "netbsd") {
+        $ldflags.add_item("-lpthread");
+    }
+
+    if (hefesto.sys.os_name() != "windows") {
+        if (isdir("/usr/local/include")) {
+            $includes.add_item("/usr/local/include");
+        }
+
+        if (isdir("/usr/local/lib")) {
+            $includes.add_item("/usr/local/lib");
+        }
+    }
+
+    $appname = "ntool";
+}
