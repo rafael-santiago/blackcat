@@ -34,4 +34,27 @@ typedef struct bnt_channel_rule {
     struct bnt_channel_rule *next, *last;
 }bnt_channel_rule_ctx;
 
+typedef struct bnt_keychunk {
+    kryptos_u8_t *data;
+    size_t data_size;
+    struct bnt_keychunk *next, *tail;
+}bnt_keychunk_ctx;
+
+typedef struct bnt_keychain {
+    struct bnt_keychain *tail;
+    kryptos_u64_t seqno;
+    bnt_keychunk_ctx *key;
+    struct bnt_keychain *last, *next;
+}bnt_keychain_ctx;
+
+typedef struct bnt_keyset {
+    kryptos_u64_t seqno;
+    kryptos_u64_t max_seqno_delta;
+    bnt_keychain_ctx *send_chain, *recv_chain;
+    kryptos_hash_func h;
+    kryptos_hash_size_func h_input_size;
+    kryptos_hash_size_func h_size;
+    kryptos_mp_value_t *xchgd_key;
+}bnt_keyset_ctx;
+
 #endif

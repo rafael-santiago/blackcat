@@ -26,4 +26,27 @@ bnt_channel_rule_ctx *get_bnt_channel_rule(const char *ruleid, bnt_channel_rule_
 
 void del_bnt_channel_rule_ctx(bnt_channel_rule_ctx *rules);
 
+bnt_keychunk_ctx *add_bnt_keychunk(bnt_keychunk_ctx *kchunk, const kryptos_u8_t *data, const size_t data_size);
+
+bnt_keychain_ctx *add_bnt_keychain(bnt_keychain_ctx *kchain, const kryptos_u64_t seqno);
+
+bnt_keychain_ctx *del_bnt_keychain_seqno(bnt_keychain_ctx *kchain, const kryptos_u64_t seqno);
+
+void del_bnt_keychunk(bnt_keychunk_ctx *keychunk);
+
+void del_bnt_keychain(bnt_keychain_ctx *keychain);
+
+bnt_keychain_ctx *get_bnt_keychain(const kryptos_u64_t seqno, bnt_keychain_ctx *kchain);
+
+int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx *pchain,
+                    const kryptos_u64_t max_seqno_delta, kryptos_hash_func h, kryptos_hash_size_func h_input_size,
+                    kryptos_hash_size_func h_size, kryptos_mp_value_t *xchgd_key);
+
+void deinit_bnt_keyset(bnt_keyset_ctx *keyset);
+
+int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno);
+
+int set_protlayer_key_by_keychain_seqno(const kryptos_u64_t seqno,
+                                       blackcat_protlayer_chain_ctx *pchain, bnt_keychain_ctx **keychain);
+
 #endif
