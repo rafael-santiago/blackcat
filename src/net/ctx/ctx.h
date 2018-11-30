@@ -40,7 +40,9 @@ bnt_keychain_ctx *get_bnt_keychain(const kryptos_u64_t seqno, bnt_keychain_ctx *
 
 int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx *pchain,
                     const kryptos_u64_t max_seqno_delta, kryptos_hash_func h, kryptos_hash_size_func h_input_size,
-                    kryptos_hash_size_func h_size, kryptos_mp_value_t *xchgd_key);
+                    kryptos_hash_size_func h_size, kryptos_mp_value_t *xchgd_key,
+                    const kryptos_u8_t *send_seed, const size_t send_seed_size,
+                    const kryptos_u8_t *recv_seed, const size_t recv_seed_size);
 
 void deinit_bnt_keyset(bnt_keyset_ctx *keyset);
 

@@ -161,6 +161,11 @@ bnt_keychunk_ctx *add_bnt_keychunk(bnt_keychunk_ctx *kchunk, const kryptos_u8_t 
 }
 
 bnt_keychain_ctx *add_bnt_keychain(bnt_keychain_ctx *kchain, const kryptos_u64_t seqno) {
+
+    if (get_bnt_keychain(seqno, kchain) != NULL) {
+        return kchain;
+    }
+
     if (kchain == NULL) {
         new_bnt_keychain_ctx(kchain);
         kchain->seqno = seqno;
@@ -179,10 +184,16 @@ bnt_keychain_ctx *del_bnt_keychain_seqno(bnt_keychain_ctx *kchain, const kryptos
 
     if ((t = get_bnt_keychain(seqno, kchain)) != NULL) {
         if (t == kchain) {
-            kchain->next->tail = kchain->tail;
+            if (kchain->next != NULL) {
+                kchain->next->tail = kchain->tail;
+            }
+            kchain = kchain->next;
         } else if (t == kchain->tail) {
             kchain->tail = t->last;
             t->last->next = t->next;
+        } else {
+            t->last->next = t->next;
+            t->next->last = t->last;
         }
 
         t->next = NULL;
@@ -195,9 +206,11 @@ bnt_keychain_ctx *del_bnt_keychain_seqno(bnt_keychain_ctx *kchain, const kryptos
 
 void del_bnt_keychunk(bnt_keychunk_ctx *keychunk) {
     bnt_keychunk_ctx *t, *p;
-    for (t = p; t != NULL; p = t) {
+    for (t = p = keychunk; t != NULL; p = t) {
         t = p->next;
-        kryptos_freeseg(p->data, p->data_size);
+        if (p->data != NULL) {
+            kryptos_freeseg(p->data, p->data_size);
+        }
         free(p);
     }
 }
@@ -206,7 +219,9 @@ void del_bnt_keychain(bnt_keychain_ctx *keychain) {
     bnt_keychain_ctx *t, *p;
     for (t = p = keychain; t != NULL; p = t) {
         t = p->next;
-        del_bnt_keychunk(p->key);
+        if (p->key != NULL) {
+            del_bnt_keychunk(p->key);
+        }
         free(p);
     }
 }
@@ -229,9 +244,13 @@ bnt_keychain_ctx *get_bnt_keychain(const kryptos_u64_t seqno, bnt_keychain_ctx *
 
 int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx *pchain,
                     const kryptos_u64_t max_seqno_delta, kryptos_hash_func h, kryptos_hash_size_func h_input_size,
-                    kryptos_hash_size_func h_size, kryptos_mp_value_t *xchgd_key) {
+                    kryptos_hash_size_func h_size, kryptos_mp_value_t *xchgd_key,
+                    const kryptos_u8_t *send_seed, const size_t send_seed_size,
+                    const kryptos_u8_t *recv_seed, const size_t recv_seed_size) {
     bnt_keyset_ctx *ksp;
     const blackcat_protlayer_chain_ctx *p;
+    const kryptos_u8_t *sp, *sp_end;
+    kryptos_u8_t *kp, *kp_end;
 
     if (keyset == NULL || *keyset == NULL) {
         return 0;
@@ -245,19 +264,94 @@ int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx 
     ksp->h_input_size = h_input_size;
     ksp->h_size = h_size;
     ksp->xchgd_key = xchgd_key;
+    ksp->send_seed = ksp->recv_seed = NULL;
+    ksp->send_seed_size = ksp->recv_seed_size = 0;
+    ksp->send_chain = ksp->recv_chain = NULL;
+
+    ksp->send_seed = (kryptos_u8_t *) kryptos_newseg(send_seed_size);
+
+    if (ksp->send_seed == NULL) {
+        deinit_bnt_keyset(ksp);
+        return 0;
+    }
+
+    ksp->send_seed_size = send_seed_size;
+    memcpy(ksp->send_seed, send_seed, send_seed_size);
+
+    ksp->recv_seed = (kryptos_u8_t *) kryptos_newseg(recv_seed_size);
+
+    if (ksp->recv_seed == NULL) {
+        deinit_bnt_keyset(ksp);
+        return 0;
+    }
+
+    ksp->recv_seed_size = recv_seed_size;
+    memcpy(ksp->recv_seed, recv_seed, recv_seed_size);
 
     // TODO(Rafael): Encontrar melhor forma de dissociar as duas chains. Talvez um send e um recv nonce.
 
     ksp->send_chain = add_bnt_keychain(ksp->send_chain, 0);
+    sp_end = ksp->send_seed + ksp->send_seed_size;
 
     for (p = pchain; p != NULL; p = p->next) {
+        kp = p->key;
+        kp_end = kp + p->key_size;
+        sp = ksp->send_seed;
+
+        while (kp != kp_end) {
+            *kp = *kp ^ *sp;
+            kp++;
+            sp++;
+            if (sp == sp_end) {
+                sp = ksp->send_seed;
+            }
+        }
+
         ksp->send_chain->key = add_bnt_keychunk(ksp->send_chain->key, p->key, p->key_size);
+
+        kp = p->key;
+        sp = ksp->send_seed;
+
+        while (kp != kp_end) {
+            *kp = *kp ^ *sp;
+            kp++;
+            sp++;
+            if (sp == sp_end) {
+                sp = ksp->send_seed;
+            }
+        }
     }
 
     ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, 0);
+    sp_end = ksp->recv_seed + ksp->recv_seed_size;
 
     for (p = pchain; p != NULL; p = p->next) {
+        kp = p->key;
+        kp_end = kp + p->key_size;
+        sp = ksp->recv_seed;
+
+        while (kp != kp_end) {
+            *kp = *kp ^ *sp;
+            kp++;
+            sp++;
+            if (sp == sp_end) {
+                sp = ksp->recv_seed;
+            }
+        }
+
         ksp->recv_chain->key = add_bnt_keychunk(ksp->recv_chain->key, p->key, p->key_size);
+
+        kp = p->key;
+        sp = ksp->recv_seed;
+
+        while (kp != kp_end) {
+            *kp = *kp ^ *sp;
+            kp++;
+            sp++;
+            if (sp == sp_end) {
+                sp = ksp->recv_seed;
+            }
+        }
     }
 
     return 1;
@@ -268,11 +362,28 @@ void deinit_bnt_keyset(bnt_keyset_ctx *keyset) {
         return;
     }
 
-    del_bnt_keychain(keyset->send_chain);
-    del_bnt_keychain(keyset->recv_chain);
+    if (keyset->send_chain != NULL) {
+        del_bnt_keychain(keyset->send_chain);
+    }
+
+    if (keyset->send_chain != NULL) {
+        del_bnt_keychain(keyset->recv_chain);
+    }
 
     if (keyset->xchgd_key != NULL) {
         kryptos_del_mp_value(keyset->xchgd_key);
+    }
+
+    if (keyset->send_seed != NULL) {
+        kryptos_freeseg(keyset->send_seed, keyset->send_seed_size);
+        keyset->send_seed = NULL;
+        keyset->send_seed_size = 0;
+    }
+
+    if (keyset->recv_seed != NULL) {
+        kryptos_freeseg(keyset->recv_seed, keyset->recv_seed_size);
+        keyset->recv_seed = NULL;
+        keyset->recv_seed_size = 0;
     }
 }
 

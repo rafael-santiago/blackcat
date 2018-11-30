@@ -94,6 +94,23 @@ blackcat_hash_size_func get_hash_size(const char *name) {
     return NULL;
 }
 
+blackcat_hash_size_func get_hash_input_size(const char *name) {
+    size_t h;
+
+    if (name == NULL) {
+        return NULL;
+    }
+
+    for (h = 0; h < g_blackcat_hashing_algos_nr; h++) {
+        if (strcmp(g_blackcat_hashing_algos[h].name, name) == 0) {
+            return g_blackcat_hashing_algos[h].input_size;
+        }
+    }
+
+    return NULL;
+}
+
+
 int is_hmac_processor(blackcat_cipher_processor processor) {
     return is_hmac(processor, aes128)         ||
            is_hmac(processor, aes192)         ||

@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define HANDLE_NR 4
+#define HOOK_NR 4
 
 typedef ssize_t (*send_func)(int fd, const char *buf, const size_t buf_size);
 
@@ -52,8 +52,8 @@ struct ntool_task_ctx {
     pthread_t thread;
 };
 
-// INFO(Rafael): Para nao chamar de 'caiau', 'caiazao' ou ainda 'caiauzaço'.
-static struct ntool_task_ctx g_trinket[HANDLE_NR << 1] = {
+// INFO(Rafael): Para nao chamar de 'caiau', 'caiauzao' ou ainda 'caiauzaço'.
+static struct ntool_task_ctx g_trinket[HOOK_NR << 1] = {
     { 1234, "read/write server\n",      18, write_sending,   read_receiving,     server, 0 },
     { 1235, "send/recv server\n",       17, send_sending,    recv_receiving,     server, 0 },
     { 1236, "sendto/recvfrom server\n", 23, sendto_sending,  recvfrom_receiving, server, 0 },
@@ -64,7 +64,7 @@ static struct ntool_task_ctx g_trinket[HANDLE_NR << 1] = {
     { 1237, "sendmsg/recvmsg client\n", 23, sendmsg_sending, recvmsg_receiving,  client, 0 }
 };
 
-static size_t g_trinket_size = HANDLE_NR << 1;
+static size_t g_trinket_size = HOOK_NR << 1;
 
 static void *client(void *args) {
     struct ntool_task_ctx *ntc = (struct ntool_task_ctx *) args;

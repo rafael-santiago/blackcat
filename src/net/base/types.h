@@ -55,6 +55,10 @@ typedef struct bnt_keyset {
     kryptos_hash_size_func h_input_size;
     kryptos_hash_size_func h_size;
     kryptos_mp_value_t *xchgd_key;
+    kryptos_u8_t *send_seed;
+    size_t send_seed_size;
+    kryptos_u8_t *recv_seed;
+    size_t recv_seed_size;
 }bnt_keyset_ctx;
 
 #endif

@@ -6,6 +6,7 @@
  *
  */
 #include <cutest.h>
+#include <ctx/ctx.h>
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
 #include <keychain/ciphering_schemes.h>
@@ -188,6 +189,11 @@ CUTE_TEST_CASE(ctx_tests)
     struct bnt_channel_rule_assertion assertion;
     kryptos_u8_t *key;
     size_t key_size;
+    bnt_keychunk_ctx *kchunk = NULL;
+    bnt_keychain_ctx *kchain = NULL, *kcp, *kcp_l;
+    kryptos_u64_t seqno;
+    bnt_keyset_ctx ks, *keyset = &ks;
+    blackcat_protlayer_chain_ctx *pchain = NULL;
 
     key = (kryptos_u8_t *) kryptos_newseg(8);
     memset(key, 'Z', 8);
@@ -264,4 +270,92 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(rules == NULL);
 
     del_bnt_channel_rule_ctx(rules);
+
+    kchunk = add_bnt_keychunk(kchunk, "abc", 3);
+    CUTE_ASSERT(kchunk != NULL);
+    CUTE_ASSERT(kchunk->tail == kchunk);
+    CUTE_ASSERT(kchunk->next == NULL);
+    CUTE_ASSERT(kchunk->data_size == 3);
+    CUTE_ASSERT(kchunk->data != NULL);
+    CUTE_ASSERT(memcmp(kchunk->data, "abc", 3) == 0);
+    kchunk = add_bnt_keychunk(kchunk, "d", 1);
+    CUTE_ASSERT(kchunk != NULL);
+    CUTE_ASSERT(kchunk->next != NULL);
+    CUTE_ASSERT(kchunk->tail == kchunk->next);
+    CUTE_ASSERT(kchunk->next->data_size == 1);
+    CUTE_ASSERT(kchunk->next->data != NULL);
+    CUTE_ASSERT(memcmp(kchunk->next->data, "d", 1) == 0);
+    kchunk = add_bnt_keychunk(kchunk, "efghijklmnopq", 13);
+    CUTE_ASSERT(kchunk != NULL);
+    CUTE_ASSERT(kchunk->next->next != NULL);
+    CUTE_ASSERT(kchunk->tail == kchunk->next->next);
+    CUTE_ASSERT(kchunk->next->next->data_size == 13);
+    CUTE_ASSERT(kchunk->next->next->data != NULL);
+    CUTE_ASSERT(memcmp(kchunk->next->next->data, "efghijklmnopq", 13) == 0);
+    del_bnt_keychunk(kchunk);
+
+    for (seqno = 0; seqno < 11; seqno++) {
+        kchain = add_bnt_keychain(kchain, seqno);
+        kchain = add_bnt_keychain(kchain, seqno);
+        CUTE_ASSERT(kchain != NULL);
+        CUTE_ASSERT(kchain->tail != NULL);
+    }
+
+    seqno = 0;
+    kcp_l = NULL;
+
+    for (kcp = kchain; kcp != NULL; kcp_l = kcp, kcp = kcp->next) {
+        CUTE_ASSERT(kcp->seqno == seqno++);
+        CUTE_ASSERT(kcp_l == kcp->last);
+    }
+
+    for (seqno = 0; seqno < 11; seqno++) {
+        kcp = get_bnt_keychain(seqno, kchain);
+        CUTE_ASSERT(kcp != NULL);
+        CUTE_ASSERT(kcp->seqno == seqno);
+    }
+
+    CUTE_ASSERT(get_bnt_keychain(seqno, kchain) == NULL);
+
+    kchain = del_bnt_keychain_seqno(kchain, 3);
+    kchain = del_bnt_keychain_seqno(kchain, 9);
+    kchain = del_bnt_keychain_seqno(kchain, 8);
+    kchain = del_bnt_keychain_seqno(kchain, 1);
+    kchain = del_bnt_keychain_seqno(kchain, 0);
+    kchain = del_bnt_keychain_seqno(kchain, 10);
+
+    CUTE_ASSERT(get_bnt_keychain(0, kchain) == NULL);
+    CUTE_ASSERT(get_bnt_keychain(1, kchain) == NULL);
+    CUTE_ASSERT(get_bnt_keychain(2, kchain) != NULL);
+    CUTE_ASSERT(get_bnt_keychain(3, kchain) == NULL);
+    CUTE_ASSERT(get_bnt_keychain(4, kchain) != NULL);
+    CUTE_ASSERT(get_bnt_keychain(5, kchain) != NULL);
+    CUTE_ASSERT(get_bnt_keychain(6, kchain) != NULL);
+    CUTE_ASSERT(get_bnt_keychain(7, kchain) != NULL);
+    CUTE_ASSERT(get_bnt_keychain(8, kchain) == NULL);
+    CUTE_ASSERT(get_bnt_keychain(9, kchain) == NULL);
+    CUTE_ASSERT(get_bnt_keychain(10, kchain) == NULL);
+
+    kchain = del_bnt_keychain_seqno(kchain, 2);
+    kchain = del_bnt_keychain_seqno(kchain, 4);
+    kchain = del_bnt_keychain_seqno(kchain, 5);
+    kchain = del_bnt_keychain_seqno(kchain, 6);
+    kchain = del_bnt_keychain_seqno(kchain, 7);
+
+    CUTE_ASSERT(kchain == NULL);
+
+    key = (kryptos_u8_t *) kryptos_newseg(9);
+    CUTE_ASSERT(key != NULL);
+    key_size = 9;
+
+    pchain = add_composite_protlayer_to_chain(pchain,
+                                              "aes-128-cbc,des-cbc,aes-256-cbc,hmac-sha-224-shacal1-ctr", &key, &key_size,
+                                              get_hash_processor("whirlpool"), NULL);
+
+    CUTE_ASSERT(init_bnt_keyset(&keyset, pchain, 50,
+                                get_hash_processor("sha3-512"), get_hash_input_size("sha3-512"), get_hash_size("sha3-512"),
+                                NULL, "----->", 6, "<-----", 6) == 1);
+
+    del_protlayer_chain_ctx(pchain);
+    deinit_bnt_keyset(keyset);
 CUTE_TEST_CASE_END

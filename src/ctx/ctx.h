@@ -21,5 +21,4 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
 
 void del_protlayer_chain_ctx(blackcat_protlayer_chain_ctx *chain);
 
-
 #endif

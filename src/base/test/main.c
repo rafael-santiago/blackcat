@@ -21,6 +21,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_available_cipher_schemes_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_meta_processor_tests);
 CUTE_DECLARE_TEST_CASE(get_hash_processor_tests);
 CUTE_DECLARE_TEST_CASE(get_hash_size_tests);
+CUTE_DECLARE_TEST_CASE(get_hash_input_size_tests);
 CUTE_DECLARE_TEST_CASE(is_hmac_processor_tests);
 CUTE_DECLARE_TEST_CASE(is_weak_hash_funcs_usage_tests);
 CUTE_DECLARE_TEST_CASE(get_hash_processor_name_tests);
@@ -39,6 +40,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_is_dec_tests);
     CUTE_RUN_TEST(get_hash_processor_tests);
     CUTE_RUN_TEST(get_hash_size_tests);
+    CUTE_RUN_TEST(get_hash_input_size_tests);
     CUTE_RUN_TEST(get_encoder_tests);
     CUTE_RUN_TEST(get_encoder_name_tests);
     CUTE_RUN_TEST(is_hmac_processor_tests);
@@ -315,6 +317,36 @@ CUTE_TEST_CASE(get_hash_size_tests)
         CUTE_ASSERT(get_hash_size(test[t].hash) == test[t].size);
     }
 CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_hash_input_size_tests)
+    struct test_ctx {
+        const char *hash;
+        blackcat_hash_size_func size;
+    };
+    struct test_ctx test[] = {
+        { "sha-224",   kryptos_sha224_hash_input_size    },
+        { "sha-256",   kryptos_sha256_hash_input_size    },
+        { "sha-384",   kryptos_sha384_hash_input_size    },
+        { "sha-512",   kryptos_sha512_hash_input_size    },
+        { "sha3-224",  kryptos_sha3_224_hash_input_size  },
+        { "sha3-256",  kryptos_sha3_256_hash_input_size  },
+        { "sha3-384",  kryptos_sha3_384_hash_input_size  },
+        { "sha3-512",  kryptos_sha3_512_hash_input_size  },
+        { "tiger",     kryptos_tiger_hash_input_size     },
+        { "whirlpool", kryptos_whirlpool_hash_input_size },
+        { "bug-a-loo", NULL                              },
+        { "sha3_224",  NULL                              },
+        { "sha3_256",  NULL                              },
+        { "sha3_384",  NULL                              },
+        { "sha3_512",  NULL                              }
+    };
+    size_t test_nr = sizeof(test) / sizeof(test[0]), t;
+
+    for (t = 0; t < test_nr; t++) {
+        CUTE_ASSERT(get_hash_input_size(test[t].hash) == test[t].size);
+    }
+CUTE_TEST_CASE_END
+
 
 CUTE_TEST_CASE(get_hmac_key_size_tests)
     struct test_ctx {
