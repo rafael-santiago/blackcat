@@ -189,11 +189,13 @@ CUTE_TEST_CASE(ctx_tests)
     struct bnt_channel_rule_assertion assertion;
     kryptos_u8_t *key;
     size_t key_size;
-    bnt_keychunk_ctx *kchunk = NULL;
+    bnt_keychunk_ctx *kchunk = NULL, *kp;
     bnt_keychain_ctx *kchain = NULL, *kcp, *kcp_l;
     kryptos_u64_t seqno;
     bnt_keyset_ctx ks, *keyset = &ks;
-    blackcat_protlayer_chain_ctx *pchain = NULL;
+    blackcat_protlayer_chain_ctx *pchain = NULL, *p;
+    kryptos_u8_t *keystream, *ksp;
+    size_t keystream_size;
 
     key = (kryptos_u8_t *) kryptos_newseg(8);
     memset(key, 'Z', 8);
@@ -355,6 +357,108 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(init_bnt_keyset(&keyset, pchain, 50,
                                 get_hash_processor("sha3-512"), get_hash_input_size("sha3-512"), get_hash_size("sha3-512"),
                                 NULL, "----->", 6, "<-----", 6) == 1);
+
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 0) == 0);
+
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 1);
+
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 1) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 2) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 3) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 4) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 5) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 6) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 7) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 8) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 9) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 10) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 11) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 12) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 13) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 14) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 15) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 16) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 17) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 18) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 19) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 21) == 1);
+
+    keystream_size = 0;
+
+    for (p = pchain; p != NULL; p = p->next) {
+        keystream_size += p->key_size;
+    }
+
+    for (seqno = 0; seqno < 22; seqno++) {
+        keystream = (kryptos_u8_t *) kryptos_newseg(keystream_size);
+        ksp = keystream;
+
+        for (kp = keyset->send_chain->key; kp != NULL; kp = kp->next) {
+            memcpy(ksp, kp->data, kp->data_size);
+            ksp += kp->data_size;
+        }
+
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain) == 1);
+
+        ksp = keystream;
+
+        for (p = pchain; p != NULL; p = p->next) {
+            CUTE_ASSERT(memcmp(p->key, ksp, p->key_size) == 0);
+            ksp += p->key_size;
+        }
+
+        kryptos_freeseg(keystream, keystream_size);
+    }
+
+    for (seqno = 0; seqno < 22; seqno++) {
+        keystream = (kryptos_u8_t *) kryptos_newseg(keystream_size);
+        ksp = keystream;
+
+        for (kp = keyset->recv_chain->key; kp != NULL; kp = kp->next) {
+            memcpy(ksp, kp->data, kp->data_size);
+            ksp += kp->data_size;
+        }
+
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain) == 1);
+
+        ksp = keystream;
+
+        for (p = pchain; p != NULL; p = p->next) {
+            CUTE_ASSERT(memcmp(p->key, ksp, p->key_size) == 0);
+            ksp += p->key_size;
+        }
+
+        kryptos_freeseg(keystream, keystream_size);
+    }
+
+    for (seqno = 0; seqno < 22; seqno++) {
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain) == 0);
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain) == 0);
+    }
+
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 0) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 1) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 2) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 3) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 4) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 5) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 6) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 7) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 8) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 9) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 10) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 11) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 12) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 13) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 14) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 15) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 16) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 17) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 18) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 19) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 21) == 0);
 
     del_protlayer_chain_ctx(pchain);
     deinit_bnt_keyset(keyset);

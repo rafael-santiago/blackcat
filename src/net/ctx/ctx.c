@@ -394,13 +394,13 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno)
 
     if (keyset == NULL || *keyset == NULL ||
         (*keyset)->send_chain == NULL || (*keyset)->recv_chain == NULL ||
-        intended_seqno < (*keyset)->seqno) {
+        intended_seqno <= (*keyset)->seqno) {
         return 0;
     }
 
     ksp = *keyset;
 
-    while (ksp->seqno <= intended_seqno) {
+    while (ksp->seqno < intended_seqno) {
         ksp->seqno++;
 
         ksp->send_chain = add_bnt_keychain(ksp->send_chain, ksp->seqno);
