@@ -30,6 +30,19 @@
     k->key = NULL;\
 }
 
+struct bnt_keyset_priv_ctx {
+    kryptos_u64_t seqno;
+    kryptos_u64_t max_seqno_delta;
+    kryptos_hash_func h;
+    kryptos_hash_size_func h_input_size;
+    kryptos_hash_size_func h_size;
+    kryptos_mp_value_t *xchgd_key;
+    kryptos_u8_t *send_seed;
+    size_t send_seed_size;
+    kryptos_u8_t *recv_seed;
+    size_t recv_seed_size;
+};
+
 static bnt_channel_rule_ctx *get_bnt_channel_rule_tail(bnt_channel_rule_ctx *rules);
 
 bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
@@ -258,98 +271,110 @@ int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx 
 
     ksp = *keyset;
 
-    ksp->seqno = 0;
-    ksp->max_seqno_delta = max_seqno_delta;
-    ksp->h = h;
-    ksp->h_input_size = h_input_size;
-    ksp->h_size = h_size;
-    ksp->xchgd_key = xchgd_key;
-    ksp->send_seed = ksp->recv_seed = NULL;
-    ksp->send_seed_size = ksp->recv_seed_size = 0;
+    ksp->priv = (struct bnt_keyset_priv_ctx *) kryptos_newseg(sizeof(struct bnt_keyset_priv_ctx));
+
+    if (ksp->priv == NULL) {
+        return 0;
+    }
+
+    ksp->priv->seqno = 0;
+    ksp->priv->max_seqno_delta = max_seqno_delta;
+    ksp->priv->h = h;
+    ksp->priv->h_input_size = h_input_size;
+    ksp->priv->h_size = h_size;
+
+    if (xchgd_key != NULL) {
+        ksp->priv->xchgd_key = kryptos_assign_mp_value(&ksp->priv->xchgd_key, xchgd_key);
+    } else {
+        ksp->priv->xchgd_key = NULL;
+    }
+
+    ksp->priv->send_seed = ksp->priv->recv_seed = NULL;
+    ksp->priv->send_seed_size = ksp->priv->recv_seed_size = 0;
     ksp->send_chain = ksp->recv_chain = NULL;
 
-    ksp->send_seed = (kryptos_u8_t *) kryptos_newseg(send_seed_size);
+    ksp->priv->send_seed = (kryptos_u8_t *) kryptos_newseg(send_seed_size);
 
-    if (ksp->send_seed == NULL) {
+    if (ksp->priv->send_seed == NULL) {
         deinit_bnt_keyset(ksp);
         return 0;
     }
 
-    ksp->send_seed_size = send_seed_size;
-    memcpy(ksp->send_seed, send_seed, send_seed_size);
+    ksp->priv->send_seed_size = send_seed_size;
+    memcpy(ksp->priv->send_seed, send_seed, send_seed_size);
 
-    ksp->recv_seed = (kryptos_u8_t *) kryptos_newseg(recv_seed_size);
+    ksp->priv->recv_seed = (kryptos_u8_t *) kryptos_newseg(recv_seed_size);
 
-    if (ksp->recv_seed == NULL) {
+    if (ksp->priv->recv_seed == NULL) {
         deinit_bnt_keyset(ksp);
         return 0;
     }
 
-    ksp->recv_seed_size = recv_seed_size;
-    memcpy(ksp->recv_seed, recv_seed, recv_seed_size);
+    ksp->priv->recv_seed_size = recv_seed_size;
+    memcpy(ksp->priv->recv_seed, recv_seed, recv_seed_size);
 
     // TODO(Rafael): Encontrar melhor forma de dissociar as duas chains. Talvez um send e um recv nonce.
 
     ksp->send_chain = add_bnt_keychain(ksp->send_chain, 0);
-    sp_end = ksp->send_seed + ksp->send_seed_size;
+    sp_end = ksp->priv->send_seed + ksp->priv->send_seed_size;
 
     for (p = pchain; p != NULL; p = p->next) {
         kp = p->key;
         kp_end = kp + p->key_size;
-        sp = ksp->send_seed;
+        sp = ksp->priv->send_seed;
 
         while (kp != kp_end) {
             *kp = *kp ^ *sp;
             kp++;
             sp++;
             if (sp == sp_end) {
-                sp = ksp->send_seed;
+                sp = ksp->priv->send_seed;
             }
         }
 
         ksp->send_chain->key = add_bnt_keychunk(ksp->send_chain->key, p->key, p->key_size);
 
         kp = p->key;
-        sp = ksp->send_seed;
+        sp = ksp->priv->send_seed;
 
         while (kp != kp_end) {
             *kp = *kp ^ *sp;
             kp++;
             sp++;
             if (sp == sp_end) {
-                sp = ksp->send_seed;
+                sp = ksp->priv->send_seed;
             }
         }
     }
 
     ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, 0);
-    sp_end = ksp->recv_seed + ksp->recv_seed_size;
+    sp_end = ksp->priv->recv_seed + ksp->priv->recv_seed_size;
 
     for (p = pchain; p != NULL; p = p->next) {
         kp = p->key;
         kp_end = kp + p->key_size;
-        sp = ksp->recv_seed;
+        sp = ksp->priv->recv_seed;
 
         while (kp != kp_end) {
             *kp = *kp ^ *sp;
             kp++;
             sp++;
             if (sp == sp_end) {
-                sp = ksp->recv_seed;
+                sp = ksp->priv->recv_seed;
             }
         }
 
         ksp->recv_chain->key = add_bnt_keychunk(ksp->recv_chain->key, p->key, p->key_size);
 
         kp = p->key;
-        sp = ksp->recv_seed;
+        sp = ksp->priv->recv_seed;
 
         while (kp != kp_end) {
             *kp = *kp ^ *sp;
             kp++;
             sp++;
             if (sp == sp_end) {
-                sp = ksp->recv_seed;
+                sp = ksp->priv->recv_seed;
             }
         }
     }
@@ -370,21 +395,28 @@ void deinit_bnt_keyset(bnt_keyset_ctx *keyset) {
         del_bnt_keychain(keyset->recv_chain);
     }
 
-    if (keyset->xchgd_key != NULL) {
-        kryptos_del_mp_value(keyset->xchgd_key);
+    if (keyset->priv->xchgd_key != NULL) {
+        kryptos_del_mp_value(keyset->priv->xchgd_key);
     }
 
-    if (keyset->send_seed != NULL) {
-        kryptos_freeseg(keyset->send_seed, keyset->send_seed_size);
-        keyset->send_seed = NULL;
-        keyset->send_seed_size = 0;
+    if (keyset->priv->send_seed != NULL) {
+        kryptos_freeseg(keyset->priv->send_seed, keyset->priv->send_seed_size);
+        keyset->priv->send_seed = NULL;
+        keyset->priv->send_seed_size = 0;
     }
 
-    if (keyset->recv_seed != NULL) {
-        kryptos_freeseg(keyset->recv_seed, keyset->recv_seed_size);
-        keyset->recv_seed = NULL;
-        keyset->recv_seed_size = 0;
+    if (keyset->priv->recv_seed != NULL) {
+        kryptos_freeseg(keyset->priv->recv_seed, keyset->priv->recv_seed_size);
+        keyset->priv->recv_seed = NULL;
+        keyset->priv->recv_seed_size = 0;
     }
+
+    if (keyset->priv != NULL) {
+        memset(keyset->priv, 0, sizeof(struct bnt_keyset_priv_ctx));
+        free(keyset->priv);
+        keyset->priv = NULL;
+    }
+
 }
 
 int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno) {
@@ -394,23 +426,24 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno)
 
     if (keyset == NULL || *keyset == NULL ||
         (*keyset)->send_chain == NULL || (*keyset)->recv_chain == NULL ||
-        intended_seqno <= (*keyset)->seqno) {
+        intended_seqno <= (*keyset)->priv->seqno ||
+        abs(intended_seqno - (*keyset)->priv->seqno) > (*keyset)->priv->max_seqno_delta) {
         return 0;
     }
 
     ksp = *keyset;
 
-    while (ksp->seqno < intended_seqno) {
-        ksp->seqno++;
+    while (ksp->priv->seqno < intended_seqno) {
+        ksp->priv->seqno++;
 
-        ksp->send_chain = add_bnt_keychain(ksp->send_chain, ksp->seqno);
+        ksp->send_chain = add_bnt_keychain(ksp->send_chain, ksp->priv->seqno);
 
         for (kcp = ksp->send_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
             key = kryptos_do_hkdf(kcp->data,
                                   kcp->data_size,
-                                  ksp->h,
-                                  ksp->h_input_size,
-                                  ksp->h_size,
+                                  ksp->priv->h,
+                                  ksp->priv->h_input_size,
+                                  ksp->priv->h_size,
                                   NULL, 0,
                                   NULL, 0,
                                   kcp->data_size);
@@ -423,14 +456,14 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno)
             kryptos_freeseg(key, kcp->data_size);
         }
 
-        ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, ksp->seqno);
+        ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, ksp->priv->seqno);
 
         for (kcp = ksp->recv_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
             key = kryptos_do_hkdf(kcp->data,
                                   kcp->data_size,
-                                  ksp->h,
-                                  ksp->h_input_size,
-                                  ksp->h_size,
+                                  ksp->priv->h,
+                                  ksp->priv->h_input_size,
+                                  ksp->priv->h_size,
                                   NULL, 0,
                                   NULL, 0,
                                   kcp->data_size);

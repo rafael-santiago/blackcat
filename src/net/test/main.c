@@ -358,6 +358,8 @@ CUTE_TEST_CASE(ctx_tests)
                                 get_hash_processor("sha3-512"), get_hash_input_size("sha3-512"), get_hash_size("sha3-512"),
                                 NULL, "----->", 6, "<-----", 6) == 1);
 
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 100) == 0);
+
     CUTE_ASSERT(step_bnt_keyset(&keyset, 0) == 0);
 
     CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 1);

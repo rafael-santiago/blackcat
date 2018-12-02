@@ -48,17 +48,8 @@ typedef struct bnt_keychain {
 }bnt_keychain_ctx;
 
 typedef struct bnt_keyset {
-    kryptos_u64_t seqno;
-    kryptos_u64_t max_seqno_delta;
+    struct bnt_keyset_priv_ctx *priv;
     bnt_keychain_ctx *send_chain, *recv_chain;
-    kryptos_hash_func h;
-    kryptos_hash_size_func h_input_size;
-    kryptos_hash_size_func h_size;
-    kryptos_mp_value_t *xchgd_key;
-    kryptos_u8_t *send_seed;
-    size_t send_seed_size;
-    kryptos_u8_t *recv_seed;
-    size_t recv_seed_size;
 }bnt_keyset_ctx;
 
 #endif
