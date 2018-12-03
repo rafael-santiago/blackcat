@@ -9,6 +9,7 @@
 include ~/toolsets/null/null.hsl
 include ~/toolsets/utils/forge_projects.hsl
 include forgeutils/installer.hsl
+include forgeutils/toolsets.hsl
 
 var exit_code type int;
 
@@ -16,6 +17,14 @@ project blackcat : toolset "no-tool-any-set" : $exit_code;
 
 blackcat.prologue() {
     var option type list;
+
+    $option = hefesto.sys.get_option("avail-ciphers");
+
+    if ($option.count() > 0) {
+        var dummy type list;
+        setup_ciphering_schemes($dummy);
+    }
+
     $option = hefesto.sys.get_option("install");
 
     if ($option.count() == 0) {

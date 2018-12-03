@@ -46,7 +46,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_hmac_processor_tests);
     CUTE_RUN_TEST(get_hmac_key_size_tests);
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
-    CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
+    //CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);

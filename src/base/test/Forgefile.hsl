@@ -34,6 +34,8 @@ base-tests.prologue() {
     $ldflags = hefesto.sys.get_option("ldflags");
     $appname = get_appname();
 
+    setup_ciphering_schemes($cflags);
+
     if (build("libcutest") != 0) {
         hefesto.project.abort(1);
     }

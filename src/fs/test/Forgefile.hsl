@@ -33,6 +33,8 @@ fs-tests.prologue() {
     $lib = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    setup_ciphering_schemes($cflags);
+
     if (hefesto.sys.os_name() == "linux") {
         $ldflags.add_item("-ldl");
         $ldflags.add_item("-lpthread");

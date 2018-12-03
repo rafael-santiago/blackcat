@@ -879,7 +879,7 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((lsockfd = bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+    if ((lsockfd = g_bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
         fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1022,7 +1022,7 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((sockfd = bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+    if ((sockfd = g_bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
         fprintf(stderr, "ERROR: Unable to create a socket.\n");
         err = errno;
         goto do_xchg_client_epilogue;

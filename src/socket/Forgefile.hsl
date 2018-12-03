@@ -32,6 +32,8 @@ libbcsck.prologue() {
     $lib = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    setup_ciphering_schemes($cflags);
+
     var option type list;
     $option = hefesto.sys.get_option("no-thread-safe");
 

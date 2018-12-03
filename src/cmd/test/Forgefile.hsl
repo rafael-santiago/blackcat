@@ -35,6 +35,8 @@ blackcat-cmd-tests.prologue() {
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    setup_ciphering_schemes($cflags);
+
     $ldflags = get_cmd_objects($ldflags);
 
     if (build("libcutest") != 0) {

@@ -32,6 +32,8 @@ libbcnet.prologue() {
     $lib = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    setup_ciphering_schemes($cflags);
+
     if (hefesto.sys.os_name() == "netbsd") {
         $cflags.add_item("-std=c99");
     }

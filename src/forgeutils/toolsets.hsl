@@ -275,3 +275,90 @@ local function execbkcmd(cmdline type string) : result type int {
 
     result hefesto.sys.run($cmdline);
 }
+
+function setup_ciphering_schemes(cflags type list) : result type none {
+    var ciphers type list;
+    var defines type list;
+
+    $ciphers.add_item("arc4"); $defines.add_item("-DBLACKCAT_WITH_ARC4=1");
+    $ciphers.add_item("seal"); $defines.add_item("-DBLACKCAT_WITH_SEAL=1");
+    $ciphers.add_item("rabbit"); $defines.add_item("-DBLACKCAT_WITH_RABBIT=1");
+    $ciphers.add_item("aes"); $defines.add_item("-DBLACKCAT_WITH_AES=1");
+    $ciphers.add_item("des"); $defines.add_item("-DBLACKCAT_WITH_DES=1");
+    $ciphers.add_item("idea"); $defines.add_item("-DBLACKCAT_WITH_IDEA=1");
+    $ciphers.add_item("rc2"); $defines.add_item("-DBLACKCAT_WITH_RC2=1");
+    $ciphers.add_item("rc5"); $defines.add_item("-DBLACKCAT_WITH_RC5=1");
+    $ciphers.add_item("rc6"); $defines.add_item("-DBLACKCAT_WITH_RC6=1");
+    $ciphers.add_item("feal"); $defines.add_item("-DBLACKCAT_WITH_FEAL=1");
+    $ciphers.add_item("cast5"); $defines.add_item("-DBLACKCAT_WITH_CAST5=1");
+    $ciphers.add_item("camellia"); $defines.add_item("-DBLACKCAT_WITH_CAMELLIA=1");
+    $ciphers.add_item("safer-k64"); $defines.add_item("-DBLACKCAT_WITH_SAFERK64=1");
+    $ciphers.add_item("blowfish"); $defines.add_item("-DBLACKCAT_WITH_BLOWFISH=1");
+    $ciphers.add_item("serpent"); $defines.add_item("-DBLACKCAT_WITH_SERPENT=1");
+    $ciphers.add_item("tea"); $defines.add_item("-DBLACKCAT_WITH_TEA=1");
+    $ciphers.add_item("xtea"); $defines.add_item("-DBLACKCAT_WITH_XTEA=1");
+    $ciphers.add_item("misty1"); $defines.add_item("-DBLACKCAT_WITH_MISTY1=1");##
+    $ciphers.add_item("mars"); $defines.add_item("-DBLACKCAT_WITH_MARS=1");
+    $ciphers.add_item("present"); $defines.add_item("-DBLACKCAT_WITH_PRESENT=1");
+    $ciphers.add_item("shacal1"); $defines.add_item("-DBLACKCAT_WITH_SHACAL1=1");
+    $ciphers.add_item("shacal2"); $defines.add_item("-DBLACKCAT_WITH_SHACAL2=1");
+    $ciphers.add_item("noekeon"); $defines.add_item("-DBLACKCAT_WITH_NOEKEON=1");
+
+    var avail_ciphers type list;
+    $avail_ciphers = hefesto.sys.get_option("avail-ciphers");
+
+    if ($avail_ciphers.count() > 0) {
+        var c type int;
+        $c = 0;
+        hefesto.sys.echo("*** The currently available ciphers are:\n");
+        while ($c < $ciphers.count()) {
+            hefesto.sys.echo("\t" + $ciphers.item($c) + "\n");
+            $c = $c + 1;
+        }
+        hefesto.sys.echo("*** Include them by using the build option '--with-ciphers'.\n");
+        hefesto.project.abort(0);
+    }
+
+    var with_ciphers type list;
+    var message type string;
+
+    $with_ciphers = hefesto.sys.get_option("with-ciphers");
+
+    if ($with_ciphers.count() == 0) {
+        hefesto.sys.echo("BUILD ERROR: No ciphers were configured.\n");
+        hefesto.project.abort(1);
+    }
+
+    $message = "*** Configured ciphering schemes:\n";
+
+    var w type int;
+    $w = 0;
+
+    while ($w < $with_ciphers.count()) {
+        var cipher type string;
+        var define type string;
+        var cidx type int;
+
+        $cipher = $with_ciphers.item($w);
+        $cidx = $ciphers.index_of($cipher);
+        if ($cidx == -1) {
+            hefesto.sys.echo("BUILD ERROR: Unknown cipher '" + $cipher + "' included in --with-ciphers option.\n" +
+                             "             Use the option --avail-ciphers to see the supported ones.\n");
+            hefesto.project.abort(1);
+        }
+
+        $message = $message + "\t" + $cipher + "\n";
+
+        $define = $defines.item($cidx);
+
+        $cflags.add_item($define);
+
+        $w = $w + 1;
+    }
+
+    hefesto.sys.byref($cflags);
+
+    if (hefesto.project.name() == "libbbase") {
+        hefesto.sys.echo($message + "***\n");
+    }
+}
