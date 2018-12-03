@@ -282,6 +282,7 @@ int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx 
     ksp->priv->h = h;
     ksp->priv->h_input_size = h_input_size;
     ksp->priv->h_size = h_size;
+    ksp->send_seqno = ksp->recv_seqno = 0;
 
     if (xchgd_key != NULL) {
         ksp->priv->xchgd_key = kryptos_assign_mp_value(&ksp->priv->xchgd_key, xchgd_key);

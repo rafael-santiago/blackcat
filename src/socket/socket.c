@@ -6,9 +6,12 @@
  *
  */
 #include <socket/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <net/base/types.h>
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
+#include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <kbd/kbd.h>
 #include <kryptos.h>
@@ -46,13 +49,16 @@ struct bcsck_handle_ctx {
                     mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func,
                     mtx_socket_func;
 #endif
-    int libc_loaded;
+    int libc_loaded, p2p_conn;
+    const char *xchg_addr;
+    unsigned short xchg_port;
+    bnt_keyset_ctx ks, *keyset;
 };
 
 #if defined(BCSCK_THREAD_SAFE)
 
 static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
-                                                  0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle.libc_loaded) {\
@@ -192,14 +198,23 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define BCSCK_DBPATH "BCSCK_DBPATH"
-#define BCSCK_RULE   "BCSCK_RULE"
+#define BCSCK_DBPATH      "BCSCK_DBPATH"
+#define BCSCK_RULE        "BCSCK_RULE"
+#define BCSCK_P2P         "BCSCK_P2P"
+#define BCSCK_XCHG_PORT   "BCSCK_PORT"
+#define BCSCK_XCHG_ADDR   "BCSCK_ADDR"
+
+#define BCSCK_SEQNO_WINDOW_SIZE 100
 
 static void __attribute__((constructor)) bcsck_init(void);
 
 static void __attribute__((destructor)) bcsck_deinit(void);
 
 static int bcsck_read_rule(void);
+
+static int do_xchg_server(void);
+
+static int do_xchg_client(void);
 
 int socket(int domain, int type, int protocol) {
     int err = -1;
@@ -661,9 +676,10 @@ __bcsck_epilogue
 
 static int bcsck_read_rule(void) {
     kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, *rule_id = NULL;
-    char *db_path = NULL;
+    char *db_path = NULL, *port;
     int err = 0;
     size_t session_key_size = 0, temp_size = 0, db_size = 0, db_path_size = 0, db_key_size = 0;
+    int (*do_xchg)(void) = NULL;
 
     if ((db_path = getenv(BCSCK_DBPATH)) == NULL) {
         err = EFAULT;
@@ -745,6 +761,46 @@ static int bcsck_read_rule(void) {
         fprintf(stderr, "ERROR: The specified rule seems not exist or the Netdb password is wrong.\n");
         fflush(stderr);
         err = EFAULT;
+        goto bcsck_read_rule_epilogue;
+    }
+
+    if (!(g_bcsck_handle.p2p_conn = (getenv(BCSCK_P2P) != NULL))) {
+        goto bcsck_read_rule_epilogue;
+    }
+
+    setenv(BCSCK_P2P, " ", 1);
+    unsetenv(BCSCK_P2P);
+
+    // INFO(Rafael): If the user has indicated a p2p communication, we will strengthen a little more the encryption by
+    //               preventing replay attacks and mitigating a session key disclosure situation by making it more ephemeral.
+
+    if ((port = getenv(BCSCK_XCHG_PORT)) == NULL) {
+        fprintf(stderr, "ERROR: The port for the connection parameters exchanging is lacking.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto bcsck_read_rule_epilogue;
+    }
+
+    setenv(BCSCK_XCHG_PORT, " ", 1);
+    unsetenv(BCSCK_P2P);
+
+    g_bcsck_handle.xchg_port = atoi(port);
+
+    g_bcsck_handle.xchg_addr = getenv(BCSCK_XCHG_ADDR);
+
+    setenv(BCSCK_XCHG_ADDR, " ", 1);
+    unsetenv(BCSCK_XCHG_ADDR);
+
+    if (g_bcsck_handle.xchg_addr == NULL) {
+        do_xchg = do_xchg_server;
+    } else {
+        do_xchg = do_xchg_client;
+    }
+
+    if ((err = do_xchg()) != 0) {
+        fprintf(stderr, "ERROR: During connection parameters exchanging. Aborted.\n");
+        fflush(stderr);
+        goto bcsck_read_rule_epilogue;
     }
 
 bcsck_read_rule_epilogue:
@@ -778,8 +834,299 @@ bcsck_read_rule_epilogue:
     unsetenv(BCSCK_DBPATH);
     unsetenv(BCSCK_RULE);
 
+    setenv(BCSCK_P2P, " ", 1);
+    unsetenv(BCSCK_P2P);
+
+    setenv(BCSCK_XCHG_PORT, " ", 1);
+    unsetenv(BCSCK_P2P);
+
+    setenv(BCSCK_XCHG_ADDR, " ", 1);
+    unsetenv(BCSCK_XCHG_ADDR);
+
     return err;
 }
+
+static int do_xchg_server(void) {
+    int err = -1;
+    int lsockfd = -1, csockfd = -1;
+    kryptos_u8_t *send_seed = NULL, *out_buf = NULL;
+    size_t send_seed_size, out_buf_size;
+    char buf[64];
+    kryptos_u8_t *hash = NULL;
+    ssize_t buf_size;
+    struct sockaddr_in sin;
+    socklen_t slen;
+    unsigned char yeah_butt_head = 1;
+    size_t seed_sizes[5] = { 4, 8, 16, 32, 64 }; // INFO(Rafael): Seeds from 32 up to 512 bits.
+
+    // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
+    //               Due to it, let's avoid a deadlock by doing it before anything.
+
+    send_seed_size = seed_sizes[kryptos_get_random_byte() % (sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
+    send_seed = kryptos_get_random_block(send_seed_size);
+
+    // INFO(Rafael): Ensuring that any hooked socket function will not be used by the user application.
+
+__bcsck_enter(read)
+__bcsck_enter(write)
+__bcsck_enter(recv)
+__bcsck_enter(send)
+__bcsck_enter(recvfrom)
+__bcsck_enter(sendto)
+__bcsck_enter(recvmsg)
+__bcsck_enter(sendmsg)
+
+    // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
+    //               otherwise the Terminator never 'will be back'.
+
+    if ((lsockfd = bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+        fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
+        err = errno;
+        goto do_xchg_server_epilogue;
+    }
+
+    setsockopt(lsockfd, SOL_SOCKET, SO_REUSEADDR, &yeah_butt_head, sizeof(yeah_butt_head));
+
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(g_bcsck_handle.xchg_port);
+    sin.sin_addr.s_addr = INADDR_ANY;
+
+    if ((bind(lsockfd, (struct sockaddr *)&sin, sizeof(sin))) == -1) {
+        fprintf(stderr, "ERROR: Unable to bind the listen socket.\n");
+        err = errno;
+        goto do_xchg_server_epilogue;
+    }
+
+    listen(lsockfd, 1);
+
+    if ((csockfd = accept(lsockfd, (struct sockaddr *)&sin, &slen)) == -1) {
+        fprintf(stderr, "ERROR: Unable to accept the client during session parameters exchanging.\n");
+        err = errno;
+        goto do_xchg_server_epilogue;
+    }
+
+    bcsck_encrypt(send_seed, send_seed_size, out_buf, out_buf_size,
+                  {
+                    fprintf(stderr, "ERROR: Unable to encrypt the sending seed.\n");
+                    err = EFAULT;
+                    goto do_xchg_server_epilogue;
+                  })
+
+    if (g_bcsck_handle.libc_send(csockfd, out_buf, out_buf_size, 0) != send_seed_size) {
+        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
+        err = errno;
+        goto do_xchg_server_epilogue;
+    }
+
+    kryptos_freeseg(out_buf, out_buf_size);
+    out_buf = NULL;
+    out_buf_size = 0;
+
+    if ((buf_size = g_bcsck_handle.libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
+        fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
+        err = errno;
+        goto do_xchg_server_epilogue;
+    }
+
+    bcsck_decrypt(buf, buf_size, out_buf, out_buf_size,
+                  {
+                    fprintf(stderr, "ERROR: Unable to decrypt the receiving seed.\n");
+                    err = EFAULT;
+                    goto do_xchg_server_epilogue;
+                  })
+
+    hash = g_bcsck_handle.rule->pchain->repo_key_hash;
+
+    // INFO(Rafael): It seems tricky but the 'sending seed' for us is actually the 'receiving seed'...
+
+    g_bcsck_handle.keyset = &g_bcsck_handle.ks;
+
+    if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
+                        get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
+                        NULL, out_buf, out_buf_size, send_seed, send_seed_size) == 0) {
+        fprintf(stderr, "ERROR: Unable to initialize the keyset.\n");
+        err = EFAULT;
+        goto do_xchg_server_epilogue;
+    }
+
+    err = 0; // INFO(Rafael): ...and we done, now we got the two session key chains ('send' and 'recv') well configured.
+
+do_xchg_server_epilogue:
+
+    if (lsockfd != -1) {
+        close(lsockfd);
+    }
+
+    if (csockfd != -1) {
+        close(csockfd);
+    }
+
+    hash = NULL;
+
+    memset(buf, 0, sizeof(buf));
+    buf_size = 0;
+
+    if (out_buf != NULL) {
+        kryptos_freeseg(out_buf, out_buf_size);
+        out_buf = NULL;
+        out_buf_size = 0;
+    }
+
+    if (send_seed != NULL) {
+        kryptos_freeseg(send_seed, send_seed_size);
+        send_seed_size = 0;
+        send_seed = NULL;
+    }
+
+__bcsck_leave(sendmsg)
+__bcsck_leave(recvmsg)
+__bcsck_leave(sendto)
+__bcsck_leave(recvfrom)
+__bcsck_leave(send)
+__bcsck_leave(recv)
+__bcsck_leave(write)
+__bcsck_leave(read)
+
+    return err;
+}
+
+static int do_xchg_client(void) {
+    int err = -1;
+    int sockfd = -1;
+    kryptos_u8_t *send_seed = NULL, *out_buf = NULL;
+    size_t send_seed_size, out_buf_size;
+    char buf[64];
+    kryptos_u8_t *hash = NULL;
+    ssize_t buf_size;
+    struct sockaddr_in sin;
+    socklen_t slen;
+    size_t seed_sizes[5] = { 4, 8, 16, 32, 64 }; // INFO(Rafael): Seeds from 32 up to 512 bits.
+    struct hostent *hp;
+
+    // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
+    //               Due to it, let's avoid a deadlock by doing it before anything.
+
+    send_seed_size = seed_sizes[kryptos_get_random_byte() % (sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
+    send_seed = kryptos_get_random_block(send_seed_size);
+
+    // INFO(Rafael): Ensuring that any hooked socket function will not be used by the user application.
+__bcsck_enter(read)
+__bcsck_enter(write)
+__bcsck_enter(recv)
+__bcsck_enter(send)
+__bcsck_enter(recvfrom)
+__bcsck_enter(sendto)
+__bcsck_enter(recvmsg)
+__bcsck_enter(sendmsg)
+
+    // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
+    //               otherwise the Terminator never 'will be back'.
+
+    if ((sockfd = bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+        fprintf(stderr, "ERROR: Unable to create a socket.\n");
+        err = errno;
+        goto do_xchg_client_epilogue;
+    }
+
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(g_bcsck_handle.xchg_port);
+
+    if ((hp = gethostbyname(g_bcsck_handle.xchg_addr)) == NULL) {
+        fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
+        err = errno;
+        goto do_xchg_client_epilogue;
+    }
+
+    sin.sin_addr.s_addr = ((struct in_addr *)hp->h_aliases[0])->s_addr;
+
+    if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+        fprintf(stderr, "ERROR: Unable to bind the socket.\n");
+        err = errno;
+        goto do_xchg_client_epilogue;
+    }
+
+    if (connect(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+        fprintf(stderr, "ERROR: Unable to connect to the host.\n");
+        err = errno;
+        goto do_xchg_client_epilogue;
+    }
+
+    if ((buf_size = g_bcsck_handle.libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
+        fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
+        err = errno;
+        goto do_xchg_client_epilogue;
+    }
+
+    bcsck_decrypt(buf, buf_size, out_buf, out_buf_size,
+                  {
+                    fprintf(stderr, "ERROR: Unable to decrypt the receiving seed.\n");
+                    err = EFAULT;
+                    goto do_xchg_client_epilogue;
+                  })
+
+    hash = g_bcsck_handle.rule->pchain->repo_key_hash;
+    g_bcsck_handle.keyset = &g_bcsck_handle.ks;
+
+    if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
+                        get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
+                        NULL, send_seed, send_seed_size, out_buf, out_buf_size) == 0) {
+        fprintf(stderr, "ERROR: Unable to initialize the keyset.\n");
+        err = EFAULT;
+        goto do_xchg_client_epilogue;
+    }
+
+    kryptos_freeseg(out_buf, out_buf_size);
+
+    bcsck_encrypt(send_seed, send_seed_size, out_buf, out_buf_size,
+                  {
+                    fprintf(stderr, "ERROR: Unable to encrypt the sending seed.\n");
+                    err = EFAULT;
+                    goto do_xchg_client_epilogue;
+                  })
+
+    if (g_bcsck_handle.libc_send(sockfd, send_seed, send_seed_size, 0) != send_seed_size) {
+        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
+        err = EFAULT;
+        goto do_xchg_client_epilogue;
+    }
+
+    err = 0;
+
+do_xchg_client_epilogue:
+
+    if (sockfd != -1) {
+        close(sockfd);
+    }
+
+    hash = NULL;
+
+    memset(buf, 0, sizeof(buf));
+    buf_size = 0;
+
+    if (out_buf != NULL) {
+        kryptos_freeseg(out_buf, out_buf_size);
+        out_buf = NULL;
+        out_buf_size = 0;
+    }
+
+    if (send_seed != NULL) {
+        kryptos_freeseg(send_seed, send_seed_size);
+        send_seed_size = 0;
+        send_seed = NULL;
+    }
+
+__bcsck_leave(sendmsg)
+__bcsck_leave(recvmsg)
+__bcsck_leave(sendto)
+__bcsck_leave(recvfrom)
+__bcsck_leave(send)
+__bcsck_leave(recv)
+__bcsck_leave(write)
+__bcsck_leave(read)
+
+    return err;
+}
+
 
 #undef __bcsck_prologue
 #undef __bcsck_epilogue
@@ -790,3 +1137,8 @@ bcsck_read_rule_epilogue:
 
 #undef BCSCK_DBPATH
 #undef BCSCK_RULE
+#undef BCSCK_P2P
+#undef BCSCK_XCHG_PORT
+#undef BCSCK_XCHG_ADDR
+
+#undef BCSCK_SEQNO_WINDOW_SIZE
