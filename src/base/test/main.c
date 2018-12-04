@@ -46,7 +46,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_hmac_processor_tests);
     CUTE_RUN_TEST(get_hmac_key_size_tests);
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
-    //CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
+    CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
@@ -1232,6 +1232,7 @@ CUTE_TEST_CASE(blackcat_is_dec_tests)
     CUTE_ASSERT(blackcat_is_dec(NULL, 0) == 0);
 
     for (i = 0; i < is_dec_tests_nr; i++) {
+
         CUTE_ASSERT(blackcat_is_dec(is_dec_tests[i].buf, strlen(is_dec_tests[i].buf)) == is_dec_tests[i].valid);
     }
 CUTE_TEST_CASE_END
