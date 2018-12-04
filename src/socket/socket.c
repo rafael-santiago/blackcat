@@ -198,6 +198,17 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
+#define bcsck_p2p_decrypt_setup(offset, buf, buf_size, esc_stmt) {\
+    if (g_bcsck_handle.p2p_conn) {\
+        offset = sizeof(kryptos_u64_t);\
+        if (set_protlayer(buf, buf_size, &g_bcsck_handle.keyset->recv_chain, &g_bcsck_handle.keyset->recv_seqno) == 0) {\
+            esc_stmt;\
+        }\
+    } else {\
+        offset = 0;\
+    }\
+}
+
 #define BCSCK_DBPATH      "BCSCK_DBPATH"
 #define BCSCK_RULE        "BCSCK_RULE"
 #define BCSCK_P2P         "BCSCK_P2P"
@@ -216,6 +227,9 @@ static int do_xchg_server(void);
 
 static int do_xchg_client(void);
 
+static int set_protlayer(const kryptos_u8_t *buf, const ssize_t buf_size,
+                         bnt_keychain_ctx **keychain, kryptos_u64_t *chain_seqno);
+
 int socket(int domain, int type, int protocol) {
     int err = -1;
 
@@ -232,10 +246,44 @@ __bcsck_leave(socket)
     return err;
 }
 
+static int set_protlayer(const kryptos_u8_t *buf, const ssize_t buf_size,
+                         bnt_keychain_ctx **keychain, kryptos_u64_t *chain_seqno) {
+    kryptos_u64_t seqno;
+
+    if (buf_size < sizeof(kryptos_u64_t) ) {
+        return 0;
+    }
+
+    seqno = (((kryptos_u64_t)buf[0]) << 56) |
+            (((kryptos_u64_t)buf[1]) << 48) |
+            (((kryptos_u64_t)buf[2]) << 40) |
+            (((kryptos_u64_t)buf[3]) << 32) |
+            (((kryptos_u64_t)buf[4]) << 24) |
+            (((kryptos_u64_t)buf[5]) << 16) |
+            (((kryptos_u64_t)buf[6]) <<  8) | buf[7];
+
+    if (seqno > *chain_seqno) {
+        if (step_bnt_keyset(&g_bcsck_handle.keyset, seqno) == 0) {
+            return 0;
+        }
+        *chain_seqno = seqno;
+    }
+
+    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
+        if (get_bnt_keychain(seqno, *keychain) == NULL) {
+            fprintf(stderr, "WARN: A possible replay attack was detected.\n");
+        }
+        return 0;
+    }
+
+    return 1;
+}
+
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     kryptos_u8_t *obuf = NULL, *rbuf = NULL;
     size_t obuf_size = 0, rbuf_size = 0;
     ssize_t bytes_nr;
+    size_t rbuf_offset;
 
 __bcsck_enter(recv)
 
@@ -250,7 +298,10 @@ __bcsck_enter(recv)
         goto recv_epilogue;
     }
 
-    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recv_epilogue; });
+    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recv_epilogue; });
+
+    bcsck_decrypt(rbuf + rbuf_offset, rbuf_size - rbuf_offset, obuf, obuf_size,
+                  { bytes_nr = -1; errno = EFAULT; goto recv_epilogue; });
 
     if (obuf_size > len) {
         errno = EFAULT;
@@ -285,6 +336,7 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
     kryptos_u8_t *obuf = NULL, *rbuf = NULL;
     size_t obuf_size = 0, rbuf_size = 0;
     ssize_t bytes_nr;
+    size_t rbuf_offset;
 
 __bcsck_enter(recvfrom)
 
@@ -298,6 +350,8 @@ __bcsck_enter(recvfrom)
         bytes_nr = -1;
         goto recvfrom_epilogue;
     }
+
+    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvfrom_epilogue; });
 
     bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recvfrom_epilogue; });
 
@@ -336,6 +390,7 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
     size_t iov_c;
     struct msghdr rmsg;
     struct iovec iov;
+    size_t rbuf_offset;
 
     if (msg == NULL) {
         errno = EINVAL;
@@ -368,6 +423,8 @@ __bcsck_enter(recvmsg)
 
     memset(&rmsg, 0, sizeof(rmsg));
     memset(&iov, 0, sizeof(iov));
+
+    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
     bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
@@ -426,6 +483,7 @@ ssize_t read(int fd, void *buf, size_t count) {
     socklen_t addrl;
     struct stat st;
     int is_sock = 0;
+    size_t rbuf_offset;
 
     if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
         // WARN(Rafael): Otherwise you will get a deadlock.
@@ -440,6 +498,8 @@ ssize_t read(int fd, void *buf, size_t count) {
             bytes_nr = -1;
             goto read_epilogue;
         }
+
+        bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto read_epilogue; })
 
         bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto read_epilogue; });
 
@@ -1134,6 +1194,7 @@ __bcsck_leave(read)
 #undef __bcsck_leave
 #undef bcsck_encrypt
 #undef bcsck_decrypt
+#undef bcsck_p2p_decrypt_setup
 
 #undef BCSCK_DBPATH
 #undef BCSCK_RULE
