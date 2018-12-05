@@ -47,18 +47,19 @@ struct bcsck_handle_ctx {
 #if defined(BCSCK_THREAD_SAFE)
     pthread_mutex_t mtx_recv_func, mtx_recvfrom_func, mtx_recvmsg_func, mtx_read_func,
                     mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func,
-                    mtx_socket_func;
+                    mtx_socket_func, mtx_set_protlayer_by_seqno_func;
 #endif
     int libc_loaded, p2p_conn;
-    const char *xchg_addr;
+    char *xchg_addr;
     unsigned short xchg_port;
     bnt_keyset_ctx ks, *keyset;
 };
 
 #if defined(BCSCK_THREAD_SAFE)
 
-static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
-                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle.libc_loaded) {\
@@ -88,7 +89,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_sendto_func, NULL) == 0) &&\
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_sendmsg_func, NULL) == 0) &&\
                                      (pthread_mutex_init(&g_bcsck_handle.mtx_write_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_socket_func, NULL) == 0);\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_socket_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle.mtx_set_protlayer_by_seqno_func, NULL) == 0);\
     }\
     if (!g_bcsck_handle.libc_loaded) {\
         return_stmt;\
@@ -120,6 +122,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     pthread_mutex_destroy(&g_bcsck_handle.mtx_sendmsg_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_write_func);\
     pthread_mutex_destroy(&g_bcsck_handle.mtx_socket_func);\
+    pthread_mutex_destroy(&g_bcsck_handle.mtx_set_protlayer_by_seqno_func);\
 }
 
 #define __bcsck_enter(sock_func) {\
@@ -132,7 +135,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 
 #else
 
-static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0 };
+static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
+                                                  0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle.libc_loaded) {\
@@ -201,11 +205,37 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 #define bcsck_p2p_decrypt_setup(offset, buf, buf_size, esc_stmt) {\
     if (g_bcsck_handle.p2p_conn) {\
         offset = sizeof(kryptos_u64_t);\
-        if (set_protlayer(buf, buf_size, &g_bcsck_handle.keyset->recv_chain, &g_bcsck_handle.keyset->recv_seqno) == 0) {\
+        if (set_protlayer_by_recvd_buf(buf, buf_size, &g_bcsck_handle.keyset->recv_chain) == 0) {\
             esc_stmt;\
         }\
     } else {\
         offset = 0;\
+    }\
+}
+
+#define bcsck_p2p_encrypt_setup(send_buf, send_buf_size, esc_stmt) {\
+    if (g_bcsck_handle.p2p_conn) {\
+        send_buf = (kryptos_u8_t *) kryptos_newseg(0xFFFF);\
+        if (send_buf == NULL) {\
+            esc_stmt;\
+        }\
+        if (set_protlayer_by_seqno(send_buf, send_buf_size, &g_bcsck_handle.keyset->send_chain) == 0) {\
+            esc_stmt;\
+        }\
+    } else {\
+        send_buf = NULL;\
+    }\
+}
+
+#define bcsck_p2p_post_proc(send_buf, send_buf_size, out_buf, out_buf_size, esc_stmt) {\
+    if (g_bcsck_handle.p2p_conn) {\
+        if (send_buf_size < out_buf_size) {\
+            esc_stmt;\
+        }\
+        memcpy(send_buf, out_buf, out_buf_size);\
+        kryptos_freeseg(out_buf, out_buf_size);\
+        out_buf = send_buf;\
+        out_buf_size += sizeof(kryptos_u64_t);\
     }\
 }
 
@@ -227,8 +257,9 @@ static int do_xchg_server(void);
 
 static int do_xchg_client(void);
 
-static int set_protlayer(const kryptos_u8_t *buf, const ssize_t buf_size,
-                         bnt_keychain_ctx **keychain, kryptos_u64_t *chain_seqno);
+static int set_protlayer_by_recvd_buf(const kryptos_u8_t *buf, const ssize_t buf_size, bnt_keychain_ctx **keychain);
+
+static int set_protlayer_by_seqno(kryptos_u8_t *buf, const size_t buf_size, bnt_keychain_ctx **keychain);
 
 int socket(int domain, int type, int protocol) {
     int err = -1;
@@ -246,8 +277,45 @@ __bcsck_leave(socket)
     return err;
 }
 
-static int set_protlayer(const kryptos_u8_t *buf, const ssize_t buf_size,
-                         bnt_keychain_ctx **keychain, kryptos_u64_t *chain_seqno) {
+static int set_protlayer_by_seqno(kryptos_u8_t *buf, const size_t buf_size, bnt_keychain_ctx **keychain) {
+    kryptos_u64_t seqno;
+    int no_error = 0;
+
+__bcsck_enter(set_protlayer_by_seqno)
+
+    if (buf_size <= sizeof(kryptos_u64_t)) {
+        fprintf(stderr, "ERROR: Encrypting buffer is tiny.\n");
+        goto set_protlayer_by_seqno_epilogue;
+    }
+
+    seqno = g_bcsck_handle.keyset->send_seqno;
+
+    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
+        fprintf(stderr, "ERROR: While setting up the encryption process.\n");
+        goto set_protlayer_by_seqno_epilogue;
+    }
+
+    buf[0] = (seqno >> 56) & 0xFF;
+    buf[1] = (seqno >> 48) & 0xFF;
+    buf[2] = (seqno >> 40) & 0xFF;
+    buf[3] = (seqno >> 32) & 0xFF;
+    buf[4] = (seqno >> 24) & 0xFF;
+    buf[5] = (seqno >> 16) & 0xFF;
+    buf[6] = (seqno >>  8) & 0xFF;
+    buf[7] = seqno & 0xFF;
+
+    g_bcsck_handle.keyset->send_seqno += step_bnt_keyset(&g_bcsck_handle.keyset, seqno + 1);
+
+    no_error = 1;
+
+set_protlayer_by_seqno_epilogue:
+
+__bcsck_leave(set_protlayer_by_seqno)
+
+    return no_error;
+}
+
+static int set_protlayer_by_recvd_buf(const kryptos_u8_t *buf, const ssize_t buf_size, bnt_keychain_ctx **keychain) {
     kryptos_u64_t seqno;
 
     if (buf_size < sizeof(kryptos_u64_t) ) {
@@ -262,11 +330,11 @@ static int set_protlayer(const kryptos_u8_t *buf, const ssize_t buf_size,
             (((kryptos_u64_t)buf[5]) << 16) |
             (((kryptos_u64_t)buf[6]) <<  8) | buf[7];
 
-    if (seqno > *chain_seqno) {
+    if (seqno > g_bcsck_handle.keyset->send_seqno) {
         if (step_bnt_keyset(&g_bcsck_handle.keyset, seqno) == 0) {
+            fprintf(stderr, "WARN: A possible replay attack was detected.\n");
             return 0;
         }
-        *chain_seqno = seqno;
     }
 
     if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
@@ -536,13 +604,19 @@ read_epilogue:
 }
 
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
-    kryptos_u8_t *obuf;
+    kryptos_u8_t *obuf = NULL;
     size_t obuf_size;
     ssize_t bytes_nr;
+    kryptos_u8_t *sbuf = NULL;
+    ssize_t sbuf_size;
 
 __bcsck_enter(send)
 
+    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto send_epilogue; });
+
     bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
+
+    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -559,9 +633,19 @@ __bcsck_enter(send)
 
 send_epilogue:
 
-    kryptos_freeseg(obuf, obuf_size);
+    if (obuf != NULL && obuf != sbuf) {
+        kryptos_freeseg(obuf, obuf_size);
+    }
+
     obuf = NULL;
     obuf_size = 0;
+
+
+    if (sbuf != NULL) {
+        kryptos_freeseg(sbuf, sbuf_size);
+        sbuf = NULL;
+        sbuf_size = 0;
+    }
 
 __bcsck_leave(send)
 
@@ -570,13 +654,19 @@ __bcsck_leave(send)
 
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
-    kryptos_u8_t *obuf;
+    kryptos_u8_t *obuf = NULL;
     size_t obuf_size;
     ssize_t bytes_nr;
+    kryptos_u8_t *sbuf = NULL;
+    ssize_t sbuf_size;
 
 __bcsck_enter(sendto)
 
+    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto sendto_epilogue; });
+
     bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
+
+    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -593,9 +683,18 @@ __bcsck_enter(sendto)
 
 sendto_epilogue:
 
-    kryptos_freeseg(obuf, obuf_size);
+    if (obuf != NULL && obuf != sbuf) {
+        kryptos_freeseg(obuf, obuf_size);
+    }
+
     obuf = NULL;
     obuf_size = 0;
+
+    if (sbuf != NULL) {
+        kryptos_freeseg(sbuf, sbuf_size);
+        sbuf = NULL;
+        sbuf_size = 0;
+    }
 
 __bcsck_leave(sendto)
 
@@ -603,12 +702,14 @@ __bcsck_leave(sendto)
 }
 
 ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags) {
-    kryptos_u8_t *obuf, *ibuf, *ib;
+    kryptos_u8_t *obuf = NULL, *ibuf, *ib;
     size_t obuf_size, ibuf_size;
     ssize_t bytes_nr;
     size_t iov_c, iov_len;
     struct msghdr omsg;
     struct iovec iov;
+    kryptos_u8_t *sbuf = NULL;
+    ssize_t sbuf_size;
 
 __bcsck_prologue(return -1)
 
@@ -638,8 +739,14 @@ __bcsck_enter(sendmsg)
         ib += iov_len;
     }
 
+    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1;
+                                               goto sendmsg_epilogue; });
+
     bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, { bytes_nr = -1;
                                                       goto sendmsg_epilogue; });
+
+    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1;
+                                                            goto sendmsg_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -675,10 +782,17 @@ sendmsg_epilogue:
         ibuf_size = 0;
     }
 
-    if (obuf != NULL) {
+    if (obuf != NULL && obuf != sbuf) {
         kryptos_freeseg(obuf, obuf_size);
-        obuf = NULL;
-        obuf_size = 0;
+    }
+
+    obuf = NULL;
+    obuf_size = 0;
+
+    if (sbuf != NULL) {
+        kryptos_freeseg(sbuf, sbuf_size);
+        sbuf = NULL;
+        sbuf_size = 0;
     }
 
 __bcsck_leave(sendmsg)
@@ -687,18 +801,22 @@ __bcsck_leave(sendmsg)
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
-    kryptos_u8_t *obuf;
+    kryptos_u8_t *obuf = NULL;
     size_t obuf_size;
     ssize_t bytes_nr;
     struct sockaddr addr;
     socklen_t addrl;
     struct stat st;
     int is_sock = 0;
+    kryptos_u8_t *sbuf = NULL;
+    ssize_t sbuf_size;
 
     if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
         // WARN(Rafael): Otherwise you will get a deadlock.
         __bcsck_enter(write)
+        bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto write_epilogue; });
         bcsck_encrypt(buf, count, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
+        bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
     } else {
         obuf = (kryptos_u8_t *)buf;
         obuf_size = count;
@@ -710,10 +828,17 @@ ssize_t write(int fd, const void *buf, size_t count) {
 
 write_epilogue:
 
-    if (obuf != NULL && obuf != buf) {
+    if (obuf != NULL && obuf != buf && obuf != sbuf) {
         kryptos_freeseg(obuf, obuf_size);
-        obuf = NULL;
-        obuf_size = 0;
+    }
+
+    obuf = NULL;
+    obuf_size = 0;
+
+    if (sbuf != NULL) {
+        kryptos_freeseg(sbuf, sbuf_size);
+        sbuf = NULL;
+        sbuf_size = 0;
     }
 
     if (is_sock) {

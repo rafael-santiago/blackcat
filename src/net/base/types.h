@@ -49,7 +49,7 @@ typedef struct bnt_keychain {
 
 typedef struct bnt_keyset {
     struct bnt_keyset_priv_ctx *priv;
-    kryptos_u64_t send_seqno, recv_seqno;
+    kryptos_u64_t send_seqno;
     bnt_keychain_ctx *send_chain, *recv_chain;
 }bnt_keyset_ctx;
 
