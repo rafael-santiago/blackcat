@@ -553,10 +553,10 @@ executing an 'undo' command.
 Decoy files
 ===========
 
-Blackcat has a command that allows you creating decoy files that are totally random but for an unwarned
-attacker is almost impossible to separate this kind of data from real cryptograms. The most obvious
-utility of decoy files is to add noise during a possible repo cryptanalysis. Maybe a cryptanalyst could
-spend days, months or even years on pure chaff. The usage is as follows:
+Blackcat has a command that allows you creating decoy files that are totally random but for an
+unsuspecting attacker is almost impossible to separate this kind of data from real cryptograms.
+The most obvious utility of decoy files is to add noise during a possible repo cryptanalysis.
+Maybe a cryptanalyst could spend days, months or even years on pure chaff. The usage is as follows:
 
     root@RedBarn:~/sphinx# blackcat decoy chunk-001.txt chunk-002.txt --fsize=4096
     root@RedBarn:~/sphinx# _
