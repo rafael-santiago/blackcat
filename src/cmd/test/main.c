@@ -235,9 +235,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help setkey", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help undo", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help decoy", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy", "", NULL) == 0);
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -1614,8 +1615,18 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("deinit", "Talking head", NULL) == 0);
 
     remove("etc/s2.txt");
-    rmdir("etc");
     remove("s1.txt");
+    remove("p.txt");
+
+    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --encoder=base64 --overwrite", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=base64", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=uuencode", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=uuencode --overwrite", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("decoy p.txt --fsize=8192", "", NULL) == 0);
+
+    remove("s1.txt");
+    remove("etc/s2.txt");
+    rmdir("etc");
     remove("p.txt");
 CUTE_TEST_CASE_END
 

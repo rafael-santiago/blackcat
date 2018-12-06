@@ -171,6 +171,84 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size);
 
+int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int overwrite) {
+    FILE *fp = NULL;
+    kryptos_u8_t *chaff = NULL;
+    int no_error = 0;
+    kryptos_task_ctx t, *ktask = &t;
+    size_t temp_size;
+    struct stat st;
+    int del_file = 1;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (filepath == NULL || chaff_size == 0) {
+        goto bcrepo_decoy_epilogue;
+    }
+
+    if (!overwrite && bstat(filepath, &st) == 0) {
+        fprintf(stderr, "ERROR: The file '%s' already exists. Retry using the overwrite flag to go ahead.\n", filepath);
+        del_file = 0;
+        goto bcrepo_decoy_epilogue;
+    }
+
+    if ((fp = fopen(filepath, "wb")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", filepath);
+        goto bcrepo_decoy_epilogue;
+    }
+
+    if ((chaff = kryptos_get_random_block(chaff_size)) == NULL) {
+        fprintf(stderr, "ERROR: Unable to get random data.\n");
+        goto bcrepo_decoy_epilogue;
+    }
+
+    if (encoder != NULL) {
+        kryptos_task_set_encode_action(ktask);
+        kryptos_task_set_in(ktask, chaff, chaff_size);
+
+        encoder(&ktask);
+
+        if (!kryptos_last_task_succeed(ktask)) {
+            fprintf(stderr, "ERROR: While encoding the random data.\n");
+            goto bcrepo_decoy_epilogue;
+        }
+
+        chaff = ktask->out;
+        temp_size = ktask->out_size;
+    } else {
+        temp_size = chaff_size;
+    }
+
+    if (fwrite(chaff, 1, temp_size, fp) != temp_size) {
+        fprintf(stderr, "ERROR: Unable to write to '%s'.\n", filepath);
+        goto bcrepo_decoy_epilogue;
+    }
+
+    no_error = 1;
+
+bcrepo_decoy_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (no_error == 0 && del_file) {
+        remove(filepath);
+    }
+
+    if (encoder != NULL) {
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+    }
+
+    if (chaff != NULL) {
+        kryptos_freeseg(chaff, temp_size);
+        chaff = NULL;
+        temp_size = 0;
+    }
+
+    return no_error;
+}
+
 int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size) {
     FILE *fp = NULL;
     int no_error = 0;

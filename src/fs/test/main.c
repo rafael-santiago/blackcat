@@ -37,6 +37,7 @@ CUTE_DECLARE_TEST_CASE(remove_go_ups_from_path_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_pack_unpack_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_reset_repo_settings_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_restore_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_decoy_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -74,6 +75,40 @@ CUTE_TEST_CASE(fs_tests)
     remove("o/des.o");
     remove("o/mars.o");
     remove("o/ciphering_schemes.o");
+    CUTE_RUN_TEST(bcrepo_decoy_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_decoy_tests)
+    char *data;
+    size_t data_size;
+    remove("decoy.sqn");
+    remove("decoy.txt");
+    CUTE_ASSERT(bcrepo_decoy(NULL, 108, NULL, 0) == 0);
+    CUTE_ASSERT(bcrepo_decoy("decoy.sqn", 0, NULL, 0) == 0);
+    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 108, NULL, 0) == 1);
+    data = open_text("decoy.sqn", &data_size);
+    CUTE_ASSERT(data == NULL);
+    data = open_text("decoy.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size == 108);
+    kryptos_freeseg(data, data_size);
+    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, 0) == 0);
+    data = open_text("decoy.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size == 108);
+    kryptos_freeseg(data, data_size);
+    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, 1) == 1);
+    data = open_text("decoy.txt", &data_size);
+    CUTE_ASSERT(data != NULL && data_size == 8);
+    kryptos_freeseg(data, data_size);
+    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 1024, get_encoder("base64"), 1) == 1);
+    data = open_text("decoy.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    kryptos_freeseg(data, data_size);
+    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 4096, get_encoder("uuencode"), 1) == 1);
+    data = open_text("decoy.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    kryptos_freeseg(data, data_size);
+    remove("decoy.sqn");
+    remove("decoy.txt");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_restore_tests)

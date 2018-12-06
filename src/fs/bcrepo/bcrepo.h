@@ -84,4 +84,6 @@ int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size);
 
 int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size);
 
+int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int overwrite);
+
 #endif

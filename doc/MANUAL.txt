@@ -550,6 +550,32 @@ In cases when blackcat does not exit normally you should immediately execute an 
 When there is some file to be recovered you will not be able to process any other file before
 executing an 'undo' command.
 
+Decoy files
+===========
+
+Blackcat has a command that allows you creating decoy files that are totally random but for an unwarned
+attacker is almost impossible to separate this kind of data from real cryptograms. The most obvious
+utility of decoy files is to add noise during a possible repo cryptanalysis. Maybe a cryptanalyst could
+spend days, months or even years on pure chaff. The usage is as follows:
+
+    root@RedBarn:~/sphinx# blackcat decoy chunk-001.txt chunk-002.txt --fsize=4096
+    root@RedBarn:~/sphinx# _
+
+The 'decoy' command for avoiding data loss does not overwrite files automatically you need to explicity
+ask for it through '--overwrite' flag option:
+
+    root@RedBarn:~/sphinx# blackcat decoy chunk-001.txt chunk-002.txt --fsize=8192 --overwrite
+    root@RedBarn:~/sphinx# _
+
+If you are using some kind of encoding for your sensible data is a good idea also generate encoded
+decoys (using the same encoded algorithm used for sensible data, of course):
+
+    root@RedBarn:~/sphinx# blackcat decoy doc/report.txt --encoder=uuencode --fsize=193
+    root@RedBarn:~/sphinx# _
+
+After doing it all you should do is to add the generated decoy files as plain files to the repo's
+catalog by using the command 'add'.
+
 Cool off
 ========
 

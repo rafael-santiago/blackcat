@@ -22,6 +22,7 @@
 #include <cmd/unpack.h>
 #include <cmd/setkey.h>
 #include <cmd/undo.h>
+#include <cmd/decoy.h>
 #if !defined(_WIN32)
 # include <cmd/lkm.h>
 # include <cmd/paranoid.h>
@@ -57,7 +58,8 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(net),
 #endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey),
-    BLACKCAT_COMMAND_TABLE_ENTRY(undo)
+    BLACKCAT_COMMAND_TABLE_ENTRY(undo),
+    BLACKCAT_COMMAND_TABLE_ENTRY(decoy)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)
