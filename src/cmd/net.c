@@ -92,6 +92,11 @@ static int drop_rule(void) {
     if ((err = blackcat_netdb_load(db_path, 1)) == 0) {
         err = blackcat_netdb_drop(rule_id, ndb_key, ndb_key_size);
         blackcat_netdb_unload();
+        if (err == ENOENT) {
+            fprintf(stderr, "ERROR: Rule '%s' does not exist.\n", rule_id);
+        } else if (err == EFAULT) {
+            fprintf(stderr, "ERROR: Unable to access the netdb data. Check your netdb key.\n");
+        }
     }
 
 drop_rule_epilogue:
@@ -143,19 +148,31 @@ static int add_rule(void) {
 
     first_access = (stat(db_path, &st) == -1);
 
+    accacia_savecursorposition();
+
     fprintf(stdout, "Netdb key: ");
     if ((key = blackcat_getuserkey(&key_size)) == NULL) {
         fprintf(stderr, "ERROR: NULL key.\n");
         goto add_rule_epilogue;
     }
 
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
     if (first_access) {
-        fprintf(stdout, "\nConfirm the netdb key: ");
+        accacia_savecursorposition();
+
+        fprintf(stdout, "Confirm the netdb key: ");
 
         if ((cp_key = blackcat_getuserkey(&cp_key_size)) == NULL) {
             fprintf(stderr, "ERROR: NULL key.\n");
             goto add_rule_epilogue;
         }
+
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
 
         if (cp_key_size != key_size && memcmp(cp_key, key, cp_key_size) != 0) {
             fprintf(stderr, "ERROR: The keys do not match.\n");
@@ -245,8 +262,7 @@ static int run(void) {
         }
     } while((temp = blackcat_get_argv(a++)) != NULL);
 
-    err = 0;
-    system(cmdline);
+    err = system(cmdline);
 
 run_epilogue:
 

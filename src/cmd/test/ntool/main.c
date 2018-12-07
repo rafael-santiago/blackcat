@@ -101,8 +101,8 @@ static void *client(void *args) {
         exit(1);
     }
 
-    fwrite(buf, buf_size, 1, stdout);
-    fflush(stdout);
+    fwrite(buf, buf_size, 1, stderr);
+    fflush(stderr);
 
     close(fd);
 
@@ -156,8 +156,8 @@ static void *server(void *args) {
         exit(1);
     }
 
-    fwrite(buf, buf_size, 1, stdout);
-    fflush(stdout);
+    fwrite(buf, buf_size, 1, stderr);
+    fflush(stderr);
 
     if (ntc->send(c_fd, ntc->data, ntc->data_size) == -1) {
         perror("ntc->send");

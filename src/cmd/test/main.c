@@ -194,7 +194,17 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     unsigned char *k1, *k2;
     FILE *fp;
     char cwd[4096];
-
+    char *ntool_out[] = {
+        "read/write client",
+        "read/write server",
+        "send/recv client",
+        "sendmsg/recvmsg client",
+        "sendto/recvfrom client",
+        "send/recv server",
+        "sendmsg/recvmsg server",
+        "sendto/recvfrom server"
+    };
+    size_t ntool_out_nr = sizeof(ntool_out) / sizeof(ntool_out[0]), n;
 
     // INFO(Rafael): Just housekeeping.
 
@@ -1628,6 +1638,35 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("etc/s2.txt");
     rmdir("etc");
     remove("p.txt");
+
+    remove("ntool-test.db");
+    remove("ntool.log");
+    CUTE_ASSERT(blackcat("net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
+                         "--protection-layer=blowfish-ctr,aes-128-cbc --db-path=ntool-test.db", "test", "test") == 0);
+
+    // TODO(Rafael): Start a thread in order to capture net data with 'tcpdump -i any -A', scan this output
+    //               trying to find any ntool_out item. If found some data, it indicates that the encryption is not
+    //               working.
+
+    CUTE_ASSERT(blackcat("net --run --rule=ntool-rule --bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                         "ntool/bin/ntool 2> ntool.log", "test", "abc\nabc") == 0);
+
+    data = get_file_data("ntool.log", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    for (n = 0; n < ntool_out_nr; n++) {
+        CUTE_ASSERT(strstr(data, ntool_out[n]) != NULL);
+    }
+
+    kryptos_freeseg(data, data_size);
+    remove("ntool.log");
+
+    CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool --db-path=ntool-test.db", "test", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "tEst", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "test", NULL) == 0);
+    remove("ntool-test.db");
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_dev_tests)

@@ -27,6 +27,7 @@ blackcat-cmd-tests.preloading() {
 
 blackcat-cmd-tests.prologue() {
     build("hdev");
+    build("ntool");
 
     $src.ls(".*\\.c$");
 

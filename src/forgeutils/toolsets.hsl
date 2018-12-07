@@ -220,6 +220,22 @@ local function build_hdev() : result type int {
     result $exit_code;
 }
 
+local function build_ntool() : result type int {
+    var exit_code type int;
+
+    $exit_code = 1;
+
+    var old_cwd type string;
+    $old_cwd = hefesto.sys.pwd();
+
+    if (hefesto.sys.cd("ntool")) {
+        $exit_code = hefesto.sys.run("hefesto");
+        hefesto.sys.cd($old_cwd);
+    }
+
+    result $exit_code;
+}
+
 function build(libname type string) : result type int {
     var func_addr type int;
 
