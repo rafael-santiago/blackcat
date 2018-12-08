@@ -37,6 +37,8 @@ static int syshook(void);
 
 static int clear_syshook(void);
 
+static int has_tcpdump(void);
+
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
 
@@ -1644,12 +1646,26 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
                          "--protection-layer=blowfish-ctr,aes-128-cbc --db-path=ntool-test.db", "test", "test") == 0);
 
-    // TODO(Rafael): Start a thread in order to capture net data with 'tcpdump -i any -A', scan this output
-    //               trying to find any ntool_out item. If found some data, it indicates that the encryption is not
-    //               working.
+    if (has_tcpdump()) {
+        CUTE_ASSERT(system("tcpdump -i any -A -c 20 > ntool-traffic.log &") == 0);
+        sleep(1);
+    } else {
+        printf("WARN: Unable to intercept packets during 'net/--run' tests. For a more complete test install tcpdump.\n");
+    }
 
     CUTE_ASSERT(blackcat("net --run --rule=ntool-rule --bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                          "ntool/bin/ntool 2> ntool.log", "test", "abc\nabc") == 0);
+
+    if (has_tcpdump()) {
+        sleep(3);
+        data = get_file_data("ntool-traffic.log", &data_size);
+        CUTE_ASSERT(data != NULL);
+        remove("ntool-traffic.log");
+        for (n = 0; n < ntool_out_nr;n++) {
+            CUTE_ASSERT(strstr(data, ntool_out[n]) == NULL);
+        }
+        kryptos_freeseg(data, data_size);
+    }
 
     data = get_file_data("ntool.log", &data_size);
     CUTE_ASSERT(data != NULL);
@@ -1668,6 +1684,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "test", NULL) == 0);
     remove("ntool-test.db");
 CUTE_TEST_CASE_END
+
+static int has_tcpdump(void) {
+    return (system("tcpdump --version 2>/dev/null") == 0);
+}
 
 CUTE_TEST_CASE(blackcat_dev_tests)
 #if !defined(_WIN32)
