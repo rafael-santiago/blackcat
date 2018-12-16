@@ -10,6 +10,7 @@
 #include <cmd/options.h>
 #include <net/db/db.h>
 #include <kbd/kbd.h>
+#include <keychain/keychain.h>
 #include <accacia.h>
 #include <string.h>
 #include <stdlib.h>
@@ -210,7 +211,7 @@ add_rule_epilogue:
 }
 
 static int run(void) {
-    char *rule, *db_path, *bcsck_lib_path;
+    char *rule, *db_path, *bcsck_lib_path, *xchg_port, *xchg_addr;
     char *temp = NULL;
     size_t temp_size, db_key_size, cmdline_size = 0;
     char cmdline[4096], *cp;
@@ -247,8 +248,20 @@ static int run(void) {
     }
 
     memset(cmdline, 0, cmdline_size);
-    sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
-                    bcsck_lib_path, db_path, rule);
+    if (blackcat_get_bool_option("e2ee", 0) == 0) {
+        sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
+                        bcsck_lib_path, db_path, rule);
+    } else {
+        BLACKCAT_GET_OPTION_OR_DIE(xchg_addr, "xchg-addr", run_epilogue);
+        BLACKCAT_GET_OPTION_OR_DIE(xchg_port, "xchg-port", run_epilogue);
+        if (blackcat_is_dec(xchg_port, strlen(xchg_port)) == 0) {
+            fprintf(stderr, "ERROR: Invalid data supplied in xchg-port option. It must be a valid port number.\n");
+            goto run_epilogue;
+        }
+        sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_XCHG_PORT=%s BCSCK_XCHG_ADDR=%s "
+                         "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, db_path, xchg_port, xchg_addr,
+                                                           bcsck_lib_path, db_path, rule);
+    }
     cmdline_size -= strlen(cmdline);
     cp = &cmdline[0] + (sizeof(cmdline) - cmdline_size);
 

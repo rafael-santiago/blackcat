@@ -49,7 +49,7 @@ struct bcsck_handle_ctx {
                     mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func,
                     mtx_socket_func, mtx_set_protlayer_by_seqno_func;
 #endif
-    int libc_loaded, p2p_conn;
+    int libc_loaded, e2ee_conn;
     char *xchg_addr;
     unsigned short xchg_port;
     bnt_keyset_ctx ks, *keyset;
@@ -202,8 +202,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define bcsck_p2p_decrypt_setup(offset, buf, buf_size, esc_stmt) {\
-    if (g_bcsck_handle.p2p_conn) {\
+#define bcsck_e2ee_decrypt_setup(offset, buf, buf_size, esc_stmt) {\
+    if (g_bcsck_handle.e2ee_conn) {\
         offset = sizeof(kryptos_u64_t);\
         if (set_protlayer_by_recvd_buf(buf, buf_size, &g_bcsck_handle.keyset->recv_chain) == 0) {\
             esc_stmt;\
@@ -213,8 +213,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define bcsck_p2p_encrypt_setup(send_buf, send_buf_size, esc_stmt) {\
-    if (g_bcsck_handle.p2p_conn) {\
+#define bcsck_e2ee_encrypt_setup(send_buf, send_buf_size, esc_stmt) {\
+    if (g_bcsck_handle.e2ee_conn) {\
         send_buf = (kryptos_u8_t *) kryptos_newseg(0xFFFF);\
         if (send_buf == NULL) {\
             esc_stmt;\
@@ -227,8 +227,8 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
     }\
 }
 
-#define bcsck_p2p_post_proc(send_buf, send_buf_size, out_buf, out_buf_size, esc_stmt) {\
-    if (g_bcsck_handle.p2p_conn) {\
+#define bcsck_e2ee_post_proc(send_buf, send_buf_size, out_buf, out_buf_size, esc_stmt) {\
+    if (g_bcsck_handle.e2ee_conn) {\
         if (send_buf_size < out_buf_size) {\
             esc_stmt;\
         }\
@@ -241,7 +241,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 
 #define BCSCK_DBPATH      "BCSCK_DBPATH"
 #define BCSCK_RULE        "BCSCK_RULE"
-#define BCSCK_P2P         "BCSCK_P2P"
+#define BCSCK_E2EE        "BCSCK_E2EE"
 #define BCSCK_XCHG_PORT   "BCSCK_PORT"
 #define BCSCK_XCHG_ADDR   "BCSCK_ADDR"
 
@@ -366,7 +366,7 @@ __bcsck_enter(recv)
         goto recv_epilogue;
     }
 
-    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recv_epilogue; });
+    bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recv_epilogue; });
 
     bcsck_decrypt(rbuf + rbuf_offset, rbuf_size - rbuf_offset, obuf, obuf_size,
                   { bytes_nr = -1; errno = EFAULT; goto recv_epilogue; });
@@ -419,7 +419,7 @@ __bcsck_enter(recvfrom)
         goto recvfrom_epilogue;
     }
 
-    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvfrom_epilogue; });
+    bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvfrom_epilogue; });
 
     bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recvfrom_epilogue; });
 
@@ -492,7 +492,7 @@ __bcsck_enter(recvmsg)
     memset(&rmsg, 0, sizeof(rmsg));
     memset(&iov, 0, sizeof(iov));
 
-    bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
+    bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
     bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
@@ -567,7 +567,7 @@ ssize_t read(int fd, void *buf, size_t count) {
             goto read_epilogue;
         }
 
-        bcsck_p2p_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto read_epilogue; })
+        bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto read_epilogue; })
 
         bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto read_epilogue; });
 
@@ -612,11 +612,11 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 
 __bcsck_enter(send)
 
-    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto send_epilogue; });
+    bcsck_e2ee_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto send_epilogue; });
 
     bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
 
-    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
+    bcsck_e2ee_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto send_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -662,11 +662,11 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 __bcsck_enter(sendto)
 
-    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto sendto_epilogue; });
+    bcsck_e2ee_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto sendto_epilogue; });
 
     bcsck_encrypt(buf, len, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
 
-    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
+    bcsck_e2ee_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto sendto_epilogue; });
 
     if (obuf_size > 0xFFFF) {
         // INFO(Rafael): The effective message became too long. The user application will caught it
@@ -739,13 +739,13 @@ __bcsck_enter(sendmsg)
         ib += iov_len;
     }
 
-    bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1;
+    bcsck_e2ee_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1;
                                                goto sendmsg_epilogue; });
 
     bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, { bytes_nr = -1;
                                                       goto sendmsg_epilogue; });
 
-    bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1;
+    bcsck_e2ee_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1;
                                                             goto sendmsg_epilogue; });
 
     if (obuf_size > 0xFFFF) {
@@ -814,9 +814,9 @@ ssize_t write(int fd, const void *buf, size_t count) {
     if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
         // WARN(Rafael): Otherwise you will get a deadlock.
         __bcsck_enter(write)
-        bcsck_p2p_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto write_epilogue; });
+        bcsck_e2ee_encrypt_setup(sbuf, sbuf_size, { bytes_nr = -1; goto write_epilogue; });
         bcsck_encrypt(buf, count, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
-        bcsck_p2p_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
+        bcsck_e2ee_post_proc(sbuf, sbuf_size, obuf, obuf_size, { bytes_nr = -1; goto write_epilogue; });
     } else {
         obuf = (kryptos_u8_t *)buf;
         obuf_size = count;
@@ -949,14 +949,14 @@ static int bcsck_read_rule(void) {
         goto bcsck_read_rule_epilogue;
     }
 
-    if (!(g_bcsck_handle.p2p_conn = (getenv(BCSCK_P2P) != NULL))) {
+    if (!(g_bcsck_handle.e2ee_conn = (getenv(BCSCK_E2EE) != NULL))) {
         goto bcsck_read_rule_epilogue;
     }
 
-    setenv(BCSCK_P2P, " ", 1);
-    unsetenv(BCSCK_P2P);
+    setenv(BCSCK_E2EE, " ", 1);
+    unsetenv(BCSCK_E2EE);
 
-    // INFO(Rafael): If the user has indicated a p2p communication, we will strengthen a little more the encryption by
+    // INFO(Rafael): If the user has indicated a e2ee communication, we will strengthen a little more the encryption by
     //               preventing replay attacks and mitigating a session key disclosure situation by making it more ephemeral.
 
     if ((port = getenv(BCSCK_XCHG_PORT)) == NULL) {
@@ -967,7 +967,7 @@ static int bcsck_read_rule(void) {
     }
 
     setenv(BCSCK_XCHG_PORT, " ", 1);
-    unsetenv(BCSCK_P2P);
+    unsetenv(BCSCK_E2EE);
 
     g_bcsck_handle.xchg_port = atoi(port);
 
@@ -1019,11 +1019,11 @@ bcsck_read_rule_epilogue:
     unsetenv(BCSCK_DBPATH);
     unsetenv(BCSCK_RULE);
 
-    setenv(BCSCK_P2P, " ", 1);
-    unsetenv(BCSCK_P2P);
+    setenv(BCSCK_E2EE, " ", 1);
+    unsetenv(BCSCK_E2EE);
 
     setenv(BCSCK_XCHG_PORT, " ", 1);
-    unsetenv(BCSCK_P2P);
+    unsetenv(BCSCK_XCHG_PORT);
 
     setenv(BCSCK_XCHG_ADDR, " ", 1);
     unsetenv(BCSCK_XCHG_ADDR);
@@ -1319,11 +1319,11 @@ __bcsck_leave(read)
 #undef __bcsck_leave
 #undef bcsck_encrypt
 #undef bcsck_decrypt
-#undef bcsck_p2p_decrypt_setup
+#undef bcsck_e2ee_decrypt_setup
 
 #undef BCSCK_DBPATH
 #undef BCSCK_RULE
-#undef BCSCK_P2P
+#undef BCSCK_E2EE
 #undef BCSCK_XCHG_PORT
 #undef BCSCK_XCHG_ADDR
 
