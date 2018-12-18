@@ -252,15 +252,19 @@ static int run(void) {
         sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
                         bcsck_lib_path, db_path, rule);
     } else {
-        BLACKCAT_GET_OPTION_OR_DIE(xchg_addr, "xchg-addr", run_epilogue);
+        xchg_addr = blackcat_get_option("xchg-addr", NULL);
         BLACKCAT_GET_OPTION_OR_DIE(xchg_port, "xchg-port", run_epilogue);
         if (blackcat_is_dec(xchg_port, strlen(xchg_port)) == 0) {
             fprintf(stderr, "ERROR: Invalid data supplied in xchg-port option. It must be a valid port number.\n");
             goto run_epilogue;
         }
-        sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_XCHG_PORT=%s BCSCK_XCHG_ADDR=%s "
-                         "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, db_path, xchg_port, xchg_addr,
-                                                           bcsck_lib_path, db_path, rule);
+        if (xchg_addr != NULL) {
+            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
+                             "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, xchg_addr, db_path, rule);
+        } else {
+            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
+                             "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, db_path, rule);
+        }
     }
     cmdline_size -= strlen(cmdline);
     cp = &cmdline[0] + (sizeof(cmdline) - cmdline_size);

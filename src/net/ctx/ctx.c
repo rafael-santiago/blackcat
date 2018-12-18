@@ -7,6 +7,7 @@
  */
 #include <net/ctx/ctx.h>
 #include <ctx/ctx.h>
+#include <keychain/ciphering_schemes.h>
 #include <kryptos.h>
 #include <string.h>
 
@@ -74,6 +75,7 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
 
     cp->ruleid_size = strlen(ruleid);
     cp->ruleid = (char *) kryptos_newseg(cp->ruleid_size + 1);
+    cp->hash_algo = get_hash_processor_name(hash);
 
     if (cp->ruleid == NULL) {
         printf("ERROR: No memory!\n");
@@ -448,6 +450,7 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno)
                                   NULL, 0,
                                   NULL, 0,
                                   kcp->data_size);
+
             if (key == NULL) {
                 fprintf(stderr, "ERROR: KDF returned a NULL okm.\n");
                 return 0;
@@ -477,6 +480,7 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno)
             ksp->recv_chain->tail->key = add_bnt_keychunk(ksp->recv_chain->tail->key, key, kcp->data_size);
             kryptos_freeseg(key, kcp->data_size);
         }
+
     }
 
     return 1;

@@ -52,14 +52,15 @@ struct bcsck_handle_ctx {
     int libc_loaded, e2ee_conn;
     char *xchg_addr;
     unsigned short xchg_port;
-    bnt_keyset_ctx ks, *keyset;
+    bnt_keyset_ctx *keyset;
 };
 
 #if defined(BCSCK_THREAD_SAFE)
 
-static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0 };
+struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                           0, 0, 0, 0, 0, 0 };
+bnt_keyset_ctx ks[2];
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle.libc_loaded) {\
@@ -216,6 +217,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 #define bcsck_e2ee_encrypt_setup(send_buf, send_buf_size, esc_stmt) {\
     if (g_bcsck_handle.e2ee_conn) {\
         send_buf = (kryptos_u8_t *) kryptos_newseg(0xFFFF);\
+        send_buf_size = 0xFFFF;\
         if (send_buf == NULL) {\
             esc_stmt;\
         }\
@@ -232,7 +234,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
         if (send_buf_size < out_buf_size) {\
             esc_stmt;\
         }\
-        memcpy(send_buf, out_buf, out_buf_size);\
+        memcpy(send_buf + sizeof(kryptos_u64_t), out_buf, out_buf_size);\
         kryptos_freeseg(out_buf, out_buf_size);\
         out_buf = send_buf;\
         out_buf_size += sizeof(kryptos_u64_t);\
@@ -289,6 +291,8 @@ __bcsck_enter(set_protlayer_by_seqno)
     }
 
     seqno = g_bcsck_handle.keyset->send_seqno;
+    g_bcsck_handle.keyset->send_seqno += step_bnt_keyset(&g_bcsck_handle.keyset, seqno + 1);
+    printf("send_seqno = %d\n", g_bcsck_handle.keyset->send_seqno);
 
     if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
         fprintf(stderr, "ERROR: While setting up the encryption process.\n");
@@ -303,8 +307,6 @@ __bcsck_enter(set_protlayer_by_seqno)
     buf[5] = (seqno >> 16) & 0xFF;
     buf[6] = (seqno >>  8) & 0xFF;
     buf[7] = seqno & 0xFF;
-
-    g_bcsck_handle.keyset->send_seqno += step_bnt_keyset(&g_bcsck_handle.keyset, seqno + 1);
 
     no_error = 1;
 
@@ -331,8 +333,9 @@ static int set_protlayer_by_recvd_buf(const kryptos_u8_t *buf, const ssize_t buf
             (((kryptos_u64_t)buf[6]) <<  8) | buf[7];
 
     if (seqno > g_bcsck_handle.keyset->send_seqno) {
+        printf("SEQ(curr) = %d SEQ(intended) = %d\n", g_bcsck_handle.keyset->send_seqno, seqno);
         if (step_bnt_keyset(&g_bcsck_handle.keyset, seqno) == 0) {
-            fprintf(stderr, "WARN: A possible replay attack was detected.\n");
+            fprintf(stderr, "WARN: A possible replay attack was detected.1\n");
             return 0;
         }
     }
@@ -421,7 +424,8 @@ __bcsck_enter(recvfrom)
 
     bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvfrom_epilogue; });
 
-    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto recvfrom_epilogue; });
+    bcsck_decrypt(rbuf + rbuf_offset, rbuf_size - rbuf_offset, obuf, obuf_size,
+                  { bytes_nr = -1; errno = EFAULT; goto recvfrom_epilogue; });
 
     if (obuf_size > len) {
         errno = EFAULT;
@@ -494,7 +498,8 @@ __bcsck_enter(recvmsg)
 
     bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
-    bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
+    bcsck_decrypt(rbuf + rbuf_offset, rbuf_size - rbuf_offset, obuf, obuf_size,
+                  { errno = EFAULT; bytes_nr = -1; goto recvmsg_epilogue; });
 
     bytes_nr = 0;
 
@@ -554,6 +559,7 @@ ssize_t read(int fd, void *buf, size_t count) {
     size_t rbuf_offset;
 
     if (fstat(fd, &st) == 0 && (is_sock = S_ISSOCK(st.st_mode))) {
+
         // WARN(Rafael): Otherwise you will get a deadlock.
         __bcsck_enter(read)
         if ((rbuf = (kryptos_u8_t *) kryptos_newseg(0xFFFF)) == NULL) {
@@ -569,7 +575,8 @@ ssize_t read(int fd, void *buf, size_t count) {
 
         bcsck_e2ee_decrypt_setup(rbuf_offset, rbuf, rbuf_size, { errno = EFAULT; bytes_nr = -1; goto read_epilogue; })
 
-        bcsck_decrypt(rbuf, rbuf_size, obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto read_epilogue; });
+        bcsck_decrypt(rbuf + rbuf_offset, rbuf_size - rbuf_offset,
+                      obuf, obuf_size, { bytes_nr = -1; errno = EFAULT; goto read_epilogue; });
 
         if (obuf_size > count) {
             errno = EFAULT;
@@ -1031,13 +1038,21 @@ bcsck_read_rule_epilogue:
     return err;
 }
 
+void print_data(kryptos_u8_t *bytes, size_t size) {
+    size_t s;
+    for (s = 0; s < size; s++) {
+        printf("%.2X ", bytes[s]);
+    }
+    printf("\n");
+}
+
 static int do_xchg_server(void) {
     int err = -1;
     int lsockfd = -1, csockfd = -1;
     kryptos_u8_t *send_seed = NULL, *out_buf = NULL;
     size_t send_seed_size, out_buf_size;
-    char buf[64];
-    kryptos_u8_t *hash = NULL;
+    char buf[65535];
+    const char *hash = NULL;
     ssize_t buf_size;
     struct sockaddr_in sin;
     socklen_t slen;
@@ -1084,7 +1099,9 @@ __bcsck_enter(sendmsg)
 
     listen(lsockfd, 1);
 
+    slen = sizeof(sin);
     if ((csockfd = accept(lsockfd, (struct sockaddr *)&sin, &slen)) == -1) {
+        perror("accept");
         fprintf(stderr, "ERROR: Unable to accept the client during session parameters exchanging.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1097,7 +1114,7 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_server_epilogue;
                   })
 
-    if (g_bcsck_handle.libc_send(csockfd, out_buf, out_buf_size, 0) != send_seed_size) {
+    if (g_bcsck_handle.libc_send(csockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1120,15 +1137,16 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_server_epilogue;
                   })
 
-    hash = g_bcsck_handle.rule->pchain->repo_key_hash;
+    hash = g_bcsck_handle.rule->hash_algo;
 
     // INFO(Rafael): It seems tricky but the 'sending seed' for us is actually the 'receiving seed'...
 
-    g_bcsck_handle.keyset = &g_bcsck_handle.ks;
-
+    g_bcsck_handle.keyset = &ks[0];
+    //printf("send-seed_s: "); print_data(send_seed, send_seed_size);
+    //printf("recv-seed_s: "); print_data(out_buf, out_buf_size);
     if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
                         get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
-                        NULL, out_buf, out_buf_size, send_seed, send_seed_size) == 0) {
+                        NULL, send_seed, send_seed_size, out_buf, out_buf_size) == 0) {
         fprintf(stderr, "ERROR: Unable to initialize the keyset.\n");
         err = EFAULT;
         goto do_xchg_server_epilogue;
@@ -1180,8 +1198,8 @@ static int do_xchg_client(void) {
     int sockfd = -1;
     kryptos_u8_t *send_seed = NULL, *out_buf = NULL;
     size_t send_seed_size, out_buf_size;
-    char buf[64];
-    kryptos_u8_t *hash = NULL;
+    char buf[65535];
+    const char *hash = NULL;
     ssize_t buf_size;
     struct sockaddr_in sin;
     socklen_t slen;
@@ -1222,13 +1240,7 @@ __bcsck_enter(sendmsg)
         goto do_xchg_client_epilogue;
     }
 
-    sin.sin_addr.s_addr = ((struct in_addr *)hp->h_aliases[0])->s_addr;
-
-    if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
-        fprintf(stderr, "ERROR: Unable to bind the socket.\n");
-        err = errno;
-        goto do_xchg_client_epilogue;
-    }
+    sin.sin_addr.s_addr = ((struct in_addr *)hp->h_addr_list[0])->s_addr;
 
     if (connect(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
         fprintf(stderr, "ERROR: Unable to connect to the host.\n");
@@ -1249,9 +1261,11 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
-    hash = g_bcsck_handle.rule->pchain->repo_key_hash;
-    g_bcsck_handle.keyset = &g_bcsck_handle.ks;
+    hash = g_bcsck_handle.rule->hash_algo;
+    g_bcsck_handle.keyset = &ks[1];
 
+    //printf("send-seed_c: "); print_data(send_seed, send_seed_size);
+    //printf("recv-seed_c: "); print_data(out_buf, out_buf_size);
     if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
                         get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
                         NULL, send_seed, send_seed_size, out_buf, out_buf_size) == 0) {
@@ -1269,7 +1283,7 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
-    if (g_bcsck_handle.libc_send(sockfd, send_seed, send_seed_size, 0) != send_seed_size) {
+    if (g_bcsck_handle.libc_send(sockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = EFAULT;
         goto do_xchg_client_epilogue;

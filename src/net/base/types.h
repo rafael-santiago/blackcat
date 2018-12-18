@@ -29,6 +29,7 @@ typedef struct bnt_channel_rule {
     struct bnt_channel_rule *head, *tail;
     char *ruleid;
     size_t ruleid_size;
+    const char *hash_algo;
     struct bnt_channel_rule_assertion assertion;
     blackcat_protlayer_chain_ctx *pchain;
     struct bnt_channel_rule *next, *last;
