@@ -32,7 +32,7 @@
 }
 
 struct bnt_keyset_priv_ctx {
-    kryptos_u64_t seqno;
+    kryptos_u64_t recv_seqno, send_seqno;
     kryptos_u64_t max_seqno_delta;
     kryptos_hash_func h;
     kryptos_hash_size_func h_input_size;
@@ -279,12 +279,12 @@ int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx 
         return 0;
     }
 
-    ksp->priv->seqno = 0;
+    ksp->priv->send_seqno = ksp->priv->recv_seqno = 0;
     ksp->priv->max_seqno_delta = max_seqno_delta;
     ksp->priv->h = h;
     ksp->priv->h_input_size = h_input_size;
     ksp->priv->h_size = h_size;
-    ksp->send_seqno = 0;
+    ksp->send_seqno = ksp->recv_seqno = 0;
 
     if (xchgd_key != NULL) {
         ksp->priv->xchgd_key = kryptos_assign_mp_value(&ksp->priv->xchgd_key, xchgd_key);
@@ -422,72 +422,99 @@ void deinit_bnt_keyset(bnt_keyset_ctx *keyset) {
 
 }
 
-int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno) {
+int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno, bnt_keychain_ctx *keychain) {
     bnt_keyset_ctx *ksp;
     kryptos_u8_t *key;
     bnt_keychunk_ctx *kcp;
+    kryptos_u64_t curr_seqno;
+    int step_send_chain;
 
-    if (keyset == NULL || *keyset == NULL ||
-        (*keyset)->send_chain == NULL || (*keyset)->recv_chain == NULL ||
-        intended_seqno <= (*keyset)->priv->seqno ||
-        abs(intended_seqno - (*keyset)->priv->seqno) > (*keyset)->priv->max_seqno_delta) {
+    if (keyset == NULL || *keyset == NULL || keychain == NULL) {
         return 0;
     }
 
     ksp = *keyset;
 
-    while (ksp->priv->seqno < intended_seqno) {
-        ksp->priv->seqno++;
+    if (keychain == ksp->send_chain) {
+        curr_seqno = ksp->priv->send_seqno;
+        step_send_chain = 1;
+    } else {
+        curr_seqno = ksp->priv->recv_seqno;
+        step_send_chain = 0;
+    }
 
-        ksp->send_chain = add_bnt_keychain(ksp->send_chain, ksp->priv->seqno);
+    //if (get_bnt_keychain(intended_seqno, keychain) != NULL) {
+    //    return 0;
+    //}
 
-        for (kcp = ksp->send_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
-            key = kryptos_do_hkdf(kcp->data,
-                                  kcp->data_size,
-                                  ksp->priv->h,
-                                  ksp->priv->h_input_size,
-                                  ksp->priv->h_size,
-                                  NULL, 0,
-                                  NULL, 0,
-                                  kcp->data_size);
+    if (intended_seqno <= curr_seqno) {
+        return 0;
+    }
 
-            if (key == NULL) {
-                fprintf(stderr, "ERROR: KDF returned a NULL okm.\n");
-                return 0;
+    if (abs(intended_seqno - curr_seqno) > ksp->priv->max_seqno_delta) {
+        return 0;
+    }
+
+    if (step_send_chain) {
+        while (ksp->priv->send_seqno < intended_seqno) {
+            ksp->priv->send_seqno++;
+
+            ksp->send_chain = add_bnt_keychain(ksp->send_chain, ksp->priv->send_seqno);
+
+            for (kcp = ksp->send_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
+                key = kryptos_do_hkdf(kcp->data,
+                                      kcp->data_size,
+                                      ksp->priv->h,
+                                      ksp->priv->h_input_size,
+                                      ksp->priv->h_size,
+                                      NULL, 0,
+                                      NULL, 0,
+                                      kcp->data_size);
+
+                if (key == NULL) {
+                    fprintf(stderr, "ERROR: KDF returned a NULL okm.\n");
+                    return 0;
+                }
+
+                ksp->send_chain->tail->key = add_bnt_keychunk(ksp->send_chain->tail->key, key, kcp->data_size);
+                kryptos_freeseg(key, kcp->data_size);
             }
 
-            ksp->send_chain->tail->key = add_bnt_keychunk(ksp->send_chain->tail->key, key, kcp->data_size);
-            kryptos_freeseg(key, kcp->data_size);
         }
 
-        ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, ksp->priv->seqno);
+    } else {
+        while (ksp->priv->recv_seqno < intended_seqno) {
+            ksp->priv->recv_seqno++;
 
-        for (kcp = ksp->recv_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
-            key = kryptos_do_hkdf(kcp->data,
-                                  kcp->data_size,
-                                  ksp->priv->h,
-                                  ksp->priv->h_input_size,
-                                  ksp->priv->h_size,
-                                  NULL, 0,
-                                  NULL, 0,
-                                  kcp->data_size);
+            ksp->recv_chain = add_bnt_keychain(ksp->recv_chain, ksp->priv->recv_seqno);
 
-            if (key == NULL) {
-                fprintf(stderr, "ERROR: KDF returned a NULL okm.\n");
-                return 0;
+            for (kcp = ksp->recv_chain->tail->last->key; kcp != NULL; kcp = kcp->next) {
+                key = kryptos_do_hkdf(kcp->data,
+                                      kcp->data_size,
+                                      ksp->priv->h,
+                                      ksp->priv->h_input_size,
+                                      ksp->priv->h_size,
+                                      NULL, 0,
+                                      NULL, 0,
+                                      kcp->data_size);
+
+                if (key == NULL) {
+                    fprintf(stderr, "ERROR: KDF returned a NULL okm.\n");
+                    return 0;
+                }
+
+                ksp->recv_chain->tail->key = add_bnt_keychunk(ksp->recv_chain->tail->key, key, kcp->data_size);
+                kryptos_freeseg(key, kcp->data_size);
             }
-
-            ksp->recv_chain->tail->key = add_bnt_keychunk(ksp->recv_chain->tail->key, key, kcp->data_size);
-            kryptos_freeseg(key, kcp->data_size);
         }
-
     }
 
     return 1;
 }
 
 int set_protlayer_key_by_keychain_seqno(const kryptos_u64_t seqno,
-                                       blackcat_protlayer_chain_ctx *pchain, bnt_keychain_ctx **keychain) {
+                                        blackcat_protlayer_chain_ctx *pchain, bnt_keychain_ctx **keychain,
+                                        bnt_keyset_ctx **keyset) {
     bnt_keychain_ctx *kcp;
     bnt_keychunk_ctx *kp;
     blackcat_protlayer_chain_ctx *p;
@@ -498,6 +525,14 @@ int set_protlayer_key_by_keychain_seqno(const kryptos_u64_t seqno,
 
     for (kp = kcp->key, p = pchain; kp != NULL && p != NULL; kp = kp->next, p = p->next) {
         memcpy(p->key, kp->data, kp->data_size);
+    }
+
+    if ((*keychain)->next == NULL) {
+        if (*keychain == (*keyset)->send_chain) {
+            step_bnt_keyset(keyset, (*keyset)->priv->send_seqno + 1, (*keychain));
+        } else if (*keychain == (*keyset)->recv_chain) {
+            step_bnt_keyset(keyset, (*keyset)->priv->recv_seqno + 1, (*keychain));
+        }
     }
 
     (*keychain) = del_bnt_keychain_seqno(*keychain, seqno);

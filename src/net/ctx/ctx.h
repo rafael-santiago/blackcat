@@ -46,9 +46,10 @@ int init_bnt_keyset(bnt_keyset_ctx **keyset, const blackcat_protlayer_chain_ctx 
 
 void deinit_bnt_keyset(bnt_keyset_ctx *keyset);
 
-int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno);
+int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno, bnt_keychain_ctx *keychain);
 
 int set_protlayer_key_by_keychain_seqno(const kryptos_u64_t seqno,
-                                       blackcat_protlayer_chain_ctx *pchain, bnt_keychain_ctx **keychain);
+                                        blackcat_protlayer_chain_ctx *pchain, bnt_keychain_ctx **keychain,
+                                        bnt_keyset_ctx **keyset);
 
 #endif

@@ -57,46 +57,48 @@ struct bcsck_handle_ctx {
 
 #if defined(BCSCK_THREAD_SAFE)
 
-struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0 };
+//struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+//                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                                           0, 0, 0, 0, 0, 0 };
+struct bcsck_handle_ctx *g_bcsck_handle = NULL;
+
 bnt_keyset_ctx ks[2];
 
 #define __bcsck_prologue(return_stmt) {\
-    if (!g_bcsck_handle.libc_loaded) {\
-        g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
-        g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
-        g_bcsck_handle.libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
-        g_bcsck_handle.libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
-        g_bcsck_handle.libc_read = dlsym(RTLD_NEXT, "read");\
-        g_bcsck_handle.libc_send = dlsym(RTLD_NEXT, "send");\
-        g_bcsck_handle.libc_sendto = dlsym(RTLD_NEXT, "sendto");\
-        g_bcsck_handle.libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
-        g_bcsck_handle.libc_write = dlsym(RTLD_NEXT, "write");\
-        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_socket != NULL) &&\
-                                     (g_bcsck_handle.libc_recv != NULL) &&\
-                                     (g_bcsck_handle.libc_recvfrom != NULL) &&\
-                                     (g_bcsck_handle.libc_recvmsg != NULL) &&\
-                                     (g_bcsck_handle.libc_read != NULL) &&\
-                                     (g_bcsck_handle.libc_send != NULL) &&\
-                                     (g_bcsck_handle.libc_sendto != NULL) &&\
-                                     (g_bcsck_handle.libc_sendmsg != NULL) &&\
-                                     (g_bcsck_handle.libc_write != NULL) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recv_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recvfrom_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_recvmsg_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_read_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_send_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_sendto_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_sendmsg_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_write_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_socket_func, NULL) == 0) &&\
-                                     (pthread_mutex_init(&g_bcsck_handle.mtx_set_protlayer_by_seqno_func, NULL) == 0);\
+    if (!g_bcsck_handle->libc_loaded) {\
+        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, "socket");\
+        g_bcsck_handle->libc_recv = dlsym(RTLD_NEXT, "recv");\
+        g_bcsck_handle->libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
+        g_bcsck_handle->libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
+        g_bcsck_handle->libc_read = dlsym(RTLD_NEXT, "read");\
+        g_bcsck_handle->libc_send = dlsym(RTLD_NEXT, "send");\
+        g_bcsck_handle->libc_sendto = dlsym(RTLD_NEXT, "sendto");\
+        g_bcsck_handle->libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
+        g_bcsck_handle->libc_write = dlsym(RTLD_NEXT, "write");\
+        g_bcsck_handle->libc_loaded = (g_bcsck_handle->libc_socket != NULL) &&\
+                                     (g_bcsck_handle->libc_recv != NULL) &&\
+                                     (g_bcsck_handle->libc_recvfrom != NULL) &&\
+                                     (g_bcsck_handle->libc_recvmsg != NULL) &&\
+                                     (g_bcsck_handle->libc_read != NULL) &&\
+                                     (g_bcsck_handle->libc_send != NULL) &&\
+                                     (g_bcsck_handle->libc_sendto != NULL) &&\
+                                     (g_bcsck_handle->libc_sendmsg != NULL) &&\
+                                     (g_bcsck_handle->libc_write != NULL) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_recv_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_recvfrom_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_recvmsg_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_read_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_send_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_sendto_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_sendmsg_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_write_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_socket_func, NULL) == 0) &&\
+                                     (pthread_mutex_init(&g_bcsck_handle->mtx_set_protlayer_by_seqno_func, NULL) == 0);\
     }\
-    if (!g_bcsck_handle.libc_loaded) {\
+    if (!g_bcsck_handle->libc_loaded) {\
         return_stmt;\
     }\
-    if (g_bcsck_handle.rule == NULL) {\
+    if (g_bcsck_handle->rule == NULL) {\
         if (bcsck_read_rule() != 0) {\
             return_stmt;\
         }\
@@ -104,34 +106,34 @@ bnt_keyset_ctx ks[2];
 }
 
 #define __bcsck_epilogue {\
-    g_bcsck_handle.libc_loaded = 0;\
-    g_bcsck_handle.libc_socket = NULL;\
-    g_bcsck_handle.libc_recv = NULL;\
-    g_bcsck_handle.libc_recvfrom = NULL;\
-    g_bcsck_handle.libc_recvmsg = NULL;\
-    g_bcsck_handle.libc_read = NULL;\
-    g_bcsck_handle.libc_send = NULL;\
-    g_bcsck_handle.libc_sendto = NULL;\
-    g_bcsck_handle.libc_sendmsg = NULL;\
-    g_bcsck_handle.libc_write = NULL;\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_recv_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_recvfrom_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_recvmsg_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_read_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_send_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_sendto_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_sendmsg_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_write_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_socket_func);\
-    pthread_mutex_destroy(&g_bcsck_handle.mtx_set_protlayer_by_seqno_func);\
+    g_bcsck_handle->libc_loaded = 0;\
+    g_bcsck_handle->libc_socket = NULL;\
+    g_bcsck_handle->libc_recv = NULL;\
+    g_bcsck_handle->libc_recvfrom = NULL;\
+    g_bcsck_handle->libc_recvmsg = NULL;\
+    g_bcsck_handle->libc_read = NULL;\
+    g_bcsck_handle->libc_send = NULL;\
+    g_bcsck_handle->libc_sendto = NULL;\
+    g_bcsck_handle->libc_sendmsg = NULL;\
+    g_bcsck_handle->libc_write = NULL;\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_recv_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_recvfrom_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_recvmsg_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_read_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_send_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_sendto_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_sendmsg_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_write_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_socket_func);\
+    pthread_mutex_destroy(&g_bcsck_handle->mtx_set_protlayer_by_seqno_func);\
 }
 
 #define __bcsck_enter(sock_func) {\
-    pthread_mutex_lock(&g_bcsck_handle.mtx_ ## sock_func ## _func);\
+    pthread_mutex_lock(&g_bcsck_handle->mtx_ ## sock_func ## _func);\
 }
 
 #define __bcsck_leave(sock_func) {\
-    pthread_mutex_unlock(&g_bcsck_handle.mtx_ ## sock_func ## _func);\
+    pthread_mutex_unlock(&g_bcsck_handle->mtx_ ## sock_func ## _func);\
 }
 
 #else
@@ -140,30 +142,30 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
                                                   0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
-    if (!g_bcsck_handle.libc_loaded) {\
-        g_bcsck_handle.libc_socket = dlsym(RTLD_NEXT, "socket");\
-        g_bcsck_handle.libc_recv = dlsym(RTLD_NEXT, "recv");\
-        g_bcsck_handle.libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
-        g_bcsck_handle.libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
-        g_bcsck_handle.libc_read = dlsym(RTLD_NEXT, "read");\
-        g_bcsck_handle.libc_send = dlsym(RTLD_NEXT, "send");\
-        g_bcsck_handle.libc_sendto = dlsym(RTLD_NEXT, "sendto");\
-        g_bcsck_handle.libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
-        g_bcsck_handle.libc_write = dlsym(RTLD_NEXT, "write");\
-        g_bcsck_handle.libc_loaded = (g_bcsck_handle.libc_socket != NULL) &&\
-                                     (g_bcsck_handle.libc_recv != NULL) &&\
-                                     (g_bcsck_handle.libc_recvfrom != NULL) &&\
-                                     (g_bcsck_handle.libc_recvmsg != NULL) &&\
-                                     (g_bcsck_handle.libc_read != NULL) &&\
-                                     (g_bcsck_handle.libc_send != NULL) &&\
-                                     (g_bcsck_handle.libc_sendto != NULL) &&\
-                                     (g_bcsck_handle.libc_sendmsg != NULL) &&\
-                                     (g_bcsck_handle.libc_write != NULL);\
+    if (!g_bcsck_handle->libc_loaded) {\
+        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, "socket");\
+        g_bcsck_handle->libc_recv = dlsym(RTLD_NEXT, "recv");\
+        g_bcsck_handle->libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
+        g_bcsck_handle->libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
+        g_bcsck_handle->libc_read = dlsym(RTLD_NEXT, "read");\
+        g_bcsck_handle->libc_send = dlsym(RTLD_NEXT, "send");\
+        g_bcsck_handle->libc_sendto = dlsym(RTLD_NEXT, "sendto");\
+        g_bcsck_handle->libc_sendmsg = dlsym(RTLD_NEXT, "sendmsg");\
+        g_bcsck_handle->libc_write = dlsym(RTLD_NEXT, "write");\
+        g_bcsck_handle->libc_loaded = (g_bcsck_handle->libc_socket != NULL) &&\
+                                     (g_bcsck_handle->libc_recv != NULL) &&\
+                                     (g_bcsck_handle->libc_recvfrom != NULL) &&\
+                                     (g_bcsck_handle->libc_recvmsg != NULL) &&\
+                                     (g_bcsck_handle->libc_read != NULL) &&\
+                                     (g_bcsck_handle->libc_send != NULL) &&\
+                                     (g_bcsck_handle->libc_sendto != NULL) &&\
+                                     (g_bcsck_handle->libc_sendmsg != NULL) &&\
+                                     (g_bcsck_handle->libc_write != NULL);\
     }\
-    if (!g_bcsck_handle.libc_loaded) {\
+    if (!g_bcsck_handle->libc_loaded) {\
         return_stmt;\
     }\
-    if (g_bcsck_handle.rule == NULL) {\
+    if (g_bcsck_handle->rule == NULL) {\
         if (bcsck_read_rule() != 0) {\
             return_stmt;\
         }\
@@ -171,16 +173,16 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 }
 
 #define __bcsck_epilogue {\
-    g_bcsck_handle.libc_loaded = 0;\
-    g_bcsck_handle.libc_socket = NULL;\
-    g_bcsck_handle.libc_recv = NULL;\
-    g_bcsck_handle.libc_recvfrom = NULL;\
-    g_bcsck_handle.libc_recvmsg = NULL;\
-    g_bcsck_handle.libc_read = NULL;\
-    g_bcsck_handle.libc_send = NULL;\
-    g_bcsck_handle.libc_sendto = NULL;\
-    g_bcsck_handle.libc_sendmsg = NULL;\
-    g_bcsck_handle.libc_write = NULL;\
+    g_bcsck_handle->libc_loaded = 0;\
+    g_bcsck_handle->libc_socket = NULL;\
+    g_bcsck_handle->libc_recv = NULL;\
+    g_bcsck_handle->libc_recvfrom = NULL;\
+    g_bcsck_handle->libc_recvmsg = NULL;\
+    g_bcsck_handle->libc_read = NULL;\
+    g_bcsck_handle->libc_send = NULL;\
+    g_bcsck_handle->libc_sendto = NULL;\
+    g_bcsck_handle->libc_sendmsg = NULL;\
+    g_bcsck_handle->libc_write = NULL;\
 }
 
 #define __bcsck_enter(sock_func) {};
@@ -190,23 +192,23 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 #endif // defined(BCSCK_THREAD_SAFE)
 
 #define bcsck_encrypt(ibuf, ibuf_size, obuf, obuf_size, esc_stmt) {\
-    if ((obuf = blackcat_encrypt_data(g_bcsck_handle.rule->pchain,\
+    if ((obuf = blackcat_encrypt_data(g_bcsck_handle->rule->pchain,\
                                       (kryptos_u8_t *)ibuf, ibuf_size, &obuf_size)) == NULL) {\
         esc_stmt;\
     }\
 }
 
 #define bcsck_decrypt(ibuf, ibuf_size, obuf, obuf_size, esc_stmt) {\
-    if ((obuf = blackcat_decrypt_data(g_bcsck_handle.rule->pchain,\
+    if ((obuf = blackcat_decrypt_data(g_bcsck_handle->rule->pchain,\
                                       (kryptos_u8_t *)ibuf, ibuf_size, &obuf_size)) == NULL) {\
         esc_stmt;\
     }\
 }
 
 #define bcsck_e2ee_decrypt_setup(offset, buf, buf_size, esc_stmt) {\
-    if (g_bcsck_handle.e2ee_conn) {\
+    if (g_bcsck_handle->e2ee_conn) {\
         offset = sizeof(kryptos_u64_t);\
-        if (set_protlayer_by_recvd_buf(buf, buf_size, &g_bcsck_handle.keyset->recv_chain) == 0) {\
+        if (set_protlayer_by_recvd_buf(buf, buf_size, &g_bcsck_handle->keyset->recv_chain) == 0) {\
             esc_stmt;\
         }\
     } else {\
@@ -215,13 +217,13 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 }
 
 #define bcsck_e2ee_encrypt_setup(send_buf, send_buf_size, esc_stmt) {\
-    if (g_bcsck_handle.e2ee_conn) {\
+    if (g_bcsck_handle->e2ee_conn) {\
         send_buf = (kryptos_u8_t *) kryptos_newseg(0xFFFF);\
         send_buf_size = 0xFFFF;\
         if (send_buf == NULL) {\
             esc_stmt;\
         }\
-        if (set_protlayer_by_seqno(send_buf, send_buf_size, &g_bcsck_handle.keyset->send_chain) == 0) {\
+        if (set_protlayer_by_seqno(send_buf, send_buf_size, &g_bcsck_handle->keyset->send_chain) == 0) {\
             esc_stmt;\
         }\
     } else {\
@@ -230,7 +232,7 @@ static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, 
 }
 
 #define bcsck_e2ee_post_proc(send_buf, send_buf_size, out_buf, out_buf_size, esc_stmt) {\
-    if (g_bcsck_handle.e2ee_conn) {\
+    if (g_bcsck_handle->e2ee_conn) {\
         if (send_buf_size < out_buf_size) {\
             esc_stmt;\
         }\
@@ -270,7 +272,7 @@ __bcsck_enter(socket)
 
 __bcsck_prologue(goto socket_epilogue)
 
-    err = g_bcsck_handle.libc_socket(domain, type, protocol);
+    err = g_bcsck_handle->libc_socket(domain, type, protocol);
 
 socket_epilogue:
 
@@ -290,11 +292,12 @@ __bcsck_enter(set_protlayer_by_seqno)
         goto set_protlayer_by_seqno_epilogue;
     }
 
-    seqno = g_bcsck_handle.keyset->send_seqno;
-    g_bcsck_handle.keyset->send_seqno += step_bnt_keyset(&g_bcsck_handle.keyset, seqno + 1);
-    printf("send_seqno = %d\n", g_bcsck_handle.keyset->send_seqno);
+    seqno = g_bcsck_handle->keyset->send_seqno;
+    if (step_bnt_keyset(&g_bcsck_handle->keyset, seqno + 1, g_bcsck_handle->keyset->send_chain)) {
+        g_bcsck_handle->keyset->send_seqno += 1;
+    }
 
-    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
+    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle->rule->pchain, keychain, &g_bcsck_handle->keyset) == 0) {
         fprintf(stderr, "ERROR: While setting up the encryption process.\n");
         goto set_protlayer_by_seqno_epilogue;
     }
@@ -332,20 +335,21 @@ static int set_protlayer_by_recvd_buf(const kryptos_u8_t *buf, const ssize_t buf
             (((kryptos_u64_t)buf[5]) << 16) |
             (((kryptos_u64_t)buf[6]) <<  8) | buf[7];
 
-    if (seqno > g_bcsck_handle.keyset->send_seqno) {
-        printf("SEQ(curr) = %d SEQ(intended) = %d\n", g_bcsck_handle.keyset->send_seqno, seqno);
-        if (step_bnt_keyset(&g_bcsck_handle.keyset, seqno) == 0) {
-            fprintf(stderr, "WARN: A possible replay attack was detected.1\n");
+    if (seqno > g_bcsck_handle->keyset->recv_seqno) {
+        if (step_bnt_keyset(&g_bcsck_handle->keyset, seqno, g_bcsck_handle->keyset->recv_chain) == 0) {
+            fprintf(stderr, "WARN: A possible replay attack was detected.\n");
             return 0;
         }
     }
 
-    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle.rule->pchain, keychain) == 0) {
+    if (set_protlayer_key_by_keychain_seqno(seqno, g_bcsck_handle->rule->pchain, keychain, &g_bcsck_handle->keyset) == 0) {
         if (get_bnt_keychain(seqno, *keychain) == NULL) {
             fprintf(stderr, "WARN: A possible replay attack was detected.\n");
         }
         return 0;
     }
+
+    g_bcsck_handle->keyset->recv_seqno += 1;
 
     return 1;
 }
@@ -364,7 +368,7 @@ __bcsck_enter(recv)
         goto recv_epilogue;
     }
 
-    if ((rbuf_size = g_bcsck_handle.libc_recv(sockfd, rbuf, 0xFFFF, flags)) == -1) {
+    if ((rbuf_size = g_bcsck_handle->libc_recv(sockfd, rbuf, 0xFFFF, flags)) == -1) {
         bytes_nr = -1;
         goto recv_epilogue;
     }
@@ -417,7 +421,7 @@ __bcsck_enter(recvfrom)
         goto recvfrom_epilogue;
     }
 
-    if ((rbuf_size = g_bcsck_handle.libc_recvfrom(sockfd, rbuf, 0xFFFF, flags, src_addr, addrlen)) == -1) {
+    if ((rbuf_size = g_bcsck_handle->libc_recvfrom(sockfd, rbuf, 0xFFFF, flags, src_addr, addrlen)) == -1) {
         bytes_nr = -1;
         goto recvfrom_epilogue;
     }
@@ -487,7 +491,7 @@ __bcsck_enter(recvmsg)
     iov.iov_base = rbuf;
     iov.iov_len = 0xFFFF;
 
-    if ((rbuf_size = g_bcsck_handle.libc_recvmsg(sockfd, &rmsg, flags)) == -1) {
+    if ((rbuf_size = g_bcsck_handle->libc_recvmsg(sockfd, &rmsg, flags)) == -1) {
         errno = EFAULT;
         bytes_nr = -1;
         goto recvmsg_epilogue;
@@ -568,7 +572,7 @@ ssize_t read(int fd, void *buf, size_t count) {
             goto read_epilogue;
         }
 
-        if ((rbuf_size = g_bcsck_handle.libc_read(fd, rbuf, 0xFFFF)) == -1) {
+        if ((rbuf_size = g_bcsck_handle->libc_read(fd, rbuf, 0xFFFF)) == -1) {
             bytes_nr = -1;
             goto read_epilogue;
         }
@@ -586,7 +590,7 @@ ssize_t read(int fd, void *buf, size_t count) {
         memcpy(buf, obuf, obuf_size);
         bytes_nr = obuf_size;
     } else {
-        bytes_nr = g_bcsck_handle.libc_read(fd, buf, count);
+        bytes_nr = g_bcsck_handle->libc_read(fd, buf, count);
     }
 
 read_epilogue:
@@ -634,7 +638,7 @@ __bcsck_enter(send)
         goto send_epilogue;
     }
 
-    if ((bytes_nr = g_bcsck_handle.libc_send(sockfd, obuf, obuf_size, flags)) != -1) {
+    if ((bytes_nr = g_bcsck_handle->libc_send(sockfd, obuf, obuf_size, flags)) != -1) {
         bytes_nr = len;
     }
 
@@ -684,7 +688,7 @@ __bcsck_enter(sendto)
         goto sendto_epilogue;
     }
 
-    if ((bytes_nr = g_bcsck_handle.libc_sendto(sockfd, obuf, obuf_size, flags, dest_addr, addrlen)) != -1) {
+    if ((bytes_nr = g_bcsck_handle->libc_sendto(sockfd, obuf, obuf_size, flags, dest_addr, addrlen)) != -1) {
         bytes_nr = len;
     }
 
@@ -774,7 +778,7 @@ __bcsck_enter(sendmsg)
     iov.iov_base = obuf;
     iov.iov_len = obuf_size;
 
-    if ((bytes_nr = g_bcsck_handle.libc_sendmsg(sockfd, &omsg, flags)) != -1) {
+    if ((bytes_nr = g_bcsck_handle->libc_sendmsg(sockfd, &omsg, flags)) != -1) {
         bytes_nr = ibuf_size;
     }
 
@@ -829,7 +833,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
         obuf_size = count;
     }
 
-    if ((bytes_nr = g_bcsck_handle.libc_write(fd, obuf, obuf_size)) != -1) {
+    if ((bytes_nr = g_bcsck_handle->libc_write(fd, obuf, obuf_size)) != -1) {
         bytes_nr = count;
     }
 
@@ -856,6 +860,11 @@ write_epilogue:
 }
 
 static void bcsck_init(void) {
+    g_bcsck_handle = (struct bcsck_handle_ctx *) malloc(sizeof(struct bcsck_handle_ctx));
+    if (g_bcsck_handle == NULL) {
+        printf("ERROR: Not enough memory!\n");
+        exit(1);
+    }
 __bcsck_prologue({
                     printf("ERROR: during libbcsck.so initializing. Aborted.\n");
                     exit(1);
@@ -864,6 +873,9 @@ __bcsck_prologue({
 
 static void bcsck_deinit(void) {
 __bcsck_epilogue
+    if (g_bcsck_handle != NULL) {
+        free(g_bcsck_handle);
+    }
 }
 
 static int bcsck_read_rule(void) {
@@ -945,18 +957,18 @@ static int bcsck_read_rule(void) {
     temp_size = 0;
 
     if ((err = blackcat_netdb_load(db_path, 0)) == 0) {
-        g_bcsck_handle.rule = blackcat_netdb_select(rule_id, db_key, db_key_size, &session_key, &session_key_size);
+        g_bcsck_handle->rule = blackcat_netdb_select(rule_id, db_key, db_key_size, &session_key, &session_key_size);
         err = blackcat_netdb_unload();
     }
 
-    if (g_bcsck_handle.rule == NULL) {
+    if (g_bcsck_handle->rule == NULL) {
         fprintf(stderr, "ERROR: The specified rule seems not exist or the Netdb password is wrong.\n");
         fflush(stderr);
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
 
-    if (!(g_bcsck_handle.e2ee_conn = (getenv(BCSCK_E2EE) != NULL))) {
+    if (!(g_bcsck_handle->e2ee_conn = (getenv(BCSCK_E2EE) != NULL))) {
         goto bcsck_read_rule_epilogue;
     }
 
@@ -976,14 +988,14 @@ static int bcsck_read_rule(void) {
     setenv(BCSCK_XCHG_PORT, " ", 1);
     unsetenv(BCSCK_E2EE);
 
-    g_bcsck_handle.xchg_port = atoi(port);
+    g_bcsck_handle->xchg_port = atoi(port);
 
-    g_bcsck_handle.xchg_addr = getenv(BCSCK_XCHG_ADDR);
+    g_bcsck_handle->xchg_addr = getenv(BCSCK_XCHG_ADDR);
 
     setenv(BCSCK_XCHG_ADDR, " ", 1);
     unsetenv(BCSCK_XCHG_ADDR);
 
-    if (g_bcsck_handle.xchg_addr == NULL) {
+    if (g_bcsck_handle->xchg_addr == NULL) {
         do_xchg = do_xchg_server;
     } else {
         do_xchg = do_xchg_client;
@@ -997,9 +1009,9 @@ static int bcsck_read_rule(void) {
 
 bcsck_read_rule_epilogue:
 
-    if (err != 0 && g_bcsck_handle.rule != NULL) {
-        del_bnt_channel_rule_ctx(g_bcsck_handle.rule);
-        g_bcsck_handle.rule = NULL;
+    if (err != 0 && g_bcsck_handle->rule != NULL) {
+        del_bnt_channel_rule_ctx(g_bcsck_handle->rule);
+        g_bcsck_handle->rule = NULL;
     }
 
     if (temp != NULL) {
@@ -1038,13 +1050,13 @@ bcsck_read_rule_epilogue:
     return err;
 }
 
-void print_data(kryptos_u8_t *bytes, size_t size) {
+/*void print_data(kryptos_u8_t *bytes, size_t size) {
     size_t s;
     for (s = 0; s < size; s++) {
         printf("%.2X ", bytes[s]);
     }
     printf("\n");
-}
+}*/
 
 static int do_xchg_server(void) {
     int err = -1;
@@ -1079,7 +1091,7 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((lsockfd = g_bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+    if ((lsockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
         fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1088,7 +1100,7 @@ __bcsck_enter(sendmsg)
     setsockopt(lsockfd, SOL_SOCKET, SO_REUSEADDR, &yeah_butt_head, sizeof(yeah_butt_head));
 
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(g_bcsck_handle.xchg_port);
+    sin.sin_port = htons(g_bcsck_handle->xchg_port);
     sin.sin_addr.s_addr = INADDR_ANY;
 
     if ((bind(lsockfd, (struct sockaddr *)&sin, sizeof(sin))) == -1) {
@@ -1114,7 +1126,7 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_server_epilogue;
                   })
 
-    if (g_bcsck_handle.libc_send(csockfd, out_buf, out_buf_size, 0) != out_buf_size) {
+    if (g_bcsck_handle->libc_send(csockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1124,7 +1136,7 @@ __bcsck_enter(sendmsg)
     out_buf = NULL;
     out_buf_size = 0;
 
-    if ((buf_size = g_bcsck_handle.libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
+    if ((buf_size = g_bcsck_handle->libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
         fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
         err = errno;
         goto do_xchg_server_epilogue;
@@ -1137,14 +1149,13 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_server_epilogue;
                   })
 
-    hash = g_bcsck_handle.rule->hash_algo;
+    hash = g_bcsck_handle->rule->hash_algo;
 
     // INFO(Rafael): It seems tricky but the 'sending seed' for us is actually the 'receiving seed'...
 
-    g_bcsck_handle.keyset = &ks[0];
-    //printf("send-seed_s: "); print_data(send_seed, send_seed_size);
-    //printf("recv-seed_s: "); print_data(out_buf, out_buf_size);
-    if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
+    g_bcsck_handle->keyset = &ks[0];
+
+    if (init_bnt_keyset(&g_bcsck_handle->keyset, g_bcsck_handle->rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
                         get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
                         NULL, send_seed, send_seed_size, out_buf, out_buf_size) == 0) {
         fprintf(stderr, "ERROR: Unable to initialize the keyset.\n");
@@ -1225,16 +1236,16 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((sockfd = g_bcsck_handle.libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+    if ((sockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
         fprintf(stderr, "ERROR: Unable to create a socket.\n");
         err = errno;
         goto do_xchg_client_epilogue;
     }
 
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(g_bcsck_handle.xchg_port);
+    sin.sin_port = htons(g_bcsck_handle->xchg_port);
 
-    if ((hp = gethostbyname(g_bcsck_handle.xchg_addr)) == NULL) {
+    if ((hp = gethostbyname(g_bcsck_handle->xchg_addr)) == NULL) {
         fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
         err = errno;
         goto do_xchg_client_epilogue;
@@ -1248,7 +1259,7 @@ __bcsck_enter(sendmsg)
         goto do_xchg_client_epilogue;
     }
 
-    if ((buf_size = g_bcsck_handle.libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
+    if ((buf_size = g_bcsck_handle->libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
         fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
         err = errno;
         goto do_xchg_client_epilogue;
@@ -1261,12 +1272,10 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
-    hash = g_bcsck_handle.rule->hash_algo;
-    g_bcsck_handle.keyset = &ks[1];
+    hash = g_bcsck_handle->rule->hash_algo;
+    g_bcsck_handle->keyset = &ks[1];
 
-    //printf("send-seed_c: "); print_data(send_seed, send_seed_size);
-    //printf("recv-seed_c: "); print_data(out_buf, out_buf_size);
-    if (init_bnt_keyset(&g_bcsck_handle.keyset, g_bcsck_handle.rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
+    if (init_bnt_keyset(&g_bcsck_handle->keyset, g_bcsck_handle->rule->pchain, BCSCK_SEQNO_WINDOW_SIZE,
                         get_hash_processor(hash), get_hash_input_size(hash), get_hash_size(hash),
                         NULL, send_seed, send_seed_size, out_buf, out_buf_size) == 0) {
         fprintf(stderr, "ERROR: Unable to initialize the keyset.\n");
@@ -1283,7 +1292,7 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
-    if (g_bcsck_handle.libc_send(sockfd, out_buf, out_buf_size, 0) != out_buf_size) {
+    if (g_bcsck_handle->libc_send(sockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = EFAULT;
         goto do_xchg_client_epilogue;

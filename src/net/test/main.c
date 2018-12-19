@@ -358,33 +358,33 @@ CUTE_TEST_CASE(ctx_tests)
                                 get_hash_processor("sha3-512"), get_hash_input_size("sha3-512"), get_hash_size("sha3-512"),
                                 NULL, "----->", 6, "<-----", 6) == 1);
 
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 100) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 100, keyset->send_chain) == 0);
 
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 0) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 0, keyset->send_chain) == 0);
 
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 1);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20, keyset->send_chain) == 1);
 
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 1) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 2) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 3) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 4) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 5) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 6) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 7) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 8) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 9) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 10) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 11) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 12) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 13) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 14) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 15) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 16) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 17) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 18) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 19) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 21) == 1);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  1, keyset->send_chain ) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  2, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  3, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  4, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  5, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  6, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  7, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  8, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  9, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 10, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 11, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 12, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 13, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 14, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 15, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 16, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 17, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 18, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 19, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 21, keyset->send_chain) == 1);
 
     keystream_size = 0;
 
@@ -401,7 +401,7 @@ CUTE_TEST_CASE(ctx_tests)
             ksp += kp->data_size;
         }
 
-        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain) == 1);
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain, &keyset) == 1);
 
         ksp = keystream;
 
@@ -422,7 +422,7 @@ CUTE_TEST_CASE(ctx_tests)
             ksp += kp->data_size;
         }
 
-        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain) == 1);
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain, &keyset) == 1);
 
         ksp = keystream;
 
@@ -435,32 +435,32 @@ CUTE_TEST_CASE(ctx_tests)
     }
 
     for (seqno = 0; seqno < 22; seqno++) {
-        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain) == 0);
-        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain) == 0);
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->send_chain, &keyset) == 0);
+        CUTE_ASSERT(set_protlayer_key_by_keychain_seqno(seqno, pchain, &keyset->recv_chain, &keyset) == 0);
     }
 
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 0) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 1) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 2) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 3) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 4) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 5) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 6) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 7) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 8) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 9) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 10) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 11) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 12) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 13) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 14) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 15) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 16) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 17) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 18) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 19) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 20) == 0);
-    CUTE_ASSERT(step_bnt_keyset(&keyset, 21) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  0, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  1, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  2, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  3, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  4, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  5, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  6, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  7, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  8, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset,  9, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 10, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 11, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 12, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 13, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 14, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 15, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 16, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 17, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 18, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 19, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 20, keyset->send_chain) == 0);
+    CUTE_ASSERT(step_bnt_keyset(&keyset, 21, keyset->send_chain) == 0);
 
     del_protlayer_chain_ctx(pchain);
     deinit_bnt_keyset(keyset);
