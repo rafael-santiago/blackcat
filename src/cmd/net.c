@@ -217,12 +217,21 @@ static int run(void) {
     char cmdline[4096], *cp;
     int err = EINVAL;
     size_t a;
+    struct stat st;
 
     BLACKCAT_GET_OPTION_OR_DIE(rule, "rule", run_epilogue);
 
     if ((bcsck_lib_path = blackcat_get_option("bcsck-lib-path", getenv(BLACKCAT_BCSCK_LIB_HOME))) == NULL) {
+#if defined(__unix__)
+        bcsck_lib_path = "/usr/lib/libbcsck.so";
+        if (stat(bcsck_lib_path, &st) != 0) {
+            fprintf(stderr, "ERROR: NULL bcsck library path.\n");
+            goto run_epilogue;
+        }
+#else
         fprintf(stderr, "ERROR: NULL bcsck library path.\n");
         goto run_epilogue;
+#endif
     }
 
     if ((db_path = blackcat_get_option("db-path", getenv(BLACKCAT_NET_DB_HOME))) == NULL) {
