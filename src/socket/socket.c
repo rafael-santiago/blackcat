@@ -55,14 +55,11 @@ struct bcsck_handle_ctx {
     bnt_keyset_ctx *keyset;
 };
 
-#if defined(BCSCK_THREAD_SAFE)
-
-//struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-//                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//                                           0, 0, 0, 0, 0, 0 };
 struct bcsck_handle_ctx *g_bcsck_handle = NULL;
 
 bnt_keyset_ctx ks[2];
+
+#if defined(BCSCK_THREAD_SAFE)
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle->libc_loaded) {\
@@ -137,9 +134,6 @@ bnt_keyset_ctx ks[2];
 }
 
 #else
-
-static struct bcsck_handle_ctx g_bcsck_handle = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
-                                                  0, 0, 0, 0, 0 };
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle->libc_loaded) {\
