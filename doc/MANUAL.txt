@@ -576,6 +576,90 @@ decoys (using the same encoded algorithm used for sensible data, of course):
 After doing it all you should do is to add the generated decoy files as plain files to the repo's
 catalog by using the command 'add'.
 
+Protecting network traffic
+==========================
+
+Blackcat is able to protect data flowing from network connections. The basic idea behind the net
+module is to protect applications by running them through blackcat. In this case any socket function
+related to send/receive data is intercepted by 'libbcsck.so', the library with socket stuff but including
+some crypto capabilities.
+
+When you protect network traffic with blackcat you must indicate what protection rule will be applied over
+that communication channel. Due to this reason you need to create a rule and store it inside a file that
+is commonly called 'netdb'. A kind of database with rules that can protect net data.
+
+The command to create a rule is 'net/--add-rule':
+
+    root@RedBarn:~/# blackcat net --add-rule --rule=nc --type=socket --hash=whirlpool \
+    > --protection-layer=blowfish,aes-128-ctr,hmac-sha3-512-aes-256-cbc --db-path=netdb.db
+
+It will create a file called 'netdb.db' with a rule called 'nc' of type 'socket'. Until now only type
+'socket' is supported. The '--protection-layer' option specifies what algorithm(s) will be used to
+protect data. The '--hash' algorithm is used in the key derivation function.
+
+When you specify an existing file in the '--db-path' option your new rule will be appended to the
+existing ones.
+
+If for some reason you want to delete a rule:
+
+    root@RedBarn:~/# blackcat net --drop-rule --rule=nc --db-path=netdb.db
+
+Pretty easy, huh?
+
+Now let's see how to use a rule to protect a connection. As said before blackcat will apply
+some hooking stuff to make the connection encrypted. Let's suppose that Alice wants to communicate
+with Bob just by using netcat but she wants some level of secrecy during this chat. Alice should
+use the command 'net/--run' to create a protected instance of netcat in her system:
+
+    root@RedBarn:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
+    > --db-path=/usr/local/share/blackcat/db/netdb.db nc -l -p 1024
+
+Just after executing the command above Alice will be asked for the netdb's password and also a
+session key (previously agreed between Bob and her). Notice that the command invoking the external
+application must passed after all blackcat options.
+
+Bob also runs the netcat wrapped by blackcat by indicating the same netdb rule and session key
+indicated by Alice:
+
+    root@SkyValley:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
+    > --db-path=/usr/local/share/blackcat/db/netdb.db nc alice.workstation 1024
+
+After well estabilished the connection every data exchanged between each other will be encrypted.
+
+The option '--bcsck-lib-path' can be omitted and by default blackcat will scan its socket library
+in '/usr/lib' if you want to overwrite the default you should define an environment variable called
+'BLACKCAT_BCSCK_LIB_HOME'.
+
+The option '--db-path' can be omitted when you define an environment variable called
+'BLACKCAT_NET_DB_HOME'.
+
+The 'net/--run' sample given above does not protect you against replay attacks. If you want to
+protect the communication against this kind of attack you should flag your intention by using
+the option flag '--e2ee'. This will force the blackcat to use an ephemeral key for each exchanged
+data. The command becomes a little bit different:
+
+    root@RedBarn:~/# blackcat net --run --e2ee --xchg-port=50 --rule=nc \
+    > --bcsck-lib-path=/usr/lib/libbcsck.so \
+    > --db-path=/usr/local/share/blackcat/db/netdb.db nc -l -p 1024
+
+Now Alice has used '--e2ee' option and indicated a control port number. This port number will be
+used during a necessary initial negotiation.
+
+The command for Bob also changes a little:
+
+    root@SkyValley:~/# blackcat net --run --e2ee --xchg-port=50 --xchg-addr=alice.workstation \
+    > --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
+    > --db-path=/usr/local/share/blackcat/db/netdb.db nc alice.workstation 1024
+
+Bob, being the client must pass three additional flags: '--e2ee', '--xchg-port' and '--xchg-addr'.
+
+The '--xchg-port' must contain the same value picked by Alice. The '--xchg-addr' must contain the
+Alice's network address.
+
+Once well estabilished the connection, each message exchanged between each other will be encrypted
+with a double ratchet mechanism. When some key is re-used a warning displayed. Alerting the user
+about a possible replay attack, in this case is better to close the connection immediately.
+
 Cool off
 ========
 
