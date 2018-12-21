@@ -197,8 +197,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     FILE *fp;
     char cwd[4096];
     char *ntool_out[] = {
-        "read/write client",
-        "read/write server",
+        "write/read client",
+        "write/read server",
         "send/recv client",
         "sendmsg/recvmsg client",
         "sendto/recvfrom client",

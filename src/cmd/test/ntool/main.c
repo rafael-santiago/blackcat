@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -54,17 +55,38 @@ struct ntool_task_ctx {
 
 // INFO(Rafael): Para nao chamar de 'caiau', 'caiauzao' ou ainda 'caiauzaço'.
 static struct ntool_task_ctx g_trinket[HOOK_NR << 1] = {
-    { 1234, "read/write server\n",      18, write_sending,   read_receiving,     server, 0 },
+    { 1234, "write/read server\n",      18, write_sending,   read_receiving,     server, 0 },
     { 1235, "send/recv server\n",       17, send_sending,    recv_receiving,     server, 0 },
     { 1236, "sendto/recvfrom server\n", 23, sendto_sending,  recvfrom_receiving, server, 0 },
     { 1237, "sendmsg/recvmsg server\n", 23, sendmsg_sending, recvmsg_receiving,  server, 0 },
-    { 1234, "read/write client\n",      18, write_sending,   read_receiving,     client, 0 },
+    { 1234, "write/read client\n",      18, write_sending,   read_receiving,     client, 0 },
     { 1235, "send/recv client\n",       17, send_sending,    recv_receiving,     client, 0 },
     { 1236, "sendto/recvfrom client\n", 23, sendto_sending,  recvfrom_receiving, client, 0 },
     { 1237, "sendmsg/recvmsg client\n", 23, sendmsg_sending, recvmsg_receiving,  client, 0 }
 };
 
 static size_t g_trinket_size = HOOK_NR << 1;
+
+static struct ntool_task_ctx *get_trinket(const char *func_pair, int server) {
+    size_t t = 0;
+
+    if (func_pair == NULL) {
+        return NULL;
+    }
+
+    if (!server) {
+        t = t + HOOK_NR;
+    }
+
+    while (t < (HOOK_NR << 1)) {
+        if (strstr(g_trinket[t].data, func_pair) != NULL) {
+            return &g_trinket[t];
+        }
+        t++;
+    }
+
+    return NULL;
+}
 
 static void *client(void *args) {
     struct ntool_task_ctx *ntc = (struct ntool_task_ctx *) args;
@@ -225,17 +247,45 @@ static ssize_t recvmsg_receiving(int fd, char *buf, const size_t buf_size) {
 
 int main(int argc, char **argv) {
     size_t t;
+    struct ntool_task_ctx *task;
+    int is_server = 0;
 
-    for (t = 0; t < g_trinket_size; t++) {
-        if (pthread_create(&g_trinket[t].thread, NULL, g_trinket[t].handle, &g_trinket[t]) != 0) {
+    if (argc == 1) {
+        for (t = 0; t < g_trinket_size; t++) {
+            if (pthread_create(&g_trinket[t].thread, NULL, g_trinket[t].handle, &g_trinket[t]) != 0) {
+                perror("pthread_create");
+                exit(1);
+            }
+            usleep(1000);
+        }
+
+        for (t = 0; t < g_trinket_size; t++) {
+            pthread_join(g_trinket[t].thread, NULL);
+        }
+    } else if (argc == 3) {
+        if (strcmp(argv[1], "-s") == 0) {
+            is_server = 1;
+        } else if (strcmp(argv[1], "-c") != 0) {
+            printf("error: invalid, it must be -s or -c.\n");
+            return 1;
+        }
+
+        if ((task = get_trinket(argv[2], is_server)) == NULL) {
+            printf("error: invalid function pair.\n");
+            return 1;
+        }
+
+        if (pthread_create(&task->thread, NULL, task->handle, task) != 0) {
             perror("pthread_create");
             exit(1);
         }
-        usleep(1000);
-    }
 
-    for (t = 0; t < g_trinket_size; t++) {
-        pthread_join(g_trinket[t].thread, NULL);
+        usleep(1000);
+
+        pthread_join(task->thread, NULL);
+    } else {
+        printf("use: %s [-c || -s <function pair id>]\n");
+        return 1;
     }
 
     return 0;
