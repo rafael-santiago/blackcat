@@ -62,9 +62,9 @@ you@Hellfire:~/src/blackcat/src# hefesto --with-ciphers=aes,des,blowfish
 If you do not have the sources of your operating system in order to compile the
 device driver or simply you do not want it, use the build option  '--no-dev'.
 
---------------------------------------------------
+-------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --no-dev
---------------------------------------------------
+-------------------------------------------------
 
 In NetBSD you need to create the device node and also define by yourself the
 major number of the device. The default number is 210 if you want to define
@@ -74,9 +74,9 @@ will be created.
 
 Building some modules only is possible by using the build option 'modules':
 
----------------------------------------------------------------
+--------------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --modules=base,fs,cmd
----------------------------------------------------------------
+--------------------------------------------------------------
 
 The blackcat's modules are some sub-directories under the toplevel src
 directory.
@@ -84,15 +84,21 @@ directory.
 If you want to build the socket module as a no thread safe library,
 just use the option '--no-thread-safe':
 
----------------------------------------------------------------------------
+--------------------------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --modules=socket --no-thread-safe
----------------------------------------------------------------------------
+--------------------------------------------------------------------------
 
 or simply
 
-----------------------------------------------------------
+---------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --no-thread-safe
-----------------------------------------------------------
+---------------------------------------------------------
+
+If you want to skip the net module tests:
+
+---------------------------------------------------------
+you@Hellfire:~/src/blackcat/src# hefesto --skip-net-tests
+---------------------------------------------------------
 
 In order to install:
 

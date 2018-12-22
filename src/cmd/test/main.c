@@ -25,6 +25,8 @@ unsigned char *get_file_data(const char *filepath, size_t *data_size);
 
 static int blackcat(const char *command, const unsigned char *p1, const unsigned char *p2);
 
+static int blackcat_nowait(const char *command, const unsigned char *p1, const unsigned char *p2);
+
 static int check_blackcat_lkm_hiding(void);
 
 static int try_unload_blackcat_lkm(void);
@@ -198,15 +200,16 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     char cwd[4096];
     char *ntool_out[] = {
         "write/read client",
-        "write/read server",
         "send/recv client",
         "sendmsg/recvmsg client",
         "sendto/recvfrom client",
+        "write/read server",
         "send/recv server",
         "sendmsg/recvmsg server",
         "sendto/recvfrom server"
     };
     size_t ntool_out_nr = sizeof(ntool_out) / sizeof(ntool_out[0]), n;
+    char cmdline[4096];
 
     // INFO(Rafael): Just housekeeping.
 
@@ -1641,6 +1644,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     remove("p.txt");
 
+#if !defined(SKIP_NET_TESTS)
+
     remove("ntool-test.db");
     remove("ntool.log");
     CUTE_ASSERT(blackcat("net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
@@ -1661,7 +1666,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
         data = get_file_data("ntool-traffic.log", &data_size);
         CUTE_ASSERT(data != NULL);
         remove("ntool-traffic.log");
-        for (n = 0; n < ntool_out_nr;n++) {
+        for (n = 0; n < ntool_out_nr; n++) {
             CUTE_ASSERT(strstr(data, ntool_out[n]) == NULL);
         }
         kryptos_freeseg(data, data_size);
@@ -1677,12 +1682,106 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     kryptos_freeseg(data, data_size);
     remove("ntool.log");
 
+    //INFO(Rafael): Testing the strengthened E2EE mode (with a double ratchet mechanism).
+
+    if (has_tcpdump()) {
+        CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+        sleep(1);
+    }
+
+    remove("ntool.server.log");
+    remove("ntool.client.log");
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=104 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=104 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -c write/read 2>> ntool.client.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=105 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -s send/recv 2>> ntool.server.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=105 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -c send/recv 2>> ntool.client.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=106 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -s sendto/recvfrom 2>> ntool.server.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=106 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -c sendto/recvfrom 2>> ntool.client.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=107 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -s sendmsg/recvmsg 2>> ntool.server.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=107 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -c sendmsg/recvmsg 2>> ntool.client.log", "test", "abc\nabc") == 0);
+
+    usleep(1);
+
+    if (has_tcpdump()) {
+        data = get_file_data("ntool-traffic.log", &data_size);
+        CUTE_ASSERT(data != NULL);
+        remove("ntool-traffic.log");
+        for (n = 0; n < ntool_out_nr; n++) {
+            CUTE_ASSERT(strstr(data, ntool_out[n]) == NULL);
+        }
+        kryptos_freeseg(data, data_size);
+    }
+
+    data = get_file_data("ntool.server.log", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    for (n = 0; n < (ntool_out_nr >> 1); n++) {
+        CUTE_ASSERT(strstr(data, ntool_out[n]) != NULL);
+    }
+
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("ntool.client.log", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    for (n = ntool_out_nr >> 1; n < ntool_out_nr; n++) {
+        CUTE_ASSERT(strstr(data, ntool_out[n]) != NULL);
+    }
+
+    kryptos_freeseg(data, data_size);
+
+    remove("ntool.server.log");
+    remove("ntool.client.log");
+
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool --db-path=ntool-test.db", "test", NULL) != 0);
 
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "tEst", NULL) != 0);
 
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "test", NULL) == 0);
     remove("ntool-test.db");
+#else
+    printf("=====\n"
+           "WARN: The net module tests were skipped.\n"
+           "=====\n");
+#endif
 CUTE_TEST_CASE_END
 
 static int has_tcpdump(void) {
@@ -2028,6 +2127,47 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
     sprintf(cmdline, "%s %s < .bcpass", bin, command);
 
     exit_code = system(cmdline);
+
+    remove(".bcpass");
+
+    return exit_code;
+}
+
+static int blackcat_nowait(const char *command, const unsigned char *p1, const unsigned char *p2) {
+    char bin[4096];
+    char cmdline[4096];
+    int exit_code;
+    struct stat st;
+
+    if (p1 == NULL) {
+        return 0;
+    }
+
+    strncpy(cmdline, "../", sizeof(cmdline) - 1);
+
+    sprintf(bin, "%sbin/blackcat", cmdline);
+
+    while (stat(bin, &st) != 0) {
+        strcat(cmdline, "../");
+        sprintf(bin, "%sbin/blackcat", cmdline);
+    }
+
+    sprintf(cmdline, "%s\n", p1);
+
+    if (p2 != NULL) {
+        strcat(cmdline, p2);
+        strcat(cmdline, "\n");
+    }
+
+    if (create_file(".bcpass", cmdline, strlen(cmdline)) == 0) {
+        return 0;
+    }
+
+    sprintf(cmdline, "%s %s < .bcpass &", bin, command);
+
+    exit_code = system(cmdline);
+
+    sleep(1);
 
     remove(".bcpass");
 
