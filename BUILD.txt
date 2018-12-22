@@ -11,7 +11,7 @@ Now, supposing that you have installed 'Hefesto' in your build
 environment. You need to clone another repo of mine called 'Helios'
 so execute the following commands:
 
-------------------------------------------------------------------------
+-----------------------------------------------------------------------
 you@Hellfire:~/src# git clone https://github.com/rafael-santiago/helios
 you@Hellfire:~/src# cd helios
 you@Hellfire:~/src/helios# hefesto --install=forge-bootstrapper,\
@@ -20,7 +20,7 @@ you@Hellfire:~/src/helios# hefesto --install=forge-bootstrapper,\
 you@Hellfire:~/src/helios# cd ..
 you@Hellfire:~/src# rm -rf helios
 you@Hellfire:~/src# _
-------------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 You need (of course) to clone this repo:
 
