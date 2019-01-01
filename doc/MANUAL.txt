@@ -550,6 +550,18 @@ In cases when blackcat does not exit normally you should immediately execute an 
 When there is some file to be recovered you will not be able to process any other file before
 executing an 'undo' command.
 
+Getting info about the repo
+===========================
+
+If for some reason you want to know some meta-info about your blackcat repo, things such as version,
+used hashes, protection layer, etc. Try the command 'info':
+
+    root@RedBarn:~/sphinx# blackcat info
+    (some info...)
+    root@RedBarn:~/sphinx# _
+
+Your password will be asked before providing the information.
+
 Decoy files
 ===========
 

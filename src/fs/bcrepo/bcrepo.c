@@ -171,6 +171,28 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size);
 
+int bcrepo_info(bfs_catalog_ctx *catalog) {
+    int no_error = 0;
+
+    if (catalog == NULL) {
+        goto bcrepo_info_epilogue;
+    }
+
+    fprintf(stdout, ".bcrepo\n");
+    fprintf(stdout, " |_ bc-version: %s\n", catalog->bc_version);
+    fprintf(stdout, " |_ catalog-hash: %s\n", get_hash_processor_name(catalog->catalog_key_hash_algo));
+    fprintf(stdout, " |_ key-hash: %s\n", get_hash_processor_name(catalog->key_hash_algo));
+    fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
+    fprintf(stdout, " |_ protection-layer: %s\n", catalog->protection_layer);
+    fprintf(stdout, " |_ encoder: %s\n", get_encoder_name(catalog->encoder));
+
+    no_error = 1;
+
+bcrepo_info_epilogue:
+
+    return no_error;
+}
+
 int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int overwrite) {
     FILE *fp = NULL;
     kryptos_u8_t *chaff = NULL;

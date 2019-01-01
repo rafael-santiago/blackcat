@@ -86,4 +86,6 @@ int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const s
 
 int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int overwrite);
 
+int bcrepo_info(bfs_catalog_ctx *catalog);
+
 #endif
