@@ -31,6 +31,7 @@ CUTE_DECLARE_TEST_CASE(add_composite_ciphers_to_chain_tests);
 CUTE_DECLARE_TEST_CASE(get_encoder_tests);
 CUTE_DECLARE_TEST_CASE(get_encoder_name_tests);
 CUTE_DECLARE_TEST_CASE(get_hmac_key_size_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_bcrypt_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -51,6 +52,43 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
+    CUTE_RUN_TEST(blackcat_bcrypt_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_bcrypt_tests)
+    kryptos_task_ctx t, *ktask = &t;
+    int cost;
+    kryptos_u8_t *password = "wabba labba dub dub!";
+    size_t password_size = 20;
+
+    kryptos_task_init_as_null(ktask);
+
+    blackcat_bcrypt(NULL, 0);
+    blackcat_bcrypt(&ktask, 0);
+    CUTE_ASSERT(ktask->result == kKryptosInvalidParams);
+
+    ktask->in = password;
+    ktask->in_size = password_size;
+    cost = 8;
+
+    ktask->arg[0] = &cost;
+    blackcat_bcrypt(&ktask, 0);
+
+    CUTE_ASSERT(ktask->result == kKryptosSuccess);
+
+    ktask->in = ktask->out;
+    ktask->in_size = ktask->out_size;
+    ktask->arg[0] = "wabba lab -- Burp! -- ba dub dub!\x00";
+
+    blackcat_bcrypt(&ktask, 1);
+
+    CUTE_ASSERT(ktask->result == kKryptosProcessError);
+    ktask->arg[0] = password;
+    blackcat_bcrypt(&ktask, 1);
+
+    CUTE_ASSERT(ktask->result == kKryptosSuccess);
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_encoder_name_tests)
@@ -201,6 +239,7 @@ CUTE_TEST_CASE(get_hash_processor_name_tests)
         { kryptos_sha3_512_hash,   "sha3-512"  },
         { kryptos_tiger_hash,      "tiger"     },
         { kryptos_whirlpool_hash,  "whirlpool" },
+        { blackcat_bcrypt,         "bcrypt"    },
         { NULL,                    NULL        },
         { (blackcat_hash_processor)&test[0], NULL }
     };
@@ -276,6 +315,7 @@ CUTE_TEST_CASE(get_hash_processor_tests)
         { "sha3-512",  kryptos_sha3_512_hash  },
         { "tiger",     kryptos_tiger_hash     },
         { "whirlpool", kryptos_whirlpool_hash },
+        { "bcrypt",    blackcat_bcrypt        },
         { "bug-a-loo", NULL                   },
         { "sha3_224",  NULL                   },
         { "sha3_256",  NULL                   },
@@ -305,6 +345,7 @@ CUTE_TEST_CASE(get_hash_size_tests)
         { "sha3-512",  kryptos_sha3_512_hash_size  },
         { "tiger",     kryptos_tiger_hash_size     },
         { "whirlpool", kryptos_whirlpool_hash_size },
+        { "bcrypt",    blackcat_bcrypt_size        },
         { "bug-a-loo", NULL                        },
         { "sha3_224",  NULL                        },
         { "sha3_256",  NULL                        },
@@ -334,6 +375,7 @@ CUTE_TEST_CASE(get_hash_input_size_tests)
         { "sha3-512",  kryptos_sha3_512_hash_input_size  },
         { "tiger",     kryptos_tiger_hash_input_size     },
         { "whirlpool", kryptos_whirlpool_hash_input_size },
+        { "bcrypt",    blackcat_bcrypt_input_size        },
         { "bug-a-loo", NULL                              },
         { "sha3_224",  NULL                              },
         { "sha3_256",  NULL                              },

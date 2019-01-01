@@ -276,6 +276,58 @@ const char *get_encoder_name(blackcat_encoder encoder) {
     return NULL;
 }
 
+void blackcat_bcrypt(kryptos_task_ctx **ktask, const int verify) {
+    int cost;
+    kryptos_u8_t *temp = NULL;
+    size_t temp_size;
+
+    if (ktask == NULL) {
+        return;
+    }
+
+    if ((*ktask)->in == NULL || (*ktask)->in_size == 0 || (*ktask)->arg[0] == NULL) {
+        (*ktask)->result = kKryptosInvalidParams;
+        goto blackcat_bcrypt_epilogue;
+    }
+
+    if (!verify) {
+        if ((temp = kryptos_get_random_block(16)) == NULL) {
+            (*ktask)->result = kKryptosProcessError;
+            goto blackcat_bcrypt_epilogue;
+        }
+        cost = *((int *)(*ktask)->arg[0]);
+        (*ktask)->out = kryptos_bcrypt(cost, temp, 16, (*ktask)->in, (*ktask)->in_size, &(*ktask)->out_size);
+        (*ktask)->result = ((*ktask)->out != NULL) ? kKryptosSuccess : kKryptosProcessError;
+    } else {
+        temp = (*ktask)->arg[0];
+        temp_size = strlen(temp);
+        if (kryptos_bcrypt_verify(temp, temp_size, (*ktask)->in, (*ktask)->in_size)) {
+            (*ktask)->result = kKryptosSuccess;
+        } else {
+            (*ktask)->result = kKryptosProcessError;
+        }
+        temp = NULL;
+        temp_size = 0;
+    }
+
+blackcat_bcrypt_epilogue:
+
+    if (!verify) {
+        cost = 0;
+        if (temp != NULL) {
+            kryptos_freeseg(temp, 16);
+        }
+    }
+}
+
+size_t blackcat_bcrypt_size(void) {
+    return 60;
+}
+
+size_t blackcat_bcrypt_input_size(void) {
+    return 72; // WARN(Rafael): Here for bcrypt this is useless but let's return the maximum supported size.
+}
+
 #define IMPL_BLACKCAT_GET_AVAIL(what, data_vector)\
 kryptos_u8_t *blackcat_get_avail_ ## what(size_t *size) {\
     size_t s, c;\

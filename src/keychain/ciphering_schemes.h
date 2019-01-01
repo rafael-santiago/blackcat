@@ -144,6 +144,12 @@ kryptos_u8_t *blackcat_get_avail_hashes(size_t *size);
 
 kryptos_u8_t *blackcat_get_avail_encoders(size_t *size);
 
+void blackcat_bcrypt(kryptos_task_ctx **ktask, const int dummy);
+
+size_t blackcat_bcrypt_size(void);
+
+size_t blackcat_bcrypt_input_size(void);
+
 static struct blackcat_encoding_algorithms_ctx g_blackcat_encoding_algos[] = {
     { "uuencode", blackcat_uuencode },
     { "base64",   blackcat_base64   }
@@ -161,7 +167,8 @@ static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
     { "sha3-384",  kryptos_sha3_384_hash,  kryptos_sha3_384_hash_size,  kryptos_sha3_384_hash_input_size  },
     { "sha3-512",  kryptos_sha3_512_hash,  kryptos_sha3_512_hash_size,  kryptos_sha3_512_hash_input_size  },
     { "tiger",     kryptos_tiger_hash,     kryptos_tiger_hash_size,     kryptos_tiger_hash_input_size     },
-    { "whirlpool", kryptos_whirlpool_hash, kryptos_whirlpool_hash_size, kryptos_whirlpool_hash_input_size }
+    { "whirlpool", kryptos_whirlpool_hash, kryptos_whirlpool_hash_size, kryptos_whirlpool_hash_input_size },
+    { "bcrypt",    blackcat_bcrypt,        blackcat_bcrypt_size,        blackcat_bcrypt_input_size        }
 };
 
 static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / sizeof(g_blackcat_hashing_algos[0]);
