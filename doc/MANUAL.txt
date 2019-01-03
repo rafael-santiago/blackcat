@@ -69,7 +69,8 @@ Maybe you are curious about the options present in command init.
 
     --catalog-hash -> Specifies the hash function used by the catalog password (the first key).
 
-    --key-hash     -> Specifies the hash function used by the user encryption key (the second key).
+    --key-hash     -> Specifies the hash function used to store the user encryption key
+                      (the second key).
 
     --protection-layer-hash -> Specifies the hash function used internally by the protection
                                processors (key crunching, got it?).
@@ -97,6 +98,22 @@ protection layer.
 
 If you do not need a barrier of two passwords you can force blackcat to use only one key. What can
 be done by specifying the option flag '--keyed-alike'. By default a blackcat repo is "keyed-twice".
+
+Some people when talking about password hashing get wet only by hearing the word "bcrypt". Well,
+if you are this kind of people, the '--key-hash' option supports bcrypt, "ooh wee!!" would say
+Mr. Poopy Butthole. Yes, it supports but in this case is necessary to pass the bcrypt's cost
+through the option '--bcrypt-cost':
+
+    root@RedBarn:~/sphinx# blackcat init \
+    > --catalog-hash=sha3-512 --key-hash=bcrypt --bcrypt-cost=8 \
+    > --protection-layer-hash=whirlpool \
+    > --protection-layer=aes-256-cbc
+    root@RedBarn:~/sphinx# _
+
+Sorry pure people, the last paragraph was... a kind of humid, huh? It will never happen again,
+because from now on I will not approach any subject related to... b  c  r  y  p  t...
+
+Let's move on.
 
 Now we got a directory where some files or whole files stored under it can be encrypted. However is
 also possible put files without cataloging it. When you catalog a file, blackcat will track this.
