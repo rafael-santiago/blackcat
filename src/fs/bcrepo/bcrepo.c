@@ -26,6 +26,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
+// INFO(Rafael): This version not always will match the cmd tool version. It does not means that the
+//               tool will generate unsupported data for the fs module.
+
+#define BCREPO_METADATA_VERSION                 "1.0.0"
+
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
 #define BCREPO_CATALOG_KEY_HASH_ALGO            "key-hash-algo: "
 #define BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO  "protlayer-key-hash-algo: "
@@ -170,6 +175,8 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
 
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size);
+
+static int is_metadata_compatible(const char *version);
 
 int bcrepo_info(bfs_catalog_ctx *catalog) {
     int no_error = 0;
@@ -2377,20 +2384,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     p_layer.key = NULL;
 
     kryptos_task_init_as_null(ktask);
-/*
-    ktask->in = (kryptos_u8_t *) key;
-    ktask->in_size = key_size;
 
-    catalog->catalog_key_hash_algo(&ktask, 0);
-
-    if (!kryptos_last_task_succeed(ktask)) {
-        fprintf(stderr, "ERROR: Unable to process the catalog's key.\n");
-        goto decrypt_catalog_data_epilogue;
-    }
-
-    p_layer.key = ktask->out;
-    p_layer.key_size = ktask->out_size;
-*/
     p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
     p_layer.key = bckdf(key, key_size,
                         catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
@@ -2418,7 +2412,6 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    //p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
 decrypt_catalog_data_epilogue:
@@ -2446,20 +2439,7 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
     kryptos_task_init_as_null(ktask);
 
     catalog->hmac_scheme = get_random_hmac_catalog_scheme();
-/*
-    ktask->in = (kryptos_u8_t *) key;
-    ktask->in_size = key_size;
 
-    catalog->catalog_key_hash_algo(&ktask, 0);
-
-    if (!kryptos_last_task_succeed(ktask)) {
-        fprintf(stderr, "ERROR: Unable to process the catalog's key.\n");
-        goto encrypt_catalog_data_epilogue;
-    }
-
-    p_layer.key = ktask->out;
-    p_layer.key_size = ktask->out_size;
-*/
     p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
     p_layer.key = bckdf(key, key_size,
                         catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
@@ -2479,7 +2459,6 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_IV);
 
-    //p_layer.key_size = 0;
     p_layer.mode = kKryptosCipherModeNr;
 
     result = ktask->result;
@@ -2759,10 +2738,26 @@ get_catalog_field_epilogue:
     return data;
 }
 
+static int is_metadata_compatible(const char *version) {
+    // INFO(Rafael): If you are changing something here and it will not break compatibility with the current
+    //               cmd tool's version include its version here, otherwise erase this version entry.
+    static const char *compatible_versions[] = {
+        BCREPO_METADATA_VERSION
+    };
+    static const size_t compatible_versions_nr = sizeof(compatible_versions) / sizeof(compatible_versions[0]);
+    size_t c;
+    int is = 0;
+    for (c = 0; c < compatible_versions_nr && !is; c++) {
+         is = (strcmp(compatible_versions[c], version) == 0);
+    }
+    return is;
+}
+
 static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
     cp->bc_version = get_catalog_field(BCREPO_CATALOG_BC_VERSION, in, in_size);
-    return (cp->bc_version != NULL);
+    // INFO(Rafael): In case of incompatibility we will abort the reading here.
+    return is_metadata_compatible(cp->bc_version);
 }
 
 static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
@@ -3116,6 +3111,8 @@ random_printable_padding_epilogue:
 
     return data;
 }
+
+#undef BCREPO_METADATA_VERSION
 
 #undef BCREPO_CATALOG_BC_VERSION
 #undef BCREPO_CATALOG_KEY_HASH_ALGO

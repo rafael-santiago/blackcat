@@ -8,7 +8,7 @@
 #include <cmd/version.h>
 #include <stdio.h>
 
-static char *g_blackcat_version = "0.0.1";
+static char *g_blackcat_version = "1.0.0";
 
 const char *get_blackcat_version(void) {
     return g_blackcat_version;

@@ -38,6 +38,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_pack_unpack_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_reset_repo_settings_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_restore_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_decoy_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_incompatibility_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -45,6 +46,7 @@ char *open_text(const char *filepath, size_t *data_size);
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
+    CUTE_RUN_TEST(bcrepo_incompatibility_tests);
     CUTE_ASSERT(save_text("aes", 3, "o/aes.o") == 1);
     CUTE_ASSERT(save_text("des", 3, "o/des.o") == 1);
     CUTE_ASSERT(save_text("mars", 4, "o/mars.o") == 1);
@@ -76,6 +78,72 @@ CUTE_TEST_CASE(fs_tests)
     remove("o/mars.o");
     remove("o/ciphering_schemes.o");
     CUTE_RUN_TEST(bcrepo_decoy_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_incompatibility_tests)
+    bfs_catalog_ctx catalog, *cp;
+    bfs_catalog_relpath_ctx files;
+    kryptos_u8_t *key = "Goliath";
+    kryptos_u8_t *data = NULL;
+    size_t data_size;
+    struct test_ctx {
+        char *version;
+        int stat_return;
+    };
+    struct test_ctx tests[] = {
+        { "0.0.1", 0 },
+        { "1.0.0", 1 }
+    };
+    size_t tests_nr = sizeof(tests) / sizeof(tests[0]), t;
+
+    for (t = 0; t < tests_nr; t++) {
+        catalog.bc_version = tests[t].version;
+        catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
+        catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
+        catalog.hmac_scheme = get_hmac_catalog_scheme("hmac-sha3-256-tea-ofb");
+        catalog.key_hash_algo = get_hash_processor("sha-224");
+        catalog.key_hash_algo_size = get_hash_size("sha-224");
+        catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
+        catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
+        catalog.encoder = get_encoder("uuencode");
+
+        catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
+        CUTE_ASSERT(catalog.key_hash != NULL);
+
+        catalog.protection_layer = "aes-256-ctr,hmac-whirlpool-cast5-cbc";
+        catalog.files = &files;
+
+        files.head = &files;
+        files.tail = &files;
+        files.path = "a/b/c.txt";
+        files.path_size = strlen("a/b/c.txt");
+        files.status = 'U';
+        files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
+        files.seed_size = 8;
+        sprintf(files.timestamp, "%s", "123456789");
+        files.last = NULL;
+        files.next = NULL;
+
+        CUTE_ASSERT(bcrepo_write(BCREPO_DATA, &catalog, "parangaricutirimirruaru", strlen("parangaricutirimirruaru")) == 1);
+
+        kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
+
+        cp = new_bfs_catalog_ctx();
+
+        CUTE_ASSERT(cp != NULL);
+
+        data = bcrepo_read(BCREPO_DATA, cp, &data_size);
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size > 0);
+
+        CUTE_ASSERT(bcrepo_stat(&cp, "parangaricutirimirruaru", strlen("parangaricutirimirruaru"),
+                                &data, &data_size) == tests[t].stat_return);
+
+        CUTE_ASSERT(data == NULL);
+        CUTE_ASSERT(data_size == 0);
+        del_bfs_catalog_ctx(cp);
+        remove(BCREPO_DATA);
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_decoy_tests)
@@ -197,7 +265,7 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
     catalog->key_hash_algo_size = get_hash_size("sha-512");
@@ -385,7 +453,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
     catalog->key_hash_algo_size = get_hash_size("sha-512");
@@ -605,7 +673,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
     catalog->key_hash_algo_size = get_hash_size("sha-512");
@@ -844,7 +912,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
     catalog->key_hash_algo_size = get_hash_size("sha-512");
@@ -996,7 +1064,7 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-whirlpool-camellia-192-ctr");
     catalog->key_hash_algo = get_hash_processor("tiger");
     catalog->key_hash_algo_size = get_hash_size("tiger");
@@ -1116,7 +1184,7 @@ CUTE_TEST_CASE(bcrepo_add_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha3-512");
     catalog->key_hash_algo_size = get_hash_size("sha3-512");
@@ -1248,7 +1316,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "0.0.1";
+    catalog->bc_version = "1.0.0";
     catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
     catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
@@ -1429,7 +1497,7 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(data_size == 0);
 
     CUTE_ASSERT(catalog->bc_version != NULL);
-    CUTE_ASSERT(strcmp(catalog->bc_version, "0.0.1") == 0);
+    CUTE_ASSERT(strcmp(catalog->bc_version, "1.0.0") == 0);
 
     // INFO(Rafael): If it was correctly read for sure that the hmac_scheme must match.
     //               Test it would be a little bit stupid.
@@ -1509,7 +1577,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_relpath_ctx files;
     kryptos_u8_t *key = "Goliath";
 
-    catalog.bc_version = "0.0.1";
+    catalog.bc_version = "1.0.0";
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
     catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
     catalog.hmac_scheme = get_hmac_catalog_scheme("hmac-sha3-256-tea-ofb");
