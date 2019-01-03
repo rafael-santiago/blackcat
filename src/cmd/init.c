@@ -10,6 +10,7 @@
 #include <cmd/options.h>
 #include <cmd/version.h>
 #include <keychain/ciphering_schemes.h>
+#include <keychain/keychain.h>
 #include <ctx/ctx.h>
 #include <fs/ctx/fsctx.h>
 #include <accacia.h>
@@ -18,7 +19,7 @@
 #include <errno.h>
 
 int blackcat_cmd_init(void) {
-    char *catalog_hash, *key_hash, *protection_layer_hash, *protection_layer, *encoder;
+    char *catalog_hash, *key_hash, *protection_layer_hash, *protection_layer, *encoder, *bcrypt_cost;
     int keyed_alike;
     int exit_code = EINVAL;
     blackcat_hash_processor key_hash_proc, protlayer_hash_proc, catalog_hash_proc;
@@ -29,6 +30,8 @@ int blackcat_cmd_init(void) {
     kryptos_task_ctx t, *ktask = &t;
     char *info = NULL;
     char *rootpath = NULL;
+    void *key_hash_algo_args = NULL;
+    int cost;
 
     if ((rootpath = bcrepo_get_rootpath()) != NULL) {
         fprintf(stderr, "ERROR: This is already a blackcat repo.\n");
@@ -42,6 +45,11 @@ int blackcat_cmd_init(void) {
         goto blackcat_cmd_init_epilogue;
     }
 
+    if (is_pht(catalog_hash_proc)) {
+        fprintf(stderr, "ERROR: You cannot use '%s' as catalog hash. Choose another one.\n", catalog_hash);
+        goto blackcat_cmd_init_epilogue;
+    }
+
     BLACKCAT_GET_OPTION_OR_DIE(key_hash, "key-hash", blackcat_cmd_init_epilogue);
 
     if ((key_hash_proc = get_hash_processor(key_hash)) == NULL) {
@@ -49,10 +57,32 @@ int blackcat_cmd_init(void) {
         goto blackcat_cmd_init_epilogue;
     }
 
+    if (key_hash_proc == blackcat_bcrypt) {
+        BLACKCAT_GET_OPTION_OR_DIE(bcrypt_cost, "bcrypt-cost", blackcat_cmd_init_epilogue);
+        if (!blackcat_is_dec(bcrypt_cost, strlen(bcrypt_cost))) {
+            fprintf(stderr, "ERROR: The option 'bcrypt-cost' has invalid data.\n");
+            goto blackcat_cmd_init_epilogue;
+        }
+
+        cost = atoi(bcrypt_cost);
+
+        if (cost < 4 || cost > 31) {
+            fprintf(stderr, "ERROR: The option 'bcrypt-cost' requires a value between 4 and 31.\n");
+            goto blackcat_cmd_init_epilogue;
+        }
+
+        key_hash_algo_args = &cost;
+    }
+
     BLACKCAT_GET_OPTION_OR_DIE(protection_layer_hash, "protection-layer-hash", blackcat_cmd_init_epilogue);
 
     if ((protlayer_hash_proc = get_hash_processor(protection_layer_hash)) == NULL) {
         fprintf(stderr, "ERROR: Unknown hash algorithm supplied in 'protection-layer-hash'.\n");
+        goto blackcat_cmd_init_epilogue;
+    }
+
+    if (is_pht(protlayer_hash_proc)) {
+        fprintf(stderr, "ERROR: You cannot use '%s' in protection layer. Choose another one.\n", protection_layer_hash);
         goto blackcat_cmd_init_epilogue;
     }
 
@@ -185,22 +215,22 @@ int blackcat_cmd_init(void) {
     catalog->key_hash_algo = key_hash_proc;
     catalog->key_hash_algo_size = get_hash_size(key_hash);
 
-    kryptos_task_init_as_null(ktask);
+    //kryptos_task_init_as_null(ktask);
 
-    ktask->in = protlayer_key;
-    ktask->in_size = protlayer_key_size;
+    //ktask->in = protlayer_key;
+    //ktask->in_size = protlayer_key_size;
 
-    // WARN(Rafael): This is not hash with binary output it must be hexadecimal.
+    //catalog->key_hash_algo(&ktask, 1);
 
-    catalog->key_hash_algo(&ktask, 1);
+    //if (kryptos_last_task_succeed(ktask) == 0) {
+    //    fprintf(stderr, "ERROR: While trying to hash the user key.\n");
+    //    goto blackcat_cmd_init_epilogue;
+    //}
 
-    if (kryptos_last_task_succeed(ktask) == 0) {
-        fprintf(stderr, "ERROR: While trying to hash the user key.\n");
-        goto blackcat_cmd_init_epilogue;
-    }
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
+    //catalog->key_hash = ktask->out;
+    //catalog->key_hash_size = ktask->out_size;
+    catalog->key_hash = bcrepo_hash_key(protlayer_key, protlayer_key_size,
+                                        catalog->key_hash_algo, key_hash_algo_args, &catalog->key_hash_size);
 
     // WARN(Rafael): No problem in set ktask->out to NULL it will be freed indirectly when freeing the entire catalog.
 

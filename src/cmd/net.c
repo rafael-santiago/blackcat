@@ -10,6 +10,7 @@
 #include <cmd/options.h>
 #include <net/db/db.h>
 #include <kbd/kbd.h>
+#include <keychain/ciphering_schemes.h>
 #include <keychain/keychain.h>
 #include <accacia.h>
 #include <string.h>
@@ -125,6 +126,11 @@ static int add_rule(void) {
     BLACKCAT_GET_OPTION_OR_DIE(rule_type, "type", add_rule_epilogue);
 
     BLACKCAT_GET_OPTION_OR_DIE(hash, "hash", add_rule_epilogue);
+
+    if (is_pht(get_hash_processor(hash))) {
+        fprintf(stderr, "ERROR: You cannont use '%s' here.\n", hash);
+        goto add_rule_epilogue;
+    }
 
     if (strcmp(rule_type, "socket") != 0) {
         BLACKCAT_GET_OPTION_OR_DIE(target, "target", add_rule_epilogue);

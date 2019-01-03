@@ -10,6 +10,7 @@
 #include <cmd/session.h>
 #include <cmd/checkpoint.h>
 #include <keychain/ciphering_schemes.h>
+#include <keychain/keychain.h>
 #include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <kryptos.h>
@@ -19,7 +20,7 @@
 
 int blackcat_cmd_setkey(void) {
     int exit_code = EINVAL;
-    char *catalog_hash, *key_hash, *protection_layer_hash, *encoder, *protection_layer;
+    char *catalog_hash, *key_hash, *protection_layer_hash, *encoder, *protection_layer, *bcrypt_cost;
     blackcat_exec_session_ctx *session = NULL;
     int keyed_alike;
     blackcat_hash_processor catalog_hash_proc, key_hash_proc, protection_layer_hash_proc;
@@ -28,6 +29,8 @@ int blackcat_cmd_setkey(void) {
     size_t new_key_size[3] = { 0, 0, 0 };
     char *prompt;
     blackcat_protlayer_chain_ctx *p_layer = NULL;
+    void *key_hash_algo_args = NULL;
+    int cost;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_setkey_epilogue;
@@ -61,6 +64,33 @@ int blackcat_cmd_setkey(void) {
                   "Unknown encoding algorithm supplied in 'encoder'")
 
 #undef GET_PROCESSOR
+
+    if (is_pht(catalog_hash_proc)) {
+        fprintf(stderr, "ERROR: You cannot use '%s' as catalog hash. Choose another one.\n", catalog_hash);
+        goto blackcat_cmd_setkey_epilogue;
+    }
+
+    if (is_pht(protection_layer_hash_proc)) {
+        fprintf(stderr, "ERROR: You cannot use '%s' in protection layer. Choose another one.\n", protection_layer_hash);
+        goto blackcat_cmd_setkey_epilogue;
+    }
+
+    if (key_hash_proc == blackcat_bcrypt) {
+        BLACKCAT_GET_OPTION_OR_DIE(bcrypt_cost, "bcrypt-cost", blackcat_cmd_setkey_epilogue);
+        if (!blackcat_is_dec(bcrypt_cost, strlen(bcrypt_cost))) {
+            fprintf(stderr, "ERROR: The option 'bcrypt-cost' has invalid data.\n");
+            goto blackcat_cmd_setkey_epilogue;
+        }
+
+        cost = atoi(bcrypt_cost);
+
+        if (cost < 4 || cost > 31) {
+            fprintf(stderr, "ERROR: The option 'bcrypt-cost' requires a value between 4 and 31.\n");
+            goto blackcat_cmd_setkey_epilogue;
+        }
+
+        key_hash_algo_args = &cost;
+    }
 
     if (is_weak_hash_funcs_usage(key_hash_proc, protection_layer_hash_proc)) {
         fprintf(stderr, "ERROR: The combination of %s and %s is not a good one, try again with another.\n",
@@ -187,7 +217,7 @@ int blackcat_cmd_setkey(void) {
                                    session->rootpath, session->rootpath_size,
                                    new_key[0], new_key_size[0], &new_key[1], &new_key_size[1],
                                    protection_layer,
-                                   catalog_hash_proc, key_hash_proc, protection_layer_hash_proc,
+                                   catalog_hash_proc, key_hash_proc, key_hash_algo_args, protection_layer_hash_proc,
                                    encoder_proc,
                                    blackcat_checkpoint,
                                    session) != 1) {

@@ -32,6 +32,7 @@ CUTE_DECLARE_TEST_CASE(get_encoder_tests);
 CUTE_DECLARE_TEST_CASE(get_encoder_name_tests);
 CUTE_DECLARE_TEST_CASE(get_hmac_key_size_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_bcrypt_tests);
+CUTE_DECLARE_TEST_CASE(is_pht_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -53,13 +54,40 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
     CUTE_RUN_TEST(blackcat_bcrypt_tests);
+    CUTE_RUN_TEST(is_pht_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(is_pht_tests)
+    struct test_ctx {
+        blackcat_hash_processor p;
+        int is;
+    };
+    struct test_ctx test[] = {
+        { kryptos_sha224_hash,    0 },
+        { kryptos_sha256_hash,    0 },
+        { kryptos_sha384_hash,    0 },
+        { kryptos_sha512_hash,    0 },
+        { kryptos_sha3_224_hash,  0 },
+        { kryptos_sha3_256_hash,  0 },
+        { kryptos_sha3_384_hash,  0 },
+        { kryptos_sha3_512_hash,  0 },
+        { kryptos_tiger_hash,     0 },
+        { kryptos_whirlpool_hash, 0 },
+        { blackcat_bcrypt,        1 },
+        { NULL,                   0 }
+    };
+    size_t test_nr = sizeof(test) / sizeof(test[0]), t;
+
+    for (t = 0; t < test_nr; t++) {
+        CUTE_ASSERT(is_pht(test[t].p) == test[t].is);
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_bcrypt_tests)
     kryptos_task_ctx t, *ktask = &t;
     int cost;
     kryptos_u8_t *password = "wabba labba dub dub!";
-    size_t password_size = 20;
+    size_t password_size = 20, wrong_password_size;
 
     kryptos_task_init_as_null(ktask);
 
@@ -79,11 +107,14 @@ CUTE_TEST_CASE(blackcat_bcrypt_tests)
     ktask->in = ktask->out;
     ktask->in_size = ktask->out_size;
     ktask->arg[0] = "wabba lab -- Burp! -- ba dub dub!\x00";
+    wrong_password_size = strlen(ktask->arg[0]);
+    ktask->arg[1] = &wrong_password_size;
 
     blackcat_bcrypt(&ktask, 1);
 
     CUTE_ASSERT(ktask->result == kKryptosProcessError);
     ktask->arg[0] = password;
+    ktask->arg[1] = &password_size;
     blackcat_bcrypt(&ktask, 1);
 
     CUTE_ASSERT(ktask->result == kKryptosSuccess);

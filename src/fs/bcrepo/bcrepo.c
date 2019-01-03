@@ -398,12 +398,12 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                const char *protection_layer,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
+                               void *key_hash_proc_args,
                                blackcat_hash_processor protlayer_hash_proc,
                                blackcat_encoder encoder,
                                bfs_checkpoint_func ckpt,
                                void *ckpt_args) {
     bfs_catalog_ctx *cp = *catalog;
-    kryptos_task_ctx t, *ktask = &t;
     char filepath[4096];
     int no_error = 1;
     size_t temp_size;
@@ -415,26 +415,16 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     cp->key_hash_algo = key_hash_proc;
     cp->key_hash_algo_size = get_hash_size(get_hash_processor_name(key_hash_proc));
 
-    kryptos_task_init_as_null(ktask);
+    kryptos_freeseg(cp->key_hash, cp->key_hash_size);
 
-    ktask->in = *protlayer_key;
-    ktask->in_size = *protlayer_key_size;
+    cp->key_hash = bcrepo_hash_key(*protlayer_key, *protlayer_key_size,
+                                   cp->key_hash_algo, key_hash_proc_args, &cp->key_hash_size);
 
-    cp->key_hash_algo(&ktask, 1);
-
-    if (!kryptos_last_task_succeed(ktask)) {
+    if (cp->key_hash == NULL) {
         fprintf(stderr, "ERROR: While trying to hash the user key.\n");
         no_error = 0;
         goto bcrepo_reset_repo_settings_epilogue;
     }
-
-    kryptos_freeseg(cp->key_hash, cp->key_hash_size);
-
-    cp->key_hash = ktask->out;
-    cp->key_hash_size = ktask->out_size;
-
-    ktask->in = ktask->out = NULL;
-    ktask->in_size = ktask->out_size = 0;
 
     cp->protlayer_key_hash_algo = protlayer_hash_proc;
     cp->protlayer_key_hash_algo_size = get_hash_size(get_hash_processor_name(protlayer_hash_proc));
@@ -1752,30 +1742,148 @@ char *bcrepo_get_rootpath(void) {
 int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size) {
     int is_valid = 0;
     kryptos_task_ctx t, *ktask = &t;
+    size_t salt_size = 0;
+    kryptos_u8_t *salt = NULL;
+    blackcat_hash_size_func hash_size;
+
+    kryptos_task_init_as_null(ktask);
 
     if (catalog == NULL || key == NULL || key_size == 0 || catalog->key_hash_algo == NULL) {
         goto bcrepo_validate_key_epilogue;
     }
 
-    kryptos_task_init_as_null(ktask);
+    if (!is_pht(catalog->key_hash_algo)) {
+        if ((hash_size = get_hash_size(get_hash_processor_name(catalog->key_hash_algo))) == NULL) {
+            goto bcrepo_validate_key_epilogue;
+        }
 
-    ktask->in = (kryptos_u8_t *)key;
-    ktask->in_size = key_size;
+        salt_size = hash_size();
 
-    catalog->key_hash_algo(&ktask, 1);
+        bcrepo_hex_to_seed(&salt, &salt_size, catalog->key_hash, catalog->key_hash_size >> 1);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        goto bcrepo_validate_key_epilogue;
+        ktask->in_size = salt_size + key_size;
+
+        if ((ktask->in = kryptos_newseg(ktask->in_size + 1)) == NULL) {
+            goto bcrepo_validate_key_epilogue;
+        }
+
+        memset(ktask->in, 0, ktask->in_size + 1);
+        memcpy(ktask->in, salt, salt_size);
+        memcpy(ktask->in + salt_size, key, key_size);
+
+        catalog->key_hash_algo(&ktask, 1);
+
+        if (!kryptos_last_task_succeed(ktask)) {
+            goto bcrepo_validate_key_epilogue;
+        }
+
+        is_valid = (ktask->out_size == (catalog->key_hash_size >> 1) &&
+                    memcmp(ktask->out, catalog->key_hash + ktask->out_size, ktask->out_size) == 0);
+    } else if (catalog->key_hash_algo == blackcat_bcrypt) {
+        ktask->in = catalog->key_hash;
+        ktask->in_size = catalog->key_hash_size;
+        ktask->arg[0] = (void *) key;
+        ktask->arg[1] = (void *) &key_size;
+        blackcat_bcrypt(&ktask, 1);
+        is_valid = (ktask->result == kKryptosSuccess);
+        ktask->arg[0] = ktask->arg[1] = NULL;
+        ktask->in = NULL;
     }
-
-    is_valid = (ktask->out_size == catalog->key_hash_size &&
-                    memcmp(ktask->out, catalog->key_hash, ktask->out_size) == 0);
 
 bcrepo_validate_key_epilogue:
 
-    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT | KRYPTOS_TASK_IN);
+
+    if (salt != NULL) {
+        kryptos_freeseg(salt, salt_size);
+        salt_size = 0;
+    }
 
     return is_valid;
+}
+
+kryptos_u8_t *bcrepo_hash_key(const kryptos_u8_t *key,
+                              const size_t key_size, blackcat_hash_processor h, void *h_args, size_t *hsize) {
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *salt = NULL, *hash = NULL;
+    size_t salt_size;
+    blackcat_hash_size_func hash_size;
+    int cost;
+    kryptos_u8_t xsalt[8192];
+
+    kryptos_task_init_as_null(ktask);
+
+    if (hsize == NULL) {
+        goto bcrepo_hash_key_epilogue;
+    }
+
+    if (!is_pht(h)) {
+        if ((hash_size = get_hash_size(get_hash_processor_name(h))) == NULL) {
+            goto bcrepo_hash_key_epilogue;
+        }
+
+        salt_size = hash_size();
+        hash_size = NULL;
+
+        if ((salt = kryptos_get_random_block(salt_size)) == NULL) {
+            goto bcrepo_hash_key_epilogue;
+        }
+
+        ktask->in_size = key_size + salt_size;
+        if ((ktask->in = kryptos_newseg(ktask->in_size)) == NULL) {
+            goto bcrepo_hash_key_epilogue;
+        }
+
+        memcpy(ktask->in, salt, salt_size);
+        memcpy(ktask->in + salt_size, key, key_size);
+
+        // WARN(Rafael): It does not hash with binary output, it must be hexadecimal.
+        h(&ktask, 1);
+
+        bcrepo_seed_to_hex(xsalt, sizeof(xsalt) - 1, salt, salt_size);
+
+        *hsize = (salt_size << 1) + ktask->out_size;
+
+        if ((hash = kryptos_newseg(*hsize + 1)) == NULL) {
+            goto bcrepo_hash_key_epilogue;
+        }
+
+        memset(hash, 0, *hsize + 1);
+        memcpy(hash, xsalt, salt_size << 1);
+        memcpy(hash + (salt_size << 1), ktask->out, ktask->out_size);
+    } else if (h == blackcat_bcrypt) {
+        if (h_args == NULL) {
+            goto bcrepo_hash_key_epilogue;
+        }
+
+        ktask->in = (kryptos_u8_t *)key;
+        ktask->in_size = key_size;
+        ktask->arg[0] = h_args;
+
+        h(&ktask, 0);
+
+        hash = ktask->out;
+        *hsize = ktask->out_size;
+        ktask->out = NULL;
+    }
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto bcrepo_hash_key_epilogue;
+    }
+
+
+bcrepo_hash_key_epilogue:
+
+    if (ktask->in != NULL && ktask->in != key) {
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_OUT);
+    }
+
+    if (salt != NULL) {
+        kryptos_freeseg(salt, salt_size);
+        salt_size = 0;
+    }
+
+    return hash;
 }
 
 int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) {
@@ -2715,7 +2823,7 @@ static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const s
     }
 
     cp->key_hash = get_catalog_field(BCREPO_CATALOG_KEY_HASH, in, in_size);
-    cp->key_hash_size = cp->key_hash_algo_size() << 1; // INFO(Rafael): Stored in hexadecimal format.
+    cp->key_hash_size = strlen(cp->key_hash);
 
     return (cp->key_hash != NULL && cp->key_hash_size > 0);
 }

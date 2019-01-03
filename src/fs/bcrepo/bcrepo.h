@@ -25,6 +25,9 @@ int bcrepo_stat(bfs_catalog_ctx **catalog,
 
 int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t key_size);
 
+kryptos_u8_t *bcrepo_hash_key(const kryptos_u8_t *key,
+                              const size_t key_size, blackcat_hash_processor h, void *h_args, size_t *hsize);
+
 char *bcrepo_get_rootpath(void);
 
 int bcrepo_add(bfs_catalog_ctx **catalog,
@@ -63,6 +66,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                const char *protection_layer,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
+                               void *key_hash_proc_args,
                                blackcat_hash_processor protlayer_hash_proc,
                                blackcat_encoder encoder,
                                bfs_checkpoint_func ckpt,

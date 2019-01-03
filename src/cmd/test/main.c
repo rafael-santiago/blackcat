@@ -294,6 +294,20 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--keyed-alike "
                          "--encoder=OI''55", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=bcrypt "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=bcrypt "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
+
     // INFO(Rafael): Valid keyed alike init.
 
     CUTE_ASSERT(blackcat("init "
@@ -678,6 +692,22 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--protection-layer-hash=tiger "
                          "--encoder=uuencode "
                          "--protection-layer=carmellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=bcrypt "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=tiger "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--catalog-hash=whirlpool "
+                         "--key-hash=sha-512 "
+                         "--protection-layer-hash=bcrypt "
+                         "--encoder=uuencode "
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
     CUTE_ASSERT(blackcat("setkey --keyed-alike "
@@ -1653,6 +1683,9 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     remove("ntool-test.db");
     remove("ntool.log");
+    CUTE_ASSERT(blackcat("net --add-rule --rule=ntool-rule --type=socket --hash=bcrypt "
+                         "--protection-layer=blowfish-ctr,aes-128-cbc --db-path=ntool-test.db", "test", "test") != 0);
+
     CUTE_ASSERT(blackcat("net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
                          "--protection-layer=blowfish-ctr,aes-128-cbc --db-path=ntool-test.db", "test", "test") == 0);
 

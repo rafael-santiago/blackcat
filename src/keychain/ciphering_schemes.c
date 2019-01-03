@@ -300,7 +300,8 @@ void blackcat_bcrypt(kryptos_task_ctx **ktask, const int verify) {
         (*ktask)->result = ((*ktask)->out != NULL) ? kKryptosSuccess : kKryptosProcessError;
     } else {
         temp = (*ktask)->arg[0];
-        temp_size = strlen(temp);
+        temp_size = *(size_t *)(*ktask)->arg[1];
+        //temp_size = strlen(temp);
         if (kryptos_bcrypt_verify(temp, temp_size, (*ktask)->in, (*ktask)->in_size)) {
             (*ktask)->result = kKryptosSuccess;
         } else {
@@ -326,6 +327,10 @@ size_t blackcat_bcrypt_size(void) {
 
 size_t blackcat_bcrypt_input_size(void) {
     return 72; // WARN(Rafael): Here for bcrypt this is useless but let's return the maximum supported size.
+}
+
+int is_pht(blackcat_hash_processor h) {
+    return (h == blackcat_bcrypt);
 }
 
 #define IMPL_BLACKCAT_GET_AVAIL(what, data_vector)\

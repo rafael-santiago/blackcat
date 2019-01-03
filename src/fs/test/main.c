@@ -471,6 +471,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                            "gibberish-wrap/101-11",
                                            get_hash_processor("whirlpool"),
                                            get_hash_processor("sha3-512"),
+                                           NULL,
                                            get_hash_processor("sha-384"),
                                            get_encoder("base64"), NULL, NULL) == 1);
 
@@ -1413,8 +1414,6 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     bfs_catalog_ctx *catalog = NULL;
     kryptos_u8_t *data = NULL;
     size_t data_size;
-    // INFO(Rafael): 'Goliath' hashed with SHA-224.
-    kryptos_u8_t *protlayer_key_hash = "DE5F31A972D8EF1BFD1045E6299AD2B0F8EC2E85454D38A4D7252430";
 
     catalog = new_bfs_catalog_ctx();
 
@@ -1441,11 +1440,8 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size == get_hash_size("sha3-384"));
 
     CUTE_ASSERT(catalog->key_hash != NULL);
-    // TIP(Rafael): This hash is stored in hexadecimal format.
-    CUTE_ASSERT(catalog->key_hash_size == (catalog->key_hash_algo_size() << 1));
-    // INFO(Rafael): This repo has a secondary (protection layer) key, that is 'Goliath' not 'parangaricutirimirruaru'.
-    //               The real validation of it is tested in 'bcrepo_validate_key_tests'.
-    CUTE_ASSERT(memcmp(catalog->key_hash, protlayer_key_hash, strlen(protlayer_key_hash)) == 0);
+    // TIP(Rafael): This hash is stored in hexadecimal format with a salt having the same size of the hash.
+    CUTE_ASSERT(catalog->key_hash_size == (catalog->key_hash_algo_size() << 2));
 
     CUTE_ASSERT(catalog->protection_layer != NULL);
     CUTE_ASSERT(strcmp(catalog->protection_layer, "aes-256-ctr,hmac-whirlpool-cast5-cbc") == 0);
@@ -1511,7 +1507,6 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_ctx catalog;
     bfs_catalog_relpath_ctx files;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *key = "Goliath";
 
     catalog.bc_version = "0.0.1";
@@ -1524,14 +1519,9 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
     catalog.encoder = get_encoder("uuencode");
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog.key_hash_algo(&ktask, 1);
+    catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
+    CUTE_ASSERT(catalog.key_hash != NULL);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog.key_hash = ktask->out;
-    catalog.key_hash_size = ktask->out_size;
     catalog.protection_layer = "aes-256-ctr,hmac-whirlpool-cast5-cbc";
     catalog.files = &files;
 
@@ -1548,7 +1538,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
 
     CUTE_ASSERT(bcrepo_write(BCREPO_DATA, &catalog, "parangaricutirimirruaru", strlen("parangaricutirimirruaru")) == 1);
 
-    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+    kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(relpath_ctx_tests)

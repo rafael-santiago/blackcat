@@ -150,6 +150,8 @@ size_t blackcat_bcrypt_size(void);
 
 size_t blackcat_bcrypt_input_size(void);
 
+int is_pht(blackcat_hash_processor h);
+
 static struct blackcat_encoding_algorithms_ctx g_blackcat_encoding_algos[] = {
     { "uuencode", blackcat_uuencode },
     { "base64",   blackcat_base64   }
