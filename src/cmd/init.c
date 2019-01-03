@@ -175,7 +175,7 @@ int blackcat_cmd_init(void) {
         }
     }
 
-    if (protlayer_hash_proc == blackcat_bcrypt && protlayer_key_size > 72) {
+    if (key_hash_proc == blackcat_bcrypt && protlayer_key_size > 72) {
         fprintf(stderr, "ERROR: The protection layer key exceeds its limit of 72 bytes (you chose bcrypt, didn't you?).\n");
         goto blackcat_cmd_init_epilogue;
     }
@@ -220,20 +220,6 @@ int blackcat_cmd_init(void) {
     catalog->key_hash_algo = key_hash_proc;
     catalog->key_hash_algo_size = get_hash_size(key_hash);
 
-    //kryptos_task_init_as_null(ktask);
-
-    //ktask->in = protlayer_key;
-    //ktask->in_size = protlayer_key_size;
-
-    //catalog->key_hash_algo(&ktask, 1);
-
-    //if (kryptos_last_task_succeed(ktask) == 0) {
-    //    fprintf(stderr, "ERROR: While trying to hash the user key.\n");
-    //    goto blackcat_cmd_init_epilogue;
-    //}
-
-    //catalog->key_hash = ktask->out;
-    //catalog->key_hash_size = ktask->out_size;
     catalog->key_hash = bcrepo_hash_key(protlayer_key, protlayer_key_size,
                                         catalog->key_hash_algo, key_hash_algo_args, &catalog->key_hash_size);
 

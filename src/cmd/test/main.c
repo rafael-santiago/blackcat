@@ -1679,6 +1679,241 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     remove("p.txt");
 
+    // INFO(Rafael): For people who like bcrypt with love (keyed alike init first, ok?).
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "HazeJaneII", "HazeJaneII") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=101 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "HazeJaneII", "HazeJaneII") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=6 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "HazeJaneII"
+                                          "HazeJaneII"
+                                          "HazeJaneII"
+                                          "HazeJaneII"
+                                          "HazeJaneII"
+                                          "HazeJaneII"
+                                          "HazeJaneII!!!", "HazeJaneII"
+                                                           "HazeJaneII"
+                                                           "HazeJaneII"
+                                                           "HazeJaneII"
+                                                           "HazeJaneII"
+                                                           "HazeJaneII"
+                                                           "HazeJaneII!!!") != 0);
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=6 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike", "HazeJaneII", "HazeJaneII") == 0);
+
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    //INFO(Rafael): Adding s1 and s2 to the repo's catalog.
+
+    CUTE_ASSERT(blackcat("add s1.txt", "HazeJaneIII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/*.c", "HazeJaneII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "HazeJaneII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt --lock", "HazeJaneII", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "HazeJaneII", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "HazeJaneII", NULL) == 0);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit", "HazeJaneII", NULL) == 0);
+
+    // INFO(Rafael): Now two-layer keys.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "HazeJaneII\nHazeJaneII", "IPutASpellOnYou\nIPutASpellOnYou") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=82 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "HazeJaneII\nHazeJaneII", "OhWee!\nOhWee!") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=6 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "HazeJaneII\nHazeJaneII", "YouNeverCallMyNameOnTheTelephone"
+                                                   "YouNeverCallMyNameOnTheTelephone"
+                                                   "YouNeverCallMyNameOnTheTelephone\n"
+                                                   "YouNeverCallMyNameOnTheTelephone"
+                                                   "YouNeverCallMyNameOnTheTelephone"
+                                                   "YouNeverCallMyNameOnTheTelephone") != 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=8 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "HazeJaneII\nHazeJaneII", "NoOneKnows\nNoOneKnows") == 0);
+
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    //INFO(Rafael): Adding s1 and s2 to the repo's catalog.
+
+    CUTE_ASSERT(blackcat("add s1.txt", "HazeJaneIII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add s1.txt", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/*.c", "HazeJaneII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "HazeJaneII", NULL) != 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "HazeJaneII", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt --lock", "HazeJaneII", "NoOneKnows") == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "HazeJaneII", "NoUoniQuinousJeguere") != 0);
+
+    CUTE_ASSERT(blackcat("lock", "HazeJaneII", "NoOneKnows") == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "HazeJaneII", "NoOneKnows") == 0);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit", "HazeJaneII", NULL) == 0);
+
+    remove("s1.txt");
+    remove("etc/s2.txt");
+    remove("s3.txt");
+    remove("p.txt");
+    rmdir("etc");
+
 #if !defined(SKIP_NET_TESTS)
 
     remove("ntool-test.db");
