@@ -175,6 +175,11 @@ int blackcat_cmd_init(void) {
         }
     }
 
+    if (protlayer_hash_proc == blackcat_bcrypt && protlayer_key_size > 72) {
+        fprintf(stderr, "ERROR: The protection layer key exceeds its limit of 72 bytes (you chose bcrypt, didn't you?).\n");
+        goto blackcat_cmd_init_epilogue;
+    }
+
     catalog = new_bfs_catalog_ctx();
 
     if (catalog == NULL) {

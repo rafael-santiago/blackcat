@@ -187,6 +187,11 @@ int blackcat_cmd_setkey(void) {
         new_key_size[2] = 0;
     }
 
+    if (protection_layer_hash_proc == blackcat_bcrypt && new_key_size[1] > 72) {
+        fprintf(stderr, "ERROR: The protection layer key exceeds its limit of 72 bytes (you chose bcrypt, didn't you?).\n");
+        goto blackcat_cmd_setkey_epilogue;
+    }
+
     new_key[2] = (kryptos_u8_t *)kryptos_newseg(4);
 
     if (new_key[2] == NULL) {
