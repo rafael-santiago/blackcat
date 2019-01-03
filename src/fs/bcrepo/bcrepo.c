@@ -178,6 +178,182 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
 
 static int is_metadata_compatible(const char *version);
 
+int bcrepo_detach_metainfo(const char *rootpath, const size_t rootpath_size,
+                           const char *dest, const size_t dest_size) {
+    int no_error = 0;
+    char temp[8192];
+    kryptos_u8_t *data = NULL;
+    size_t data_size;
+    FILE *fp = NULL;
+    struct stat st;
+
+    if (rootpath == NULL || rootpath_size == 0 || dest == NULL ||  dest_size == 0) {
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_RESCUE_FILE, rootpath);
+
+    if (bstat(temp, &st) == 0) {
+        fprintf(stderr, "ERROR: This repo is locked due to a rescue file. You must handle this issue before detaching.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, rootpath);
+
+    if ((fp = fopen(temp, "r")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", temp);
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    data_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    if ((data = kryptos_newseg(data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    if (fread(data, 1, data_size, fp) != data_size) {
+        fprintf(stderr, "ERROR: While reading catalog's data.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    fclose(fp);
+
+    if ((fp = fopen(dest, "w")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", dest);
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    if (fwrite(data, 1, data_size, fp) != data_size) {
+        fprintf(stderr, "ERROR: While writing catalog's data.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+
+    if (bfs_data_wiping(rootpath, rootpath_size,
+                        BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, strlen(BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE),
+                        data_size) == 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    if (remove(temp) != 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR, rootpath);
+
+    if (remove(temp) != 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    no_error = 1;
+
+bcrepo_detach_metainfo_epilogue:
+
+    if (no_error == 0) {
+        remove(dest);
+    }
+
+    memset(temp, 0, sizeof(temp));
+
+    if (data != NULL) {
+        kryptos_freeseg(data, data_size);
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    return no_error;
+}
+
+int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
+    int no_error = 0;
+    struct stat st;
+    char temp[8192], cwd[8192];
+    char *rootpath = NULL;
+    FILE *fp = NULL;
+    kryptos_u8_t *data = NULL;
+    size_t data_size;
+
+    if (src == NULL ||  src_size == 0) {
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    if ((rootpath = bcrepo_get_rootpath()) != NULL) {
+        fprintf(stderr, "ERROR: It do not seems to be a detached repo.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
+        fprintf(stderr, "ERROR: Unable to get the cwd path.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, cwd);
+
+    if (bcrepo_mkdtree(BCREPO_HIDDEN_DIR) != 0) {
+        fprintf(stderr, "ERROR: Unable to create the .bcrepo metainfo directory.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    if ((fp = fopen(src, "r")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", src);
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    data_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    if ((data = kryptos_newseg(data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    if (fread(data, 1, data_size, fp) != data_size) {
+        fprintf(stderr, "ERROR: While reading metainfo data from '%s'.\n", src);
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    fclose(fp);
+
+    if ((fp = fopen(temp, "w")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", temp);
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    if (fwrite(data, 1, data_size, fp) != data_size) {
+        fprintf(stderr, "ERROR: While writing catalog's data.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+    no_error = 1;
+
+bcrepo_attach_metainfo_epilogue:
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (data != NULL) {
+        kryptos_freeseg(data, data_size);
+    }
+
+    return no_error;
+}
+
 int bcrepo_info(bfs_catalog_ctx *catalog) {
     int no_error = 0;
 
@@ -1961,7 +2137,6 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         goto bcrepo_write_epilogue;
     }
 
-    //memset(o, 0, o_size);
     dump_catalog_data(o + pfx_size, o_size, catalog);
 
     // INFO(Rafael): Mitigating chosen-plaintext attack by making its applying hard.
@@ -2740,7 +2915,7 @@ get_catalog_field_epilogue:
 
 static int is_metadata_compatible(const char *version) {
     // INFO(Rafael): If you are changing something here and it will not break compatibility with the current
-    //               cmd tool's version include its version here, otherwise erase this version entry.
+    //               cmd tool's version, include its version here, otherwise erase this version entry.
     static const char *compatible_versions[] = {
         BCREPO_METADATA_VERSION
     };
@@ -2750,6 +2925,13 @@ static int is_metadata_compatible(const char *version) {
     for (c = 0; c < compatible_versions_nr && !is; c++) {
          is = (strcmp(compatible_versions[c], version) == 0);
     }
+
+    if (!is) {
+        fprintf(stderr, "ERROR: Your repository was created with a incompatible version (%s).\n"
+                        "       Try to use that old version or rebase your repo with this version (%s).\n",
+                        version, BCREPO_METADATA_VERSION);
+    }
+
     return is;
 }
 

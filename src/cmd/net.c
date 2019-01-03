@@ -128,7 +128,7 @@ static int add_rule(void) {
     BLACKCAT_GET_OPTION_OR_DIE(hash, "hash", add_rule_epilogue);
 
     if (is_pht(get_hash_processor(hash))) {
-        fprintf(stderr, "ERROR: You cannont use '%s' here.\n", hash);
+        fprintf(stderr, "ERROR: You cannot use '%s' here.\n", hash);
         goto add_rule_epilogue;
     }
 

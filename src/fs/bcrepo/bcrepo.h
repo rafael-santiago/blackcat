@@ -92,4 +92,8 @@ int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder
 
 int bcrepo_info(bfs_catalog_ctx *catalog);
 
+int bcrepo_detach_metainfo(const char *rootpath, const size_t rootpath_size, const char *dest, const size_t dest_size);
+
+int bcrepo_attach_metainfo(const char *src, const size_t src_size);
+
 #endif
