@@ -178,18 +178,26 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
 
 static int is_metadata_compatible(const char *version);
 
-int bcrepo_detach_metainfo(const char *rootpath, const size_t rootpath_size,
-                           const char *dest, const size_t dest_size) {
+int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
     int no_error = 0;
     char temp[8192];
     kryptos_u8_t *data = NULL;
     size_t data_size;
     FILE *fp = NULL;
     struct stat st;
+     char *rootpath = NULL;
+    size_t rootpath_size;
 
-    if (rootpath == NULL || rootpath_size == 0 || dest == NULL ||  dest_size == 0) {
+    if (dest == NULL ||  dest_size == 0) {
         goto bcrepo_detach_metainfo_epilogue;
     }
+
+    if ((rootpath = bcrepo_get_rootpath()) == NULL) {
+        fprintf(stderr, "ERROR: This is not a blackcat repo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+
+    rootpath_size = strlen(rootpath);
 
     sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_RESCUE_FILE, rootpath);
 
@@ -268,6 +276,10 @@ bcrepo_detach_metainfo_epilogue:
         kryptos_freeseg(data, data_size);
     }
 
+    if (rootpath != NULL) {
+        kryptos_freeseg(rootpath, rootpath_size);
+    }
+
     if (fp != NULL) {
         fclose(fp);
     }
@@ -289,7 +301,7 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
     }
 
     if ((rootpath = bcrepo_get_rootpath()) != NULL) {
-        fprintf(stderr, "ERROR: It do not seems to be a detached repo.\n");
+        fprintf(stderr, "ERROR: It does not seem to be a detached repo.\n");
         goto bcrepo_attach_metainfo_epilogue;
     }
 

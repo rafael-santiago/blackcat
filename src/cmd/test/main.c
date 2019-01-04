@@ -1914,6 +1914,50 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("p.txt");
     rmdir("etc");
 
+    // INFO(Rafael): Repo detaching & attaching tests.
+
+    CUTE_ASSERT(blackcat("detach --dest=metainfo.yyz", "", NULL) != 0);
+
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=tiger "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc "
+                         "--keyed-alike",
+                         "ThingsIUsedToDo", "ThingsIUsedToDo") == 0);
+
+    CUTE_ASSERT(blackcat("add s1.txt", "ThingsIUsedToDo", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "ThingsIUsedToDo", NULL) == 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "ThingsIUsedToDo", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt --lock", "ThingsIUsedToDo", "NoOneKnows") == 0);
+
+    CUTE_ASSERT(blackcat("detach", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("detach --dest=metainfo.yyz", "", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("status", "ThingsIUsedToDo", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("attach", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("attach --src=metainfo.yyz", "", NULL) == 0);
+
+    CUTE_ASSERT(remove("metainfo.yyz") == 0);
+
+    CUTE_ASSERT(blackcat("status", "ThingsIUsedToDo", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "ThingsIUsedToDo", NULL) == 0);
+
+    remove("s1.txt");
+    remove("etc/s2.txt");
+    remove("s3.txt");
+    remove("p.txt");
+    rmdir("etc");
+
 #if !defined(SKIP_NET_TESTS)
 
     remove("ntool-test.db");

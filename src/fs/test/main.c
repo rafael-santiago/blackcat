@@ -235,7 +235,7 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     CUTE_ASSERT(catalog->files->head == catalog->files);
     CUTE_ASSERT(catalog->files->tail == catalog->files->next);
 
-    CUTE_ASSERT(bcrepo_detach_metainfo(rootpath, rootpath_size, "metainfo.txt", 12) == 1);
+    CUTE_ASSERT(bcrepo_detach_metainfo("metainfo.txt", 12) == 1);
 
     CUTE_ASSERT(stat(".bcrepo", &st) != 0);
 
