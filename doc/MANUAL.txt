@@ -100,9 +100,8 @@ If you do not need a barrier of two passwords you can force blackcat to use only
 be done by specifying the option flag '--keyed-alike'. By default a blackcat repo is "keyed-twice".
 
 Some people when talking about password hashing get wet only by hearing the word "bcrypt". Well,
-if you are this kind of people, the '--key-hash' option supports bcrypt, "ooh wee!!" would say
-Mr. Poopy Butthole. Yes, it supports but in this case is necessary to pass the bcrypt's cost
-through the option '--bcrypt-cost':
+if you are this kind of people, the '--key-hash' option supports bcrypt; yes, it supports but in
+this case is necessary to pass the bcrypt's cost through the option '--bcrypt-cost':
 
     root@RedBarn:~/sphinx# blackcat init \
     > --catalog-hash=sha3-512 --key-hash=bcrypt --bcrypt-cost=8 \
@@ -184,7 +183,7 @@ Now you know all basic usage workflow:
     -> Initializing a repository.
     -> Adding files to the repository's catalog.
     -> Removing them when necessary.
-    -> Locking & unlocking your sensible data.
+    -> Locking & unlocking your sensitive data.
 
 Let's move to more advanced features.
 
@@ -304,7 +303,7 @@ In order to list all ciphers (including the HMAC schemes):
     root@RedBarn:~/sphinx# _
 
 I know: "Wtf is 'gibberish-wrap'?!". It is not actually a cipher. It is just about a way of
-wrapping the sensible data with pseudo-random bytes. The gibberish-wrap expects two arguments:
+wrapping the sensitive data with pseudo-random bytes. The gibberish-wrap expects two arguments:
 
     1. how many bytes will wrap the data more left.
     2. how many bytes will wrap the data more right.
@@ -388,9 +387,9 @@ you have a rootkit installed into your system you have failed a bunch while user
 Stop reading this and go burn this machine immediately and learn more about best practices
 related to information security.
 
-Supposing that you are editing your sensible data into a system and silent someone is connected
+Supposing that you are editing your sensitive data into a system and silent someone is connected
 probing your filesystem, downloading everything that looks interesting. What about a mechanism
-that makes the sensible data invisible to an external attacker?
+that makes the sensitive data invisible to an external attacker?
 
 So you can hide specific files into a repository or even the entire repository.
 
@@ -434,7 +433,7 @@ screen loggers, rootkits and so on, you should re-think if computers are tools t
 really should be able to use without harming yourself and other people.
 
 The problem of using encryption tools in modern operating systems is the possibility of
-leaking some sensible information (e.g.: keys) to secondary storage devices. How does it
+leaking some sensitive information (e.g.: keys) to secondary storage devices. How does it
 can happen? Simple, as instance, if your system decides to swap the data into the RAM to
 the disk, the key will be recorded in disk and someone (smart enough) would be able to
 recover this information using it to access your repo.
@@ -596,14 +595,199 @@ ask for it through '--overwrite' flag option:
     root@RedBarn:~/sphinx# blackcat decoy chunk-001.txt chunk-002.txt --fsize=8192 --overwrite
     root@RedBarn:~/sphinx# _
 
-If you are using some kind of encoding for your sensible data is a good idea also generate encoded
-decoys (using the same encoded algorithm used for sensible data, of course):
+If you are using some kind of encoding for your sensitive data is a good idea also generate encoded
+decoys (using the same encoded algorithm used for sensitive data, of course):
 
     root@RedBarn:~/sphinx# blackcat decoy doc/report.txt --encoder=uuencode --fsize=193
     root@RedBarn:~/sphinx# _
 
 After doing it all you should do is to add the generated decoy files as plain files to the repo's
 catalog by using the command 'add'.
+
+Promoting a plausibly deniable encryption with some blackcat primitives
+=======================================================================
+
+There are three primitives strategically implemented in blackcat that allows you to create a repo
+with deniable crypto. Those primitives (or commands) are: 'decoy', 'detach' and 'attach'.
+
+The 'decoy' command was already introduced. The 'detach' commnand makes possible the "extraction"
+of the metainfo present into a blackcat repo (the encrypted catalog containing all information
+necessary to properly access the repo's data). After extracting those metainfo to an ordinary file,
+the repository becomes an ordinary folder again.
+
+Opposingly the 'attach' command takes a metainfo previously extracted through detach. Turning into
+an ordinary folder a blackcat repo again.
+
+This locking swap allows you to put information that is valid by using a key but invalid by using
+(an)other one(s). Also you can put files that are invalid when decrypted by any key (decoy files).
+The possibility of put a decoy file adds more deniability to your stuff.
+
+Let's suppose Alice wants to create a repository that has information not much favorable about
+Bob. However, Bob controls any information that Alice creates.
+
+Firstly, Alice will create from scrath a repo:
+
+    alice@RedBarn:~/wonderland# blackcat init \
+    > --catalog-hash=sha3-512 --key-hash=whirlpool --protection-layer-hash=tiger \
+    > --protection-layer=hmac-sha-384-aes-256-cbc,blowfish-cbc,aes-192-cbc
+    > --encoder=uuencode
+    alice@RedBarn:~/wonderland# _
+
+Alice creates plenty of files, including: '001.txt', '002.txt', '003.txt'.
+
+Those files have information that gathers her bad impressions about Bob. Alice adds those
+files as protected files:
+
+    alice@RedBarn:~/wonderland# blackcat add 001.txt 002.txt 003.txt --lock
+    alice@RedBarn:~/wonderland# _
+
+Alice would let her data in this state but seeing which way the black cat jumps (sorry).
+She decided to add some decoy files. She adds pure chaff from '004.txt' to '020.txt':
+
+    alice@RedBarn:~/wonderland# blackcat decoy 004.txt --encoder=uuencode --fsize=512
+    alice@RedBarn:~/wonderland# blackcat decoy 005.txt --encoder=uuencode --fsize=896
+    alice@RedBarn:~/wonderland# blackcat decoy 006.txt --encoder=uuencode --fsize=1024
+    alice@RedBarn:~/wonderland# blackcat decoy 007.txt --encoder=uuencode --fsize=4096
+    alice@RedBarn:~/wonderland# blackcat decoy 008.txt --encoder=uuencode --fsize=8192
+    alice@RedBarn:~/wonderland# blackcat decoy 009.txt --encoder=uuencode --fsize=64
+    alice@RedBarn:~/wonderland# blackcat decoy 010.txt --encoder=uuencode --fsize=128
+    alice@RedBarn:~/wonderland# blackcat decoy 011.txt --encoder=uuencode --fsize=837
+    alice@RedBarn:~/wonderland# blackcat decoy 012.txt --encoder=uuencode --fsize=100
+    alice@RedBarn:~/wonderland# blackcat decoy 013.txt --encoder=uuencode --fsize=167
+    alice@RedBarn:~/wonderland# blackcat decoy 014.txt --encoder=uuencode --fsize=200
+    alice@RedBarn:~/wonderland# blackcat decoy 015.txt --encoder=uuencode --fsize=256
+    alice@RedBarn:~/wonderland# blackcat decoy 016.txt --encoder=uuencode --fsize=1000
+    alice@RedBarn:~/wonderland# blackcat decoy 017.txt --encoder=uuencode --fsize=2048
+    alice@RedBarn:~/wonderland# blackcat decoy 018.txt --encoder=uuencode --fsize=192
+    alice@RedBarn:~/wonderland# blackcat decoy 019.txt --encoder=uuencode --fsize=999
+    alice@RedBarn:~/wonderland# blackcat decoy 020.txt --encoder=uuencode --fsize=101
+    alice@RedBarn:~/wonderland# _
+
+After creating some decoys she needs to add them to the catalog but she adds them as plain files:
+
+    alice@RedBarn:~/wonderland# blackcat add \
+    > 004.txt 005.txt 006.txt 008.txt \
+    > 009.txt 010.txt 011.txt 012.txt \
+    > 013.txt 014.txt 015.txt 016.txt \
+    > 017.txt 018.txt 019.txt 020.txt --plain
+    alice@RedBarn:~/wonderland# _
+
+Now she also create some decoys that are actually protected but is pure dummy chaff, too.
+
+    alice@RedBarn:~/wonderland# blackcat decoy 021.txt --fsize=1024
+    alice@RedBarn:~/wonderland# blackcat decoy 022.txt --fsize=2048
+    alice@RedBarn:~/wonderland# blackcat decoy 023.txt --fsize=4096
+    alice@RedBarn:~/wonderland# blackcat decoy 024.txt --fsize=8192
+    alice@RedBarn:~/wonderland# blackcat decoy 025.txt --fsize=64
+    alice@RedBarn:~/wonderland# blackcat decoy 026.txt --fsize=128
+
+After it she needs to add them to the catalog as "protected garbage":
+
+    alice@RedBarn:~/wonderland# blackcat add 021.txt 022.txt 023.txt 024.txt \
+    > 025.txt 026.txt --lock
+
+Now Alice runs a status command to see if everything is really protected:
+
+    alice@RedBarn:~/wonderland# blackcat status
+    alice@RedBarn:~/wonderland# _
+
+Since everything is protected she decides to removes the repo metainfo by saving it in a
+secure place:
+
+    alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k0
+    alice@RedBarn:~/wonderland# _
+
+But Bob will ask her to decrypt the content before allowing her to send out those data out there.
+Due to it Alice creates files talking only good things about Bob, contradicting any bad information
+that she knows. She decided to dedicate some time creating good reports from '027.txt' until '050.txt':
+
+Now she needs to protect them with another key:
+
+    alice@RedBarn:~/wonderland# blackcat init \
+    > --catalog-hash=sha-512 --key-hash=sha3-512 --protection-layer-hash=whirlpool \
+    > --protection-layer=blowfish-ctr,aes-192-cbc,hmac-sha-224-blowfish-cbc
+    > --encoder=uuencode --keyed-alike
+    alice@RedBarn:~/wonderland# _
+
+Once the init done, she adds the files '027.txt'..'050.txt' as protected files:
+
+    alice@RedBarn:~/wonderland# blackcat add \
+    > 027.txt 028.txt 029.txt \
+    > 030.txt 031.txt 032.txt 033.txt 034.txt 035.txt 036.txt 037.txt 038.txt 039.txt \
+    > 040.txt 041.txt 042.txt 043.txt 044.txt 045.txt 046.txt 047.txt 048.txt 049.txt \
+    > 050.txt --lock
+
+She also needs to add the real information (001.txt 002.txt 003.txt) to the catalog, but
+in this case, just as plain files (they will be alleged decoy files):
+
+    alice@RedBarn:~/wonderland# blackcat add 001.txt 002.txt 003.txt --plain
+    alice@RedBarn:~/wonderland# _
+
+She knows that the information in 001.txt, 002.txt and 003.txt will not change anymore,
+so in the dummy catalog it can be just plain stuff. In other scenarios it would be better
+process them as protected chaff (the encoding algorithm used should be dropped).
+
+Alice also add all other decoy from the original repo's catalog as plain files:
+
+    alice@RedBarn:~/wonderland# blackcat add \
+    > 004.txt 005.txt 006.txt 008.txt \
+    > 009.txt 010.txt 011.txt 012.txt \
+    > 013.txt 014.txt 015.txt 016.txt \
+    > 017.txt 018.txt 019.txt 020.txt \
+    > 021.txt 022.txt 023.txt 024.txt \
+    > 025.txt 026.txt --plain
+    alice@RedBarn:~/wonderland# _
+
+She also creates protected chaff in this catalog from 051.txt up to 064.txt:
+
+    alice@RedBarn:~/wonderland# blackcat decoy 051.txt --fsize=1024
+    alice@RedBarn:~/wonderland# blackcat decoy 052.txt --fsize=2048
+    alice@RedBarn:~/wonderland# blackcat decoy 053.txt --fsize=4096
+    alice@RedBarn:~/wonderland# blackcat decoy 054.txt --fsize=8192
+    alice@RedBarn:~/wonderland# blackcat decoy 055.txt --fsize=64
+    alice@RedBarn:~/wonderland# blackcat decoy 056.txt --fsize=128
+    alice@RedBarn:~/wonderland# blackcat decoy 057.txt --fsize=512
+    alice@RedBarn:~/wonderland# blackcat decoy 058.txt --fsize=256
+    alice@RedBarn:~/wonderland# blackcat decoy 059.txt --fsize=192
+    alice@RedBarn:~/wonderland# blackcat decoy 060.txt --fsize=128
+    alice@RedBarn:~/wonderland# blackcat decoy 061.txt --fsize=103
+    alice@RedBarn:~/wonderland# blackcat decoy 062.txt --fsize=18
+    alice@RedBarn:~/wonderland# blackcat decoy 063.txt --fsize=78
+    alice@RedBarn:~/wonderland# blackcat decoy 064.txt --fsize=92
+
+Now she adds those new chaff to the catalog as protected data:
+
+    alice@RedBarn:~/wonderland# blackcat add 051.txt 052.txt 053.txt 054.txt \
+    > 055.txt 056.txt 057.txt 058.txt 059.txt 060.txt 061.txt 062.txt \
+    > 063.txt 064.txt --lock
+    alice@RedBarn:~/wonderland# _
+
+Since everything is currently protected, Alice also extracts the current metainfo
+from this dummy catalog:
+
+    alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k1
+    alice@RedBarn:~/wonderland# _
+
+Now let's suppose that when asked to allow Alice to send out the data, Bob asks her for the key.
+Alice presents the wonderland.k1 content as the only one repository key. She saves a copy to
+Bob of this data in 'wonderland.metainfo' and send it to him. So Bob will test it:
+
+    bob@BigBo:~/data-inspection/alice# blackcat attach \
+    > --src=/home/bob/data/policy/alice/wonderland.metainfo
+    bob@BigBo:~/data-inspection/alice# _
+
+Alice has provided him the repo's master key, so Bob only needs to run a "hungry lock" and
+eavesdrop everything:
+
+    bob@BigBo:~/data-inspection/alice# blackcat lock
+    bob@BigBo:~/data-inspection/alice# _
+
+After reading what Alice has wrote about him, with tears in his eyes, Bob allows Alice to
+send out every single information. The data was approved and Alice recommended.
+
+This scenario is pretty unreal for the majority, in many cases the key will be asked after
+the data was sent, in this case Alice will not face the risk of Bob censor her decoy files.
+Otherwise would be better Alice apply some steganography over the decoy data, too.
 
 Protecting network traffic
 ==========================
@@ -733,7 +917,7 @@ For example, it is straightforward to integrate blackcat with some scm tool. The
 can host a private repository without paying for your privacy. I find privacy is basic, it is a
 right and you should not pay for it. In my opinion it is shameful.
 
-Nowadays everyone likes to send data to the cloud. However, if you have sensible stuff or very personal
+Nowadays everyone likes to send data to the cloud. However, if you have sensitive stuff or very personal
 data you should encrypt it. Do not be fool, believing that all your data is securely stored and that
 no one would be able to access it. Systems are full of bugs and people in majority tends to be crooked.
 Moreover, some systems/companies just like to eavesdrop us because we are profitable while users.
