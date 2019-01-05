@@ -788,7 +788,7 @@ send out every single information. The data was approved.
 This scenario is pretty unreal for the majority, in many cases the key will be asked after
 the data was sent, in this case Alice will not face the risk of Bob censor her decoy files.
 Otherwise it would be better Alice apply some steganography over the decoy data, too.
-It is out of the scope of the manual.
+It is out of the scope of this manual.
 
 Protecting network traffic
 ==========================
