@@ -691,7 +691,7 @@ Now Alice runs a status command to see if everything is really protected:
     alice@RedBarn:~/wonderland# blackcat status
     alice@RedBarn:~/wonderland# _
 
-Since everything is protected she decides to removes the repo metainfo by saving it in a
+Since everything is protected she decides to remove the repo metainfo by saving it in a
 secure place:
 
     alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k0
@@ -717,15 +717,15 @@ Once the init done, she adds the files '027.txt'..'050.txt' as protected files:
     > 040.txt 041.txt 042.txt 043.txt 044.txt 045.txt 046.txt 047.txt 048.txt 049.txt \
     > 050.txt --lock
 
-She also needs to add the real information (001.txt 002.txt 003.txt) to the catalog, but
+She also needs to add the real information (001.txt, 002.txt, 003.txt) to the catalog, but
 in this case, just as plain files (they will be alleged decoy files):
 
     alice@RedBarn:~/wonderland# blackcat add 001.txt 002.txt 003.txt --plain
     alice@RedBarn:~/wonderland# _
 
 She knows that the information in 001.txt, 002.txt and 003.txt will not change anymore,
-so in the dummy catalog it can be just plain stuff. In other scenarios it would be better
-process them as protected chaff (the encoding algorithm used should be dropped).
+so in the dummy catalog it can be just plain stuff. In other scenarios it would be better to
+process them as protected chaff (the encoding algorithm should be dropped).
 
 Alice also add all other decoy from the original repo's catalog as plain files:
 
@@ -768,9 +768,9 @@ from this dummy catalog:
     alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k1
     alice@RedBarn:~/wonderland# _
 
-Now let's suppose that when asked to allow Alice to send out the data, Bob asks her for the key.
+Now let's suppose that when asked to allow Alice to send out data, Bob asks her for the key.
 Alice presents the wonderland.k1 content as the only one repository key. She saves a copy to
-Bob of this data in 'wonderland.metainfo' and send it to him. So Bob will test it:
+Bob of the metainfo data in 'wonderland.metainfo' and send it to him. So Bob will test it:
 
     bob@BigBo:~/data-inspection/alice# blackcat attach \
     > --src=/home/bob/data/policy/alice/wonderland.metainfo
@@ -783,11 +783,12 @@ eavesdrop everything:
     bob@BigBo:~/data-inspection/alice# _
 
 After reading what Alice has wrote about him, with tears in his eyes, Bob allows Alice to
-send out every single information. The data was approved and Alice recommended.
+send out every single information. The data was approved.
 
 This scenario is pretty unreal for the majority, in many cases the key will be asked after
 the data was sent, in this case Alice will not face the risk of Bob censor her decoy files.
-Otherwise would be better Alice apply some steganography over the decoy data, too.
+Otherwise it would be better Alice apply some steganography over the decoy data, too. This
+is out of the scope of this manual.
 
 Protecting network traffic
 ==========================
