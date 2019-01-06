@@ -2,7 +2,31 @@
 
 My simple personal encryption tool (with my own personal "paranoid" cares).
 
-If you are interested in it:
+Including:
+
+    - Individual file encryption/decryption;
+
+    - The possibility of cascading many ciphers
+      (the cipher suite is configurable during the build);
+
+    - HMACs for every block cipher supported. By using the following hash functions:
+      SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, Tiger, Whirlpool;
+
+    - Bcrypt is also an option for password hashing (if you like it);
+
+    - The possibility of encoding the encrypted data by using: UUEncode or Radix-64;
+
+    - Some level of plausibly deniable encryption (by associating some "building block" commands);
+
+    - Assuming your system is pretty bad configured and hacked...
+      A device driver that avoids your files of being downloaded after decrypted;
+
+    - If you are pretty paranoid, some cares for avoiding RAM swap issues that would leak some
+      pretty sensitive information (depending on your requirements).
+
+    - "Poor man's" vpn (socket level) with E2EE (by using a double ratchet like mechanism or not);
+
+If you are interested in:
 
 -> Read more about the build instructions in 'BUILD.txt'.
 

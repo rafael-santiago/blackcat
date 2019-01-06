@@ -768,16 +768,104 @@ from this dummy catalog:
     alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k1
     alice@RedBarn:~/wonderland# _
 
+Alice decides to add a second dummy catalog. Doing it she is able to gives Bob two keys instead
+of one that decrypts to the alleged valid content. So:
+
+    alice@RedBarn:~/wonderland# blackcat init \
+    > --catalog-hash=tiger --key-hash=sha-384 --protection-layer-hash=sha3-224 \
+    > --protection-layer=hmac-sha-256-aes-128-cbc
+    > --encoder=uuencode --keyed-alike
+    alice@RedBarn:~/wonderland# _
+
+She creates ten files with some fake secret information (065.txt .. 075.txt). Just after she
+adds them as protected files to the current attached catalog:
+
+    alice@RedBarn:~/wonderland# blackcat add 065.txt 066.txt 067.txt 068.txt 069.txt \
+    > 070.txt 071.txt 072.txt 073.txt 074.txt 075.txt --lock
+    alice@RedBarn:~/wonderland# _
+
+After it she generates five protected decoy files:
+
+    alice@RedBarn:~/wonderland# blackcat decoy 076.txt --fsize=17
+    alice@RedBarn:~/wonderland# blackcat decoy 077.txt --fsize=103
+    alice@RedBarn:~/wonderland# blackcat decoy 078.txt --fsize=1024
+    alice@RedBarn:~/wonderland# blackcat decoy 079.txt --fsize=3096
+    alice@RedBarn:~/wonderland# blackcat decoy 080.txt --fsize=2093
+    alice@RedBarn:~/wonderland# blackcat add 076.txt 077.txt 078.txt 079.txt 080.txt --lock
+    alice@RedBarn:~/wonderland# _
+
+Now she creates more twenty decoys:
+
+    alice@RedBarn:~/wonderland# blackcat decoy 081.txt --encoder=uuencode --fsize=512
+    alice@RedBarn:~/wonderland# blackcat decoy 082.txt --encoder=uuencode --fsize=183
+    alice@RedBarn:~/wonderland# blackcat decoy 083.txt --encoder=uuencode --fsize=278
+    alice@RedBarn:~/wonderland# blackcat decoy 084.txt --encoder=uuencode --fsize=10
+    alice@RedBarn:~/wonderland# blackcat decoy 085.txt --encoder=uuencode --fsize=52
+    alice@RedBarn:~/wonderland# blackcat decoy 086.txt --encoder=uuencode --fsize=12
+    alice@RedBarn:~/wonderland# blackcat decoy 087.txt --encoder=uuencode --fsize=92
+    alice@RedBarn:~/wonderland# blackcat decoy 088.txt --encoder=uuencode --fsize=1024
+    alice@RedBarn:~/wonderland# blackcat decoy 089.txt --encoder=uuencode --fsize=276
+    alice@RedBarn:~/wonderland# blackcat decoy 090.txt --encoder=uuencode --fsize=293
+    alice@RedBarn:~/wonderland# blackcat decoy 091.txt --encoder=uuencode --fsize=32
+    alice@RedBarn:~/wonderland# blackcat decoy 092.txt --encoder=uuencode --fsize=62
+    alice@RedBarn:~/wonderland# blackcat decoy 093.txt --encoder=uuencode --fsize=9
+    alice@RedBarn:~/wonderland# blackcat decoy 094.txt --encoder=uuencode --fsize=22
+    alice@RedBarn:~/wonderland# blackcat decoy 095.txt --encoder=uuencode --fsize=62
+    alice@RedBarn:~/wonderland# blackcat decoy 096.txt --encoder=uuencode --fsize=91
+    alice@RedBarn:~/wonderland# blackcat decoy 097.txt --encoder=uuencode --fsize=42
+    alice@RedBarn:~/wonderland# blackcat decoy 098.txt --encoder=uuencode --fsize=102
+    alice@RedBarn:~/wonderland# blackcat decoy 099.txt --encoder=uuencode --fsize=384
+    alice@RedBarn:~/wonderland# blackcat decoy 100.txt --encoder=uuencode --fsize=224
+
+She also adds those decoys as plain files:
+
+    alice@RedBarn:~/wonderland# blackcat add 081.txt 082.txt 083.txt \
+    > 084.txt 085.txt 086.txt 087.txt 088.txt 089.txt 090.txt 091.txt \
+    > 092.txt 093.txt 094.txt 095.txt 096.txt 097.txt 098.txt 099.txt 100.txt --plain
+    alice@RedBarn:~/wonderland# _
+
+She also adds the files 001.txt .. 064.txt as plain data, too:
+
+    alice@RedBarn:~/wonderland# blackcat add 001.txt 002.txt 003.txt \
+    > 004.txt 005.txt 006.txt 007.txt 008.txt 009.txt 010.txt 011.txt \
+    > 012.txt 013.txt 014.txt 015.txt 016.txt 017.txt 018.txt 019.txt \
+    > 020.txt 021.txt 022.txt 023.txt 024.txt 025.txt 026.txt 027.txt \
+    > 028.txt 029.txt 030.txt 031.txt 032.txt 033.txt 034.txt 035.txt \
+    > 036.txt 037.txt 038.txt 039.txt 040.txt 041.txt 042.txt 043.txt \
+    > 044.txt 045.txt 046.txt 047.txt 048.txt 049.txt 050.txt 051.txt \
+    > 052.txt 053.txt 054.txt 055.txt 056.txt 057.txt 058.txt 059.txt \
+    > 060.txt 061.txt 062.txt 063.txt 064.txt --plain
+    alice@RedBarn:~/wonderland# _
+
+She detaches this catalog too:
+
+    alice@RedBarn:~/wonderland# blackcat detach --dest=/home/alice/secure-data/wonderland.k2
+    alice@RedBarn:~/wonderland# _
+
 Now let's suppose that when asked to allow Alice to send out data, Bob asks her for the key.
-Alice presents the wonderland.k1 content as the only one repository key. She saves a copy to
-Bob of the metainfo data in 'wonderland.metainfo' and send it to him. So Bob will test it:
+Alice presents the wonderland.k1 content as the main repository "key" and additionally she
+presents wonderland.k2 as the dummy "key". She saves a copy to Bob of thoses metainfos in
+'wonderland.main.metainfo', 'wonderland.dummy.metainfo' files and send them to Bob.
+So Bob will test it. First he will inspect the dummy data:
 
     bob@BigBo:~/data-inspection/alice# blackcat attach \
-    > --src=/home/bob/data/policy/alice/wonderland.metainfo
+    > --src=/home/bob/data/policy/alice/wonderland.dummy.metainfo
     bob@BigBo:~/data-inspection/alice# _
 
-Alice has provided him the repo's master key, so Bob only needs to run a "hungry lock" and
-eavesdrop everything:
+Alice has provided him the repo's master keys for the two sent metainfos, so Bob only needs
+to run a "hungry lock" and eavesdrop everything:
+
+    bob@BigBo:~/data-inspection/alice# blackcat lock
+    bob@BigBo:~/data-inspection/alice# _
+
+Everything looks fine with the dummy data, any disclosure about him, etc. Now he will inspect
+the "real" sensitive data:
+
+    bob@BigBo:~/data-inspection/alice# blackcat attach \
+    > --src=/home/bob/data/policy/alice/wonderland.main.metainfo
+    bob@BigBo:~/data-inspection/alice# _
+
+Now he unlocks all data and inspects:
 
     bob@BigBo:~/data-inspection/alice# blackcat lock
     bob@BigBo:~/data-inspection/alice# _
@@ -785,7 +873,7 @@ eavesdrop everything:
 After reading what Alice has wrote about him, with tears in his eyes, Bob allows Alice to
 send out every single information. The data was approved.
 
-This scenario is pretty unreal for the majority, in many cases the key will be asked after
+This scenario is pretty unreal for most of people, in many cases, the key will be asked after
 the data was sent, in this case Alice will not face the risk of Bob censor her decoy files.
 Otherwise it would be better Alice apply some steganography over the decoy data, too.
 It is out of the scope of this manual.
@@ -825,7 +913,7 @@ some hooking stuff to make the connection encrypted. Let's suppose that Alice wa
 with Bob just by using netcat but she also wants some level of secrecy during this chat. Alice
 should use the command 'net/--run' to create a protected instance of netcat in her system:
 
-    root@RedBarn:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
+    alice@RedBarn:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
     > --db-path=/usr/local/share/blackcat/db/netdb.db nc -l -p 1024
 
 Just after executing the command above Alice will be asked for the netdb's password and also a
@@ -835,7 +923,7 @@ application must be passed after all blackcat options.
 Bob also runs the netcat wrapped by blackcat. Indicating the same netdb rule and session key
 agreed with Alice:
 
-    root@SkyValley:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
+    bob@SkyValley:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
     > --db-path=/usr/local/share/blackcat/db/netdb.db nc alice.workstation 1024
 
 After the connection is well estabilished, every data exchanged between each other will be
@@ -853,7 +941,7 @@ want to protect the communication against this kind of attack you should flag yo
 using the option flag '--e2ee'. This will force the blackcat to use an ephemeral key for each
 exchanged data. The command becomes a little bit different:
 
-    root@RedBarn:~/# blackcat net --run --e2ee --xchg-port=50 --rule=nc \
+    alice@RedBarn:~/# blackcat net --run --e2ee --xchg-port=50 --rule=nc \
     > --bcsck-lib-path=/usr/lib/libbcsck.so \
     > --db-path=/usr/local/share/blackcat/db/netdb.db nc -l -p 1024
 
@@ -862,7 +950,7 @@ option '--xchg-port'. This port number will be used during a necessary initial n
 
 The command for Bob also changes a little:
 
-    root@SkyValley:~/# blackcat net --run --e2ee --xchg-port=50 --xchg-addr=alice.workstation \
+    bob@SkyValley:~/# blackcat net --run --e2ee --xchg-port=50 --xchg-addr=alice.workstation \
     > --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
     > --db-path=/usr/local/share/blackcat/db/netdb.db nc alice.workstation 1024
 
