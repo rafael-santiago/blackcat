@@ -106,6 +106,12 @@ blackcat_cmd_help_epilogue:
 }
 
 int blackcat_cmd_help_help(void) {
-    fprintf(stdout, "use: blackcat help <command>\n");
+    fprintf(stdout, "usage: blackcat <command> [options]\n\n"
+           "*** If you want to know more about some command you should try: \"blackcat help <command>\".\n"
+           "    Do not you know any command name? Welcome newbie! It is time to read some documentation: "
+           "\"man blackcat\".\n________\n"
+           "blackcat is Copyright (C) 2004-2019 by Rafael Santiago.\n\n"
+           "Bug reports, feedback, etc: <voidbrainvoid@tutanota.com> or "
+           "<https://github.com/rafael-santiago/blackcat/issues>\n");
     return 0;
 }
