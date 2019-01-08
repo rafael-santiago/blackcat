@@ -11,6 +11,7 @@
 #include <keychain/keychain.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
+#include <kbd/kbd.h>
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
@@ -33,6 +34,7 @@ CUTE_DECLARE_TEST_CASE(get_encoder_name_tests);
 CUTE_DECLARE_TEST_CASE(get_hmac_key_size_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_bcrypt_tests);
 CUTE_DECLARE_TEST_CASE(is_pht_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_getuserkey_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -55,6 +57,20 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
     CUTE_RUN_TEST(blackcat_bcrypt_tests);
     CUTE_RUN_TEST(is_pht_tests);
+    CUTE_RUN_TEST(blackcat_getuserkey_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_getuserkey_tests)
+    size_t password_size;
+    kryptos_u8_t *password;
+    kryptos_u8_t *expected = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\xDE\xAD\xBE\xEF\x00\x00\x01";
+    // INFO(Rafael): This statement is pretty important to avoid a 4kb 'leak' done by stdio.
+    setbuf(stdin, NULL);
+    password = blackcat_getuserkey(&password_size);
+    CUTE_ASSERT(password != NULL);
+    CUTE_ASSERT(password_size == 69);
+    CUTE_ASSERT(memcmp(password, expected, password_size) == 0);
+    kryptos_freeseg(password, password_size);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(is_pht_tests)

@@ -22,7 +22,6 @@ static void getuserkey_sigint_watchdog(int signo) {
 }
 
 kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
-    // WARN(Rafael): This function is actually being tested with cmd tool tests.
     kryptos_u8_t *key = NULL, *kp;
     char line[65535], *lp, *lp_end;
     size_t size;
