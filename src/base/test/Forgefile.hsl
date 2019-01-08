@@ -52,6 +52,7 @@ base-tests.prologue() {
         $ldflags.add_item("-lpthread");
     }
 
+
     if (hefesto.sys.os_name() != "windows") {
         if (isdir("/usr/local/include")) {
             $inc.add_item("/usr/local/include");

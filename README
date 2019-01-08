@@ -24,7 +24,7 @@ Including:
     - If you are pretty paranoid, some cares for avoiding RAM swap issues that would leak some
       pretty sensitive information (depending on your requirements).
 
-    - "Poor man's" vpn (socket level) with E2EE (by using a double ratchet like mechanism or not);
+    - Vpn-tunnel (socket level) with E2EE (by using a double ratchet like mechanism or not);
 
 If you are interested in:
 

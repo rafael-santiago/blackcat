@@ -57,7 +57,7 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
             lp += 1;
             switch (*lp) {
                 case 'x':
-                    if ((lp + 3) < lp_end && isxdigit(lp[1]) && isxdigit(lp[2])) {
+                    if ((lp + 2) < lp_end && isxdigit(lp[1]) && isxdigit(lp[2])) {
 #define getnibble(b) ( isdigit((b)) ? ( (b) - '0' ) : ( toupper((b)) - 55 ) )
                         *kp = getnibble(lp[1]) << 4 | getnibble(lp[2]);
 #undef getnibble
