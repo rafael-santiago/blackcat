@@ -27,10 +27,13 @@ static int run(void);
 
 static int drop_rule(void);
 
+static int mk_dh_params(void);
+
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
-    { "--add-rule",  add_rule  },
-    { "--run",       run       },
-    { "--drop-rule", drop_rule }
+    { "--add-rule",  add_rule        },
+    { "--run",       run             },
+    { "--drop-rule", drop_rule       },
+    { "--mk-dh-params", mk_dh_params }
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_net_commands)
@@ -306,5 +309,158 @@ run_epilogue:
     return err;
 }
 
+static int mk_dh_params(void) {
+    int err = EINVAL;
+    size_t p_bits, q_bits;
+    kryptos_u8_t *params = NULL;
+    size_t params_size;
+    char *out = NULL, *temp;
+    FILE *fp = NULL;
+
+    BLACKCAT_GET_OPTION_OR_DIE(out, "out", mk_dh_params_epilogue);
+
+    BLACKCAT_GET_OPTION_OR_DIE(temp, "p-bits", mk_dh_params_epilogue);
+    if (!blackcat_is_dec(temp, strlen(temp))) {
+        fprintf(stderr, "ERROR: Invalid number in '--p-bits' option.\n");
+        goto mk_dh_params_epilogue;
+    }
+
+    p_bits = strtoul(temp, NULL, 10);
+
+    BLACKCAT_GET_OPTION_OR_DIE(temp, "q-bits", mk_dh_params_epilogue);
+    if (!blackcat_is_dec(temp, strlen(temp))) {
+        fprintf(stderr, "ERROR: Invalid number in '--q-bits' option.\n");
+        goto mk_dh_params_epilogue;
+    }
+
+    q_bits = strtoul(temp, NULL, 10);
+
+    if (kryptos_dh_mk_domain_params(p_bits, q_bits, &params, &params_size) != kKryptosSuccess) {
+        fprintf(stderr, "ERROR: When generating DH parameters.\n");
+        err = EFAULT;
+        goto mk_dh_params_epilogue;
+    }
+
+    if ((fp = fopen(out, "w")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to write to '%s'.\n", out);
+        err = EFAULT;
+        goto mk_dh_params_epilogue;
+    }
+
+    if (fwrite(params, 1, params_size, fp) != params_size) {
+        fprintf(stderr, "ERROR: When writing to the file '%s'.\n", out);
+        fclose(fp);
+        fp = NULL;
+        remove(out);
+        err = EFAULT;
+        goto mk_dh_params_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+    err = 0;
+
+mk_dh_params_epilogue:
+
+    if (params != NULL) {
+        kryptos_freeseg(params, params_size);
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    return err;
+}
+/*
+static int mk_dh_key_pair(void) {
+    int err = EINVAL;
+    int use_dh_group;
+    size_t p_bits, q_bits, s_bits;
+    char *group_bits, *temp;
+    struct avail_groups {
+        kryptos_dh_modp_group_bits_t bits_n;
+        char *bits_s;
+    };
+    struct avail_groups *dh_group;
+    static struct avail_groups dh_groups[] = {
+        { kKryptosDHGroup1536, "1536" },
+        { kKryptosDHGroup2048, "2048" },
+        { kKryptosDHGroup3072, "3072" },
+        { kKryptosDHGroup4096, "4096" },
+        { kKryptosDHGroup6144, "6144" },
+        { kKryptosDHGroup8192, "8192" }
+    };
+    static size_t dh_groups_nr = sizeof(dh_groups) / sizeof(dh_groups[0]), di;
+    struct kryptos_dh_xchg_ctx dh_ctx, *dh = &dh_ctx;
+    kryptos_u8_t *params = NULL;
+    size_t params_size;
+
+    BLACKCAT_GET_OPTION_OR_DIE(temp, "s-bits", mk_dh_key_pair_epilogue);
+    if (!blackcat_is_dec(temp, strlen(temp))) {
+        fprintf(stderr, "ERROR: Invalid number in '--s-bits' option.\n");
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    s_bits = strtoul(temp, NULL, 10);
+
+    kryptos_dh_init_xchg_ctx(dh);
+
+    if ((use_dh_group = blackcat_get_bool_option("use-dh-group", 0)) == 1) {
+        BLACKCAT_GET_OPTION_OR_DIE(group_bits, "group-bits", mk_dh_key_pair_epilogue);
+
+        dh_group = NULL;
+        for (di = 0; di < dh_groups_nr && dh_group == NULL; di++) {
+            if (strcmp(dh_droups[di].bits, group_bits) == 0) {
+                dh_group = &dh_groups[di];
+            }
+        }
+
+        if (dh_group == NULL) {
+            fprintf(stderr, "ERROR: Unsupported group-bits '%s'. Available are: '1536', '2048',"
+                            " '3072', '4096', '6144' and '8192'.\n", group_bits);
+            goto mk_dh_key_pair_epilogue;
+        }
+
+        if (kryptos_dh_get_modp(dh_group.bits_n, &dh->p, &dh->g) != kKryptosSuccess) {
+            fprintf(stderr, "ERROR: During mod-p parameters loading.\n");
+            goto mk_dh_key_pair_epilogue;
+        }
+
+    } else {
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "p-bits", mk_dh_key_pair_epilogue);
+        if (!blackcat_is_dec(temp, strlen(temp)) {
+            fprintf(stderr, "ERROR: Invalid number in '--p-bits' option.\n");
+            goto mk_dh_key_pair_epilogue;
+        }
+
+        p_bits = strtoul(temp, NULL, 10);
+
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "q-bits", mk_dh_key_pair_epilogue);
+        if (!blackcat_is_dec(temp, strlen(temp)) {
+            fprintf(stderr, "ERROR: Invalid number in '--q-bits' option.\n");
+            goto mk_dh_key_pair_epilogue;
+        }
+
+        q_bits = strtoul(temp, NULL, 10);
+
+        if (kryptos_dh_mk_domain_params(p_bits, q_bits, &params, &params_size) != kKryptosSuccess) {
+            fprintf(stderr, "ERROR: When generating DH parameters.\n");
+            err = EFAULT;
+            goto mk_dh_key_pair_epilogue;
+        }
+    }
+
+
+mk_dh_key_pair_epilogue:
+
+    if (params != NULL) {
+        kryptos_freeseg(params, params_size);
+    }
+
+    return err;
+}
+*/
 #undef BLACKCAT_NET_DB_HOME
 #undef BLACKCAT_BCSCK_LIB_HOME

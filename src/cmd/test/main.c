@@ -2088,6 +2088,9 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("ntool.server.log");
     remove("ntool.client.log");
 
+    CUTE_ASSERT(blackcat("net --mk-dh-params --out=dh-params.txt --p-bits=160 --q-bits=32", "", NULL) == 0);
+    CUTE_ASSERT(remove("dh-params.txt") == 0);
+
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool --db-path=ntool-test.db", "test", NULL) != 0);
 
     CUTE_ASSERT(blackcat("net --drop-rule --rule=ntool-rule --db-path=ntool-test.db", "tEst", NULL) != 0);
