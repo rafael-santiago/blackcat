@@ -986,6 +986,26 @@ If at the end you did not find anything. It is time to go back and try another r
 
 Nice, for the first time Alice was the attacker. Eve was revenged! ;)
 
+Passwords
+=========
+
+In blackcat we call 'passwords' keys or even session keys. Anyway, keys provided by users are not
+directly used. Thus, over your provided key is always applied some (default or previously configured)
+key crunching and/or key derivation function.
+
+The nice part of providing user keys in blackcat is the possibility of easily use the extended ascii
+charset. For doing this use the following format:
+
+    '\xXX', where XX are hexadecimal digits. This is not valid -> '\x0\x1\x2' must be '\x00\x01\x02'.
+
+So the key 'abc' also could be provided as: '\x61\x62\x63'.
+
+Of course that you can mix up normal symbols with hexadecimal, such as:
+
+    'abc\x00\x01\x78\xF2\xF1\xF0\xDA\x53.101'
+
+So there is no excuse for not using more entropic keys, if you want to.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
