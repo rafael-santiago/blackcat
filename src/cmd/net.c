@@ -29,11 +29,14 @@ static int drop_rule(void);
 
 static int mk_dh_params(void);
 
+static int mk_dh_key_pair(void);
+
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
-    { "--add-rule",  add_rule        },
-    { "--run",       run             },
-    { "--drop-rule", drop_rule       },
-    { "--mk-dh-params", mk_dh_params }
+    { "--add-rule",       add_rule       },
+    { "--run",            run            },
+    { "--drop-rule",      drop_rule      },
+    { "--mk-dh-params",   mk_dh_params   },
+    { "--mk-dh-key-pair", mk_dh_key_pair }
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_net_commands)
@@ -58,6 +61,9 @@ int blackcat_cmd_net(void) {
         }
     }
 
+    if (cmd_text == NULL) {
+        fprintf(stderr, "ERROR: What are intending to do?\n");
+    }
 
     return (cmd_text != NULL) ? cmd_text() : EINVAL;
 }
@@ -373,12 +379,11 @@ mk_dh_params_epilogue:
 
     return err;
 }
-/*
+
 static int mk_dh_key_pair(void) {
     int err = EINVAL;
     int use_dh_group;
-    size_t p_bits, q_bits, s_bits;
-    char *group_bits, *temp;
+    char *group_bits, *temp, *k_pub_out, *k_priv_out;
     struct avail_groups {
         kryptos_dh_modp_group_bits_t bits_n;
         char *bits_s;
@@ -396,23 +401,22 @@ static int mk_dh_key_pair(void) {
     struct kryptos_dh_xchg_ctx dh_ctx, *dh = &dh_ctx;
     kryptos_u8_t *params = NULL;
     size_t params_size;
-
-    BLACKCAT_GET_OPTION_OR_DIE(temp, "s-bits", mk_dh_key_pair_epilogue);
-    if (!blackcat_is_dec(temp, strlen(temp))) {
-        fprintf(stderr, "ERROR: Invalid number in '--s-bits' option.\n");
-        goto mk_dh_key_pair_epilogue;
-    }
-
-    s_bits = strtoul(temp, NULL, 10);
+    FILE *fp = NULL;
+    kryptos_u8_t *k_pub = NULL, *k_priv = NULL;
+    size_t k_pub_size, k_priv_size;
 
     kryptos_dh_init_xchg_ctx(dh);
+
+    BLACKCAT_GET_OPTION_OR_DIE(k_pub_out, "public-key-out", mk_dh_key_pair_epilogue);
+
+    BLACKCAT_GET_OPTION_OR_DIE(k_priv_out, "private-key-out", mk_dh_key_pair_epilogue);
 
     if ((use_dh_group = blackcat_get_bool_option("use-dh-group", 0)) == 1) {
         BLACKCAT_GET_OPTION_OR_DIE(group_bits, "group-bits", mk_dh_key_pair_epilogue);
 
         dh_group = NULL;
         for (di = 0; di < dh_groups_nr && dh_group == NULL; di++) {
-            if (strcmp(dh_droups[di].bits, group_bits) == 0) {
+            if (strcmp(dh_groups[di].bits_s, group_bits) == 0) {
                 dh_group = &dh_groups[di];
             }
         }
@@ -423,44 +427,106 @@ static int mk_dh_key_pair(void) {
             goto mk_dh_key_pair_epilogue;
         }
 
-        if (kryptos_dh_get_modp(dh_group.bits_n, &dh->p, &dh->g) != kKryptosSuccess) {
+        if (kryptos_dh_get_modp(dh_group->bits_n, &dh->p, &dh->g) != kKryptosSuccess) {
             fprintf(stderr, "ERROR: During mod-p parameters loading.\n");
             goto mk_dh_key_pair_epilogue;
         }
 
     } else {
-        BLACKCAT_GET_OPTION_OR_DIE(temp, "p-bits", mk_dh_key_pair_epilogue);
-        if (!blackcat_is_dec(temp, strlen(temp)) {
-            fprintf(stderr, "ERROR: Invalid number in '--p-bits' option.\n");
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "dh-params-in", mk_dh_key_pair_epilogue);
+
+        if ((fp = fopen(temp, "r")) == NULL) {
+            fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", temp);
+            err = EFAULT;
             goto mk_dh_key_pair_epilogue;
         }
 
-        p_bits = strtoul(temp, NULL, 10);
+        fseek(fp, 0L, SEEK_END);
+        params_size = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
 
-        BLACKCAT_GET_OPTION_OR_DIE(temp, "q-bits", mk_dh_key_pair_epilogue);
-        if (!blackcat_is_dec(temp, strlen(temp)) {
-            fprintf(stderr, "ERROR: Invalid number in '--q-bits' option.\n");
+        if ((params = (kryptos_u8_t *) kryptos_newseg(params_size)) == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory!\n");
+            err = ENOMEM;
             goto mk_dh_key_pair_epilogue;
         }
 
-        q_bits = strtoul(temp, NULL, 10);
+        fread(params, 1, params_size, fp);
+        fclose(fp);
+        fp = NULL;
 
-        if (kryptos_dh_mk_domain_params(p_bits, q_bits, &params, &params_size) != kKryptosSuccess) {
-            fprintf(stderr, "ERROR: When generating DH parameters.\n");
+        if (kryptos_dh_get_modp_from_params_buf(params, params_size, &dh->p, NULL, &dh->g) != kKryptosSuccess) {
+            fprintf(stderr, "ERROR: When getting DH parameters.\n");
             err = EFAULT;
             goto mk_dh_key_pair_epilogue;
         }
     }
 
+    kryptos_dh_mk_key_pair(&k_pub, &k_pub_size, &k_priv, &k_priv_size, &dh);
+
+    if (!kryptos_last_task_succeed(dh)) {
+        fprintf(stderr, "ERROR: While making the key pair.\n");
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    if ((fp = fopen(k_pub_out, "w")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to write to '%s'.", k_pub_out);
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    if (fwrite(k_pub, 1, k_pub_size, fp) == -1) {
+        fprintf(stderr, "ERROR: Unable to write to save the public key.\n");
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    fclose(fp);
+
+    if ((fp = fopen(k_priv_out, "w")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to write to '%s'.", k_priv_out);
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    if (fwrite(k_priv, 1, k_priv_size, fp) == -1) {
+        fprintf(stderr, "ERROR: Unable to write to save the private key.\n");
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+    err = 0;
 
 mk_dh_key_pair_epilogue:
+
+    if (err != 0) {
+        remove(k_pub_out);
+        remove(k_priv_out);
+    }
 
     if (params != NULL) {
         kryptos_freeseg(params, params_size);
     }
 
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (k_pub != NULL) {
+        kryptos_freeseg(k_pub, k_pub_size);
+    }
+
+    if (k_priv != NULL) {
+        kryptos_freeseg(k_priv, k_priv_size);
+    }
+
+    kryptos_clear_dh_xchg_ctx(dh);
+
     return err;
 }
-*/
+
 #undef BLACKCAT_NET_DB_HOME
 #undef BLACKCAT_BCSCK_LIB_HOME
