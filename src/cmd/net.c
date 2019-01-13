@@ -17,9 +17,19 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #define BLACKCAT_NET_DB_HOME "BLACKCAT_NET_DB_HOME"
 #define BLACKCAT_BCSCK_LIB_HOME "BLACKCAT_BCSCK_LIB_HOME"
+
+struct skey_xchg_ctx {
+    char *addr;
+    unsigned short port;
+};
+
+typedef int (*skey_xchg_trap)(struct skey_xchg_ctx *arg);
 
 static int add_rule(void);
 
@@ -31,12 +41,19 @@ static int mk_dh_params(void);
 
 static int mk_dh_key_pair(void);
 
+static int skey_xchg(void);
+
+static int skey_xchg_server(struct skey_xchg_ctx *sx);
+
+static int skey_xchg_client(struct skey_xchg_ctx *sx);
+
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
     { "--add-rule",       add_rule       },
     { "--run",            run            },
     { "--drop-rule",      drop_rule      },
     { "--mk-dh-params",   mk_dh_params   },
-    { "--mk-dh-key-pair", mk_dh_key_pair }
+    { "--mk-dh-key-pair", mk_dh_key_pair },
+    { "--skey-xchg",      skey_xchg      }
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_net_commands)
@@ -524,6 +541,144 @@ mk_dh_key_pair_epilogue:
     }
 
     kryptos_clear_dh_xchg_ctx(dh);
+
+    return err;
+}
+
+static int skey_xchg_server(struct skey_xchg_ctx *sx) {
+    int err = 0;
+    kryptos_u8_t *skey[2] = { NULL, NULL };
+    size_t skey_size[2];
+    int sockfd, csockfd;
+    struct sockaddr_in sk_in;
+    socklen_t sk_in_len;
+
+    // INFO(Rafael): Reading the user session key.
+
+    accacia_savecursorposition();
+
+    fprintf(stdout, "Session key: ");
+    if ((skey[0] = blackcat_getuserkey(&skey_size[0])) == NULL) {
+        fprintf(stderr, "ERROR: NULL session key.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto skey_xchg_server_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    fprintf(stdout, "Re-type the session key: ");
+    if ((skey[1] = blackcat_getuserkey(&skey_size[1])) == NULL) {
+        fprintf(stderr, "ERROR: NULL session key.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto skey_xchg_server_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    if (skey_size[0] != skey_size[1] || memcmp(skey[0], skey[1], skey_size[0]) != 0) {
+        fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+        err = EFAULT;
+        goto skey_xchg_server_epilogue;
+    }
+
+    // INFO(Rafael): Listening to incoming connections. With DH modified, we will not authenticate anything.
+    //               Supposing that only the client will actually have her/his private key.
+
+    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    if (sockfd == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: When creating the socket.\n");
+        goto skey_xchg_server_epilogue;
+    }
+
+    sk_in.sin_family = AF_INET;
+    sk_in.sin_port = htons(sx->port);
+    sk_in.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sockfd, (struct sockaddr *)&sk_in, sizeof(sk_in)) == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: When binding the socket.\n");
+        goto skey_xchg_server_epilogue;
+    }
+
+    if (listen(sockfd, 1) == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: When listening.\n");
+        goto skey_xchg_server_epilogue;
+    }
+
+    sk_in_len = sizeof(sk_in);
+    csockfd = accept(sockfd, (struct sockaddr *)&sk_in, &sk_in_len);
+
+    if (csockfd == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: When accepting the incoming connection.\n");
+        goto skey_xchg_server_epilogue;
+    }
+
+    // TODO(Rafael): - Agree an ephemeral random key (erk);
+    //               - Encrypt the session key (sk) with erk by using hmac-sha3-512-aes-256-cbc;
+    //               - Send hmac-sha3-512-aes-256-cbc(sk, erk);
+
+skey_xchg_server_epilogue:
+
+    if (skey[0] != NULL) {
+        kryptos_freeseg(skey[0], skey_size[0]);
+    }
+
+    if (skey[1] != NULL) {
+        kryptos_freeseg(skey[1], skey_size[1]);
+    }
+
+    return err;
+}
+
+static int skey_xchg_client(struct skey_xchg_ctx *sx) {
+    int err = 0;
+
+    // TODO(Rafael): Guess what?
+
+skey_xchg_client_epilogue:
+
+    return err;
+}
+
+static int skey_xchg(void) {
+    char *temp;
+    int err = EINVAL;
+    struct skey_xchg_ctx sx;
+    skey_xchg_trap sx_trap;
+
+    if (blackcat_get_bool_option("server", 0)) {
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "port", skey_xchg_epilogue);
+        if (!blackcat_is_dec(temp, strlen(temp))) {
+            fprintf(stderr, "ERROR: The option '--port' must have a valid port number.\n");
+            goto skey_xchg_epilogue;
+        }
+        sx.addr = NULL;
+        sx.port = atoi(temp);
+        sx_trap = skey_xchg_server;
+    } else {
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "port", skey_xchg_epilogue);
+        if (!blackcat_is_dec(temp, strlen(temp))) {
+            fprintf(stderr, "ERROR: The option '--port' must have a valid port number.\n");
+            goto skey_xchg_epilogue;
+        }
+        sx.port = atoi(temp);
+        BLACKCAT_GET_OPTION_OR_DIE(sx.addr, "addr", skey_xchg_epilogue);
+        sx_trap = skey_xchg_client;
+    }
+
+    err = sx_trap(&sx);
+
+skey_xchg_epilogue:
 
     return err;
 }
