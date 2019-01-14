@@ -1004,6 +1004,8 @@ Of course that you can mix up normal symbols with hexadecimal, such as:
 
     'abc\x00\x01\x78\xF2\xF1\xF0\xDA\x53.101'
 
+Also is possible to indicade returns through '\r', enters with '\n' and tabulations as '\t'.
+
 So there is no excuse for not using more entropic keys, if you want to.
 
 Few tips for not being a tracked average sheep out there
