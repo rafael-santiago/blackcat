@@ -44,6 +44,7 @@ libbcnet.prologue() {
     $dirlist.add_item(hefesto.sys.make_path(hefesto.sys.pwd(), "base"));
     $dirlist.add_item(hefesto.sys.make_path(hefesto.sys.pwd(), "ctx"));
     $dirlist.add_item(hefesto.sys.make_path(hefesto.sys.pwd(), "db"));
+    $dirlist.add_item(hefesto.sys.make_path(hefesto.sys.pwd(), "dh"));
 
     $src = get_codes($dirlist, $deps);
 }
