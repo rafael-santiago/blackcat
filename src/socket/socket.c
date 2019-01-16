@@ -1086,8 +1086,8 @@ __bcsck_enter(sendmsg)
     //               otherwise the Terminator never 'will be back'.
 
     if ((lsockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-        fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
         goto do_xchg_server_epilogue;
     }
 
@@ -1098,8 +1098,8 @@ __bcsck_enter(sendmsg)
     sin.sin_addr.s_addr = INADDR_ANY;
 
     if ((bind(lsockfd, (struct sockaddr *)&sin, sizeof(sin))) == -1) {
-        fprintf(stderr, "ERROR: Unable to bind the listen socket.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to bind the listen socket.\n");
         goto do_xchg_server_epilogue;
     }
 
@@ -1107,9 +1107,9 @@ __bcsck_enter(sendmsg)
 
     slen = sizeof(sin);
     if ((csockfd = accept(lsockfd, (struct sockaddr *)&sin, &slen)) == -1) {
+        err = errno;
         perror("accept");
         fprintf(stderr, "ERROR: Unable to accept the client during session parameters exchanging.\n");
-        err = errno;
         goto do_xchg_server_epilogue;
     }
 
@@ -1121,8 +1121,8 @@ __bcsck_enter(sendmsg)
                   })
 
     if (g_bcsck_handle->libc_send(csockfd, out_buf, out_buf_size, 0) != out_buf_size) {
-        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         goto do_xchg_server_epilogue;
     }
 
@@ -1131,8 +1131,8 @@ __bcsck_enter(sendmsg)
     out_buf_size = 0;
 
     if ((buf_size = g_bcsck_handle->libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
-        fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
         goto do_xchg_server_epilogue;
     }
 
@@ -1231,8 +1231,8 @@ __bcsck_enter(sendmsg)
     //               otherwise the Terminator never 'will be back'.
 
     if ((sockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-        fprintf(stderr, "ERROR: Unable to create a socket.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to create a socket.\n");
         goto do_xchg_client_epilogue;
     }
 
@@ -1240,22 +1240,22 @@ __bcsck_enter(sendmsg)
     sin.sin_port = htons(g_bcsck_handle->xchg_port);
 
     if ((hp = gethostbyname(g_bcsck_handle->xchg_addr)) == NULL) {
-        fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
         goto do_xchg_client_epilogue;
     }
 
     sin.sin_addr.s_addr = ((struct in_addr *)hp->h_addr_list[0])->s_addr;
 
     if (connect(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
-        fprintf(stderr, "ERROR: Unable to connect to the host.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to connect to the host.\n");
         goto do_xchg_client_epilogue;
     }
 
     if ((buf_size = g_bcsck_handle->libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
-        fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
         err = errno;
+        fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
         goto do_xchg_client_epilogue;
     }
 
