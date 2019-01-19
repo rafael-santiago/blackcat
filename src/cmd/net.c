@@ -541,15 +541,62 @@ static int skey_xchg(void) {
     int err = EINVAL;
     struct skey_xchg_ctx sx;
     skey_xchg_trap sx_trap;
+    FILE *fp = NULL;
+    kryptos_u8_t *k_buf = NULL;
+    size_t k_buf_size;
+    int server = blackcat_get_bool_option("server", 0);
 
-    if (blackcat_get_bool_option("server", 0)) {
+    BLACKCAT_GET_OPTION_OR_DIE(temp, (server) ? "kpub" : "kpriv", skey_xchg_epilogue);
+
+    if ((fp = fopen(temp, "r")) == NULL) {
+        err = EFAULT;
+        fprintf(stderr, "ERROR: Unable to open '%s'.\n", temp);
+        goto skey_xchg_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    k_buf_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    if ((k_buf = (kryptos_u8_t *)kryptos_newseg(k_buf_size)) == NULL) {
+        err = ENOMEM;
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto skey_xchg_epilogue;
+    }
+
+    if (fread(k_buf, 1, k_buf_size, fp) == -1) {
+        err = EFAULT;
+        fprintf(stderr, "ERROR: Unable to read the dh parameters.\n");
+        goto skey_xchg_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+    sx.verbose = 1;
+
+    if (server) {
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "bits", skey_xchg_epilogue);
+
+        if (!blackcat_is_dec(temp, strlen(temp))) {
+            fprintf(stderr, "ERROR: The '--bits' option should has a valid number.\n");
+            goto skey_xchg_epilogue;
+        }
+
+        sx.s_bits = strtoul(temp, NULL, 10);
+
         BLACKCAT_GET_OPTION_OR_DIE(temp, "port", skey_xchg_epilogue);
+
         if (!blackcat_is_dec(temp, strlen(temp))) {
             fprintf(stderr, "ERROR: The option '--port' must have a valid port number.\n");
             goto skey_xchg_epilogue;
         }
+
+        sx.key_size = 0;
         sx.addr = NULL;
         sx.port = atoi(temp);
+        sx.k_pub = k_buf;
+        sx.k_pub_size = k_buf_size;
         sx_trap = skey_xchg_server;
     } else {
         BLACKCAT_GET_OPTION_OR_DIE(temp, "port", skey_xchg_epilogue);
@@ -559,6 +606,8 @@ static int skey_xchg(void) {
         }
         sx.port = atoi(temp);
         BLACKCAT_GET_OPTION_OR_DIE(sx.addr, "addr", skey_xchg_epilogue);
+        sx.k_priv = k_buf;
+        sx.k_priv_size = k_buf_size;
         sx_trap = skey_xchg_client;
     }
 
@@ -566,9 +615,17 @@ static int skey_xchg(void) {
 
 skey_xchg_epilogue:
 
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
     if (err == 0 && sx_trap == skey_xchg_client) {
         skey_print(sx.session_key, sx.session_key_size);
         kryptos_freeseg(sx.session_key, sx.session_key_size);
+    }
+
+    if (k_buf != NULL) {
+        kryptos_freeseg(k_buf, k_buf_size);
     }
 
     memset(&sx, 0, sizeof(sx));
@@ -579,7 +636,7 @@ skey_xchg_epilogue:
 static void skey_print(const kryptos_u8_t *skey, const size_t skey_size) {
     const kryptos_u8_t *sp = skey, *sp_end = skey + skey_size;
 
-    fprintf(stdout, "The session key is: ");
+    fprintf(stdout, "INFO: The session key is '");
 
     while (sp != sp_end) {
         if (isprint(*sp)) {
@@ -590,7 +647,7 @@ static void skey_print(const kryptos_u8_t *skey, const size_t skey_size) {
         sp++;
     }
 
-    fprintf(stdout, "\n");
+    fprintf(stdout, "'.\n");
     sp = sp_end = NULL;
 }
 

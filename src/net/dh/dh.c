@@ -31,6 +31,7 @@ static kryptos_u8_t *get_mp_as_raw_buf(kryptos_mp_value_t *mp, size_t *buf_size)
 #define decrypt_session_key(s, s_sz, k, k_sz, o_sz) encrypt_decrypt_session_key(s, s_sz, k, k_sz, o_sz, 1)
 
 int skey_xchg_server(struct skey_xchg_ctx *sx) {
+    // WARN(Rafael): For the sake of simplicity this function is being tested in cmd tool's poke test.
     int err = EINVAL;
     kryptos_u8_t *skey[2] = { NULL, NULL };
     size_t skey_size[2];
@@ -40,6 +41,7 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     struct kryptos_dh_xchg_ctx dh_ctx, *dh = &dh_ctx;
     kryptos_u8_t *epk = NULL, *enc_session_key = NULL;
     size_t epk_size, enc_session_key_size;
+    int yes = 1;
 
     sx->session_key = NULL;
     sx->session_key_size = 0;
@@ -54,8 +56,10 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     if (sx->key_size == 0) {
         fprintf(stdout, "Session key: ");
         if ((skey[0] = blackcat_getuserkey(&skey_size[0])) == NULL) {
-            fprintf(stderr, "ERROR: NULL session key.\n");
-            fflush(stderr);
+            if (sx->verbose) {
+                fprintf(stderr, "ERROR: NULL session key.\n");
+                fflush(stderr);
+            }
             err = EFAULT;
             goto skey_xchg_server_epilogue;
         }
@@ -66,8 +70,10 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
         fprintf(stdout, "Re-type the session key: ");
         if ((skey[1] = blackcat_getuserkey(&skey_size[1])) == NULL) {
-            fprintf(stderr, "ERROR: NULL session key.\n");
-            fflush(stderr);
+            if (sx->verbose) {
+                fprintf(stderr, "ERROR: NULL session key.\n");
+                fflush(stderr);
+            }
             err = EFAULT;
             goto skey_xchg_server_epilogue;
         }
@@ -77,14 +83,18 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
         fflush(stdout);
 
         if (skey_size[0] != skey_size[1] || memcmp(skey[0], skey[1], skey_size[0]) != 0) {
-            fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+            if (sx->verbose) {
+                fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+            }
             err = EFAULT;
             goto skey_xchg_server_epilogue;
         }
     } else {
         if ((skey[0] = kryptos_get_random_block(sx->key_size)) == NULL) {
             err = EFAULT;
-            fprintf(stderr, "ERROR: Unable to get a random block.\n");
+            if (sx->verbose) {
+                fprintf(stderr, "ERROR: Unable to get a random block.\n");
+            }
             goto skey_xchg_server_epilogue;
         }
     }
@@ -96,9 +106,13 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     if (sockfd == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: When creating the socket.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: When creating the socket.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
     sk_in.sin_family = AF_INET;
     sk_in.sin_port = htons(sx->port);
@@ -106,13 +120,17 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     if (bind(sockfd, (struct sockaddr *)&sk_in, sizeof(sk_in)) == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: When binding the socket.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: When binding the socket.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
     if (listen(sockfd, 1) == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: When listening.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: When listening.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
@@ -121,7 +139,9 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     if (csockfd == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: When accepting the incoming connection.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: When accepting the incoming connection.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
@@ -135,7 +155,9 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     if (!kryptos_last_task_succeed(dh)) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: Error when evaluating values to key exchange.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Error when evaluating values to key exchange.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
@@ -143,7 +165,9 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     if ((epk = get_mp_as_raw_buf(dh->k, &epk_size)) == NULL) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: Unable to access the session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to access the session key.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
@@ -152,7 +176,9 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     if (kryptos_pem_put_data(&dh->out,
                              &dh->out_size, BLACKCAT_SESSION_KEY, enc_session_key, enc_session_key_size) != kKryptosSuccess) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: When preparing to exchange the session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: When preparing to exchange the session key.\n");
+        }
         goto skey_xchg_server_epilogue;
     }
 
@@ -176,6 +202,7 @@ skey_xchg_server_epilogue:
         close(sockfd);
     }
 
+    dh->in = NULL;
     kryptos_clear_dh_xchg_ctx(dh);
 
     if (skey[0] != NULL) {
@@ -200,14 +227,15 @@ skey_xchg_server_epilogue:
 }
 
 int skey_xchg_client(struct skey_xchg_ctx *sx) {
+    // WARN(Rafael): For the sake of simplicity this function is being tested in cmd tool's poke test.
     int err = EINVAL;
-    int sockfd;
+    int sockfd = -1;
     struct sockaddr_in sk_in;
     struct hostent *hp;
     kryptos_u8_t buf[0xFFFF];
     ssize_t buf_size;
     struct kryptos_dh_xchg_ctx dh_ctx, *dh = &dh_ctx;
-    kryptos_u8_t *epk = NULL, *enc_session_key;
+    kryptos_u8_t *epk = NULL, *enc_session_key = NULL;
     size_t epk_size, enc_session_key_size;
 
     sx->session_key = NULL;
@@ -220,7 +248,9 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
     if (sockfd == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: Unable to create a socket.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to create a socket.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
@@ -229,7 +259,9 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
     if ((hp = gethostbyname(sx->addr)) == NULL) {
         err = errno;
-        fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
@@ -237,20 +269,26 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
     if (connect(sockfd, (struct sockaddr *)&sk_in, sizeof(sk_in)) == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: Unable to connect to the host.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to connect to the host.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
     if ((buf_size = recv(sockfd, buf, sizeof(buf) - 1, 0)) == -1) {
         err = errno;
-        fprintf(stderr, "ERROR: Unable to receive data.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to receive data.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
     dh->in_size = buf_size + sx->k_priv_size;
-    if ((dh->in = (kryptos_u8_t *)kryptos_newseg(dh->in_size)) == NULL) {
+    if ((dh->in = (kryptos_u8_t *)kryptos_newseg(dh->in_size + 1)) == NULL) {
         err = ENOMEM;
-        fprintf(stderr, "ERROR: Not enough memory.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
@@ -258,25 +296,31 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
     if (enc_session_key == NULL) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: The message seems not contain the encrypted session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: The message seems not contain the encrypted session key.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
+    memset(dh->in, 0, dh->in_size + 1);
     memcpy(dh->in, buf, buf_size);
     memcpy(dh->in + buf_size, sx->k_priv, sx->k_priv_size);
-    dh->s_bits = sx->s_bits;
 
     kryptos_dh_process_modxchg(&dh);
 
     if (!kryptos_last_task_succeed(dh)) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: Unable to calculate the session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to calculate the session key.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
     if ((epk = get_mp_as_raw_buf(dh->k, &epk_size)) == NULL) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: Unable to access the session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to access the session key.\n");
+        }
         goto skey_xchg_client_epilogue;
     }
 
@@ -284,7 +328,9 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
     if (sx->session_key == NULL) {
         err = EFAULT;
-        fprintf(stderr, "ERROR: Unable to decrypt the session key.\n");
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to decrypt the session key.\n");
+        }
     }
 
     err = 0;
@@ -301,9 +347,8 @@ skey_xchg_client_epilogue:
         kryptos_freeseg(epk, epk_size);
     }
 
-    if (enc_session_key != NULL) {
-        kryptos_freeseg(enc_session_key, enc_session_key_size);
-    }
+    enc_session_key = 0;
+    enc_session_key_size = 0;
 
     sx->ret = err;
 
@@ -338,11 +383,23 @@ static kryptos_u8_t *encrypt_decrypt_session_key(kryptos_u8_t *session_key, cons
 
     kryptos_run_cipher_hmac(aes256, sha3_512, ktask, fkey, fkey_size, kKryptosCBC);
 
+    if (!kryptos_last_task_succeed(ktask)) {
+        fprintf(stderr, "ERROR: while %s the session key.\n", (decrypt) ? "decrypting" : "encrypting");
+    }
+
 encrypt_session_key_epilogue:
 
     if (fkey != NULL) {
         kryptos_freeseg(fkey, fkey_size);
     }
+
+    if (decrypt) {
+        kryptos_freeseg(ktask->in, ktask->in_size);
+        ktask->in = NULL;
+        ktask->in_size = 0;
+    }
+
+    *out_size = ktask->out_size;
 
     return ktask->out;
 }

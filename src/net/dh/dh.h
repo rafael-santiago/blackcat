@@ -19,7 +19,7 @@ struct skey_xchg_ctx {
     size_t k_priv_size, k_pub_size;
     kryptos_u8_t *session_key;
     size_t session_key_size;
-    int ret;
+    int ret, verbose;
 };
 
 typedef int (*skey_xchg_trap)(struct skey_xchg_ctx *arg);

@@ -1008,6 +1008,64 @@ Also is possible to indicade returns through '\r', enters with '\n' and tabulati
 
 So there is no excuse for not using more entropic keys, if you want to.
 
+Exchanging session keys
+=======================
+
+Blackcat implements a well simple vpn-tunnel for applications that do not offer any encryption
+convenience. Sometimes agree a session key in a more secure way is a problem.
+
+Considering this issue blackcat implements a modified Diffie-Hellman-Merkle key exchange scheme.
+This scheme mitigates a little the man-in-the-middle attacks against the standard one.
+
+In order to exchange a session key with blackcat, firstly, is necessary to create a key pair
+through the net subcommand '--mk-key-pair'. The most straightforward way of using it is:
+
+    alice@WolandsLand:~/# blackcat net --mk-dh-key-pair --public-key-out=alice.pub \
+    > --private-key-out=alice.priv --use-dh-group --group-bits=2048
+    alice@WolandsLand:~/# _
+
+Once succeeded the command above, all Alice should do is to make public the 'alice.pub' file.
+Anyone who wants to exchange information with her must to use this public file.
+
+Alice should never make public the 'alice.priv' file, because this file will "unlock" any
+information "locked" by using 'alice.pub'.
+
+The key pair making command shown above uses standarnized MODP parameters for
+Diffie-Hellman-Merkle. Until now you can use group bits of 1536, 2048, 3072, 4096,
+6144 or 8192 bits. However, you can also create your own DH parameters in the following way:
+
+    alice@WolandsLand:~/# blackcat net --mk-dh-params --p-bits=1024 --q-bits=256 \
+    > --out=dh-params.txt
+    alice@WolandsLand:~/# _
+
+Now to create a key pair by using those parameters instead of the standanized MODP group, you
+should:
+
+    alice@WolandsLand:~/# blackcat net --mk-dh-key-pair --public-key-out=alice.pub \
+    > --private-key-out=alice.priv --dh-params-in=dh-params.txt
+    alice@WolandsLand:~/# _
+
+Now, let's suppose that Bob wants to exchange a session key that will be used between Alice
+and him during one month:
+
+    Bob@Copacabana:~/# blackcat net --skey-xchg --server --kpub=alice.pub --port=5002 \
+    > --bits=160
+    Bob@Copacabana:~/# _
+
+Bob will be asked for a session key, so he provides it besides confirming it too. The data will
+be processed and encrypted in a way that only Alice should be able to decrypt.
+
+At Alice's side, she knows the address and port that Bob is waiting for exchanging data with her:
+
+    Alice@WolandsLand:~/# blackcat net --skey-xchg --addr=Copacabana --port=5002 \
+    > --kpriv=alice.priv
+    Alice@WolandsLand:~/# _
+
+Once received all parameters, the blackcat instance executed in Alice's system will tell her the
+agreed session key (initially defined by Bob in him system).
+
+Now the two parts have estabilished their "monthly key".
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
