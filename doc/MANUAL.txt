@@ -852,7 +852,7 @@ to run a "hungry lock" and eavesdrop everything:
     bob@BigBo:~/data-inspection/alice# blackcat lock
     bob@BigBo:~/data-inspection/alice# _
 
-Everything looks fine with the dummy data, any disclosure about him, etc. Now he will inspect
+Everything looks fine with the dummy data, no disclosures about him, etc. Now he will inspect
 the "real" sensitive data:
 
     bob@BigBo:~/data-inspection/alice# blackcat attach \
