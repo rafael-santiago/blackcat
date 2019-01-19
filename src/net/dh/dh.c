@@ -366,7 +366,7 @@ static kryptos_u8_t *encrypt_decrypt_session_key(kryptos_u8_t *session_key, cons
 
     kryptos_task_init_as_null(ktask);
 
-    fkey = kryptos_hkdf(key, key_size, sha3_512, "", 0, "", 0, fkey_size);
+    fkey = kryptos_hkdf(key, key_size >> 1, sha3_512, key + (key_size >> 1),  key_size - (key_size >> 1), "", 0, fkey_size);
 
     if (fkey == NULL) {
         goto encrypt_session_key_epilogue;
