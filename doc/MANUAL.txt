@@ -77,7 +77,7 @@ Maybe you are curious about the options present in command init.
 
     --protection-layer -> Specifies the algorithm or the sequence of the cascading. Yes, you can
                           specify more than one. This protection layer will be used to encrypt
-                          the sensible data inside the current repository. When you specify more
+                          the sensitive data inside the current repository. When you specify more
                           than one cipher they need to be separated by commas.
 
 Blackcat verifies if the combination of those three hashing algorithms are considered strong. If
