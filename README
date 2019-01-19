@@ -26,6 +26,8 @@ Including:
 
     - Vpn-tunnel (socket level) with E2EE (by using a double ratchet like mechanism or not);
 
+    - Session key exchanging by using a modified Diffie-Hellman-Merkle scheme;
+
 If you are interested in:
 
 -> Read more about the build instructions in 'BUILD.txt'.
