@@ -1025,7 +1025,7 @@ through the net subcommand '--mk-key-pair'. The most straightforward way of usin
     alice@WolandsLand:~/# _
 
 Once succeeded the command above, all Alice should do is to make public the 'alice.pub' file.
-Anyone who wants to exchange information with her must to use this public file.
+Anyone who wants to exchange information with her must use this public file.
 
 Alice should never make public the 'alice.priv' file, because this file will "unlock" any
 information "locked" by using 'alice.pub'.
@@ -1038,7 +1038,7 @@ Diffie-Hellman-Merkle. Until now you can use group bits of 1536, 2048, 3072, 409
     > --out=dh-params.txt
     alice@WolandsLand:~/# _
 
-Now to create a key pair by using those parameters instead of the standanized MODP group, you
+Now to create a key pair by using those parameters instead of a standanized MODP group, you
 should:
 
     alice@WolandsLand:~/# blackcat net --mk-dh-key-pair --public-key-out=alice.pub \
@@ -1062,9 +1062,8 @@ At Alice's side, she knows the address and port that Bob is waiting for exchangi
     Alice@WolandsLand:~/# _
 
 Once received all parameters, the blackcat instance executed in Alice's system will tell her the
-agreed session key (initially defined by Bob in him system).
-
-Now the two parts have estabilished their "monthly key".
+agreed session key (initially defined by Bob in him system). Now the two parts have estabilished
+their "monthly key".
 
 Few tips for not being a tracked average sheep out there
 ========================================================
