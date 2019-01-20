@@ -1018,7 +1018,7 @@ Considering this issue blackcat implements a modified Diffie-Hellman-Merkle key 
 This scheme mitigates a little the man-in-the-middle attacks against the standard one.
 
 In order to exchange a session key with blackcat, firstly, is necessary to create a key pair
-through the net subcommand '--mk-key-pair'. The most straightforward way of using it is:
+through the net subcommand '--mk-dh-key-pair'. The most straightforward way of using it is:
 
     alice@WolandsLand:~/# blackcat net --mk-dh-key-pair --public-key-out=alice.pub \
     > --private-key-out=alice.priv --use-dh-group --group-bits=2048
@@ -1028,7 +1028,10 @@ Once succeeded the command above, all Alice should do is to make public the 'ali
 Anyone who wants to exchange information with her must use this public file.
 
 Alice should never make public the 'alice.priv' file, because this file will "unlock" any
-information "locked" by using 'alice.pub'.
+information "locked" by using 'alice.pub'. The 'alice.priv' file is encrypted with
+a key asked to her while generating it.
+
+Even so, if your private parameters was disclosed I recommend you to generate a new key pair.
 
 The key pair making command shown above uses standarnized MODP parameters for
 Diffie-Hellman-Merkle. Until now you can use group bits of 1536, 2048, 3072, 4096,

@@ -2092,21 +2092,26 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("net --mk-dh-params --out=dh-params.txt --p-bits=160 --q-bits=32", "", NULL) == 0);
 
     CUTE_ASSERT(blackcat("net --mk-dh-key-pair --public-key-out=k.pub --private-key-out=k.priv --dh-params-in=dh-params.txt",
-                         "", NULL) == 0);
+                         "1234", "1235") != 0);
+
+    CUTE_ASSERT(blackcat("net --mk-dh-key-pair --public-key-out=k.pub --private-key-out=k.priv --dh-params-in=dh-params.txt",
+                         "1234", "1234") == 0);
 
     CUTE_ASSERT(blackcat_nowait("net --skey-xchg --server --kpub=k.pub --port=5002 --bits=32",
                                 "WabbaLabbaDubDub!\nWabbaLabbaDubDub!", NULL) == 0);
 
-    CUTE_ASSERT(blackcat_nowait("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1 > kxchg.log", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "123", NULL) != 0);
 
-    data = get_file_data("kxchg.log", &data_size);
+    CUTE_ASSERT(blackcat_nowait("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "1234", NULL) == 0);
+
+    /*data = get_file_data("kxchg.log", &data_size);
     CUTE_ASSERT(data != NULL);
 
     CUTE_ASSERT(strstr(data, "INFO: The session key is 'WabbaLabbaDubDub!'.\n") != NULL);
 
     kryptos_freeseg(data, data_size);
 
-    CUTE_ASSERT(remove("kxchg.log") == 0);
+    CUTE_ASSERT(remove("kxchg.log") == 0);*/
     CUTE_ASSERT(remove("k.pub") == 0);
     CUTE_ASSERT(remove("k.priv") == 0);
     CUTE_ASSERT(remove("dh-params.txt") == 0);

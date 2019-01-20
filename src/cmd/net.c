@@ -13,6 +13,7 @@
 #include <keychain/ciphering_schemes.h>
 #include <keychain/keychain.h>
 #include <net/dh/dh.h>
+#include <fs/bcrepo/bcrepo.h>
 #include <kryptos.h>
 #include <accacia.h>
 #include <ctype.h>
@@ -23,6 +24,7 @@
 
 #define BLACKCAT_NET_DB_HOME "BLACKCAT_NET_DB_HOME"
 #define BLACKCAT_BCSCK_LIB_HOME "BLACKCAT_BCSCK_LIB_HOME"
+#define BLACKCAT_DH_KPRIV "BC DH KPRIV"
 
 static int add_rule(void);
 
@@ -37,6 +39,14 @@ static int mk_dh_key_pair(void);
 static int skey_xchg(void);
 
 static void skey_print(const kryptos_u8_t *skey, const size_t skey_size);
+
+static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_size,
+                                              kryptos_u8_t *key, const size_t key_size,
+                                              size_t *out_size, const int decrypt);
+
+#define encrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 0)
+
+#define decrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 1)
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
     { "--add-rule",       add_rule       },
@@ -411,8 +421,10 @@ static int mk_dh_key_pair(void) {
     kryptos_u8_t *params = NULL;
     size_t params_size;
     FILE *fp = NULL;
-    kryptos_u8_t *k_pub = NULL, *k_priv = NULL;
-    size_t k_pub_size, k_priv_size;
+    kryptos_u8_t *k_pub = NULL, *k_priv = NULL, *enc_k_priv = NULL;
+    size_t k_pub_size, k_priv_size, enc_k_priv_size;
+    kryptos_u8_t *kpriv_key[2] = { NULL, NULL };
+    size_t kpriv_key_size[2] = { 0, 0 };
 
     kryptos_dh_init_xchg_ctx(dh);
 
@@ -471,6 +483,37 @@ static int mk_dh_key_pair(void) {
         }
     }
 
+    accacia_savecursorposition();
+    fprintf(stdout, "Kpriv key: ");
+    if ((kpriv_key[0] = blackcat_getuserkey(&kpriv_key_size[0])) == NULL) {
+        fprintf(stderr, "ERROR: NULL Kpriv key.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    fprintf(stdout, "Re-type kpriv key: ");
+    if ((kpriv_key[1] = blackcat_getuserkey(&kpriv_key_size[1])) == NULL) {
+        fprintf(stderr, "ERROR: NULL Kpriv key confirmation.\n");
+        fflush(stderr);
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    accacia_restorecursorposition();
+    accacia_delline();
+    fflush(stdout);
+
+    if (kpriv_key_size[0] != kpriv_key_size[1] || memcmp(kpriv_key[0], kpriv_key[1], kpriv_key_size[0]) != 0) {
+        fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
     kryptos_dh_mk_key_pair(&k_pub, &k_pub_size, &k_priv, &k_priv_size, &dh);
 
     if (!kryptos_last_task_succeed(dh)) {
@@ -499,7 +542,13 @@ static int mk_dh_key_pair(void) {
         goto mk_dh_key_pair_epilogue;
     }
 
-    if (fwrite(k_priv, 1, k_priv_size, fp) == -1) {
+    if ((enc_k_priv = encrypt_dh_kpriv(k_priv, k_priv_size, kpriv_key[0], kpriv_key_size[0], &enc_k_priv_size)) == NULL) {
+        fprintf(stderr, "ERROR: Unable to encrypt the kpriv buffer.\n");
+        err = EFAULT;
+        goto mk_dh_key_pair_epilogue;
+    }
+
+    if (fwrite(enc_k_priv, 1, enc_k_priv_size, fp) == -1) {
         fprintf(stderr, "ERROR: Unable to write to save the private key.\n");
         err = EFAULT;
         goto mk_dh_key_pair_epilogue;
@@ -510,6 +559,25 @@ static int mk_dh_key_pair(void) {
     err = 0;
 
 mk_dh_key_pair_epilogue:
+
+    if (k_pub != NULL) {
+        kryptos_freeseg(k_pub, k_pub_size);
+    }
+
+    if (k_priv != NULL) {
+        kryptos_freeseg(k_priv, k_priv_size);
+    }
+
+    if (kpriv_key[0] != NULL) {
+        kryptos_freeseg(kpriv_key[0], kpriv_key_size[0]);
+    }
+
+    if (kpriv_key[1] != NULL) {
+        kryptos_freeseg(kpriv_key[1], kpriv_key_size[1]);
+    }
+
+    kpriv_key[0] = kpriv_key[1] = NULL;
+    kpriv_key_size[0] = kpriv_key_size[1] = 0;
 
     if (err != 0) {
         remove(k_pub_out);
@@ -524,15 +592,12 @@ mk_dh_key_pair_epilogue:
         fclose(fp);
     }
 
-    if (k_pub != NULL) {
-        kryptos_freeseg(k_pub, k_pub_size);
-    }
-
-    if (k_priv != NULL) {
-        kryptos_freeseg(k_priv, k_priv_size);
-    }
-
     kryptos_clear_dh_xchg_ctx(dh);
+
+    if (enc_k_priv != NULL) {
+        kryptos_freeseg(enc_k_priv, enc_k_priv_size);
+        enc_k_priv_size = 0;
+    }
 
     return err;
 }
@@ -543,8 +608,8 @@ static int skey_xchg(void) {
     struct skey_xchg_ctx sx;
     skey_xchg_trap sx_trap;
     FILE *fp = NULL;
-    kryptos_u8_t *k_buf = NULL;
-    size_t k_buf_size;
+    kryptos_u8_t *k_buf = NULL, *kpriv_key = NULL;
+    size_t k_buf_size, kpriv_key_size;
     int server = blackcat_get_bool_option("server", 0);
 
     BLACKCAT_GET_OPTION_OR_DIE(temp, (server) ? "kpub" : "kpriv", skey_xchg_epilogue);
@@ -600,6 +665,29 @@ static int skey_xchg(void) {
         sx.k_pub_size = k_buf_size;
         sx_trap = skey_xchg_server;
     } else {
+        accacia_savecursorposition();
+        fprintf(stdout, "Kpriv key: ");
+        if ((kpriv_key = blackcat_getuserkey(&kpriv_key_size)) == NULL) {
+            fprintf(stderr, "ERROR: NULL Kpriv key.\n");
+            fflush(stderr);
+            err = EFAULT;
+            goto skey_xchg_epilogue;
+        }
+
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
+
+        if ((sx.k_priv = decrypt_dh_kpriv(k_buf, k_buf_size, kpriv_key, kpriv_key_size, &sx.k_priv_size)) == NULL) {
+            fprintf(stderr, "ERROR: Invalid Kpriv key.\n");
+            err = EFAULT;
+            goto skey_xchg_epilogue;
+        }
+
+        kryptos_freeseg(kpriv_key, kpriv_key_size);
+        kpriv_key = NULL;
+        kpriv_key_size = 0;
+
         BLACKCAT_GET_OPTION_OR_DIE(temp, "port", skey_xchg_epilogue);
         if (!blackcat_is_dec(temp, strlen(temp))) {
             fprintf(stderr, "ERROR: The option '--port' must have a valid port number.\n");
@@ -607,8 +695,6 @@ static int skey_xchg(void) {
         }
         sx.port = atoi(temp);
         BLACKCAT_GET_OPTION_OR_DIE(sx.addr, "addr", skey_xchg_epilogue);
-        sx.k_priv = k_buf;
-        sx.k_priv_size = k_buf_size;
         sx_trap = skey_xchg_client;
     }
 
@@ -616,13 +702,22 @@ static int skey_xchg(void) {
 
 skey_xchg_epilogue:
 
+    if (kpriv_key != NULL) {
+        kryptos_freeseg(kpriv_key, kpriv_key_size);
+        kpriv_key = NULL;
+        kpriv_key_size = 0;
+    }
+
     if (fp != NULL) {
         fclose(fp);
     }
 
-    if (err == 0 && sx_trap == skey_xchg_client) {
-        skey_print(sx.session_key, sx.session_key_size);
-        kryptos_freeseg(sx.session_key, sx.session_key_size);
+    if (sx_trap == skey_xchg_client) {
+        if (err == 0) {
+            skey_print(sx.session_key, sx.session_key_size);
+            kryptos_freeseg(sx.session_key, sx.session_key_size);
+        }
+        kryptos_freeseg(sx.k_priv, sx.k_priv_size);
     }
 
     if (k_buf != NULL) {
@@ -652,5 +747,92 @@ static void skey_print(const kryptos_u8_t *skey, const size_t skey_size) {
     sp = sp_end = NULL;
 }
 
+static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_size,
+                                              kryptos_u8_t *key, const size_t key_size,
+                                              size_t *out_size, const int decrypt) {
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *dk = NULL;
+    size_t dk_size = 32, temp_size;
+    size_t lpad_sz, rpad_sz, pad_sz;
+    kryptos_u8_t *lpad = NULL, *rpad = NULL, *temp;
+
+    kryptos_task_init_as_null(ktask);
+
+    dk = kryptos_hkdf(key, key_size, sha3_512, "", 0, "", 0, dk_size);
+
+    if (dk == NULL) {
+        goto encrypt_decrypt_dh_kpriv_epilogue;
+    }
+
+    if (!decrypt) {
+        if ((lpad = random_printable_padding(&lpad_sz)) == NULL) {
+            goto encrypt_decrypt_dh_kpriv_epilogue;
+        }
+
+        if ((rpad = random_printable_padding(&rpad_sz)) == NULL) {
+            goto encrypt_decrypt_dh_kpriv_epilogue;
+        }
+
+        ktask->in_size = lpad_sz + in_size + rpad_sz;
+
+        if ((ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size)) == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory!\n");
+            goto encrypt_decrypt_dh_kpriv_epilogue;
+        }
+
+        memcpy(ktask->in, lpad, lpad_sz);
+        memcpy(ktask->in + lpad_sz, in, in_size);
+        memcpy(ktask->in + lpad_sz + in_size, rpad, rpad_sz);
+        kryptos_task_set_encrypt_action(ktask);
+    } else {
+        if ((ktask->in = kryptos_pem_get_data(BLACKCAT_DH_KPRIV, in, in_size, &ktask->in_size)) == NULL) {
+            fprintf(stderr, "ERROR: The kpriv buffer seems corrupted.\n");
+            goto encrypt_decrypt_dh_kpriv_epilogue;
+        }
+        kryptos_task_set_decrypt_action(ktask);
+    }
+
+    kryptos_run_cipher_hmac(aes256, sha3_512, ktask, dk, dk_size, kKryptosCBC);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto encrypt_decrypt_dh_kpriv_epilogue;
+    }
+
+    if (!decrypt) {
+        temp = ktask->out;
+        temp_size = ktask->out_size;
+        ktask->out = NULL;
+        ktask->out_size = 0;
+        kryptos_pem_put_data(&ktask->out, &ktask->out_size, BLACKCAT_DH_KPRIV, temp, temp_size);
+    }
+
+encrypt_decrypt_dh_kpriv_epilogue:
+
+    if (lpad != NULL) {
+        kryptos_freeseg(lpad, lpad_sz);
+        lpad_sz = 0;
+    }
+
+    if (rpad != NULL) {
+        kryptos_freeseg(rpad, rpad_sz);
+        rpad_sz = 0;
+    }
+
+    if (dk != NULL) {
+        kryptos_freeseg(dk, dk_size);
+    }
+
+    if (!decrypt) {
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+    }
+
+    *out_size = ktask->out_size;
+
+    return ktask->out;
+}
+
 #undef BLACKCAT_NET_DB_HOME
 #undef BLACKCAT_BCSCK_LIB_HOME
+#undef BLACKCAT_DH_KPRIV
+#undef encrypt_dh_kpriv
+#undef decrypt_dh_kpriv

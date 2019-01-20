@@ -156,8 +156,6 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 
 char *remove_go_ups_from_path(char *path, const size_t path_size);
 
-static kryptos_u8_t *random_printable_padding(size_t *size);
-
 static int bcrepo_mkdtree(const char *dirtree);
 
 static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size);
@@ -3249,7 +3247,7 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 
 }
 
-static kryptos_u8_t *random_printable_padding(size_t *size) {
+kryptos_u8_t *random_printable_padding(size_t *size) {
     // WARN(Rafael): This function only generates random blocks from 1b up to 1Kb. However,
     //               it is enough to make harder the building of an infrastructure to promote
     //               a chosen-plaintext attack over the catalog's data.
