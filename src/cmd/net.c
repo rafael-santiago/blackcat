@@ -754,7 +754,7 @@ static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_
     kryptos_u8_t *dk = NULL;
     size_t dk_size = 32, temp_size;
     size_t lpad_sz, rpad_sz, pad_sz;
-    kryptos_u8_t *lpad = NULL, *rpad = NULL, *temp;
+    kryptos_u8_t *lpad = NULL, *rpad = NULL, *temp = NULL;
 
     kryptos_task_init_as_null(ktask);
 
@@ -808,6 +808,12 @@ static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_
 
 encrypt_decrypt_dh_kpriv_epilogue:
 
+    if (temp != NULL) {
+        kryptos_freeseg(temp, temp_size);
+        temp = NULL;
+        temp_size = 0;
+    }
+
     if (lpad != NULL) {
         kryptos_freeseg(lpad, lpad_sz);
         lpad_sz = 0;
@@ -822,9 +828,7 @@ encrypt_decrypt_dh_kpriv_epilogue:
         kryptos_freeseg(dk, dk_size);
     }
 
-    if (!decrypt) {
-        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
-    }
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN);
 
     *out_size = ktask->out_size;
 
