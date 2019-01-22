@@ -180,10 +180,7 @@ static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / s
 #define is_null_arg_handler(a) ( (a) == blackcat_NULL_args || (a) == NULL )
 
 static struct blackcat_ciphering_scheme_ctx g_blackcat_ciphering_schemes[] = {
-    // WARN(Rafael): Key sizes are given in bytes. If you are boring enough (or stupid, you find hard to divide by 8)
-    //               you can declare...
-    //                  #define im_a_pedant_person_with_key_sizes(b) ( (b) >> 3 )
-    //               And use it to pass the 'k' when registering an algorithm (IN YOUR COPY... "Ha-ha-ha").
+    // WARN(Rafael): Key sizes are given in bytes.
 #if defined(BLACKCAT_WITH_ARC4)
     register_ciphering_scheme( -1, "arc4", arc4, NULL, CipherModeNr),
 #endif
