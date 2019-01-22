@@ -9,6 +9,7 @@
 #include <ctx/ctx.h>
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
+#include <net/dh/dh.h>
 #include <keychain/ciphering_schemes.h>
 #include <string.h>
 #include <errno.h>
@@ -16,12 +17,36 @@
 CUTE_DECLARE_TEST_CASE(blackcat_net_tests_entry);
 CUTE_DECLARE_TEST_CASE(ctx_tests);
 CUTE_DECLARE_TEST_CASE(net_db_io_tests);
+CUTE_DECLARE_TEST_CASE(encrypt_decrypt_dh_kpriv_tests);
 
 CUTE_MAIN(blackcat_net_tests_entry);
 
 CUTE_TEST_CASE(blackcat_net_tests_entry)
     CUTE_RUN_TEST(ctx_tests);
     CUTE_RUN_TEST(net_db_io_tests);
+    CUTE_RUN_TEST(encrypt_decrypt_dh_kpriv_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(encrypt_decrypt_dh_kpriv_tests)
+    kryptos_u8_t *buf = "-----we gon' boogaloo-----\0";
+    size_t buf_size = 27;
+    kryptos_u8_t *cryptogram = NULL, *plaintext;
+    size_t cryptogram_size, plaintext_size;
+
+    cryptogram = encrypt_dh_kpriv(buf, buf_size, "boo", 3, &cryptogram_size);
+    CUTE_ASSERT(cryptogram != NULL);
+
+    CUTE_ASSERT(strstr(cryptogram, "-----BEGIN BC DH KPRIV-----") == (char *)cryptogram);
+    CUTE_ASSERT(strstr(cryptogram, "-----END BC DH KPRIV-----") == (char *)(cryptogram +
+                                                                            strlen(cryptogram) -
+                                                                            strlen("-----END BC DH KPRIV-----") - 1));
+
+    plaintext = decrypt_dh_kpriv(cryptogram, cryptogram_size, "boo", 3, &plaintext_size);
+    CUTE_ASSERT(plaintext != NULL);
+    CUTE_ASSERT(strstr(plaintext, buf) != NULL);
+
+    kryptos_freeseg(cryptogram, cryptogram_size);
+    kryptos_freeseg(plaintext, plaintext_size);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(net_db_io_tests)

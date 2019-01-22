@@ -13,7 +13,6 @@
 #include <keychain/ciphering_schemes.h>
 #include <keychain/keychain.h>
 #include <net/dh/dh.h>
-#include <fs/bcrepo/bcrepo.h>
 #include <kryptos.h>
 #include <accacia.h>
 #include <ctype.h>
@@ -24,7 +23,6 @@
 
 #define BLACKCAT_NET_DB_HOME "BLACKCAT_NET_DB_HOME"
 #define BLACKCAT_BCSCK_LIB_HOME "BLACKCAT_BCSCK_LIB_HOME"
-#define BLACKCAT_DH_KPRIV "BC DH KPRIV"
 
 static int add_rule(void);
 
@@ -39,14 +37,6 @@ static int mk_dh_key_pair(void);
 static int skey_xchg(void);
 
 static void skey_print(const kryptos_u8_t *skey, const size_t skey_size);
-
-static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_size,
-                                              kryptos_u8_t *key, const size_t key_size,
-                                              size_t *out_size, const int decrypt);
-
-#define encrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 0)
-
-#define decrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 1)
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_net_commands)
     { "--add-rule",       add_rule       },
@@ -747,96 +737,5 @@ static void skey_print(const kryptos_u8_t *skey, const size_t skey_size) {
     sp = sp_end = NULL;
 }
 
-static kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_size,
-                                              kryptos_u8_t *key, const size_t key_size,
-                                              size_t *out_size, const int decrypt) {
-    kryptos_task_ctx t, *ktask = &t;
-    kryptos_u8_t *dk = NULL;
-    size_t dk_size = 32, temp_size;
-    size_t lpad_sz, rpad_sz, pad_sz;
-    kryptos_u8_t *lpad = NULL, *rpad = NULL, *temp = NULL;
-
-    kryptos_task_init_as_null(ktask);
-
-    dk = kryptos_hkdf(key, key_size, sha3_512, "", 0, "", 0, dk_size);
-
-    if (dk == NULL) {
-        goto encrypt_decrypt_dh_kpriv_epilogue;
-    }
-
-    if (!decrypt) {
-        if ((lpad = random_printable_padding(&lpad_sz)) == NULL) {
-            goto encrypt_decrypt_dh_kpriv_epilogue;
-        }
-
-        if ((rpad = random_printable_padding(&rpad_sz)) == NULL) {
-            goto encrypt_decrypt_dh_kpriv_epilogue;
-        }
-
-        ktask->in_size = lpad_sz + in_size + rpad_sz;
-
-        if ((ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size)) == NULL) {
-            fprintf(stderr, "ERROR: Not enough memory!\n");
-            goto encrypt_decrypt_dh_kpriv_epilogue;
-        }
-
-        memcpy(ktask->in, lpad, lpad_sz);
-        memcpy(ktask->in + lpad_sz, in, in_size);
-        memcpy(ktask->in + lpad_sz + in_size, rpad, rpad_sz);
-        kryptos_task_set_encrypt_action(ktask);
-    } else {
-        if ((ktask->in = kryptos_pem_get_data(BLACKCAT_DH_KPRIV, in, in_size, &ktask->in_size)) == NULL) {
-            fprintf(stderr, "ERROR: The kpriv buffer seems corrupted.\n");
-            goto encrypt_decrypt_dh_kpriv_epilogue;
-        }
-        kryptos_task_set_decrypt_action(ktask);
-    }
-
-    kryptos_run_cipher_hmac(aes256, sha3_512, ktask, dk, dk_size, kKryptosCBC);
-
-    if (!kryptos_last_task_succeed(ktask)) {
-        goto encrypt_decrypt_dh_kpriv_epilogue;
-    }
-
-    if (!decrypt) {
-        temp = ktask->out;
-        temp_size = ktask->out_size;
-        ktask->out = NULL;
-        ktask->out_size = 0;
-        kryptos_pem_put_data(&ktask->out, &ktask->out_size, BLACKCAT_DH_KPRIV, temp, temp_size);
-    }
-
-encrypt_decrypt_dh_kpriv_epilogue:
-
-    if (temp != NULL) {
-        kryptos_freeseg(temp, temp_size);
-        temp = NULL;
-        temp_size = 0;
-    }
-
-    if (lpad != NULL) {
-        kryptos_freeseg(lpad, lpad_sz);
-        lpad_sz = 0;
-    }
-
-    if (rpad != NULL) {
-        kryptos_freeseg(rpad, rpad_sz);
-        rpad_sz = 0;
-    }
-
-    if (dk != NULL) {
-        kryptos_freeseg(dk, dk_size);
-    }
-
-    kryptos_task_free(ktask, KRYPTOS_TASK_IN);
-
-    *out_size = ktask->out_size;
-
-    return ktask->out;
-}
-
 #undef BLACKCAT_NET_DB_HOME
 #undef BLACKCAT_BCSCK_LIB_HOME
-#undef BLACKCAT_DH_KPRIV
-#undef encrypt_dh_kpriv
-#undef decrypt_dh_kpriv

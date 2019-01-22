@@ -28,4 +28,12 @@ int skey_xchg_server(struct skey_xchg_ctx *sx);
 
 int skey_xchg_client(struct skey_xchg_ctx *sx);
 
+kryptos_u8_t *encrypt_decrypt_dh_kpriv(kryptos_u8_t *in, const size_t in_size,
+                                       kryptos_u8_t *key, const size_t key_size,
+                                       size_t *out_size, const int decrypt);
+
+#define encrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 0)
+
+#define decrypt_dh_kpriv(i, is, k, ks, os) encrypt_decrypt_dh_kpriv(i, is, k, ks, os, 1)
+
 #endif

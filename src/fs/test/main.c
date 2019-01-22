@@ -40,7 +40,6 @@ CUTE_DECLARE_TEST_CASE(bcrepo_restore_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_decoy_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_incompatibility_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_detach_attach_metainfo_tests);
-CUTE_DECLARE_TEST_CASE(random_printable_padding_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -48,7 +47,6 @@ char *open_text(const char *filepath, size_t *data_size);
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
-    CUTE_RUN_TEST(random_printable_padding_tests);
     CUTE_RUN_TEST(bcrepo_incompatibility_tests);
     CUTE_ASSERT(save_text("aes", 3, "o/aes.o") == 1);
     CUTE_ASSERT(save_text("des", 3, "o/des.o") == 1);
@@ -82,15 +80,6 @@ CUTE_TEST_CASE(fs_tests)
     remove("o/ciphering_schemes.o");
     CUTE_RUN_TEST(bcrepo_decoy_tests);
     CUTE_RUN_TEST(bcrepo_detach_attach_metainfo_tests);
-CUTE_TEST_CASE_END
-
-CUTE_TEST_CASE(random_printable_padding_tests)
-    kryptos_u8_t *pad;
-    size_t t, curr_size;
-    for (t = 0; t < 10; t++) {
-        CUTE_ASSERT((pad = random_printable_padding(&curr_size)) != NULL);
-        kryptos_freeseg(pad, curr_size);
-    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)

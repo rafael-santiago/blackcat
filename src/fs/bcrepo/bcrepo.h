@@ -96,6 +96,4 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size);
 
 int bcrepo_attach_metainfo(const char *src, const size_t src_size);
 
-kryptos_u8_t *random_printable_padding(size_t *size);
-
 #endif

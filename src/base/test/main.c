@@ -12,6 +12,7 @@
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <kbd/kbd.h>
+#include <util/random.h>
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
@@ -35,6 +36,7 @@ CUTE_DECLARE_TEST_CASE(get_hmac_key_size_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_bcrypt_tests);
 CUTE_DECLARE_TEST_CASE(is_pht_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_getuserkey_tests);
+CUTE_DECLARE_TEST_CASE(random_printable_padding_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -58,6 +60,16 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_bcrypt_tests);
     CUTE_RUN_TEST(is_pht_tests);
     CUTE_RUN_TEST(blackcat_getuserkey_tests);
+    CUTE_RUN_TEST(random_printable_padding_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(random_printable_padding_tests)
+    kryptos_u8_t *pad;
+    size_t t, curr_size;
+    for (t = 0; t < 10; t++) {
+        CUTE_ASSERT((pad = random_printable_padding(&curr_size)) != NULL);
+        kryptos_freeseg(pad, curr_size);
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_getuserkey_tests)
