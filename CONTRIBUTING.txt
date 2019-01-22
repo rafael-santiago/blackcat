@@ -62,7 +62,7 @@ This is considered bad here:
         else
             do_that();
 
-Macros are ok, however, undefined it when it is not necessary:
+Macros are ok, however, "undef" it when it is not necessary:
 
     #define left_sh(x, s) ( (x) << (s) ) | ( (x) >> ( (sizeof(x) << 3) - (s) ) )
 
