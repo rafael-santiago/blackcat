@@ -25,6 +25,8 @@ Firstly, thank you for contributing. You should consider the following before su
     - Security and secrecy at first place;
     - Speed is secondary;
     - Some observed points in K.I.S.S. and Suckless <https://suckless.org> are awesome;
+    - Prebuilts are not provided, users should built it on their own or ask an another trustable party to build it
+      (remember: paranoid people);
 
 Code style
 ==========
