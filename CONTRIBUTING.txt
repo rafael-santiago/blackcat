@@ -90,3 +90,11 @@ Avoid using double quotes when including files in C implementation stuff (local 
 and implemenation files should be relative to the toplevel src subdirectory.
 
 Gotos are ok if it always move forward but never ever backward.
+
+Avoid capital letters in function and variable names.
+
+C Defines:
+
+    - while constants must be in upper case;
+    - while macros must be in lower case;
+    - while a DSL statement must be in upper case;
