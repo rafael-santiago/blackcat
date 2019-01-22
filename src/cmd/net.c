@@ -235,7 +235,7 @@ add_rule_epilogue:
 }
 
 static int run(void) {
-    char *rule, *db_path, *bcsck_lib_path, *xchg_port, *xchg_addr;
+    char *rule, *db_path, *bcsck_lib_path, *xchg_port, *xchg_addr = NULL, *kpriv = NULL, *kpub = NULL, *s_bits;
     char *temp = NULL;
     size_t temp_size, db_key_size, cmdline_size = 0;
     char cmdline[4096], *cp;
@@ -280,23 +280,65 @@ static int run(void) {
         goto run_epilogue;
     }
 
-    memset(cmdline, 0, cmdline_size);
-    if (blackcat_get_bool_option("e2ee", 0) == 0) {
-        sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
-                        bcsck_lib_path, db_path, rule);
+    if ((kpriv = blackcat_get_option("kpriv", NULL)) == NULL) {
+        kpub = blackcat_get_option("kpub", NULL);
     } else {
-        xchg_addr = blackcat_get_option("xchg-addr", NULL);
+        BLACKCAT_GET_OPTION_OR_DIE(s_bits, "bits", run_epilogue);
+    }
+
+    if (kpriv != NULL) {
+        BLACKCAT_GET_OPTION_OR_DIE(xchg_addr, "xchg-addr", run_epilogue);
+    }
+
+    if (kpriv != NULL || kpub != NULL) {
         BLACKCAT_GET_OPTION_OR_DIE(xchg_port, "xchg-port", run_epilogue);
+
         if (blackcat_is_dec(xchg_port, strlen(xchg_port)) == 0) {
             fprintf(stderr, "ERROR: Invalid data supplied in xchg-port option. It must be a valid port number.\n");
             goto run_epilogue;
         }
-        if (xchg_addr != NULL) {
-            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
-                             "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, xchg_addr, db_path, rule);
+    }
+
+    memset(cmdline, 0, cmdline_size);
+    if (blackcat_get_bool_option("e2ee", 0) == 0) {
+        if (kpriv == NULL && kpub == NULL) {
+            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
+                            bcsck_lib_path, db_path, rule);
         } else {
-            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
-                             "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, db_path, rule);
+            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_%s=%s BCSCK_PORT=%s BCSCK_ADDR=%s",
+                            bcsck_lib_path, db_path, rule, (kpriv != NULL) ? "KPRIV" : "KPUB",
+                                                           (kpriv != NULL) ? kpriv : kpub, xchg_port, xchg_addr);
+        }
+    } else {
+        if (xchg_addr == NULL) {
+            xchg_addr = blackcat_get_option("xchg-addr", NULL);
+        }
+
+        BLACKCAT_GET_OPTION_OR_DIE(xchg_port, "xchg-port", run_epilogue);
+
+        if (blackcat_is_dec(xchg_port, strlen(xchg_port)) == 0) {
+            fprintf(stderr, "ERROR: Invalid data supplied in xchg-port option. It must be a valid port number.\n");
+            goto run_epilogue;
+        }
+
+        if (xchg_addr != NULL) {
+            if (kpriv == NULL) {
+                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, xchg_addr, db_path, rule);
+            } else {
+                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPRIV=%s", bcsck_lib_path, xchg_port, xchg_addr,
+                                                                                 db_path, rule, kpriv);
+            }
+        } else {
+            if (kpub == NULL) {
+                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, db_path, rule);
+            } else {
+                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPUB=%s BCSCK_S_BITS=%s", bcsck_lib_path, xchg_port,
+                                                                                                db_path, rule, kpub, s_bits);
+            }
         }
     }
     cmdline_size -= strlen(cmdline);
@@ -601,6 +643,10 @@ static int skey_xchg(void) {
     kryptos_u8_t *k_buf = NULL, *kpriv_key = NULL;
     size_t k_buf_size, kpriv_key_size;
     int server = blackcat_get_bool_option("server", 0);
+
+    sx.libc_socket = NULL;
+    sx.libc_send = NULL;
+    sx.libc_recv = NULL;
 
     BLACKCAT_GET_OPTION_OR_DIE(temp, (server) ? "kpub" : "kpriv", skey_xchg_epilogue);
 

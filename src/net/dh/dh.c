@@ -49,6 +49,14 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     sx->session_key_size = 0;
     sx->ret = err;
 
+    if (sx->libc_socket == NULL) {
+        sx->libc_socket = socket;
+    }
+
+    if (sx->libc_send == NULL) {
+        sx->libc_send = send;
+    }
+
     kryptos_dh_init_xchg_ctx(dh);
 
     // INFO(Rafael): Reading the user session key.
@@ -104,7 +112,7 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     // INFO(Rafael): Listening to incoming connections. With DH modified, we will not authenticate anything.
     //               Supposing that only the client will actually have her/his private key.
 
-    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockfd = sx->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (sockfd == -1) {
         err = errno;
@@ -186,7 +194,7 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     // INFO(Rafael): Sending (as PEM data) the DH parameters besides the encrypted session key.
 
-    if (send(csockfd, dh->out, dh->out_size, 0) == -1) {
+    if (sx->libc_send(csockfd, dh->out, dh->out_size, 0) == -1) {
         err = errno;
         fprintf(stderr, "ERROR: While exchanging the session key.\n");
         goto skey_xchg_server_epilogue;
@@ -244,9 +252,17 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
     sx->session_key_size = 0;
     sx->ret = err;
 
+    if (sx->libc_socket == NULL) {
+        sx->libc_socket = socket;
+    }
+
+    if (sx->libc_recv == NULL) {
+        sx->libc_recv = recv;
+    }
+
     kryptos_dh_init_xchg_ctx(dh);
 
-    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockfd = sx->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (sockfd == -1) {
         err = errno;
@@ -277,7 +293,7 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
         goto skey_xchg_client_epilogue;
     }
 
-    if ((buf_size = recv(sockfd, buf, sizeof(buf) - 1, 0)) == -1) {
+    if ((buf_size = sx->libc_recv(sockfd, buf, sizeof(buf) - 1, 0)) == -1) {
         err = errno;
         if (sx->verbose) {
             fprintf(stderr, "ERROR: Unable to receive data.\n");

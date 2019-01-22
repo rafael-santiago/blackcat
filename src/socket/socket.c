@@ -11,6 +11,7 @@
 #include <net/base/types.h>
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
+#include <net/dh/dh.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <kbd/kbd.h>
@@ -242,6 +243,9 @@ bnt_keyset_ctx ks[2];
 #define BCSCK_E2EE        "BCSCK_E2EE"
 #define BCSCK_XCHG_PORT   "BCSCK_PORT"
 #define BCSCK_XCHG_ADDR   "BCSCK_ADDR"
+#define BCSCK_KPRIV       "BCSCK_KPRIV"
+#define BCSCK_KPUB        "BCSCK_KPUB"
+#define BCSCK_S_BITS      "BCSCK_S_BITS"
 
 #define BCSCK_SEQNO_WINDOW_SIZE 100
 
@@ -856,11 +860,11 @@ write_epilogue:
 static void bcsck_init(void) {
     g_bcsck_handle = (struct bcsck_handle_ctx *) malloc(sizeof(struct bcsck_handle_ctx));
     if (g_bcsck_handle == NULL) {
-        printf("ERROR: Not enough memory!\n");
+        fprintf(stderr, "ERROR: Not enough memory!\n");
         exit(1);
     }
 __bcsck_prologue({
-                    printf("ERROR: during libbcsck.so initializing. Aborted.\n");
+                    fprintf(stderr, "ERROR: during libbcsck.so initializing. Aborted.\n");
                     exit(1);
                  })
 }
@@ -873,11 +877,21 @@ __bcsck_epilogue
 }
 
 static int bcsck_read_rule(void) {
-    kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, *rule_id = NULL;
-    char *db_path = NULL, *port;
+    kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, *rule_id = NULL, *kpriv = NULL, *kpub = NULL;
+    kryptos_u8_t *kpriv_key = NULL;
+    size_t kpriv_key_size, *key_size = NULL;
+    char *db_path = NULL, *port = NULL;
     int err = 0;
     size_t session_key_size = 0, temp_size = 0, db_size = 0, db_path_size = 0, db_key_size = 0;
     int (*do_xchg)(void) = NULL;
+    struct skey_xchg_ctx sx;
+    skey_xchg_trap sx_trap = NULL;
+    FILE *fp = NULL;
+
+    sx.libc_socket = g_bcsck_handle->libc_socket;
+    sx.libc_send = g_bcsck_handle->libc_send;
+    sx.libc_recv = g_bcsck_handle->libc_recv;
+    sx.k_priv = sx.k_pub = NULL;
 
     if ((db_path = getenv(BCSCK_DBPATH)) == NULL) {
         err = EFAULT;
@@ -911,44 +925,163 @@ static int bcsck_read_rule(void) {
     accacia_delline();
     fflush(stdout);
 
-    accacia_savecursorposition();
+    if ((kpriv = getenv(BCSCK_KPRIV)) == NULL && (kpub = getenv(BCSCK_KPUB)) == NULL) {
+        accacia_savecursorposition();
 
-    fprintf(stdout, "Session key: ");
-    if ((session_key = blackcat_getuserkey(&session_key_size)) == NULL) {
-        fprintf(stderr, "ERROR: NULL session key.\n");
-        fflush(stderr);
-        err = EFAULT;
+        fprintf(stdout, "Session key: ");
+        if ((session_key = blackcat_getuserkey(&session_key_size)) == NULL) {
+            fprintf(stderr, "ERROR: NULL session key.\n");
+            fflush(stderr);
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
+
+        accacia_savecursorposition();
+
+        fprintf(stdout, "Confirm the session key: ");
+        if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
+            fprintf(stderr, "ERROR: NULL session key confirmation.\n");
+            fflush(stderr);
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
+
+        if (temp_size != session_key_size || memcmp(session_key, temp, session_key_size) != 0) {
+            fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
+            fflush(stderr);
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        kryptos_freeseg(temp, temp_size);
+        temp = NULL;
+        temp_size = 0;
+    } else if (kpriv != NULL && kpub != NULL) {
+        fprintf(stderr, "ERROR: You cannot pass kpriv and kpub together.\n");
+        err = EINVAL;
         goto bcsck_read_rule_epilogue;
+    } else if (kpriv != NULL) {
+        accacia_savecursorposition();
+
+        fprintf(stdout, "Kpriv key: ");
+        if ((kpriv_key = blackcat_getuserkey(&kpriv_key_size)) == NULL) {
+            fprintf(stderr, "ERROR: NULL kpriv key.\n");
+            fflush(stderr);
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
+
+        if ((fp = fopen(kpriv, "r")) == NULL) {
+            fprintf(stderr, "ERROR: Unable to read the private parameter file.\n");
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        fseek(fp, 0L, SEEK_END);
+        temp_size = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+
+        if ((temp = (kryptos_u8_t *)kryptos_newseg(temp_size)) == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            err = ENOMEM;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        fread(temp, temp_size, 1, fp);
+        fclose(fp);
+        fp = NULL;
+
+        sx.k_priv = decrypt_dh_kpriv(temp, temp_size, kpriv_key, kpriv_key_size, &sx.k_priv_size);
+
+        if (sx.k_priv == NULL) {
+            fprintf(stderr, "ERROR: Invalid Kpriv key.\n");
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        kryptos_freeseg(temp, temp_size);
+        temp = NULL;
+
+        sx_trap = skey_xchg_client;
+    } else if (kpub != NULL) {
+        if ((temp = getenv(BCSCK_S_BITS)) == NULL) {
+            fprintf(stderr, "ERROR: BCSCK_S_BITS was not provided.\n");
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        if ((key_size = (size_t *) kryptos_get_random_block(sizeof(size_t))) == NULL) {
+            fprintf(stderr, "ERROR: Unable to generate a random key size.\n");
+            err =  EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        sx.key_size = (*key_size % 8192);
+
+        if (sx.key_size == 0) {
+            sx.key_size = 32;
+        }
+
+        kryptos_freeseg(key_size, sizeof(size_t));
+        key_size = NULL;
+
+        sx.s_bits = strtoul(temp, NULL, 10);
+        temp = NULL;
+
+        if ((fp = fopen(kpub, "r")) == NULL) {
+            fprintf(stderr, "ERROR: Unable to read the public parameter file.\n");
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        fseek(fp, 0L, SEEK_END);
+        sx.k_pub_size = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+
+        if ((sx.k_pub = (kryptos_u8_t *)kryptos_newseg(sx.k_pub_size)) == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            err = ENOMEM;
+            goto bcsck_read_rule_epilogue;
+        }
+
+        fread(sx.k_pub, sx.k_pub_size, 1, fp);
+        fclose(fp);
+        fp = NULL;
+
+        sx_trap = skey_xchg_server;
     }
 
-    accacia_restorecursorposition();
-    accacia_delline();
-    fflush(stdout);
+    if (sx_trap != NULL) {
+        // INFO(Rafael): Estabilishing a session key.
+        sx.addr = getenv(BCSCK_XCHG_ADDR);
 
-    accacia_savecursorposition();
+        if ((port = getenv(BCSCK_XCHG_PORT)) == NULL) {
+            fprintf(stderr, "ERROR: The port for the connection parameters exchanging is lacking.\n");
+            err = EFAULT;
+            goto bcsck_read_rule_epilogue;
+        }
 
-    fprintf(stdout, "Confirm the session key: ");
-    if ((temp = blackcat_getuserkey(&temp_size)) == NULL) {
-        fprintf(stderr, "ERROR: NULL session key confirmation.\n");
-        fflush(stderr);
-        err = EFAULT;
-        goto bcsck_read_rule_epilogue;
+        sx.port = atoi(port);
+
+        if ((err = sx_trap(&sx)) != 0) {
+            goto bcsck_read_rule_epilogue;
+        }
+
+        session_key = sx.session_key;
+        session_key_size = sx.session_key_size;
     }
-
-    accacia_restorecursorposition();
-    accacia_delline();
-    fflush(stdout);
-
-    if (temp_size != session_key_size || memcmp(session_key, temp, session_key_size) != 0) {
-        fprintf(stderr, "ERROR: The key does not match with its confirmation.\n");
-        fflush(stderr);
-        err = EFAULT;
-        goto bcsck_read_rule_epilogue;
-    }
-
-    kryptos_freeseg(temp, temp_size);
-    temp = NULL;
-    temp_size = 0;
 
     if ((err = blackcat_netdb_load(db_path, 0)) == 0) {
         g_bcsck_handle->rule = blackcat_netdb_select(rule_id, db_key, db_key_size, &session_key, &session_key_size);
@@ -972,7 +1105,7 @@ static int bcsck_read_rule(void) {
     // INFO(Rafael): If the user has indicated a e2ee communication, we will strengthen a little more the encryption by
     //               preventing replay attacks and mitigating a session key disclosure situation by making it more ephemeral.
 
-    if ((port = getenv(BCSCK_XCHG_PORT)) == NULL) {
+    if (port == NULL && (port = getenv(BCSCK_XCHG_PORT)) == NULL) {
         fprintf(stderr, "ERROR: The port for the connection parameters exchanging is lacking.\n");
         fflush(stderr);
         err = EFAULT;
@@ -1003,6 +1136,21 @@ static int bcsck_read_rule(void) {
 
 bcsck_read_rule_epilogue:
 
+    if (kpriv_key != NULL) {
+        kryptos_freeseg(kpriv_key, kpriv_key_size);
+        kpriv_key_size = 0;
+    }
+
+    if (sx.k_priv != NULL) {
+        kryptos_freeseg(sx.k_priv, sx.k_priv_size);
+        sx.k_priv_size = 0;
+    }
+
+    if (sx.k_pub != NULL) {
+        kryptos_freeseg(sx.k_pub, sx.k_pub_size);
+        sx.k_pub_size = 0;
+    }
+
     if (err != 0 && g_bcsck_handle->rule != NULL) {
         del_bnt_channel_rule_ctx(g_bcsck_handle->rule);
         g_bcsck_handle->rule = NULL;
@@ -1021,6 +1169,14 @@ bcsck_read_rule_epilogue:
     if (session_key != NULL) {
         kryptos_freeseg(session_key, session_key_size);
         session_key_size = 0;
+    }
+
+    if (key_size != NULL) {
+        kryptos_freeseg(key_size, sizeof(size_t));
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
     }
 
     db_key = temp = session_key = rule_id = NULL;
@@ -1329,7 +1485,6 @@ __bcsck_leave(read)
     return err;
 }
 
-
 #undef __bcsck_prologue
 #undef __bcsck_epilogue
 #undef __bcsck_enter
@@ -1343,5 +1498,8 @@ __bcsck_leave(read)
 #undef BCSCK_E2EE
 #undef BCSCK_XCHG_PORT
 #undef BCSCK_XCHG_ADDR
+#undef BCSCK_KPRIV
+#undef BCSCK_KPUB
+#undef BCSCK_S_BITS
 
 #undef BCSCK_SEQNO_WINDOW_SIZE
