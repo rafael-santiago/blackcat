@@ -70,7 +70,7 @@ Macros are ok, however, "undef" it when it is not necessary:
 
     #undef left_sh
 
-When passing an string pass its size besides assuming it as a null terminated string.
+When passing a string pass its size besides assuming it as a null terminated string.
 
 When commenting some code use the following format:
 
