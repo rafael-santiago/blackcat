@@ -281,9 +281,9 @@ static int run(void) {
     }
 
     if ((kpriv = blackcat_get_option("kpriv", NULL)) == NULL) {
-        kpub = blackcat_get_option("kpub", NULL);
-    } else {
-        BLACKCAT_GET_OPTION_OR_DIE(s_bits, "bits", run_epilogue);
+        if ((kpub = blackcat_get_option("kpub", NULL)) != NULL) {
+            BLACKCAT_GET_OPTION_OR_DIE(s_bits, "bits", run_epilogue);
+        }
     }
 
     if (kpriv != NULL) {
@@ -327,8 +327,8 @@ static int run(void) {
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, xchg_addr, db_path, rule);
             } else {
                 sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
-                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPRIV=%s", bcsck_lib_path, xchg_port, xchg_addr,
-                                                                                 db_path, rule, kpriv);
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPRIV=%s ", bcsck_lib_path, xchg_port, xchg_addr,
+                                                                                  db_path, rule, kpriv);
             }
         } else {
             if (kpub == NULL) {
@@ -336,8 +336,8 @@ static int run(void) {
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, db_path, rule);
             } else {
                 sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
-                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPUB=%s BCSCK_S_BITS=%s", bcsck_lib_path, xchg_port,
-                                                                                                db_path, rule, kpub, s_bits);
+                                 "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPUB=%s BCSCK_S_BITS=%s ", bcsck_lib_path, xchg_port,
+                                                                                                 db_path, rule, kpub, s_bits);
             }
         }
     }

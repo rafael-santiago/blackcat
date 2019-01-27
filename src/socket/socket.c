@@ -1318,10 +1318,12 @@ __bcsck_enter(sendmsg)
 do_xchg_server_epilogue:
 
     if (lsockfd != -1) {
+        shutdown(lsockfd, SHUT_WR);
         close(lsockfd);
     }
 
     if (csockfd != -1) {
+        shutdown(csockfd, SHUT_WR);
         close(csockfd);
     }
 
@@ -1453,6 +1455,7 @@ __bcsck_enter(sendmsg)
 do_xchg_client_epilogue:
 
     if (sockfd != -1) {
+        shutdown(sockfd, SHUT_WR);
         close(sockfd);
     }
 

@@ -44,6 +44,8 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     kryptos_u8_t *epk = NULL, *enc_session_key = NULL;
     size_t epk_size, enc_session_key_size;
     int yes = 1;
+    static size_t key_sizes[] = { 32, 64, 128, 192, 256, 512, 1024, 2048, 4096, 8192 };
+    static size_t key_sizes_nr = sizeof(key_sizes) / sizeof(key_sizes[0]);
 
     sx->session_key = NULL;
     sx->session_key_size = 0;
@@ -100,7 +102,8 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
             goto skey_xchg_server_epilogue;
         }
     } else {
-        if ((skey[0] = kryptos_get_random_block(sx->key_size)) == NULL) {
+        skey_size[0] = key_sizes[kryptos_get_random_byte() % key_sizes_nr];
+        if ((skey[0] = kryptos_get_random_block(skey_size[0])) == NULL) {
             err = EFAULT;
             if (sx->verbose) {
                 fprintf(stderr, "ERROR: Unable to get a random block.\n");
@@ -205,10 +208,12 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 skey_xchg_server_epilogue:
 
     if (csockfd != -1) {
+        shutdown(csockfd, SHUT_WR);
         close(csockfd);
     }
 
     if (sockfd != -1) {
+        shutdown(sockfd, SHUT_WR);
         close(sockfd);
     }
 
@@ -356,6 +361,7 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 skey_xchg_client_epilogue:
 
     if (sockfd != -1) {
+        shutdown(sockfd, SHUT_WR);
         close(sockfd);
     }
 
@@ -402,7 +408,7 @@ static kryptos_u8_t *encrypt_decrypt_session_key(kryptos_u8_t *session_key, cons
     kryptos_run_cipher_hmac(aes256, sha3_512, ktask, fkey, fkey_size, kKryptosCBC);
 
     if (!kryptos_last_task_succeed(ktask)) {
-        fprintf(stderr, "ERROR: while %s the session key.\n", (decrypt) ? "decrypting" : "encrypting");
+        fprintf(stderr, "ERROR: While %s the session key.\n", (decrypt) ? "decrypting" : "encrypting");
     }
 
 encrypt_session_key_epilogue:
