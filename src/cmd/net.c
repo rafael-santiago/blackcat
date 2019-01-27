@@ -647,6 +647,7 @@ static int skey_xchg(void) {
     sx.libc_socket = NULL;
     sx.libc_send = NULL;
     sx.libc_recv = NULL;
+    sx.keep_sk_open = 0;
 
     BLACKCAT_GET_OPTION_OR_DIE(temp, (server) ? "kpub" : "kpriv", skey_xchg_epilogue);
 

@@ -19,7 +19,7 @@ struct skey_xchg_ctx {
     size_t k_priv_size, k_pub_size;
     kryptos_u8_t *session_key;
     size_t session_key_size;
-    int ret, verbose;
+    int ret, verbose, keep_sk_open, sockfd;
     int (*libc_socket)(int domain, int type, int protocol);
     ssize_t (*libc_recv)(int sockfd, void *buf, size_t len, int flags);
     ssize_t (*libc_send)(int sockfd, const void *buf, size_t len, int flags);

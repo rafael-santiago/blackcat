@@ -50,7 +50,7 @@ struct bcsck_handle_ctx {
                     mtx_send_func, mtx_sendto_func, mtx_sendmsg_func, mtx_write_func,
                     mtx_socket_func, mtx_set_protlayer_by_seqno_func;
 #endif
-    int libc_loaded, e2ee_conn;
+    int libc_loaded, e2ee_conn, sockfd;
     char *xchg_addr;
     unsigned short xchg_port;
     bnt_keyset_ctx *keyset;
@@ -1063,7 +1063,7 @@ static int bcsck_read_rule(void) {
         sx_trap = skey_xchg_server;
     }
 
-    if (sx_trap != NULL) {
+    if ((sx.keep_sk_open = (sx_trap != NULL))) {
         // INFO(Rafael): Estabilishing a session key.
         sx.addr = getenv(BCSCK_XCHG_ADDR);
 
@@ -1082,6 +1082,8 @@ static int bcsck_read_rule(void) {
         session_key = sx.session_key;
         session_key_size = sx.session_key_size;
     }
+
+    g_bcsck_handle->sockfd = (sx.keep_sk_open) ? sx.sockfd : -1;
 
     if ((err = blackcat_netdb_load(db_path, 0)) == 0) {
         g_bcsck_handle->rule = blackcat_netdb_select(rule_id, db_key, db_key_size, &session_key, &session_key_size);
@@ -1241,32 +1243,36 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((lsockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-        err = errno;
-        fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
-        goto do_xchg_server_epilogue;
-    }
+    if (g_bcsck_handle->sockfd == -1) {
+        if ((lsockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+            err = errno;
+            fprintf(stderr, "ERROR: Unable to create the listen socket.\n");
+            goto do_xchg_server_epilogue;
+        }
 
-    setsockopt(lsockfd, SOL_SOCKET, SO_REUSEADDR, &yeah_butt_head, sizeof(yeah_butt_head));
+        setsockopt(lsockfd, SOL_SOCKET, SO_REUSEADDR, &yeah_butt_head, sizeof(yeah_butt_head));
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(g_bcsck_handle->xchg_port);
-    sin.sin_addr.s_addr = INADDR_ANY;
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(g_bcsck_handle->xchg_port);
+        sin.sin_addr.s_addr = INADDR_ANY;
 
-    if ((bind(lsockfd, (struct sockaddr *)&sin, sizeof(sin))) == -1) {
-        err = errno;
-        fprintf(stderr, "ERROR: Unable to bind the listen socket.\n");
-        goto do_xchg_server_epilogue;
-    }
+        if ((bind(lsockfd, (struct sockaddr *)&sin, sizeof(sin))) == -1) {
+            err = errno;
+            fprintf(stderr, "ERROR: Unable to bind the listen socket.\n");
+            goto do_xchg_server_epilogue;
+        }
 
-    listen(lsockfd, 1);
+        listen(lsockfd, 1);
 
-    slen = sizeof(sin);
-    if ((csockfd = accept(lsockfd, (struct sockaddr *)&sin, &slen)) == -1) {
-        err = errno;
-        perror("accept");
-        fprintf(stderr, "ERROR: Unable to accept the client during session parameters exchanging.\n");
-        goto do_xchg_server_epilogue;
+        slen = sizeof(sin);
+        if ((csockfd = accept(lsockfd, (struct sockaddr *)&sin, &slen)) == -1) {
+            err = errno;
+            perror("accept");
+            fprintf(stderr, "ERROR: Unable to accept the client during session parameters exchanging.\n");
+            goto do_xchg_server_epilogue;
+        }
+    } else {
+        csockfd = g_bcsck_handle->sockfd;
     }
 
     bcsck_encrypt(send_seed, send_seed_size, out_buf, out_buf_size,
@@ -1388,27 +1394,31 @@ __bcsck_enter(sendmsg)
     // WARN(Rafael): From now on, never ever, call any hooked socket function directly here,
     //               otherwise the Terminator never 'will be back'.
 
-    if ((sockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-        err = errno;
-        fprintf(stderr, "ERROR: Unable to create a socket.\n");
-        goto do_xchg_client_epilogue;
-    }
+    if (g_bcsck_handle->sockfd == -1) {
+        if ((sockfd = g_bcsck_handle->libc_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+            err = errno;
+            fprintf(stderr, "ERROR: Unable to create a socket.\n");
+            goto do_xchg_client_epilogue;
+        }
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons(g_bcsck_handle->xchg_port);
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(g_bcsck_handle->xchg_port);
 
-    if ((hp = gethostbyname(g_bcsck_handle->xchg_addr)) == NULL) {
-        err = errno;
-        fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
-        goto do_xchg_client_epilogue;
-    }
+        if ((hp = gethostbyname(g_bcsck_handle->xchg_addr)) == NULL) {
+            err = errno;
+            fprintf(stderr, "ERROR: Unable to resolve the host name.\n");
+            goto do_xchg_client_epilogue;
+        }
 
-    sin.sin_addr.s_addr = ((struct in_addr *)hp->h_addr_list[0])->s_addr;
+        sin.sin_addr.s_addr = ((struct in_addr *)hp->h_addr_list[0])->s_addr;
 
-    if (connect(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
-        err = errno;
-        fprintf(stderr, "ERROR: Unable to connect to the host.\n");
-        goto do_xchg_client_epilogue;
+        if (connect(sockfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+            err = errno;
+            fprintf(stderr, "ERROR: Unable to connect to the host.\n");
+            goto do_xchg_client_epilogue;
+        }
+    } else {
+        sockfd = g_bcsck_handle->sockfd;
     }
 
     if ((buf_size = g_bcsck_handle->libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {

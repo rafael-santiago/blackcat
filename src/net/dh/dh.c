@@ -44,7 +44,7 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     kryptos_u8_t *epk = NULL, *enc_session_key = NULL;
     size_t epk_size, enc_session_key_size;
     int yes = 1;
-    static size_t key_sizes[] = { 32, 64, 128, 192, 256, 512, 1024, 2048, 4096, 8192 };
+    static size_t key_sizes[] = { 4, 8, 16, 32, 64 };
     static size_t key_sizes_nr = sizeof(key_sizes) / sizeof(key_sizes[0]);
 
     sx->session_key = NULL;
@@ -207,14 +207,18 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
 skey_xchg_server_epilogue:
 
-    if (csockfd != -1) {
-        shutdown(csockfd, SHUT_WR);
-        close(csockfd);
-    }
+    if (!sx->keep_sk_open) {
+        if (csockfd != -1) {
+            shutdown(csockfd, SHUT_WR);
+            close(csockfd);
+        }
 
-    if (sockfd != -1) {
-        shutdown(sockfd, SHUT_WR);
-        close(sockfd);
+        if (sockfd != -1) {
+            shutdown(sockfd, SHUT_WR);
+            close(sockfd);
+        }
+    } else {
+        sx->sockfd = csockfd;
     }
 
     dh->in = NULL;
@@ -360,9 +364,13 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
 
 skey_xchg_client_epilogue:
 
-    if (sockfd != -1) {
-        shutdown(sockfd, SHUT_WR);
-        close(sockfd);
+    if (!sx->keep_sk_open) {
+        if (sockfd != -1) {
+            shutdown(sockfd, SHUT_WR);
+            close(sockfd);
+        }
+    } else {
+        sx->sockfd = sockfd;
     }
 
     kryptos_clear_dh_xchg_ctx(dh);
