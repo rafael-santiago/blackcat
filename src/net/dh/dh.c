@@ -102,7 +102,7 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
             goto skey_xchg_server_epilogue;
         }
     } else {
-        skey_size[0] = key_sizes[kryptos_get_random_byte() % key_sizes_nr];
+        skey_size[0] = sx->key_size;
         if ((skey[0] = kryptos_get_random_block(skey_size[0])) == NULL) {
             err = EFAULT;
             if (sx->verbose) {
@@ -224,12 +224,19 @@ skey_xchg_server_epilogue:
     dh->in = NULL;
     kryptos_clear_dh_xchg_ctx(dh);
 
-    if (skey[0] != NULL) {
+    if (skey[0] != NULL && sx->key_size == 0) {
         kryptos_freeseg(skey[0], skey_size[0]);
+    } else if (skey[0] != NULL && sx->key_size > 0) {
+        sx->session_key = skey[0];
+        sx->session_key_size = skey_size[0];
+        skey[0] = NULL;
+        skey_size[0] = 0;
     }
 
     if (skey[1] != NULL) {
         kryptos_freeseg(skey[1], skey_size[1]);
+        skey[1] = NULL;
+        skey_size[1] = 0;
     }
 
     if (enc_session_key != NULL) {

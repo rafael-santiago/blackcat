@@ -1015,6 +1015,8 @@ static int bcsck_read_rule(void) {
         temp = NULL;
 
         sx_trap = skey_xchg_client;
+
+        fprintf(stderr, "[blackcat] INFO: Estabilishing a session key... please wait...\n");
     } else if (kpub != NULL) {
         if ((temp = getenv(BCSCK_S_BITS)) == NULL) {
             fprintf(stderr, "ERROR: BCSCK_S_BITS was not provided.\n");
@@ -1061,6 +1063,7 @@ static int bcsck_read_rule(void) {
         fp = NULL;
 
         sx_trap = skey_xchg_server;
+        fprintf(stderr, "[blackcat] INFO: Estabilishing a session key... please wait...\n");
     }
 
     if ((sx.keep_sk_open = (sx_trap != NULL))) {
@@ -1081,6 +1084,8 @@ static int bcsck_read_rule(void) {
 
         session_key = sx.session_key;
         session_key_size = sx.session_key_size;
+
+        fprintf(stderr, "[blackcat] INFO: Session key estabilished.\n");
     }
 
     g_bcsck_handle->sockfd = (sx.keep_sk_open) ? sx.sockfd : -1;
@@ -1275,6 +1280,8 @@ __bcsck_enter(sendmsg)
         csockfd = g_bcsck_handle->sockfd;
     }
 
+    fprintf(stderr, "[blackcat] INFO: Encrypting and sending the random seed...\n");
+
     bcsck_encrypt(send_seed, send_seed_size, out_buf, out_buf_size,
                   {
                     fprintf(stderr, "ERROR: Unable to encrypt the sending seed.\n");
@@ -1288,9 +1295,13 @@ __bcsck_enter(sendmsg)
         goto do_xchg_server_epilogue;
     }
 
+    fprintf(stderr, "[blackcat] INFO: Done.\n");
+
     kryptos_freeseg(out_buf, out_buf_size);
     out_buf = NULL;
     out_buf_size = 0;
+
+    fprintf(stderr, "[blackcat] INFO: Receiving and decrypting the random seed... please wait...\n");
 
     if ((buf_size = g_bcsck_handle->libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
         err = errno;
@@ -1304,6 +1315,9 @@ __bcsck_enter(sendmsg)
                     err = EFAULT;
                     goto do_xchg_server_epilogue;
                   })
+
+    fprintf(stderr, "[blackcat] INFO: Done.\n"
+                    "[blackcat] INFO: Initializing the double ratchet...\n");
 
     hash = g_bcsck_handle->rule->hash_algo;
 
@@ -1320,6 +1334,8 @@ __bcsck_enter(sendmsg)
     }
 
     err = 0; // INFO(Rafael): ...and we done, now we got the two session key chains ('send' and 'recv') well configured.
+
+    fprintf(stderr, "[blackcat] INFO: Done. Now all network data from this application is using end to end encryption.\n");
 
 do_xchg_server_epilogue:
 
@@ -1421,6 +1437,8 @@ __bcsck_enter(sendmsg)
         sockfd = g_bcsck_handle->sockfd;
     }
 
+    fprintf(stderr, "[blackcat] INFO: Receiving and decrypting the random seed...\n");
+
     if ((buf_size = g_bcsck_handle->libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
         err = errno;
         fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
@@ -1434,6 +1452,9 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
+    fprintf(stderr, "[blackcat] INFO: Done.\n"
+                    "[blackcat] INFO: Initializing the double ratchet...\n");
+
     hash = g_bcsck_handle->rule->hash_algo;
     g_bcsck_handle->keyset = &ks[1];
 
@@ -1446,6 +1467,9 @@ __bcsck_enter(sendmsg)
     }
 
     kryptos_freeseg(out_buf, out_buf_size);
+
+    fprintf(stderr, "[blackcat] INFO: Done.\n"
+                    "[blackcat] INFO: Encrypting and sending the random seed...\n");
 
     bcsck_encrypt(send_seed, send_seed_size, out_buf, out_buf_size,
                   {
@@ -1461,6 +1485,8 @@ __bcsck_enter(sendmsg)
     }
 
     err = 0;
+
+    fprintf(stderr, "[blackcat] INFO: Done. Now all network data from this application is using end to end encryption.\n");
 
 do_xchg_client_epilogue:
 

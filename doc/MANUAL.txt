@@ -1068,6 +1068,29 @@ Once received all parameters, the blackcat instance executed in Alice's system w
 agreed session key (initially defined by Bob in him system). Now the two parts have estabilished
 their "monthly key".
 
+It is also possible to estabilish a random session key, instead of estabilishing a static one
+when executing 'net/--run' command.
+
+Supposing Alice wants to communicate with Bob through netcat. Alice previously send
+to Bob her public parameters ('alice.pub'). So she asks Bob to run netcat in his system
+listening for her connection at port 1009 and listening for session key exchanging stuff
+at port 5003:
+
+    Bob@Copacabana:~/# blackcat net --run --e2ee --rule=nc-alice-bob \
+    > --bcsck-lib-path=lib/libbcsck.so --db-path=/home/Bob/rules.ndb \
+    > --kpub=alice.pub --bits=160 --xchg-port=5003 nc -l -p 1009
+    Bob@Copacabana:~/# _
+
+Now Alice in her system uses her private parameters and connects to Bob's host:
+
+    alice@WolandsLand:~/# blackcat net --e2ee --rule=nc-alice-bob \
+    > --bcsck-lib-path=lib/libbcsck.so --db-path=/home/Alice/rules.ndb \
+    > --kpriv=alice.priv --xchg-addr=Copacabana --xchg-port=5003 nc Copacabana 1009
+    alice@WolandsLand:~/# _
+
+Done. They have estabilished a secure chat session. Now Netcat is using strong encryption
+with ephemeral keys per message.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
