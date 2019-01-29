@@ -1225,7 +1225,7 @@ static int do_xchg_server(void) {
     ssize_t buf_size;
     struct sockaddr_in sin;
     socklen_t slen;
-    unsigned char yeah_butt_head = 1;
+    unsigned int yeah_butt_head = 1;
     size_t seed_sizes[5] = { 4, 8, 16, 32, 64 }; // INFO(Rafael): Seeds from 32 up to 512 bits.
 
     // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.

@@ -126,6 +126,7 @@ static void *client(void *args) {
     fwrite(buf, buf_size, 1, stderr);
     fflush(stderr);
 
+    shutdown(fd, SHUT_RDWR);
     close(fd);
 
     return NULL;
@@ -139,7 +140,7 @@ static void *server(void *args) {
     socklen_t sa_len;
     char buf[0xFFFF];
     ssize_t buf_size;
-    unsigned char yes = 1;
+    unsigned int yes = 1;
 
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -186,7 +187,11 @@ static void *server(void *args) {
         exit(1);
     }
 
+    shutdown(fd, SHUT_RDWR);
     close(fd);
+
+    shutdown(c_fd, SHUT_RDWR);
+    close(c_fd);
 
     return NULL;
 }
@@ -284,7 +289,7 @@ int main(int argc, char **argv) {
 
         pthread_join(task->thread, NULL);
     } else {
-        printf("use: %s [-c || -s <function pair id>]\n");
+        printf("use: %s [-c || -s <function pair id>]\n", argv[0]);
         return 1;
     }
 

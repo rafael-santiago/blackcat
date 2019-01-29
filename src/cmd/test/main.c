@@ -2104,14 +2104,99 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat_nowait("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "1234", NULL) == 0);
 
-    /*data = get_file_data("kxchg.log", &data_size);
+    if (has_tcpdump()) {
+        CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+        sleep(1);
+    }
+
+    remove("ntool.server.log");
+    remove("ntool.client.log");
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=144 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpub=k.pub --bits=32 "
+                                "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", NULL) == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=144 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpriv=k.priv "
+                                "ntool/bin/ntool -c write/read 2>> ntool.client.log", "test", "1234") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=145 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpub=k.pub --bits=32 "
+                                "ntool/bin/ntool -s send/recv 2>> ntool.server.log", "test", NULL) == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=145 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpriv=k.priv "
+                                "ntool/bin/ntool -c send/recv 2>> ntool.client.log", "test", "1234") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=146 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpub=k.pub --bits=32 "
+                                "ntool/bin/ntool -s sendto/recvfrom 2>> ntool.server.log", "test", NULL) == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=146 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpriv=k.priv "
+                                "ntool/bin/ntool -c sendto/recvfrom 2>> ntool.client.log", "test", "1234") == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=147 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpub=k.pub --bits=32 "
+                                "ntool/bin/ntool -s sendmsg/recvmsg 2>> ntool.server.log", "test", NULL) == 0);
+
+    usleep(1);
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=147 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "--kpriv=k.priv "
+                                "ntool/bin/ntool -c sendmsg/recvmsg 2>> ntool.client.log", "test", "1234") == 0);
+
+    if (has_tcpdump()) {
+        data = get_file_data("ntool-traffic.log", &data_size);
+        CUTE_ASSERT(data != NULL);
+        remove("ntool-traffic.log");
+        for (n = 0; n < ntool_out_nr; n++) {
+            CUTE_ASSERT(strstr(data, ntool_out[n]) == NULL);
+        }
+        kryptos_freeseg(data, data_size);
+    }
+
+    data = get_file_data("ntool.server.log", &data_size);
     CUTE_ASSERT(data != NULL);
 
-    CUTE_ASSERT(strstr(data, "INFO: The session key is 'WabbaLabbaDubDub!'.\n") != NULL);
+    for (n = 0; n < (ntool_out_nr >> 1); n++) {
+        CUTE_ASSERT(strstr(data, ntool_out[n]) != NULL);
+    }
 
     kryptos_freeseg(data, data_size);
 
-    CUTE_ASSERT(remove("kxchg.log") == 0);*/
+    data = get_file_data("ntool.client.log", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    for (n = ntool_out_nr >> 1; n < ntool_out_nr; n++) {
+        CUTE_ASSERT(strstr(data, ntool_out[n]) != NULL);
+    }
+
+    kryptos_freeseg(data, data_size);
+
+    remove("ntool.server.log");
+    remove("ntool.client.log");
+
     CUTE_ASSERT(remove("k.pub") == 0);
     CUTE_ASSERT(remove("k.priv") == 0);
     CUTE_ASSERT(remove("dh-params.txt") == 0);
