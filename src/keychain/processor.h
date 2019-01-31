@@ -18,4 +18,12 @@ kryptos_u8_t *blackcat_decrypt_data(const blackcat_protlayer_chain_ctx *protlaye
                                     kryptos_u8_t *in, size_t in_size,
                                     size_t *out_size);
 
+kryptos_u8_t *blackcat_otp_encrypt_data(const blackcat_protlayer_chain_ctx *protlayer,
+                                        kryptos_u8_t *in, size_t in_size,
+                                        size_t *out_size);
+
+kryptos_u8_t *blackcat_otp_decrypt_data(const blackcat_protlayer_chain_ctx *protlayer,
+                                        kryptos_u8_t *in, size_t in_size,
+                                        size_t *out_size);
+
 #endif
