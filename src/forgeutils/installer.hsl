@@ -51,21 +51,36 @@ function installer() : result type none {
 local function do_install() : result type int {
     var src type list;
     var dest type list;
+    var has_dev type int;
 
-    if (hefesto.sys.os_name() == "netbsd") {
+    $has_dev = 0;
+
+    if (hefesto.sys.os_name() == "netbsd" && isfile("dev/blackcat.kmod")) {
         $src.add_item("dev/blackcat.kmod");
-    } else if (hefesto.sys.os_name() == "linux" || hefesto.sys.os_name() == "freebsd") {
+        $has_dev = 1;
+    } else if (hefesto.sys.os_name() == "linux" || hefesto.sys.os_name() == "freebsd" && isfile("dev/blackcat.ko")) {
         $src.add_item("dev/blackcat.ko");
+        $has_dev = 1;
     }
 
     $src.add_item("../doc/MANUAL.txt");
     $src.add_item("../etc/man/blackcat.1");
     $src.add_item("../bin/blackcat");
+    $src.add_item("lib/libbcsck.so");
 
-    $dest.add_item("/usr/local/share/blackcat/lkm");
+    if ($has_dev) {
+        $dest.add_item("/usr/local/share/blackcat/lkm");
+    }
+
     $dest.add_item("/usr/local/share/blackcat/doc");
     $dest.add_item("/usr/local/man/man1");
     $dest.add_item("/usr/local/bin");
+
+    if (isdir("/lib")) {
+        $dest.add_item("/lib");
+    } else {
+        $dest.add_item("/usr/local/share/blackcat/lib");
+    }
 
     var f type int;
 
@@ -95,6 +110,10 @@ local function do_install() : result type int {
 function do_uninstall() : result type int {
     var src type list;
 
+    if (isfile("/usr/local/share/blackcat/lib/libbcsck.so")) {
+        $src.add_item("/usr/local/share/blackcat/lib/libbcsck.so");
+    }
+
     if (hefesto.sys.os_name() == "netbsd") {
         $src.add_item("/usr/local/share/blackcat/lkm/blackcat.kmod");
     } else if (hefesto.sys.os_name() == "freebsd" || hefesto.sys.os_name() == "linux") {
@@ -106,8 +125,13 @@ function do_uninstall() : result type int {
     $src.add_item("/usr/local/share/blackcat/doc");
     $src.add_item("/usr/local/share/blackcat/lkm");
 
+    if (isdir("/usr/local/share/blackcat/lib")) {
+        $src.add_item("/usr/local/share/blackcat/lib");
+    }
+
     $src.add_item("/usr/local/man/man1/blackcat.1");
     $src.add_item("/usr/local/bin/blackcat");
+    $src.add_item("/lib/libbcsck.so");
 
     var s type int;
 
