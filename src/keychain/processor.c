@@ -16,6 +16,7 @@
 
 struct blackcat_otp_chain_regs {
     blackcat_protlayer_chain_ctx *protlayer;
+    blackcat_protlayer_chain_ctx *tail;
     blackcat_protlayer_chain_ctx *middle;
     blackcat_protlayer_chain_ctx *first_cascade_end;
 };
@@ -76,6 +77,8 @@ kryptos_u8_t *blackcat_otp_decrypt_data(const blackcat_protlayer_chain_ctx *prot
 static void blackcat_otp_chain_regs_init(struct blackcat_otp_chain_regs *regs) {
     size_t protlayer_nr = 0, p;
 
+    regs->tail = regs->protlayer->tail;
+
     for (regs->middle = regs->protlayer; regs->middle != NULL; regs->middle = regs->middle->next) {
         protlayer_nr += 1;
     }
@@ -90,12 +93,14 @@ static void blackcat_otp_chain_regs_init(struct blackcat_otp_chain_regs *regs) {
 
         regs->first_cascade_end = regs->middle->last;
         regs->first_cascade_end->next = NULL;
+        regs->protlayer->tail = regs->first_cascade_end;
         if (regs->middle != NULL) {
             regs->middle->head = regs->middle;
             for (regs->middle->tail = regs->middle;
                  regs->middle->tail->next != NULL;
                  regs->middle->tail = regs->middle->tail->next)
                 ;
+            regs->middle->last = NULL;
         }
     } else {
         regs->middle = regs->protlayer;
@@ -103,8 +108,15 @@ static void blackcat_otp_chain_regs_init(struct blackcat_otp_chain_regs *regs) {
 }
 
 static void blackcat_otp_chain_regs_deinit(struct blackcat_otp_chain_regs *regs) {
+    if (regs->tail != NULL) {
+        regs->protlayer->tail = regs->tail;
+        regs->tail = NULL;
+    }
     if (regs->first_cascade_end != NULL) {
         regs->first_cascade_end->next = regs->middle;
+        if (regs->middle != NULL) {
+            regs->middle->last = regs->first_cascade_end;
+        }
         regs->first_cascade_end = NULL;
     }
 
@@ -133,7 +145,7 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
     //                  - [Additional step]: encrypt LEPR' with the entire cascade -> C';
     //
     kryptos_u8_t *out = NULL, *temp = NULL;
-    kryptos_u8_t *r = NULL, *xp, *ip_end, *ip, *data = NULL;
+    kryptos_u8_t *r = NULL, *xp = NULL, *ip_end, *ip, *data = NULL;
     size_t protlayer_nr = 0, p, xp_size, data_size, temp_size = 0, ip_size;
     kryptos_task_ctx t, *ktask = &t;
     struct blackcat_otp_chain_regs regs;
@@ -156,7 +168,7 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
             goto blackcat_otp_meta_processor_epilogue;
         }
 
-        xp_size = ip_size;
+        xp_size = in_size;
 
         ip = in;
         ip_end = in + in_size;
@@ -197,6 +209,9 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
             temp_size = 0;
             goto blackcat_otp_meta_processor_epilogue;
         }
+
+        kryptos_freeseg(xp, xp_size);
+        xp = NULL;
 
         if (kryptos_pem_put_data(&temp, &temp_size, BLACKCAT_OTP_C, data, data_size) != kKryptosSuccess) {
             kryptos_freeseg(temp, temp_size);
@@ -262,10 +277,6 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
 
             kryptos_task_set_encode_action(ktask);
             protlayer->head->encoder(&ktask);
-
-            kryptos_freeseg(out, *out_size);
-            out = NULL;
-            *out_size = 0;
 
             if (!kryptos_last_task_succeed(ktask)) {
                 goto blackcat_otp_meta_processor_epilogue;
@@ -335,6 +346,8 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
         if ((out = (kryptos_u8_t *)kryptos_newseg(ip_size)) == NULL) {
             goto blackcat_otp_meta_processor_epilogue;
         }
+
+        *out_size = ip_size;
 
         temp = out;
 

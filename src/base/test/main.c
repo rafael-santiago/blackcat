@@ -37,6 +37,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_bcrypt_tests);
 CUTE_DECLARE_TEST_CASE(is_pht_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_getuserkey_tests);
 CUTE_DECLARE_TEST_CASE(random_printable_padding_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_otp_meta_processor_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -54,6 +55,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
     CUTE_RUN_TEST(blackcat_available_cipher_schemes_tests);
     CUTE_RUN_TEST(blackcat_meta_processor_tests);
+    CUTE_RUN_TEST(blackcat_otp_meta_processor_tests);
     CUTE_RUN_TEST(get_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(get_random_hmac_catalog_scheme_tests);
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
@@ -61,6 +63,34 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_pht_tests);
     CUTE_RUN_TEST(blackcat_getuserkey_tests);
     CUTE_RUN_TEST(random_printable_padding_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
+    blackcat_protlayer_chain_ctx *protlayer = NULL;
+    kryptos_u8_t *pass;
+    size_t pass_size = 4;
+    kryptos_u8_t *in = "(null)\x00";
+    size_t in_size = 7;
+    size_t out_size, plain_size;
+    kryptos_u8_t *out = NULL, *plain = NULL;
+    pass = (kryptos_u8_t *)kryptos_newseg(pass_size);
+    CUTE_ASSERT(pass != NULL);
+    pass[0] = 0xDE;
+    pass[1] = 0xAD;
+    pass[2] = 0xBE;
+    pass[3] = 0xEF;
+    protlayer = add_composite_protlayer_to_chain(protlayer, "blowfish-cbc,hmac-sha3-512-blowfish-ofb",
+                                                 &pass, &pass_size, get_hash_processor("tiger"), NULL);
+    CUTE_ASSERT(protlayer != NULL);
+    out = blackcat_otp_encrypt_data(protlayer, in, in_size, &out_size);
+    CUTE_ASSERT(out != NULL);
+    plain = blackcat_otp_decrypt_data(protlayer, out, out_size, &plain_size);
+    CUTE_ASSERT(plain != NULL);
+    CUTE_ASSERT(plain_size == in_size);
+    CUTE_ASSERT(memcmp(plain, in, plain_size) == 0);
+    kryptos_freeseg(out, out_size);
+    kryptos_freeseg(plain, plain_size);
+    del_protlayer_chain_ctx(protlayer);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(random_printable_padding_tests)
