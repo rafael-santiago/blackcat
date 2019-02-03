@@ -12,7 +12,7 @@ Firstly, thank you for contributing. You should consider the following before su
     - New stuff should be detailed and documented;
     - Bugfixes should be tested;
     - Memory leaks are bad, try always to eliminate it before any pull request;
-    - Sorry, but "backyard" ciphers are not welcomed here;
+    - Sorry, but "backyard" ciphers are not welcome here;
     - This software is suitable for paranoid people, so arguments such as 'no one will be capable of doing this'
       are weak by default;
     - If you added some feature that has some drawback or this is not so strong against some kind of attack(s),

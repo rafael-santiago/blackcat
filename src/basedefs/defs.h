@@ -27,6 +27,10 @@ typedef size_t (*blackcat_hash_size_func)(void);
 
 typedef void (*blackcat_encoder)(kryptos_task_ctx **ktask);
 
+typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_ctx *protlayer,
+                                                 kryptos_u8_t *in, size_t in_size,
+                                                 size_t *out_size);
+
 #define DECL_BLACKCAT_CIPHER_PROCESSOR(name, ktask, p_layer)\
     void blackcat_ ## name (kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
