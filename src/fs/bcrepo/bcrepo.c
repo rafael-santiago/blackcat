@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-// INFO(Rafael): This version not always will match the cmd tool version. It does not means that the
+// INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
 //               tool will generate unsupported data for the fs module.
 
 #define BCREPO_METADATA_VERSION                 "1.0.0"
