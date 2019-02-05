@@ -44,8 +44,6 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     kryptos_u8_t *epk = NULL, *enc_session_key = NULL;
     size_t epk_size, enc_session_key_size;
     unsigned int yes = 1;
-    static size_t key_sizes[] = { 4, 8, 16, 32, 64 };
-    static size_t key_sizes_nr = sizeof(key_sizes) / sizeof(key_sizes[0]);
 
     sx->session_key = NULL;
     sx->session_key_size = 0;
