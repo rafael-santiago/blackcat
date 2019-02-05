@@ -12,7 +12,6 @@
 
 #define BLACKCAT_OTP_K "BC OTP K"
 #define BLACKCAT_OTP_C "BC OTP C"
-#define BLACKCAT_OTP_D "BC OTP D"
 
 struct blackcat_otp_chain_regs {
     blackcat_protlayer_chain_ctx *protlayer;
@@ -522,4 +521,3 @@ blackcat_meta_processor_epilogue:
 
 #undef BLACKCAT_OTP_K
 #undef BLACKCAT_OTP_C
-#undef BLACKCAT_OTP_D

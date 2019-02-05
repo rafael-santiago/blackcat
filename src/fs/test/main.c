@@ -11,6 +11,7 @@
 #include <ctx/ctx.h>
 #include <bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
+#include <keychain/processor.h>
 #include <fs/strglob.h>
 #include <kryptos_pem.h>
 #include <stdio.h>
@@ -322,34 +323,69 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(bcrepo_decoy_tests)
     char *data;
     size_t data_size;
+    int otp;
     remove("decoy.sqn");
     remove("decoy.txt");
-    CUTE_ASSERT(bcrepo_decoy(NULL, 108, NULL, 0) == 0);
-    CUTE_ASSERT(bcrepo_decoy("decoy.sqn", 0, NULL, 0) == 0);
-    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 108, NULL, 0) == 1);
-    data = open_text("decoy.sqn", &data_size);
-    CUTE_ASSERT(data == NULL);
-    data = open_text("decoy.txt", &data_size);
-    CUTE_ASSERT(data != NULL && data_size == 108);
-    kryptos_freeseg(data, data_size);
-    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, 0) == 0);
-    data = open_text("decoy.txt", &data_size);
-    CUTE_ASSERT(data != NULL && data_size == 108);
-    kryptos_freeseg(data, data_size);
-    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, 1) == 1);
-    data = open_text("decoy.txt", &data_size);
-    CUTE_ASSERT(data != NULL && data_size == 8);
-    kryptos_freeseg(data, data_size);
-    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 1024, get_encoder("base64"), 1) == 1);
-    data = open_text("decoy.txt", &data_size);
-    CUTE_ASSERT(data != NULL);
-    kryptos_freeseg(data, data_size);
-    CUTE_ASSERT(bcrepo_decoy("decoy.txt", 4096, get_encoder("uuencode"), 1) == 1);
-    data = open_text("decoy.txt", &data_size);
-    CUTE_ASSERT(data != NULL);
-    kryptos_freeseg(data, data_size);
-    remove("decoy.sqn");
-    remove("decoy.txt");
+    for (otp = 0; otp < 2; otp++) {
+        CUTE_ASSERT(bcrepo_decoy(NULL, 108, NULL, otp, 0) == 0);
+        CUTE_ASSERT(bcrepo_decoy("decoy.sqn", 0, NULL, otp, 0) == 0);
+        CUTE_ASSERT(bcrepo_decoy("decoy.txt", 108, NULL, otp, 0) == 1);
+
+        if (!otp) {
+            data = open_text("decoy.sqn", &data_size);
+            CUTE_ASSERT(data == NULL);
+            data = open_text("decoy.txt", &data_size);
+            CUTE_ASSERT(data != NULL && data_size == 108);
+            kryptos_freeseg(data, data_size);
+        }
+
+        CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, otp, 0) == 0);
+
+        if (!otp) {
+            data = open_text("decoy.txt", &data_size);
+            CUTE_ASSERT(data != NULL && data_size == 108);
+            kryptos_freeseg(data, data_size);
+        } else {
+            data = open_text("decoy.txt", &data_size);
+            CUTE_ASSERT(data != NULL && strstr(data, BLACKCAT_OTP_D) != NULL);
+            kryptos_freeseg(data, data_size);
+        }
+
+        CUTE_ASSERT(bcrepo_decoy("decoy.txt", 8, NULL, otp, 1) == 1);
+
+        if (!otp) {
+            data = open_text("decoy.txt", &data_size);
+            CUTE_ASSERT(data != NULL && data_size == 8);
+            kryptos_freeseg(data, data_size);
+        } else {
+            data = open_text("decoy.txt", &data_size);
+            CUTE_ASSERT(data != NULL && strstr(data, BLACKCAT_OTP_D) != NULL);
+            kryptos_freeseg(data, data_size);
+        }
+
+        CUTE_ASSERT(bcrepo_decoy("decoy.txt", 1024, get_encoder("base64"), otp, 1) == 1);
+        data = open_text("decoy.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+
+        if (otp) {
+            CUTE_ASSERT(strstr(data, BLACKCAT_OTP_D) == NULL);
+        }
+
+        kryptos_freeseg(data, data_size);
+
+        CUTE_ASSERT(bcrepo_decoy("decoy.txt", 4096, get_encoder("uuencode"), otp, 1) == 1);
+        data = open_text("decoy.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
+
+        if (otp) {
+            CUTE_ASSERT(strstr(data, BLACKCAT_OTP_D) == NULL);
+        }
+
+        kryptos_freeseg(data, data_size);
+
+        remove("decoy.sqn");
+        remove("decoy.txt");
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_restore_tests)
@@ -617,144 +653,149 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     size_t new_key_size;
     kryptos_u8_t *new_protlayer_key;
     size_t new_protlayer_key_size;
+    int otp = 0;
 
-    // INFO(Rafael): Bootstrapping the test repo.
+    do {
+        // INFO(Rafael): Bootstrapping the test repo.
 
-    remove(".bcrepo/CATALOG");
-    rmdir(".bcrepo");
+        remove(".bcrepo/CATALOG");
+        rmdir(".bcrepo");
 
-    catalog = new_bfs_catalog_ctx();
+        catalog = new_bfs_catalog_ctx();
 
-    CUTE_ASSERT(catalog != NULL);
+        CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
-    catalog->otp = 0;
-    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
-    catalog->key_hash_algo = get_hash_processor("sha-512");
-    catalog->key_hash_algo_size = get_hash_size("sha-512");
-    catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
-    catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
-    catalog->encoder = get_encoder("uuencode");
+        catalog->bc_version = "1.0.0";
+        catalog->otp = otp;
+        catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
+        catalog->key_hash_algo = get_hash_processor("sha-512");
+        catalog->key_hash_algo_size = get_hash_size("sha-512");
+        catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
+        catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
+        catalog->encoder = get_encoder("uuencode");
 
-    CUTE_ASSERT(catalog->key_hash_algo != NULL);
-    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
-    CUTE_ASSERT(catalog->encoder != NULL);
+        CUTE_ASSERT(catalog->key_hash_algo != NULL);
+        CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+        CUTE_ASSERT(catalog->encoder != NULL);
 
-    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
-    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+        CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+        CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+        ktask->in = key;
+        ktask->in_size = strlen(key);
+        catalog->key_hash_algo(&ktask, 1);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+        CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
 
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "hmac-sha-224-blowfish-ctr,shacal1-ctr,gibberish-wrap/38-42,shacal1-ofb,mars-192-ctr,"
-                                "hmac-sha3-512-shacal2-cbc";
+        catalog->key_hash = ktask->out;
+        catalog->key_hash_size = ktask->out_size;
+        catalog->protection_layer = "hmac-sha-224-blowfish-ctr,shacal1-ctr,gibberish-wrap/38-42,shacal1-ofb,mars-192-ctr,"
+                                    "hmac-sha3-512-shacal2-cbc";
 
-    protkey = (kryptos_u8_t *) kryptos_newseg(9);
-    CUTE_ASSERT(protkey != NULL);
-    memcpy(protkey, "aeroplane", 9);
-    protkey_size = 9;
+        protkey = (kryptos_u8_t *) kryptos_newseg(9);
+        CUTE_ASSERT(protkey != NULL);
+        memcpy(protkey, "aeroplane", 9);
+        protkey_size = 9;
 
-    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
-                                                          catalog->encoder);
+        catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                              catalog->protection_layer,
+                                                              &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                              catalog->encoder);
 
-    CUTE_ASSERT(protkey == NULL);
-    CUTE_ASSERT(protkey_size == 0);
+        CUTE_ASSERT(protkey == NULL);
+        CUTE_ASSERT(protkey_size == 0);
 
-    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+        CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 
-    rootpath = bcrepo_get_rootpath();
+        rootpath = bcrepo_get_rootpath();
 
-    CUTE_ASSERT(rootpath != NULL);
+        CUTE_ASSERT(rootpath != NULL);
 
-    rootpath_size = strlen(rootpath);
+        rootpath_size = strlen(rootpath);
 
-    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
-    CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
+        CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+        CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
 
-    pattern = "sensitive.txt";
-    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+        pattern = "sensitive.txt";
+        CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
 
-    CUTE_ASSERT(catalog->files != NULL);
-    CUTE_ASSERT(catalog->files->head == catalog->files);
-    CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+        CUTE_ASSERT(catalog->files != NULL);
+        CUTE_ASSERT(catalog->files->head == catalog->files);
+        CUTE_ASSERT(catalog->files->tail == catalog->files->head);
 
-    pattern = "plain.txt";
-    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
+        pattern = "plain.txt";
+        CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
 
-    CUTE_ASSERT(catalog->files != NULL);
-    CUTE_ASSERT(catalog->files->head == catalog->files);
-    CUTE_ASSERT(catalog->files->tail == catalog->files->next);
+        CUTE_ASSERT(catalog->files != NULL);
+        CUTE_ASSERT(catalog->files->head == catalog->files);
+        CUTE_ASSERT(catalog->files->tail == catalog->files->next);
 
-    // INFO(Rafael): The files must be decrypted and re-encrypted with the new key setting.
-    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
+        // INFO(Rafael): The files must be decrypted and re-encrypted with the new key setting.
+        CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
 
-    new_key_size = strlen("Sham time");
-    new_key = (kryptos_u8_t *)kryptos_newseg(new_key_size);
-    CUTE_ASSERT(new_key != NULL);
-    memcpy(new_key, "Sham time", new_key_size);
+        new_key_size = strlen("Sham time");
+        new_key = (kryptos_u8_t *)kryptos_newseg(new_key_size);
+        CUTE_ASSERT(new_key != NULL);
+        memcpy(new_key, "Sham time", new_key_size);
 
-    new_protlayer_key_size = strlen("That mother fucker always spiked with pain");
-    new_protlayer_key = (kryptos_u8_t *)kryptos_newseg(new_protlayer_key_size);
-    CUTE_ASSERT(new_protlayer_key != NULL);
-    memcpy(new_protlayer_key, "That mother fucker always spiked with pain", new_protlayer_key_size);
+        new_protlayer_key_size = strlen("That mother fucker always spiked with pain");
+        new_protlayer_key = (kryptos_u8_t *)kryptos_newseg(new_protlayer_key_size);
+        CUTE_ASSERT(new_protlayer_key != NULL);
+        memcpy(new_protlayer_key, "That mother fucker always spiked with pain", new_protlayer_key_size);
 
-    CUTE_ASSERT(bcrepo_reset_repo_settings(&catalog, rootpath, rootpath_size,
-                                           new_key, new_key_size,
-                                           &new_protlayer_key, &new_protlayer_key_size,
-                                           "hmac-tiger-blowfish-ofb,"
-                                           "gibberish-wrap/448-128,"
-                                           "rc6-128-cbc/96,"
-                                           "gibberish-wrap/101-11",
-                                           get_hash_processor("whirlpool"),
-                                           get_hash_processor("sha3-512"),
-                                           NULL,
-                                           get_hash_processor("sha-384"),
-                                           get_encoder("base64"), NULL, NULL) == 1);
+        catalog->otp = !catalog->otp;
 
-    // INFO(Rafael): We reset the catalog's key for paranoia issues.
+        CUTE_ASSERT(bcrepo_reset_repo_settings(&catalog, rootpath, rootpath_size,
+                                               new_key, new_key_size,
+                                               &new_protlayer_key, &new_protlayer_key_size,
+                                               "hmac-tiger-blowfish-ofb,"
+                                               "gibberish-wrap/448-128,"
+                                               "rc6-128-cbc/96,"
+                                               "gibberish-wrap/101-11",
+                                               get_hash_processor("whirlpool"),
+                                               get_hash_processor("sha3-512"),
+                                               NULL,
+                                               get_hash_processor("sha-384"),
+                                               get_encoder("base64"), NULL, NULL) == 1);
 
-    CUTE_ASSERT(memcmp(new_key, "Sham time", new_key_size) != 0);
+        // INFO(Rafael): We reset the catalog's key for paranoia issues.
 
-    kryptos_freeseg(new_protlayer_key, 0);
+        CUTE_ASSERT(memcmp(new_key, "Sham time", new_key_size) != 0);
 
-    data = open_text("sensitive.txt", &data_size);
-    CUTE_ASSERT(data != NULL);
+        kryptos_freeseg(new_protlayer_key, 0);
 
-    CUTE_ASSERT(data_size != strlen(sensitive));
-    CUTE_ASSERT(memcmp(data, sensitive, strlen(sensitive)) != 0);
+        data = open_text("sensitive.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
 
-    kryptos_freeseg(data, data_size);
+        CUTE_ASSERT(data_size != strlen(sensitive));
+        CUTE_ASSERT(memcmp(data, sensitive, strlen(sensitive)) != 0);
 
-    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
+        kryptos_freeseg(data, data_size);
 
-    data = open_text("sensitive.txt", &data_size);
-    CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
 
-    CUTE_ASSERT(data_size == strlen(sensitive));
-    CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
+        data = open_text("sensitive.txt", &data_size);
+        CUTE_ASSERT(data != NULL);
 
-    kryptos_freeseg(data, data_size);
+        CUTE_ASSERT(data_size == strlen(sensitive));
+        CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
 
-    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) != 1);
+        kryptos_freeseg(data, data_size);
 
-    memcpy(new_key, "Sham time", new_key_size);
-    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, new_key, new_key_size) == 1);
+        CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) != 1);
 
-    kryptos_freeseg(new_key, new_key_size);
+        memcpy(new_key, "Sham time", new_key_size);
+        CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, new_key, new_key_size) == 1);
 
-    remove("sensitive.txt");
-    remove("plain.txt");
+        kryptos_freeseg(new_key, new_key_size);
 
-    kryptos_freeseg(rootpath, rootpath_size);
-    catalog->bc_version = NULL;
-    del_bfs_catalog_ctx(catalog);
+        remove("sensitive.txt");
+        remove("plain.txt");
+
+        kryptos_freeseg(rootpath, rootpath_size);
+        catalog->bc_version = NULL;
+        del_bfs_catalog_ctx(catalog);
+    } while (otp++ < 2);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
@@ -1486,78 +1527,81 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
     kryptos_task_ctx t, *ktask = &t;
+    int otp = 0;
 
-    remove(".bcrepo/CATALOG");
-    rmdir(".bcrepo");
-    rmdir("../.bcrepo");
+    do {
+        remove(".bcrepo/CATALOG");
+        rmdir(".bcrepo");
+        rmdir("../.bcrepo");
 
-    catalog = new_bfs_catalog_ctx();
+        catalog = new_bfs_catalog_ctx();
 
-    CUTE_ASSERT(catalog != NULL);
+        CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
-    catalog->otp = 0;
-    catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
-    catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
-    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
-    catalog->key_hash_algo = get_hash_processor("sha3-512");
-    catalog->key_hash_algo_size = get_hash_size("sha3-512");
-    catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
-    catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
+        catalog->bc_version = "1.0.0";
+        catalog->otp = otp;
+        catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
+        catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
+        catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
+        catalog->key_hash_algo = get_hash_processor("sha3-512");
+        catalog->key_hash_algo_size = get_hash_size("sha3-512");
+        catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
+        catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
 
-    CUTE_ASSERT(catalog->key_hash_algo != NULL);
-    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+        CUTE_ASSERT(catalog->key_hash_algo != NULL);
+        CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
 
-    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
-    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+        CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+        CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+        ktask->in = key;
+        ktask->in_size = strlen(key);
+        catalog->key_hash_algo(&ktask, 1);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+        CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
 
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
-    catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc,des-cbc|mars-128-ctr,shacal1-cbc,hmac-tiger-aes-128-cbc";
+        catalog->key_hash = ktask->out;
+        catalog->key_hash_size = ktask->out_size;
+        catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc,des-cbc|mars-128-ctr,shacal1-cbc,hmac-tiger-aes-128-cbc";
 
-    // INFO(Rafael): An init attempt inside previously initialized repos must fail.
+        // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
-    CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
-    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
-    CUTE_ASSERT(rmdir(".bcrepo") == 0);
+        CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+        CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+        CUTE_ASSERT(rmdir(".bcrepo") == 0);
 
-    // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
-    //                a bcrepo_init() call will fail.
+        // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
+        //                a bcrepo_init() call will fail.
 
-    CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
-    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
-    CUTE_ASSERT(rmdir("../.bcrepo") == 0);
+        CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
+        CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+        CUTE_ASSERT(rmdir("../.bcrepo") == 0);
 
-    // INFO(Rafael): Cute cases where everything is marvelously perfect. Wow!
+        // INFO(Rafael): Cute cases where everything is marvelously perfect. Wow!
 
-    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+        CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 
-    rootpath = bcrepo_get_rootpath();
+        rootpath = bcrepo_get_rootpath();
 
-    CUTE_ASSERT(rootpath != NULL);
+        CUTE_ASSERT(rootpath != NULL);
 
-    rootpath_size = strlen(rootpath);
+        rootpath_size = strlen(rootpath);
 
-    // INFO(Rafael): The correct master key must match, otherwise it will fail.
+        // INFO(Rafael): The correct master key must match, otherwise it will fail.
 
-    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, "sp4c3 c4d3t", strlen("sp4c3 c4d3t")) == 0);
+        CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, "sp4c3 c4d3t", strlen("sp4c3 c4d3t")) == 0);
 
-    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+        CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
-    kryptos_freeseg(rootpath, rootpath_size);
+        kryptos_freeseg(rootpath, rootpath_size);
 
-    rootpath = bcrepo_get_rootpath();
+        rootpath = bcrepo_get_rootpath();
 
-    CUTE_ASSERT(rootpath == NULL); // INFO(Rafael): This is not a repo anymore.
+        CUTE_ASSERT(rootpath == NULL); // INFO(Rafael): This is not a repo anymore.
 
-    catalog->bc_version = catalog->protection_layer = NULL;
-    del_bfs_catalog_ctx(catalog);
+        catalog->bc_version = catalog->protection_layer = NULL;
+        del_bfs_catalog_ctx(catalog);
+    } while (otp++ < 2);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(strglob_tests)

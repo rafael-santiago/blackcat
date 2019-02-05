@@ -10,6 +10,8 @@
 
 #include <basedefs/defs.h>
 
+#define BLACKCAT_OTP_D "BC OTP D"
+
 kryptos_u8_t *blackcat_encrypt_data(const blackcat_protlayer_chain_ctx *protlayer,
                                     kryptos_u8_t *in, size_t in_size,
                                     size_t *out_size);

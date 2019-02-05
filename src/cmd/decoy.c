@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/decoy.h>
+#include <cmd/session.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/keychain.h>
@@ -22,6 +23,11 @@ int blackcat_cmd_decoy(void) {
     blackcat_encoder encoder = NULL;
     char *file_param = NULL;
     size_t fsize = 0;
+    blackcat_exec_session_ctx *session = NULL;
+
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
+        goto blackcat_cmd_decoy_epilogue;
+    }
 
     BLACKCAT_GET_OPTION_OR_DIE(fsize_option, "fsize", blackcat_cmd_decoy_epilogue);
 
@@ -37,6 +43,9 @@ int blackcat_cmd_decoy(void) {
             fprintf(stderr, "ERROR: Unknown encoder '%s'.\n", encoder_name);
             goto blackcat_cmd_decoy_epilogue;
         }
+    } else {
+        // INFO(Rafael): When not forced it will follow the default repo encoder.
+        encoder = session->catalog->encoder;
     }
 
     overwrite = blackcat_get_bool_option("overwrite", 0);
@@ -51,7 +60,7 @@ int blackcat_cmd_decoy(void) {
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   file_param,
                                   {
-                                        if (bcrepo_decoy(file_param, fsize, encoder, overwrite) == 0) {
+                                        if (bcrepo_decoy(file_param, fsize, encoder, session->catalog->otp, overwrite) == 0) {
                                             exit_code = EFAULT;
                                             goto blackcat_cmd_decoy_epilogue;
                                         }
@@ -60,6 +69,10 @@ int blackcat_cmd_decoy(void) {
     exit_code = 0;
 
 blackcat_cmd_decoy_epilogue:
+
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
+    }
 
     return exit_code;
 }

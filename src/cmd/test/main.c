@@ -716,11 +716,34 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--key-hash=sha-512 "
                          "--protection-layer-hash=tiger "
                          "--encoder=uuencode "
-                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc",
+                         "--protection-layer=camellia-192-cbc,mars-192-cbc,misty1-ctr,hmac-sha3-512-aes-256-cbc --otp",
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
 
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) != 0);
     CUTE_ASSERT(blackcat("status", "All Along The Watchtower", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "All Along The Watchtower", NULL) == 0);
+
+    // INFO(Rafael): Since we have changed the cascading type (from now on it is one-time pad) let's actually check
+    //               the data from files after unlocking the whole repo.
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("deinit", "All Along The Watchtower", NULL) == 0);
 
@@ -1665,20 +1688,58 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("deinit", "Talking head", NULL) == 0);
 
-    remove("etc/s2.txt");
     remove("s1.txt");
-    remove("p.txt");
-
-    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --encoder=base64 --overwrite", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=base64", "", NULL) == 0);
-    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=uuencode", "", NULL) != 0);
-    CUTE_ASSERT(blackcat("decoy etc/s2.txt s1.txt --fsize=8192 --encoder=uuencode --overwrite", "", NULL) == 0);
-    CUTE_ASSERT(blackcat("decoy p.txt --fsize=8192", "", NULL) == 0);
-
-    remove("s1.txt");
+    remove("sd.txt");
+    remove("sod.txt");
     remove("etc/s2.txt");
+    remove("etc/sd.txt");
+    remove("etc/sod.txt");
     rmdir("etc");
     remove("p.txt");
+    remove("pd.txt");
+    remove("pod.txt");
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=whirlpool "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc ",
+                         "Talking head\nTalking head", "Who knows\nWho knows") == 0);
+
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "Talking head", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "Talking head", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("decoy etc/sd.txt sd.txt --encoder=base64 --overwrite", "Wrong pass.", NULL) != 0);
+    CUTE_ASSERT(blackcat("decoy etc/sd.txt sd.txt --fsize=8192 --encoder=base64", "Talking head", NULL) == 0);
+    CUTE_ASSERT(blackcat("decoy etc/sd.txt sd.txt --fsize=8192 --encoder=uuencode", "Wrong pass.", NULL) != 0);
+    CUTE_ASSERT(blackcat("decoy etc/sd.txt sd.txt --fsize=8192 --encoder=uuencode --overwrite", "Wrong pass.", NULL) != 0);
+    CUTE_ASSERT(blackcat("decoy etc/sd.txt sd.txt --fsize=8192 --encoder=uuencode --overwrite", "Talking head", NULL) == 0);
+    CUTE_ASSERT(blackcat("decoy pd.txt --fsize=8192", "Talking head", NULL) == 0);
+
+    // INFO(Rafael): Let's test the otp decoy.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike --otp",
+                         "Talking head\nWho knows", "Talking head\nTalking head") == 0);
+
+    CUTE_ASSERT(blackcat("decoy etc/sod.txt sod.txt --fsize=8192 --encoder=uuencode --overwrite", "Talking head", NULL) == 0);
+    CUTE_ASSERT(blackcat("decoy pod.txt --fsize=8192", "Talking head", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "Talking head", NULL) == 0);
+
+    remove("s1.txt");
+    remove("sd.txt");
+    remove("sod.txt");
+    remove("etc/s2.txt");
+    remove("etc/sd.txt");
+    remove("etc/sod.txt");
+    rmdir("etc");
+    remove("p.txt");
+    remove("pd.txt");
+    remove("pod.txt");
 
     // INFO(Rafael): For people who like bcrypt with love (keyed alike init first, ok?).
 

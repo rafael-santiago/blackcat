@@ -317,6 +317,34 @@ For example:
 
 In the case of RC6 you are specifying the rounds total.
 
+How does the cascade actually work?
+===================================
+
+Until now there are two cascade types:
+
+    - Single flow
+    - One-time pad
+
+When in single flow type blackcat will pick your cascade (protection-layer) and apply it over the
+data following the order defined by you when initializing the repo. More straightforward, impossible.
+
+When in one-time pad type blackcat will pick your cascade (protection-layer) and divide it into two
+halves. After the application will generate a pseudo-random block with the size of the plaintext and
+get the xoring between the random block and the plaintext. Once xored the plaintext, the random block
+will be encrypted by using the first half of the cascade and the encrypted plaintext (xored) will be
+encrypted with the second half of the cascade. Those two pieces of information will be serialized by
+using the PEM format. Finally, this PEM buffer will be encrypted with the entire cascade and saved as
+another PEM buffer. When applying the last encryption layer, the PEM buffer is wrapped by two random
+blocks of variable sizes. The one-time pad cascade type is inspired by the method presented/introduced
+by Bruce Schneier in his book Applied Cryptography.
+
+If you are using an encoder for your repo and also have activated otp cascade type, the final PEM
+buffer will be encoded.
+
+Similarly, if you are using decoy files (keeping reading), those decoys will be generated following
+the out format for encrypted files in otp cascade type. However, if you have changed for single flow,
+any previous decoy material generated following the format of otp stuff will be kept.
+
 Paranoid practices
 ==================
 
@@ -597,6 +625,14 @@ decoys (using the same encoded algorithm used for sensitive data, of course):
 
 After doing it all you should do is to add the generated decoy files as plain files to the repo's
 catalog by using the command 'add'.
+
+Tip[0]: decoy can be only generated into a previous well-initialized repo.
+
+Tip[1]: as default blackcat will detect the current picked encoder for you, however, if for some reason
+you want to use a different one, force its usage through the '--encoder' option.
+
+Tip[2]: if you are using the cascade type one-time pad instead of single flow, blackcat will generate
+decoys following the PEM output format used by the otp cascade type.
 
 Promoting a plausibly deniable encryption with some blackcat primitives
 =======================================================================

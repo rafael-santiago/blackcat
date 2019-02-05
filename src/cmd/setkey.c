@@ -218,6 +218,8 @@ int blackcat_cmd_setkey(void) {
         p_layer = NULL;
     }
 
+    session->catalog->otp = blackcat_get_bool_option("otp", 0);
+
     if (bcrepo_reset_repo_settings(&session->catalog,
                                    session->rootpath, session->rootpath_size,
                                    new_key[0], new_key_size[0], &new_key[1], &new_key_size[1],

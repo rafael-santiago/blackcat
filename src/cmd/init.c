@@ -234,6 +234,8 @@ int blackcat_cmd_init(void) {
 
     catalog->encoder = encoder_proc;
 
+    catalog->otp = blackcat_get_bool_option("otp", 0);
+
     if (bcrepo_init(catalog, catalog_key, catalog_key_size)) {
         exit_code = 0;
     }

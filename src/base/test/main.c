@@ -79,18 +79,31 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     pass[1] = 0xAD;
     pass[2] = 0xBE;
     pass[3] = 0xEF;
-    protlayer = add_composite_protlayer_to_chain(protlayer, "blowfish-cbc,hmac-sha3-512-blowfish-ofb",
-                                                 &pass, &pass_size, get_hash_processor("tiger"), NULL);
-    CUTE_ASSERT(protlayer != NULL);
-    out = blackcat_otp_encrypt_data(protlayer, in, in_size, &out_size);
-    CUTE_ASSERT(out != NULL);
-    plain = blackcat_otp_decrypt_data(protlayer, out, out_size, &plain_size);
-    CUTE_ASSERT(plain != NULL);
-    CUTE_ASSERT(plain_size == in_size);
-    CUTE_ASSERT(memcmp(plain, in, plain_size) == 0);
-    kryptos_freeseg(out, out_size);
-    kryptos_freeseg(plain, plain_size);
-    del_protlayer_chain_ctx(protlayer);
+    kryptos_u8_t *cascade[] = { "blowfish-cbc",
+                                "blowfish-cbc,hmac-sha3-512-blowfish-ofb",
+                                "blowfish-cbc,hmac-sha3-512-blowfish-ofb,blowfish-ofb",
+                                "blowfish-cbc,blowfish-ctr,hmac-sha3-512-blowfish-ofb,blowfish-ofb" };
+    size_t cascade_nr = sizeof(cascade) / sizeof(cascade[0]), c;
+
+    // INFO(Rafael): We need to ascertain the right division of the protection layer in order to encrypt
+    //               the cryptogram and its one-time pad key. Thus we will test protection layers of different sizes.
+    //               If someone screwed it up this test will let we know.
+
+    for (c = 0; c < cascade_nr; c++) {
+        protlayer = add_composite_protlayer_to_chain(protlayer, cascade[c],
+                                                     &pass, &pass_size, get_hash_processor("tiger"), NULL);
+        CUTE_ASSERT(protlayer != NULL);
+        out = blackcat_otp_encrypt_data(protlayer, in, in_size, &out_size);
+        CUTE_ASSERT(out != NULL);
+        plain = blackcat_otp_decrypt_data(protlayer, out, out_size, &plain_size);
+        CUTE_ASSERT(plain != NULL);
+        CUTE_ASSERT(plain_size == in_size);
+        CUTE_ASSERT(memcmp(plain, in, plain_size) == 0);
+        kryptos_freeseg(out, out_size);
+        kryptos_freeseg(plain, plain_size);
+        del_protlayer_chain_ctx(protlayer);
+        protlayer = NULL;
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(random_printable_padding_tests)

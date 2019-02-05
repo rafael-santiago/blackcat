@@ -383,6 +383,7 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     fprintf(stdout, " |_ key-hash: %s\n", get_hash_processor_name(catalog->key_hash_algo));
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
     fprintf(stdout, " |_ protection-layer: %s\n", catalog->protection_layer);
+    fprintf(stdout, " |_ cascade type: %s\n", (catalog->otp) ? "one-time pad" : "single flow");
     fprintf(stdout, " |_ encoder: %s\n", get_encoder_name(catalog->encoder));
 
     no_error = 1;
@@ -392,12 +393,12 @@ bcrepo_info_epilogue:
     return no_error;
 }
 
-int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int overwrite) {
+int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder encoder, const int otp, const int overwrite) {
     FILE *fp = NULL;
-    kryptos_u8_t *chaff = NULL;
+    kryptos_u8_t *chaff = NULL, *pem = NULL;
     int no_error = 0;
     kryptos_task_ctx t, *ktask = &t;
-    size_t temp_size;
+    size_t temp_size, pem_size;
     struct stat st;
     int del_file = 1;
 
@@ -423,6 +424,20 @@ int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder
         goto bcrepo_decoy_epilogue;
     }
 
+    if (otp) {
+        if (kryptos_pem_put_data(&pem, &pem_size, BLACKCAT_OTP_D, chaff, chaff_size) != kKryptosSuccess) {
+            fprintf(stderr, "ERROR: Unable to encode into a PEM buffer.\n");
+            goto bcrepo_decoy_epilogue;
+        }
+        kryptos_freeseg(chaff, chaff_size);
+        chaff = pem;
+        temp_size = pem_size;
+        pem = NULL;
+        pem_size = 0;
+    } else if (encoder == NULL) {
+        temp_size = chaff_size;
+    }
+
     if (encoder != NULL) {
         kryptos_task_set_encode_action(ktask);
         kryptos_task_set_in(ktask, chaff, chaff_size);
@@ -436,8 +451,6 @@ int bcrepo_decoy(const char *filepath, const size_t chaff_size, blackcat_encoder
 
         chaff = ktask->out;
         temp_size = ktask->out_size;
-    } else {
-        temp_size = chaff_size;
     }
 
     if (fwrite(chaff, 1, temp_size, fp) != temp_size) {
@@ -465,6 +478,10 @@ bcrepo_decoy_epilogue:
         kryptos_freeseg(chaff, temp_size);
         chaff = NULL;
         temp_size = 0;
+    }
+
+    if (pem != NULL) {
+        kryptos_freeseg(pem, pem_size);
     }
 
     return no_error;
@@ -606,8 +623,20 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     char filepath[4096];
     int no_error = 1;
     size_t temp_size;
+    int inv_cascade_type;
+
+    inv_cascade_type = (cp->otp && cp->encrypt_data != blackcat_otp_encrypt_data) ||
+                       (!cp->otp && cp->encrypt_data != blackcat_encrypt_data);
+
+    if (inv_cascade_type) {
+        cp->otp = !cp->otp;
+    }
 
     bcrepo_unlock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
+
+    if (inv_cascade_type) {
+        cp->otp = !cp->otp;
+    }
 
     cp->catalog_key_hash_algo = catalog_hash_proc;
     cp->catalog_key_hash_algo_size = get_hash_size(get_hash_processor_name(catalog_hash_proc));
@@ -658,6 +687,14 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             no_error = 0;
             goto bcrepo_reset_repo_settings_epilogue;
         }
+    }
+
+    if (cp->otp) {
+        cp->encrypt_data = blackcat_otp_encrypt_data;
+        cp->decrypt_data = blackcat_otp_decrypt_data;
+    } else {
+        cp->encrypt_data = blackcat_encrypt_data;
+        cp->decrypt_data = blackcat_decrypt_data;
     }
 
     bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
