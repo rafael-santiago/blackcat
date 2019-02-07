@@ -1,0 +1,25 @@
+Blackcat challange
+==================
+
+Maybe you like to say that the encryption provided by this tool is weak. The ideas behind the software are totally wrong or
+you just want to audit the software in order to proof that everything is alright. The best way of doing any of those things
+is by trying to break blackcat encryption. No talk, just cryptanalysis and results. This mindset is awesome, thank you!
+
+This directory gathers some subdirectories, each subdirectory here is a blackcat repo. The challenge is simple:
+
+                            c    r    a    c    k       t    h    e    m    .    .    .
+_______________________________________________________________________________________________________________________________
+
+                                +=========+====================================+
+                                | Repo    |     Info                           |
+                                +=========+====================================+
+                                | Mercury | a keyed-alike repo                 |
+                                +---------+------------------------------------+
+_______________________________________________________________________________________________________________________________
+
+                                g    o    o    d       l    u    c    k    !
+
+If you cracked any of those repos, please let me know and thank you!
+
+Rafael Santiago [Thu 07 Feb 2019 11:40:25 AM AKST]
+--

@@ -9,6 +9,8 @@ Including:
     - The possibility of cascading many ciphers
       (the cipher suite is configurable during the build);
 
+    - Two ways of encrypting by cascading: single cascading, one-time based scheme;
+
     - HMACs for every block cipher supported. By using the following hash functions:
       SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, Tiger, Whirlpool;
 
