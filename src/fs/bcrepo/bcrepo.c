@@ -380,7 +380,11 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     fprintf(stdout, ".bcrepo\n");
     fprintf(stdout, " |_ bc-version: %s\n", catalog->bc_version);
     fprintf(stdout, " |_ catalog-hash: %s\n", get_hash_processor_name(catalog->catalog_key_hash_algo));
-    fprintf(stdout, " |_ key-hash: %s\n", get_hash_processor_name(catalog->key_hash_algo));
+    fprintf(stdout, " |_ key-hash: %s", get_hash_processor_name(catalog->key_hash_algo));
+    if (catalog->key_hash_algo == blackcat_bcrypt) {
+        fprintf(stdout, " (cost=%d)", (catalog->key_hash[4] - '0') * 10 + (catalog->key_hash[5] - '0'));
+    }
+    fprintf(stdout, "\n");
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
     fprintf(stdout, " |_ protection-layer: %s\n", catalog->protection_layer);
     fprintf(stdout, " |_ cascade type: %s\n", (catalog->otp) ? "one-time pad" : "single flow");
