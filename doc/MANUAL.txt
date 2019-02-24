@@ -908,6 +908,29 @@ the data was sent, in this case Alice will not face the risk of Bob censor her d
 Otherwise it would be better Alice apply some steganography over the decoy data, too.
 It is out of the scope of this manual.
 
+Untouching files
+================
+
+Time attributes can be harmful when you really want to promote a deniable encryption. Because by the access, modification or
+creation time an attacker can get a lot of useful information in order to separate want is a decoy and what is the real files.
+
+Blackcat implements the command 'untouch' in order to mitigate this problem, the usage is straightforward:
+
+    alice@RedBarn:~/wonderland# blackcat untouch 0101.txt report/002.txt abc/xyz.jpeg yyz/*.pdf
+    alice@RedBarn:~/wonderland# _
+
+The command presented does not set the creation time. If you also want to set it you should use the flag '--hard' when
+executing untouch:
+
+    alice@RedBarn:~/wonderland# blackcat untouch *.txt --hard
+    alice@RedBarn:~/wonderland# _
+
+The untouch command will set the time attribute to the "blackcat epoch" (11/05/1970 16:05:00).
+
+Always when you lock/unlock files, set any attribute or even read/write it directly, the time attributes will change. So if
+you really want to let a null time information for a possible attacker, the command untouch must be the last command. After
+locking every sensitive data run a untouch command over the whole repo.
+
 Protecting network traffic
 ==========================
 

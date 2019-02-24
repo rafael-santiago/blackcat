@@ -210,6 +210,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     };
     size_t ntool_out_nr = sizeof(ntool_out) / sizeof(ntool_out[0]), n;
     char cmdline[4096];
+    struct stat st_old, st_curr;
 
     // INFO(Rafael): Just housekeeping.
 
@@ -2013,6 +2014,63 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("status", "ThingsIUsedToDo", NULL) == 0);
 
     CUTE_ASSERT(blackcat("deinit", "ThingsIUsedToDo", NULL) == 0);
+
+    remove("s1.txt");
+    remove("etc/s2.txt");
+    remove("s3.txt");
+    remove("p.txt");
+    rmdir("etc");
+
+    // INFO(Rafael): Untouch tests.
+
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=8 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc --keyed-alike",
+                         "Exempt\nExempt", NULL) == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    CUTE_ASSERT(blackcat("add s1.txt --lock", "Exempt", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt --lock", "Exempt", NULL) == 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "Exempt", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt --lock", "Exempt", NULL) == 0);
+
+#define BLACKCAT_EPOCH 26705100
+
+    CUTE_ASSERT(stat("etc/s2.txt", &st_old) == 0);
+
+    CUTE_ASSERT(blackcat("untouch etc/s2.txt", "Exempt", NULL) == 0);
+
+    CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
+
+    CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
+    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
+    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) == 0);
+
+    CUTE_ASSERT(blackcat("untouch etc/s2.txt --hard", "Exempt", NULL) == 0);
+
+    CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
+
+    CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
+    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
+    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
+    CUTE_ASSERT(st_curr.st_ctim.tv_sec == BLACKCAT_EPOCH);
+
+#undef BLACKCAT_EPOCH
+
+    CUTE_ASSERT(blackcat("deinit", "Exempt", NULL) == 0);
 
     remove("s1.txt");
     remove("etc/s2.txt");

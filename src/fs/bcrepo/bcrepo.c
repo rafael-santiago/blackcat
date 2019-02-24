@@ -23,9 +23,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <utime.h>
 
 // INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
 //               tool will generate unsupported data for the fs module.
@@ -55,6 +57,8 @@
 #define BCREPO_RECUR_LEVEL_LIMIT 1024
 
 #define BLACKCAT_DEVPATH "/dev/" CDEVNAME
+
+#define BLACKCAT_EPOCH 26705100
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
@@ -181,6 +185,40 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
                               const kryptos_u8_t *data, const size_t data_size);
 
 static int is_metadata_compatible(const char *version);
+
+static int setfilectime(const char *path);
+
+int bcrepo_untouch(bfs_catalog_ctx *catalog,
+                   const char *rootpath, const size_t rootpath_size,
+                   const char *pattern, const size_t pattern_size, const int hard) {
+    int touch_nr = 0, done;
+    struct utimbuf tmb;
+    char fullpath[4096];
+    bfs_catalog_relpath_ctx *fp;
+
+    if (catalog == NULL) {
+        goto bcrepo_untouch_epilogue;
+    }
+
+    tmb.actime = BLACKCAT_EPOCH;
+    tmb.modtime = BLACKCAT_EPOCH;
+
+    for (fp = catalog->files; fp != NULL; fp = fp->next) {
+        if (pattern == NULL || strglob(fp->path, pattern)) {
+            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, fp->path, fp->path_size);
+            done = (hard) ? (utime(fullpath, &tmb) == 0 && setfilectime(fullpath) == 0) : (utime(fullpath, &tmb) == 0);
+            if (done) {
+                touch_nr++;
+            } else {
+                fprintf(stderr, "WARN: Unable to set file time attributes for '%s'.\n", fullpath);
+            }
+        }
+    }
+
+bcrepo_untouch_epilogue:
+
+    return touch_nr;
+}
 
 int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
     int no_error = 0;
@@ -953,6 +991,71 @@ bcrepo_unroll_ball_of_wool_epilogue:
     }
 
     return no_error;
+}
+
+static int setfilectime(const char *path) {
+    // WARN(Rafael): As you should know, in Unix by default (Yo!), we cannot set the creation time (ctime) of a file
+    //               by using any Posix function. Functions such as utime(), utimes() are capable of only set
+    //               the access time and/or the modification time of a file.
+    //
+    //               However, the creation time can be indirectly set when the file is created (sorry, obvious) and also when
+    //               its attributes are changed. Taking into consideration this system behavior, setfilectime() will:
+    //
+    //                          - get the current system time;
+    //                          - change the system time to BLACKCAT_EPOCH (11/05/1970 16:05:00);
+    //                          - will the the original file permissions;
+    //                          - change the file permissions (0777);
+    //                          - change it back to the original ones;
+    //                          - re-adjust the system time to the current time (considering the elapsed time);
+    //
+    //               A noisy but effective function.
+    //
+    struct timeval tv_old, bc_epch, tv_curr;
+    struct timezone tz_old;
+    int err, tset = 0;
+    struct stat st_old;
+    mode_t temp_mode;
+
+    if ((err = gettimeofday(&tv_old, &tz_old)) != 0) {
+        goto setfilectime_epilogue;
+    }
+
+    tset = 1;
+
+    bc_epch.tv_sec = BLACKCAT_EPOCH;
+    bc_epch.tv_usec = 0;
+
+    if ((err = settimeofday(&bc_epch, &tz_old)) != 0) {
+        goto setfilectime_epilogue;
+    }
+
+    if ((err = bstat(path, &st_old)) != 0) {
+        goto setfilectime_epilogue;
+    }
+
+    tset |= 2;
+
+    temp_mode = S_IRUSR | S_IWUSR | S_IXUSR |
+                S_IRGRP | S_IWGRP | S_IXGRP |
+                S_IROTH | S_IWOTH | S_IXOTH;
+
+    if ((err = chmod(path, temp_mode)) != 0) {
+        goto setfilectime_epilogue;
+    }
+
+setfilectime_epilogue:
+
+    if (tset & 2) {
+        chmod(path, st_old.st_mode);
+    }
+
+    if (tset & 1) {
+        gettimeofday(&tv_curr, &tz_old);
+        tv_old.tv_sec += (tv_curr.tv_sec - bc_epch.tv_sec);
+        settimeofday(&tv_old, &tz_old);
+    }
+
+    return err;
 }
 
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
@@ -3384,3 +3487,5 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 #undef BCREPO_RECUR_LEVEL_LIMIT
 
 #undef BLACKCAT_DEVPATH
+
+#undef BLACKCAT_EPOCH
