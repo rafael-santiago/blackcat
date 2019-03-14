@@ -71,6 +71,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     es->key[0] = blackcat_getuserkey(&es->key_size[0]);
 
     if (es->key[0] == NULL) {
+        accacia_restorecursorposition();
+        accacia_delline();
+        fflush(stdout);
         fprintf(stderr, "ERROR: Null key.\n");
         goto new_blackcat_exec_session_ctx_epilogue;
     }
@@ -93,6 +96,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
             es->key[1] = blackcat_getuserkey(&es->key_size[1]);
 
             if (es->key[1] == NULL) {
+                accacia_restorecursorposition();
+                accacia_delline();
+                fflush(stdout);
                 fprintf(stderr, "ERROR: Null key.\n");
                 goto new_blackcat_exec_session_ctx_epilogue;
             }
@@ -110,6 +116,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
             es->key[1] = (kryptos_u8_t *) kryptos_newseg(es->key_size[0]);
 
             if (es->key[1] == NULL) {
+                accacia_restorecursorposition();
+                accacia_delline();
+                fflush(stdout);
                 fprintf(stderr, "ERROR: Null key.\n");
                 goto new_blackcat_exec_session_ctx_epilogue;
             }

@@ -46,6 +46,10 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
 
     size = strlen(line) - 1;
 
+    if (size == 0) {
+        goto blackcat_getuserkey_epilogue;
+    }
+
     key = (kryptos_u8_t *) kryptos_newseg(size);
     kp = key;
     lp = &line[0];
