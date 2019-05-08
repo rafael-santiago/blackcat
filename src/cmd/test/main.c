@@ -2055,7 +2055,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
     CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
-    CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) == 0);
+    CUTE_ASSERT(st_curr.st_ctim.tv_sec != BLACKCAT_EPOCH);
 
     CUTE_ASSERT(blackcat("untouch etc/s2.txt --hard", "Exempt", NULL) == 0);
 
