@@ -10,6 +10,7 @@
 #include <ctx/fsctx.h>
 #include <ctx/ctx.h>
 #include <bcrepo/bcrepo.h>
+#include <bcrepo/config.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <fs/strglob.h>
@@ -42,6 +43,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_decoy_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_incompatibility_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_detach_attach_metainfo_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_untouch_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_config_tests);
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
@@ -83,6 +85,60 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_decoy_tests);
     CUTE_RUN_TEST(bcrepo_detach_attach_metainfo_tests);
     CUTE_RUN_TEST(bcrepo_untouch_tests);
+    CUTE_RUN_TEST(bcrepo_config_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_config_tests)
+    char *config = "default-opts:\nword0 word1 word2\n\n"
+                   "hello:\ncommand line 0\ncommand line 1\ncommand line 2\n\n";
+    FILE *fp;
+    struct bcrepo_config_ctx *cfg;
+
+    cfg = bcrepo_ld_config();
+    CUTE_ASSERT(cfg == NULL);
+
+    CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+
+    fp = fopen(".bcrepo/CONFIG", "w");
+    CUTE_ASSERT(fp != NULL);
+    fprintf(fp, "%s", config);
+    fclose(fp);
+
+    cfg = bcrepo_ld_config();
+
+    CUTE_ASSERT(cfg != NULL);
+
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "unknown-section") == 0);
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "DEFAULT-OPTS") == 0);
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "default-opts") == 1);
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "Hello") == 0);
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "hello") == 1);
+
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "hello") == 1);
+    CUTE_ASSERT(bcrepo_config_get_next_line(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->line, "command line 0", cfg->line_end - cfg->line) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_line(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->line, "command line 1", cfg->line_end - cfg->line) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_line(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->line, "command line 2", cfg->line_end - cfg->line) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_line(cfg) == 0);
+    CUTE_ASSERT(cfg->line == NULL && cfg->line_end == NULL);
+
+    CUTE_ASSERT(bcrepo_config_get_section(cfg, "default-opts") == 1);
+    CUTE_ASSERT(bcrepo_config_get_next_word(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->word, "word0", cfg->word_end - cfg->word) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_word(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->word, "word1", cfg->word_end - cfg->word) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_word(cfg) == 1);
+    CUTE_ASSERT(memcmp(cfg->word, "word2", cfg->word_end - cfg->word) == 0);
+    CUTE_ASSERT(bcrepo_config_get_next_word(cfg) == 0);
+    CUTE_ASSERT(cfg->word == NULL && cfg->word_end == NULL);
+
+    bcrepo_release_config(cfg);
+
+    CUTE_ASSERT(remove(".bcrepo/CONFIG") == 0);
+
+    CUTE_ASSERT(rmdir(".bcrepo") == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_untouch_tests)

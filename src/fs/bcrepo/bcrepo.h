@@ -11,6 +11,9 @@
 #include <basedefs/defs.h>
 #include <fs/base/types.h>
 
+#define BCREPO_HIDDEN_DIR ".bcrepo"
+#define BCREPO_HIDDEN_DIR_SIZE 7
+
 typedef int (*bfs_checkpoint_func)(void *ckpt_args);
 
 char *remove_go_ups_from_path(char *path, const size_t path_size);
