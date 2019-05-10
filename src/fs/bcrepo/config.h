@@ -8,6 +8,9 @@
 #ifndef BLACKCAT_FS_BCREPO_CONFIG_H
 #define BLACKCAT_FS_BCREPO_CONFIG_H 1
 
+#define BCREPO_CONFIG_FILE "CONFIG"
+#define BCREPO_CONFIG_FILE_SIZE 6
+
 struct bcrepo_config_ctx {
     struct bcrepo_config_priv_ctx *priv;
     char *line, *line_end;

@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define CONFIG_FILENAME "CONFIG"
-
 struct bcrepo_config_priv_ctx {
     char *head, *tail;
     char *sec, *sec_end;
@@ -26,7 +24,7 @@ struct bcrepo_config_ctx *bcrepo_ld_config(void) {
     size_t sz;
 
     if (rootpath  != NULL) {
-        sprintf(cfgpath, "%s/" BCREPO_HIDDEN_DIR "/" CONFIG_FILENAME, rootpath);
+        sprintf(cfgpath, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, rootpath);
         kryptos_freeseg(rootpath, strlen(rootpath));
         rootpath = NULL;
 
@@ -180,5 +178,3 @@ int bcrepo_config_get_next_word(struct bcrepo_config_ctx *cfg) {
 
     return 1;
 }
-
-#undef CONFIG_FILENAME

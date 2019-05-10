@@ -1121,10 +1121,12 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     kryptos_u8_t *protkey;
     size_t protkey_size;
     char oldcwd[4096];
+    const char *config_data = ".default-options:\n--no-swap\n\n";
 
     // INFO(Rafael): Bootstrapping the test repo.
 
     remove(".bcrepo/CATALOG");
+    remove(".bcrepo/CONFIG");
     rmdir(".bcrepo");
     remove("../bow/unroll/sensitive.txt");
     remove("../bow/unroll/plain.txt");
@@ -1186,6 +1188,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
 
     rootpath_size = strlen(rootpath);
 
+    CUTE_ASSERT(save_text(config_data, strlen(config_data), ".bcrepo/CONFIG") == 1);
     CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
     CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
 
@@ -1223,9 +1226,16 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
+    data = open_text("bow/unroll/.bcrepo/CONFIG", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(config_data));
+    CUTE_ASSERT(memcmp(data, config_data, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
     remove("bow/unroll/sensitive.txt");
     remove("bow/unroll/plain.txt");
     remove("bow/unroll/.bcrepo/CATALOG");
+    remove("bow/unroll/.bcrepo/CONFIG");
     rmdir("bow/unroll/.bcrepo");
     rmdir("bow/unroll");
     rmdir("bow/");

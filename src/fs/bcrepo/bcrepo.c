@@ -6,6 +6,7 @@
  *
  */
 #include <fs/bcrepo/bcrepo.h>
+#include <fs/bcrepo/config.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <keychain/keychain.h>
@@ -770,20 +771,21 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     char filepath[4096];
     kryptos_u8_t *data = NULL;
     size_t data_size = 0;
+    struct stat st;
 
     bcrepo_lock(catalog, rootpath, rootpath_size, "*", 1, ckpt, ckpt_args);
 
     if ((wp = fopen(wpath, "wb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", wpath);
         no_error = 0;
-        goto bcrepo_roll_ball_of_wool_epilogue;
+        goto bcrepo_pack_epilogue;
     }
 
 #define roll_data(filepath, curr_path, wp, wpp, data, data_size, no_error) {\
     if ((wpp = fopen(filepath, "rb")) == NULL) {\
         fprintf(stderr, "ERROR: Unable to read the file '%s'.\n", filepath);\
         no_error = 0;\
-        goto bcrepo_roll_ball_of_wool_epilogue;\
+        goto bcrepo_pack_epilogue;\
     }\
     fseek(wpp, 0L, SEEK_END);\
     data_size = (size_t) ftell(wpp);\
@@ -791,12 +793,12 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     if ((data = (kryptos_u8_t *) kryptos_newseg(data_size)) == NULL) {\
         fprintf(stderr, "ERROR: Not enough memory.\n");\
         no_error = 0;\
-        goto bcrepo_roll_ball_of_wool_epilogue;\
+        goto bcrepo_pack_epilogue;\
     }\
     if (fread(data, 1, data_size, wpp) == -1) {\
         fprintf(stderr, "ERROR: Unable to read data from file '%s'.\n", filepath);\
         no_error = 0;\
-        goto bcrepo_roll_ball_of_wool_epilogue;\
+        goto bcrepo_pack_epilogue;\
     }\
     fclose(wpp);\
     wpp = NULL;\
@@ -804,7 +806,7 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     if (fwrite(data, 1, data_size, wp) == -1) {\
         fprintf(stderr, "ERROR: Unable to write data to file '%s'.\n", wpath);\
         no_error = 0;\
-        goto bcrepo_roll_ball_of_wool_epilogue;\
+        goto bcrepo_pack_epilogue;\
     }\
     kryptos_freeseg(data, data_size);\
     data = NULL;\
@@ -813,6 +815,14 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     bcrepo_catalog_file(filepath, sizeof(filepath) - 1, rootpath);
 
     roll_data(filepath, BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, wp, wpp, data, data_size, no_error)
+
+    bcrepo_mkpath(filepath, sizeof(filepath) - 1, rootpath, rootpath_size,
+                  BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE,
+                  BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+
+    if (bstat(filepath, &st) == 0) {
+        roll_data(filepath, BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, wp, wpp, data, data_size, no_error)
+    }
 
     for (fp = cp->files; fp != NULL; fp = fp->next) {
         bcrepo_mkpath(filepath, sizeof(filepath) - 1, rootpath, rootpath_size, fp->path, fp->path_size);
@@ -824,7 +834,7 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     fclose(wp);
     wp = NULL;
 
-bcrepo_roll_ball_of_wool_epilogue:
+bcrepo_pack_epilogue:
 
     if (data != NULL) {
         kryptos_freeseg(data, data_size);
@@ -855,13 +865,13 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
     if ((rp = bcrepo_get_rootpath()) != NULL) {
         fprintf(stderr, "ERROR: Your are inside a previosly initialized repo.\n");
         no_error = 0;
-        goto bcrepo_unroll_ball_of_wool_epilogue;
+        goto bcrepo_unpack_epilogue;
     }
 
     if ((wool = fopen(wpath, "rb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to read the file '%s'.\n", wpath);
         no_error = 0;
-        goto bcrepo_unroll_ball_of_wool_epilogue;
+        goto bcrepo_unpack_epilogue;
     }
 
     fseek(wool, 0L, SEEK_END);
@@ -872,13 +882,13 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
         no_error = 0;
         wp_data_size = 0;
-        goto bcrepo_unroll_ball_of_wool_epilogue;
+        goto bcrepo_unpack_epilogue;
     }
 
     if (fread(wp_data, 1, wp_data_size, wool) == -1) {
         fprintf(stderr, "ERROR: Unable to read data from file '%s'.\n", wpath);
         no_error = 0;
-        goto bcrepo_unroll_ball_of_wool_epilogue;
+        goto bcrepo_unpack_epilogue;
     }
 
     fclose(wool);
@@ -888,13 +898,13 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
         if (bcrepo_mkdtree(rootpath) != 0) { 
             fprintf(stderr, "ERROR: Unable to create the directory path '%s'.\n", rootpath);
             no_error = 0;
-            goto bcrepo_unroll_ball_of_wool_epilogue;
+            goto bcrepo_unpack_epilogue;
         }
         getcwd(oldcwd, sizeof(oldcwd) - 1);
         if (chdir(rootpath) != 0) {
             fprintf(stderr, "ERROR: Unable to change the current work directory.");\
             no_error = 0;
-            goto bcrepo_unroll_ball_of_wool_epilogue;
+            goto bcrepo_unpack_epilogue;
         }
     }
 
@@ -909,7 +919,7 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
     if (wp == wp_end) {\
         no_error = 0;\
         fprintf(stderr, "ERROR: Not enough data.\n");\
-        goto bcrepo_unroll_ball_of_wool_epilogue;\
+        goto bcrepo_unpack_epilogue;\
     }\
     off = wp;\
     while (wp != wp_end && *wp != '\n') {\
@@ -922,7 +932,7 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
     if ((data = (kryptos_u8_t *)kryptos_newseg(data_size)) == NULL) {\
         no_error = 0;\
         fprintf(stderr, "ERROR: Not enough memory.\n");\
-        goto bcrepo_unroll_ball_of_wool_epilogue;\
+        goto bcrepo_unpack_epilogue;\
     }\
     memcpy(data, wp, data_size);\
     wp += data_size;\
@@ -936,18 +946,18 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
         if (bcrepo_mkdtree(temp) != 0) {\
             fprintf(stderr, "ERROR: Unable to create the directory path '%s'.\n", temp);\
             no_error = 0;\
-            goto bcrepo_unroll_ball_of_wool_epilogue;\
+            goto bcrepo_unpack_epilogue;\
         }\
     }\
     if ((fp = fopen(filepath, "wb")) == NULL) {\
         fprintf(stderr, "ERROR: Unable to create the file '%s'.\n", filepath);\
         no_error = 0;\
-        goto bcrepo_unroll_ball_of_wool_epilogue;\
+        goto bcrepo_unpack_epilogue;\
     }\
     if (fwrite(data, 1, data_size, fp) == -1) {\
         fprintf(stderr, "ERROR: Unable to dump data to file '%s'.\n", filepath);\
         no_error = 0;\
-        goto bcrepo_unroll_ball_of_wool_epilogue;\
+        goto bcrepo_unpack_epilogue;\
     }\
     fclose(fp);\
     fp = NULL;\
@@ -964,7 +974,7 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
 
 #undef unroll_data
 
-bcrepo_unroll_ball_of_wool_epilogue:
+bcrepo_unpack_epilogue:
 
     if (rp != NULL) {
         kryptos_freeseg(rp, strlen(rp));
@@ -1086,7 +1096,6 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
 
     return 1;
 }
-
 
 static int bstat(const char *pathname, struct stat *buf) {
     int err = -1, fd;
@@ -1276,6 +1285,7 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
     int no_error = 1;
     char filepath[4096], tmp[4096];
     size_t filepath_size;
+    struct stat st;
 
     if (rootpath == NULL || rootpath_size == 0 || key == NULL || key_size == 0) {
         no_error = 0;
@@ -1329,6 +1339,27 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
         fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
         goto bcrepo_deinit_epilogue;
     }
+
+    temp_size = bcrepo_mkpath(filepath, sizeof(filepath), rootpath, rootpath_size,
+                              BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE,
+                              BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+
+    if (bstat(filepath, &st) == 0) {
+        if (bfs_data_wiping(rootpath, rootpath_size,
+                            filepath + rootpath_size + 1, filepath_size - rootpath_size + 1, temp_size) == 0) {
+            fprintf(stderr, "WARN: Unable to perform data wiping over the file '%s'\n", filepath);
+            fprintf(stderr, "      If you are paranoid enough you should run a data wiping software"
+                            " over your entire storage device.\n");
+        }
+
+        if (remove(filepath) != 0) {
+            no_error = 0;
+            fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
+            goto bcrepo_deinit_epilogue;
+        }
+    }
+
+    temp_size = 0;
 
     bcrepo_mkpath(filepath, sizeof(filepath), rootpath, rootpath_size, BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE);
 

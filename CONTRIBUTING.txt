@@ -44,9 +44,9 @@ been taking into consideration here.
     - The project should be the most self contained possible;
     - Git submodules are ok, but must be hosted into 'src/lib' directory;
     - This project is GPLv2. Always include the copyright disclaimer in new code files;
-    - Respect the credit of others;
-    - Give credit for others;
-    - Give credit for yourself;
+    - Respect the credit from other people;
+    - Give credit to other people;
+    - Give credit to yourself;
 
 Code constructions
 ==================
