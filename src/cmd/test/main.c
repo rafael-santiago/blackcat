@@ -72,8 +72,34 @@ CUTE_DECLARE_TEST_CASE(blackcat_clear_options_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poking_tests);
 CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_dev_tests);
+CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
+
+CUTE_TEST_CASE(mkargv_freeargv_tests)
+    char **argv = NULL;
+    int argc;
+    char *cmdline = "command --option1 --option=2 3";
+
+    CUTE_ASSERT(mkargv(argv, NULL, strlen(cmdline), &argc) == NULL);
+    CUTE_ASSERT(mkargv(argv, cmdline, 0, &argc) == NULL);
+    CUTE_ASSERT(mkargv(argv, cmdline, strlen(cmdline), NULL) == NULL);
+
+    argv = mkargv(argv, cmdline, strlen(cmdline), &argc);
+    CUTE_ASSERT(argv != NULL);
+
+    CUTE_ASSERT(argv[0] == NULL);
+    CUTE_ASSERT(argc == 4);
+    CUTE_ASSERT(memcmp(argv[1], "command", strlen("command")) == 0);
+    CUTE_ASSERT(memcmp(argv[2], "--option1", strlen("--option1")) == 0);
+    CUTE_ASSERT(memcmp(argv[3], "--option=2", strlen("--option=2")) == 0);
+    CUTE_ASSERT(memcmp(argv[4], "3", strlen("3")) == 0);
+
+    freeargv(NULL, argc);
+    freeargv(argv, 0);
+    // INFO(Rafael): If due to some reason freeargv() has failed. The memory leak checking system will warn us.
+    freeargv(argv, argc);
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(blackcat_set_argc_argv_tests);
@@ -84,6 +110,7 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(blackcat_clear_options_tests);
     CUTE_RUN_TEST(get_blackcat_version_tests);
     CUTE_RUN_TEST(levenshtein_distance_tests);
+    CUTE_RUN_TEST(mkargv_freeargv_tests);
     // INFO(Rafael): If all is okay, time to poke this shit.
     CUTE_RUN_TEST(blackcat_poking_tests);
     CUTE_RUN_TEST(blackcat_dev_tests);

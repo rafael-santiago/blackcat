@@ -121,7 +121,7 @@ int bcrepo_config_get_section(struct bcrepo_config_ctx *cfg, const char *section
 
 void bcrepo_release_config(struct bcrepo_config_ctx *cfg) {
     if (cfg != NULL) {
-        if (cfg->priv->head != NULL) {
+        if (cfg->priv != NULL && cfg->priv->head != NULL) {
             kryptos_freeseg(cfg->priv->head, cfg->priv->tail - cfg->priv->head);
             kryptos_freeseg(cfg->priv, sizeof(struct bcrepo_config_priv_ctx));
             kryptos_freeseg(cfg, sizeof(struct bcrepo_config_ctx));

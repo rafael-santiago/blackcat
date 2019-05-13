@@ -44,4 +44,8 @@ char *blackcat_get_argv(const int v);
 
 void blackcat_clear_options(void);
 
+char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc);
+
+void freeargv(char **argv, const int argc);
+
 #endif
