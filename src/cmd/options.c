@@ -131,9 +131,9 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc) {
     a = 1;
 
     bp = bp_off = buf;
-    bp_end = bp + buf_size;
+    bp_end = bp + buf_size + 1;
 
-    while (bp < bp_end + 1) {
+    while (bp < bp_end) {
         if (*bp == '\\') {
             bp++;
         } else if (*bp == ' ' || *bp == 0) {
