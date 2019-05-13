@@ -89,7 +89,7 @@ CUTE_TEST_CASE(mkargv_freeargv_tests)
     CUTE_ASSERT(argv != NULL);
 
     CUTE_ASSERT(argv[0] == NULL);
-    CUTE_ASSERT(argc == 4);
+    CUTE_ASSERT(argc == 5);
     CUTE_ASSERT(memcmp(argv[1], "command", strlen("command")) == 0);
     CUTE_ASSERT(memcmp(argv[2], "--option1", strlen("--option1")) == 0);
     CUTE_ASSERT(memcmp(argv[3], "--option=2", strlen("--option=2")) == 0);

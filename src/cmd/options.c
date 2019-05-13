@@ -109,7 +109,7 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc) {
     }
 
     bp = buf;
-    bp_end = bp + buf_size;
+    bp_end = bp + buf_size + 1;
 
     *argc = 1;
 
@@ -160,7 +160,7 @@ void freeargv(char **argv, const int argc) {
         return;
     }
 
-    for (a = 0; a <= argc; a++) {
+    for (a = 0; a < argc; a++) {
         if (argv[a] != NULL) {
             kryptos_freeseg(argv[a], strlen(argv[a]));
         }
