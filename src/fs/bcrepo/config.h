@@ -11,6 +11,8 @@
 #define BCREPO_CONFIG_FILE "CONFIG"
 #define BCREPO_CONFIG_FILE_SIZE 6
 
+#define BCREPO_CONFIG_SECTION_DEFAULT_ARGS "default-args:"
+
 struct bcrepo_config_ctx {
     struct bcrepo_config_priv_ctx *priv;
     char *line, *line_end;
