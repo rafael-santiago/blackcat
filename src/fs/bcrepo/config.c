@@ -160,11 +160,17 @@ int bcrepo_config_get_next_word(struct bcrepo_config_ctx *cfg) {
     }
 
     if (cfg->word == NULL || cfg->word_end == NULL) {
-        cfg->word = cfg->word_end = cfg->priv->sec + (*cfg->priv->sec == '\n');
+        cfg->word = cfg->word_end = cfg->priv->sec + (*cfg->priv->sec == '\n' ||
+                                                      *cfg->priv->sec == '\t' || 
+                                                      *cfg->priv->sec == ' ');
     } else {
         cfg->word_end += 1;
         cfg->word = cfg->word_end;
         cfg->word_end += 1;
+    }
+
+    while (cfg->word != cfg->priv->sec_end && (*cfg->word == ' ' || *cfg->word == '\t' || *cfg->word == '\n')) {
+        cfg->word++;
     }
 
     if (cfg->word >= cfg->priv->sec_end) {
@@ -172,7 +178,9 @@ int bcrepo_config_get_next_word(struct bcrepo_config_ctx *cfg) {
         return 0;
     }
 
-    while (cfg->word_end != cfg->priv->sec_end && *cfg->word_end != ' ' && *cfg->word_end != '\n') {
+    cfg->word_end = cfg->word;
+
+    while (cfg->word_end != cfg->priv->sec_end && *cfg->word_end != ' ' && *cfg->word_end != '\n' && *cfg->word_end != '\t') {
         cfg->word_end += 1;
     }
 

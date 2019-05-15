@@ -9,6 +9,7 @@
 #include <cmd/options.h>
 #include <cmd/version.h>
 #include <cmd/levenshtein_distance.h>
+#include <fs/bcrepo/config.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -50,6 +51,13 @@ static char arg2[] = "--foo=bar";
 static char arg3[] = "--bar=foo";
 static char arg4[] = "--bool";
 
+static char path_default_args[] = "";
+static char cmd_default_args[] = "meow";
+static char arg2_default_args[] = "--foo=bar";
+static char arg3_default_args[] = "--bar=foo";
+static char arg4_default_args[] = "--bool";
+
+
 static char *argv[] = {
     path,
     cmd,
@@ -73,8 +81,56 @@ CUTE_DECLARE_TEST_CASE(blackcat_poking_tests);
 CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_dev_tests);
 CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
+
+CUTE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests)
+    char *default_args_data = BCREPO_CONFIG_SECTION_DEFAULT_ARGS ":\n"
+                              "\t--no-swap\t--dummy-arg  \t\t  \t  --wah-wah-wah-wah-wah=silly"
+                              "\n\n";
+    char *data;
+    int a;
+
+    argv[0] = path_default_args;
+    argv[1] = cmd_default_args;
+    argv[2] = arg2_default_args;
+    argv[3] = arg3_default_args;
+    argv[4] = arg4_default_args;
+
+    CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG", default_args_data, strlen(default_args_data)) == 1);
+
+    blackcat_set_argc_argv(argc, argv);
+
+    // INFO(Rafael): When default-args is defined in .bcrepo/CONFIG the options from original command line are zeroed after
+    //               blackcat_set_argc_argv call.
+
+    for (a = 0; a < argc; a++) {
+        CUTE_ASSERT(strlen(argv[a]) == 0);
+    }
+
+    CUTE_ASSERT((data = blackcat_get_command()) != NULL);
+    CUTE_ASSERT(memcmp(data, "meow", strlen(data)) == 0);
+
+    CUTE_ASSERT((data = blackcat_get_option("foo", NULL)) != NULL);
+    CUTE_ASSERT(memcmp(data, "bar", strlen(data)) == 0);
+
+    CUTE_ASSERT((data = blackcat_get_option("bar", NULL)) != NULL);
+    CUTE_ASSERT(memcmp(data, "foo", strlen(data)) == 0);
+
+    CUTE_ASSERT((data = blackcat_get_option("wah-wah-wah-wah-wah", NULL)) != NULL);
+    CUTE_ASSERT(memcmp(data, "silly", strlen(data)) == 0);
+
+    CUTE_ASSERT(blackcat_get_bool_option("bool", 0) == 1);
+    CUTE_ASSERT(blackcat_get_bool_option("dummy-arg", 0) == 1);
+    CUTE_ASSERT(blackcat_get_bool_option("no-swap", 0) == 1);
+
+    blackcat_clear_options(); // INFO(Rafael): If we got a leak it will break at the end of the tests.
+
+    CUTE_ASSERT(remove(".bcrepo/CONFIG") == 0);
+    CUTE_ASSERT(rmdir(".bcrepo") == 0);
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(mkargv_freeargv_tests)
     char **argv = NULL;
@@ -111,6 +167,7 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(get_blackcat_version_tests);
     CUTE_RUN_TEST(levenshtein_distance_tests);
     CUTE_RUN_TEST(mkargv_freeargv_tests);
+    CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
     // INFO(Rafael): If all is okay, time to poke this shit.
     CUTE_RUN_TEST(blackcat_poking_tests);
     CUTE_RUN_TEST(blackcat_dev_tests);
