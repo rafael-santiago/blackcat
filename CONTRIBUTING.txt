@@ -41,7 +41,7 @@ been taking into consideration here.
     - Do not use 'func()' when prototyping use 'func(void)';
     - Arrays as function parameters are not welcome, use pointers;
     - Pointers are good. Taking into consideration that you are a fluent and experienced C programmer;
-    - The project should be the most self contained possible;
+    - The project should be the most self-contained possible;
     - Git submodules are ok, but must be hosted into 'src/lib' directory;
     - This project is GPLv2. Always include the copyright disclaimer in new code files;
     - Respect the credit from other people;

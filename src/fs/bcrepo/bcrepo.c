@@ -29,7 +29,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <utime.h>
-#include <assert.h>
 
 // INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
 //               tool will generate unsupported data for the fs module.
@@ -1574,8 +1573,6 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
 
     in = bcrepo_read_file_data(rootpath, rootpath_size, path, path_size, &in_size);
 
-    assert(in != NULL);
-
     if (in == NULL) {
         no_error = 0;
         goto unl_handle_meta_proc_epilogue;
@@ -1593,8 +1590,6 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
         while ((no_error = bfs_data_wiping(rootpath, rootpath_size, path, path_size, in_size)) == 0 && ntry-- > 0)
             ;
 
-        assert(no_error != 0);
-
         if (ntry == 0 && no_error == 0) {
             goto unl_handle_meta_proc_epilogue;
         }
@@ -1602,16 +1597,12 @@ static int unl_handle_meta_proc(const char *rootpath, const size_t rootpath_size
 
     out = dproc(protlayer, in, in_size, &out_size);
 
-    assert(out != NULL);
-
     if (out == NULL) {
         no_error = 0;
         goto unl_handle_meta_proc_epilogue;
     }
 
     no_error = bcrepo_write_file_data(rootpath, rootpath_size, path, path_size, out, out_size);
-
-    assert(no_error != 0);
 
 unl_handle_meta_proc_epilogue:
 
@@ -2939,7 +2930,10 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
     };
     static size_t dumpers_nr = sizeof(dumpers) / sizeof(dumpers[0]), d;
     kryptos_u8_t *o;
-#define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done && (d)[3].done && (d)[4].done && (d)[5].done )
+    // WARN(Rafael): All dumpers must be included during this check. If you have added a new one in dumpers[] add its
+    //               writing verification here.
+#define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done &&\
+                           (d)[3].done && (d)[4].done && (d)[5].done && (d)[6].done )
 
     for (d = 0; d < dumpers_nr; d++) {
         dumpers[d].done = 0;
