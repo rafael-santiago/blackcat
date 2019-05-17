@@ -2729,7 +2729,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     fread(o, 1, *out_size, fp);
 
     // INFO(Rafael): We will keep the catalog encrypted in memory, however, we need to know how to
-    //               open it in the next catalog stat operation. So let's 'trigger' the correct
+    //               open it at the next catalog stat operation. So let's 'trigger' the correct
     //               hash algorithm (key crunching) and the HMAC processor.
 
     key_hash_algo = kryptos_pem_get_data(BCREPO_PEM_KEY_HASH_ALGO_HDR, o, *out_size, &key_hash_algo_size);
