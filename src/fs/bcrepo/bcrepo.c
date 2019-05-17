@@ -3160,7 +3160,7 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
     // WARN(Rafael): All dumpers must be included during this check. If you have added a new one in dumpers[] add its
     //               writing verification here.
 #define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done &&\
-                           (d)[3].done && (d)[4].done && (d)[5].done && (d)[6].done )
+                           (d)[3].done && (d)[4].done && (d)[5].done && (d)[6].done && (d)[7].done )
 
     for (d = 0; d < dumpers_nr; d++) {
         dumpers[d].done = 0;
