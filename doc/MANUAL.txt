@@ -11,8 +11,8 @@ Talking about cryptography, I am paranoid. I have been spending some years study
 subject and more a study more paranoid I become. This tool is merely a file encryptor with my own
 paranoid cares about how to actually encrypt data stored in a filesystem.
 
-I hate letting all files unencrypted when using encrypting tools based on storage devices. If you
-are paranoid like me, maybe you will like the way of how blackcat works.
+I hate letting all files exposed when using encryption tools based on storage devices. If you are
+paranoid like me, maybe you will like the way of how blackcat works.
 
 The general approach of this tool is to provide you a way of protecting an entire directory and
 its sub-directories. Due to it, I have designed the application to work similarly as a scm tool,
@@ -185,7 +185,7 @@ With so many encryption schemes, how can I remember the exact name of one?
 ==========================================================================
 
 Blackcat implements a command called 'show'. With the 'show' command you can list some capabilities
-present in your blackcat's copy. Since blackcat is an encrypting tool its capabilities are related
+present in your blackcat's copy. Since blackcat is an encryption tool its capabilities are related
 to ciphers, hmacs schemes, hashes and also encoders. The command will list the exact name of how a
 specific algorithm/scheme is internally recognized by blackcat.
 

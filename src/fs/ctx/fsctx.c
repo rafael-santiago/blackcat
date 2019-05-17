@@ -182,6 +182,11 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
         kryptos_freeseg(catalog->bc_version, strlen(catalog->bc_version));
     }
 
+    if (catalog->config_hash != NULL) {
+        kryptos_freeseg(catalog->config_hash, catalog->config_hash_size);
+        catalog->config_hash_size = 0;
+    }
+
     catalog->key_hash_algo = NULL;
     catalog->key_hash_algo_size = NULL;
 
@@ -222,6 +227,8 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
         catalog->key_hash_size = 0;
         catalog->files = NULL;
         catalog->encoder = NULL;
+        catalog->config_hash = NULL;
+        catalog->config_hash_size = 0;
     }
     return catalog;
 }

@@ -11,6 +11,11 @@
 #include <basedefs/defs.h>
 #include <fs/base/types.h>
 
+// INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
+//               tool will generate unsupported data for the fs module.
+
+#define BCREPO_METADATA_VERSION                 "1.1.0"
+
 #define BCREPO_HIDDEN_DIR ".bcrepo"
 #define BCREPO_HIDDEN_DIR_SIZE 7
 
@@ -102,5 +107,13 @@ int bcrepo_info(bfs_catalog_ctx *catalog);
 int bcrepo_detach_metainfo(const char *dest, const size_t dest_size);
 
 int bcrepo_attach_metainfo(const char *src, const size_t src_size);
+
+int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size);
+
+int bcrepo_config_update(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                         bfs_checkpoint_func ckpt, void *ckpt_args);
+
+int bcrepo_config_remove(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                         bfs_checkpoint_func ckpt, void *ckpt_args);
 
 #endif

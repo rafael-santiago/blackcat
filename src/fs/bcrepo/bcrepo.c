@@ -30,11 +30,6 @@
 #include <errno.h>
 #include <utime.h>
 
-// INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
-//               tool will generate unsupported data for the fs module.
-
-#define BCREPO_METADATA_VERSION                 "1.0.0"
-
 #define BCREPO_CATALOG_BC_VERSION               "bc-version: "
 #define BCREPO_CATALOG_KEY_HASH_ALGO            "key-hash-algo: "
 #define BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO  "protlayer-key-hash-algo: "
@@ -42,6 +37,7 @@
 #define BCREPO_CATALOG_PROTECTION_LAYER         "protection-layer: "
 #define BCREPO_CATALOG_FILES                    "files: "
 #define BCREPO_CATALOG_OTP                      "otp: "
+#define BCREPO_CATALOG_CONFIG_HASH              "config-hash: "
 
 #define BCREPO_PEM_KEY_HASH_ALGO_HDR "BCREPO KEY HASH ALGO"
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
@@ -81,6 +77,8 @@ static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs
 
 static kryptos_u8_t *otp_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
+static kryptos_u8_t *config_hash_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
+
 static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
                                                   const kryptos_u8_t *key, const size_t key_size,
                                                   bfs_catalog_ctx *catalog);
@@ -102,6 +100,8 @@ static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in,
 static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
 static int otp_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
 static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
@@ -186,6 +186,230 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
 static int is_metadata_compatible(const char *version);
 
 static int setfilectime(const char *path);
+
+int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size) {
+    kryptos_u8_t *config_data = NULL;
+    size_t config_data_size;
+    FILE *fp = NULL;
+    int clean = 0;
+    char temp[4096];
+    kryptos_u8_t *salt = NULL;
+    size_t salt_size;
+    kryptos_task_ctx t, *ktask = &t;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (catalog == NULL || rootpath == NULL || rootpath_size == 0 ||
+        catalog->config_hash == NULL || catalog->config_hash_size == 0) {
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    bcrepo_hex_to_seed(&salt, &salt_size,
+                       catalog->config_hash + (catalog->config_hash_size >> 1),
+                       catalog->config_hash_size - (catalog->config_hash_size >> 1));
+
+    bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
+                  BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+
+    if ((fp = fopen(temp, "r")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to open the config file for this repo.\n");
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    config_data_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    if ((config_data = (kryptos_u8_t *) kryptos_newseg(config_data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    if (fread(config_data, 1, config_data_size, fp) != config_data_size) {
+        fprintf(stderr, "ERROR: Unable to perform a full reading from config file.\n");
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+    ktask->in_size = salt_size + config_data_size;
+    ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size);
+
+    if (ktask->in == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    memcpy(ktask->in, config_data, config_data_size);
+    memcpy(ktask->in + config_data_size, salt, salt_size);
+
+    catalog->key_hash_algo(&ktask, 1);
+
+    if (kryptos_last_task_succeed(ktask) == 0) {
+        fprintf(stderr, "ERROR: During hash computation.\n");
+        goto bcrepo_check_config_integrity_epilogue;
+    }
+
+    clean = (memcmp(catalog->config_hash, ktask->out, ktask->out_size) == 0);
+
+bcrepo_check_config_integrity_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_OUT);
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    if (config_data != NULL) {
+        kryptos_freeseg(config_data, config_data_size);
+    }
+
+    if (salt != NULL) {
+        kryptos_freeseg(salt, salt_size);
+    }
+
+    return clean;
+}
+
+int bcrepo_config_update(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                         bfs_checkpoint_func ckpt, void *ckpt_args) {
+    kryptos_u8_t *salt = NULL, *config_data = NULL;
+    kryptos_task_ctx t, *ktask = &t;
+    size_t salt_size, config_data_size;
+    bfs_catalog_ctx *cp;
+    int no_error = 0;
+    FILE *fp = NULL;
+    char temp[4096];
+
+    kryptos_task_init_as_null(ktask);
+
+    if (catalog == NULL || rootpath == NULL || rootpath == 0 || ckpt == NULL) {
+        goto bcrepo_config_update_epilogue;
+    }
+
+    cp = *catalog;
+
+    salt_size = cp->key_hash_algo_size();
+    if ((salt = kryptos_get_random_block(salt_size)) == NULL) {
+        fprintf(stderr, "ERROR: Unable to get a random block.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
+              BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+
+    if ((fp = fopen(temp, "r")) == NULL) {
+        fprintf(stderr, "ERROR: Unable to open the config file.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    config_data_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    if ((config_data = (kryptos_u8_t *) kryptos_newseg(config_data_size)) == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    if (fread(config_data, 1, config_data_size, fp) != config_data_size) {
+        fprintf(stderr, "ERROR: Unable to perform a full reading from config file.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    fclose(fp);
+    fp = NULL;
+
+    ktask->in_size = salt_size + config_data_size;
+    ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size);
+    if (ktask->in == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    memcpy(ktask->in, config_data, config_data_size);
+    memcpy(ktask->in + config_data_size, salt, salt_size);
+
+    cp->key_hash_algo(&ktask, 1);
+
+    if (kryptos_last_task_succeed(ktask) == 0) {
+        fprintf(stderr, "ERROR: During hash computation.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    if (cp->config_hash != NULL) {
+        kryptos_freeseg(cp->config_hash, cp->config_hash_size);
+    }
+
+    cp->config_hash_size = ktask->out_size + (salt_size << 1);
+    cp->config_hash = (kryptos_u8_t *) kryptos_newseg(cp->config_hash_size + 1);
+    if (cp->config_hash == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory.\n");
+        goto bcrepo_config_update_epilogue;
+    }
+
+    bcrepo_seed_to_hex(temp, sizeof(temp) - 1, salt, salt_size);
+
+    memset(cp->config_hash, 0, cp->config_hash_size + 1);
+    memcpy(cp->config_hash, ktask->out, ktask->out_size);
+    memcpy(cp->config_hash + ktask->out_size, temp, salt_size << 1);
+
+    no_error = ckpt(ckpt_args);
+
+bcrepo_config_update_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_IN | KRYPTOS_TASK_OUT);
+
+    if (salt != NULL) {
+        kryptos_freeseg(salt, salt_size);
+    }
+
+    if (config_data != NULL) {
+        kryptos_freeseg(config_data, config_data_size);
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
+    }
+
+    cp = NULL;
+
+    return no_error;
+}
+
+int bcrepo_config_remove(bfs_catalog_ctx **catalog, const char *rootpath, const size_t rootpath_size,
+                         bfs_checkpoint_func ckpt, void *ckpt_args) {
+    int no_error = 0;
+    bfs_catalog_ctx *cp;
+    char temp[4096];
+
+    if (catalog == NULL || rootpath == NULL || rootpath_size == 0 || ckpt == NULL || ckpt_args == NULL) {
+        goto bcrepo_config_remove_epilogue;
+    }
+
+    bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
+                  BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+
+    if (remove(temp) != 0) {
+        fprintf(stderr, "ERROR: Unable to remove the config file.\n");
+        goto bcrepo_config_remove_epilogue;
+    }
+
+    cp = *catalog;
+
+    if (cp->config_hash != NULL) {
+        kryptos_freeseg(cp->config_hash, cp->config_hash_size);
+        cp->config_hash = NULL;
+        cp->config_hash_size = 0;
+    }
+
+    no_error = ckpt(ckpt_args);
+
+bcrepo_config_remove_epilogue:
+
+    return no_error;
+}
 
 int bcrepo_untouch(bfs_catalog_ctx *catalog,
                    const char *rootpath, const size_t rootpath_size,
@@ -2894,13 +3118,15 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
     }
 
     size += strlen(catalog->bc_version) + strlen(catalog->protection_layer) + catalog->key_hash_size + strlen(hash_name) +
+            catalog->config_hash_size +
             strlen(BCREPO_CATALOG_BC_VERSION) + 1 +
             strlen(BCREPO_CATALOG_KEY_HASH_ALGO) + 1 +
             strlen(BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO) + 1 +
             strlen(BCREPO_CATALOG_KEY_HASH) + 1 +
             strlen(BCREPO_CATALOG_PROTECTION_LAYER) + 1 +
             strlen(BCREPO_CATALOG_FILES) + 1 +
-            strlen(BCREPO_CATALOG_OTP) + 2;
+            strlen(BCREPO_CATALOG_OTP) + 1 +
+            strlen(BCREPO_CATALOG_CONFIG_HASH) + 2;
 
     hash_name = NULL;
 
@@ -2926,7 +3152,8 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
         { BCREPO_CATALOG_KEY_HASH,                key_hash_w,                0 },
         { BCREPO_CATALOG_PROTECTION_LAYER,        protection_layer_w,        0 },
         { BCREPO_CATALOG_FILES,                   files_w,                   0 },
-        { BCREPO_CATALOG_OTP,                     otp_w,                     0 }
+        { BCREPO_CATALOG_OTP,                     otp_w,                     0 },
+        { BCREPO_CATALOG_CONFIG_HASH,             config_hash_w,             0 }
     };
     static size_t dumpers_nr = sizeof(dumpers) / sizeof(dumpers[0]), d;
     kryptos_u8_t *o;
@@ -3033,6 +3260,21 @@ static kryptos_u8_t *otp_w(kryptos_u8_t *out, const size_t out_size, const bfs_c
     return (out + 1);
 }
 
+static kryptos_u8_t *config_hash_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog) {
+    size_t size;
+    kryptos_u8_t *o = out;
+    if (catalog->config_hash != NULL) {
+        size = strlen(BCREPO_CATALOG_CONFIG_HASH);
+        memcpy(o, BCREPO_CATALOG_CONFIG_HASH, size);
+        o += size;
+        memcpy(o, catalog->config_hash, catalog->config_hash_size);
+        o += catalog->config_hash_size;
+        *o = '\n';
+        o += 1;
+    }
+    return o;
+}
+
 static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog) {
     kryptos_u8_t *o;
     bfs_catalog_relpath_ctx *f;
@@ -3092,7 +3334,8 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
         key_hash_r,
         protection_layer_r,
         files_r,
-        otp_r
+        otp_r,
+        config_hash_r
     };
     static size_t read_nr = sizeof(read) /  sizeof(read[0]), r;
     int no_error = 1;
@@ -3157,7 +3400,7 @@ static int is_metadata_compatible(const char *version) {
     // INFO(Rafael): If you are changing something here and it will not break compatibility with the current
     //               cmd tool's version, include its version here, otherwise erase this version entry.
     static const char *compatible_versions[] = {
-        BCREPO_METADATA_VERSION
+        BCREPO_METADATA_VERSION, "1.0.0"
     };
     static const size_t compatible_versions_nr = sizeof(compatible_versions) / sizeof(compatible_versions[0]);
     size_t c;
@@ -3266,6 +3509,15 @@ static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in,
     bfs_catalog_ctx *cp = *catalog;
     cp->protection_layer = get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
     return (cp->protection_layer != NULL);
+}
+
+static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    bfs_catalog_ctx *cp = *catalog;
+
+    cp->config_hash = get_catalog_field(BCREPO_CATALOG_CONFIG_HASH, in, in_size);
+    cp->config_hash_size =  (cp->config_hash != NULL) ? strlen(cp->config_hash) : 0;
+
+    return 1; // INFO(Rafael): This catalog field is optional so always its reading will return true.
 }
 
 static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
@@ -3493,8 +3745,6 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
     bp = bp_end = NULL;
 
 }
-
-#undef BCREPO_METADATA_VERSION
 
 #undef BCREPO_CATALOG_BC_VERSION
 #undef BCREPO_CATALOG_KEY_HASH_ALGO

@@ -38,6 +38,8 @@ typedef struct bfs_catalog {
     blackcat_encoder encoder;
     kryptos_u8_t *key_hash;
     size_t key_hash_size;
+    kryptos_u8_t *config_hash;
+    size_t config_hash_size;
     blackcat_data_processor encrypt_data, decrypt_data;
     char *protection_layer;
     blackcat_protlayer_chain_ctx *protlayer;

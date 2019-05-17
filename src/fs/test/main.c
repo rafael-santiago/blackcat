@@ -43,10 +43,20 @@ CUTE_DECLARE_TEST_CASE(bcrepo_decoy_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_incompatibility_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_detach_attach_metainfo_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_untouch_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_config_module_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_config_tests);
+
+struct checkpoint_ctx {
+    bfs_catalog_ctx *catalog;
+    kryptos_u8_t *rootpath;
+    size_t rootpath_size;
+    size_t key_size;
+    kryptos_u8_t *key;
+};
 
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
+int checkpoint(void *args);
 
 CUTE_MAIN(fs_tests);
 
@@ -85,10 +95,104 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_decoy_tests);
     CUTE_RUN_TEST(bcrepo_detach_attach_metainfo_tests);
     CUTE_RUN_TEST(bcrepo_untouch_tests);
+    CUTE_RUN_TEST(bcrepo_config_module_tests);
     CUTE_RUN_TEST(bcrepo_config_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_config_tests)
+    bfs_catalog_ctx *catalog = NULL;
+    kryptos_u8_t *key = "live2win";
+    kryptos_u8_t *rootpath = NULL;
+    size_t rootpath_size;
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *protkey;
+    size_t protkey_size;
+    char *config_data = "default-args:\n"
+                        "\t--no-swap\n\n";
+    struct checkpoint_ctx ckpt;
+
+    // INFO(Rafael): The painful handmade bootstrapping arrrgh!
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = BCREPO_METADATA_VERSION;
+    catalog->otp = 0;
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-whirlpool-camellia-192-ctr");
+    catalog->key_hash_algo = get_hash_processor("tiger");
+    catalog->key_hash_algo_size = get_hash_size("tiger");
+    catalog->protlayer_key_hash_algo = get_hash_processor("whirlpool");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("whirlpool");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "aes-128-cbc";
+
+    protkey = (kryptos_u8_t *) kryptos_newseg(15);
+    CUTE_ASSERT(protkey != NULL);
+    memcpy(protkey, "ready to forget", 15);
+    protkey_size = 15;
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer,
+                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          catalog->encoder);
+
+    CUTE_ASSERT(protkey == NULL);
+    CUTE_ASSERT(protkey_size == 0);
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    ckpt.catalog = catalog;
+    ckpt.rootpath = rootpath;
+    ckpt.rootpath_size = rootpath_size;
+    ckpt.key = key;
+    ckpt.key_size = strlen(key);
+
+    CUTE_ASSERT(save_text(config_data, strlen(config_data), ".bcrepo/CONFIG") == 1);
+    CUTE_ASSERT(bcrepo_config_update(&catalog, rootpath, rootpath_size, checkpoint, &ckpt) == 1);
+    CUTE_ASSERT(bcrepo_check_config_integrity(catalog, rootpath, rootpath_size) == 1);
+    CUTE_ASSERT(save_text("boo", 3, ".bcrepo/CONFIG") == 1);
+    CUTE_ASSERT(bcrepo_check_config_integrity(catalog, rootpath, rootpath_size) == 0);
+    CUTE_ASSERT(bcrepo_config_update(&catalog, rootpath, rootpath_size, checkpoint, &ckpt) == 1);
+    CUTE_ASSERT(bcrepo_check_config_integrity(catalog, rootpath, rootpath_size) == 1);
+    CUTE_ASSERT(bcrepo_config_remove(&catalog, rootpath, rootpath_size, checkpoint, &ckpt) == 1);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+
+    kryptos_freeseg(rootpath, rootpath_size);
+
+    catalog->protection_layer = catalog->bc_version = NULL;
+    del_bfs_catalog_ctx(catalog);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_config_module_tests)
     char *config = "default-opts:\nword0 word1 word2\n\n"
                    "hello:\ncommand line 0\ncommand line 1\ncommand line 2\n\n";
     FILE *fp;
@@ -228,7 +332,7 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
     catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
@@ -237,6 +341,11 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
     catalog->encoder = get_encoder("uuencode");
+    catalog->otp = 0;
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -419,7 +528,7 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
     catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
@@ -428,6 +537,11 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
     catalog->encoder = get_encoder("uuencode");
+    catalog->otp = 0;
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -514,7 +628,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
     };
     struct test_ctx tests[] = {
         { "0.0.1", 0 },
-        { "1.0.0", 1 }
+        { "1.0.0", 1 },
+        { "1.1.0", 1 }
     };
     size_t tests_nr = sizeof(tests) / sizeof(tests[0]), t;
 
@@ -529,6 +644,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
         catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
         catalog.encoder = get_encoder("uuencode");
+        catalog.encrypt_data = blackcat_encrypt_data;
+        catalog.decrypt_data = blackcat_decrypt_data;
 
         catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
         CUTE_ASSERT(catalog.key_hash != NULL);
@@ -723,7 +840,7 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -731,6 +848,10 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
     catalog->encoder = get_encoder("uuencode");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -905,6 +1026,8 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     int otp = 0;
 
     do {
+        CUTE_ASSERT(otp >= 0 && otp <= 1);
+
         // INFO(Rafael): Bootstrapping the test repo.
 
         remove(".bcrepo/CATALOG");
@@ -914,7 +1037,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
 
         CUTE_ASSERT(catalog != NULL);
 
-        catalog->bc_version = "1.0.0";
+        catalog->bc_version = BCREPO_METADATA_VERSION;
         catalog->otp = otp;
         catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
         catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -922,6 +1045,16 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
         catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
         catalog->encoder = get_encoder("uuencode");
+        catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+        catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+
+        if (catalog->otp == 0) {
+            catalog->encrypt_data = blackcat_encrypt_data;
+            catalog->decrypt_data = blackcat_decrypt_data;
+        } else {
+            catalog->encrypt_data = blackcat_otp_encrypt_data;
+            catalog->decrypt_data = blackcat_otp_decrypt_data;
+        }
 
         CUTE_ASSERT(catalog->key_hash_algo != NULL);
         CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1044,7 +1177,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         kryptos_freeseg(rootpath, rootpath_size);
         catalog->bc_version = NULL;
         del_bfs_catalog_ctx(catalog);
-    } while (otp++ < 2);
+    } while (++otp < 2);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
@@ -1140,7 +1273,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -1148,6 +1281,10 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
     catalog->encoder = get_encoder("uuencode");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1388,7 +1525,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -1396,6 +1533,10 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
     catalog->encoder = get_encoder("uuencode");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1541,13 +1682,17 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-whirlpool-camellia-192-ctr");
     catalog->key_hash_algo = get_hash_processor("tiger");
     catalog->key_hash_algo_size = get_hash_size("tiger");
     catalog->protlayer_key_hash_algo = get_hash_processor("whirlpool");
     catalog->protlayer_key_hash_algo_size = get_hash_size("whirlpool");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1662,13 +1807,17 @@ CUTE_TEST_CASE(bcrepo_add_tests)
 
     CUTE_ASSERT(catalog != NULL);
 
-    catalog->bc_version = "1.0.0";
+    catalog->bc_version = BCREPO_METADATA_VERSION;
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
     catalog->key_hash_algo = get_hash_processor("sha3-512");
     catalog->key_hash_algo_size = get_hash_size("sha3-512");
     catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
     catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
 
     CUTE_ASSERT(catalog->key_hash_algo != NULL);
     CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1789,6 +1938,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     int otp = 0;
 
     do {
+        CUTE_ASSERT(otp >= 0 && otp <= 1);
         remove(".bcrepo/CATALOG");
         rmdir(".bcrepo");
         rmdir("../.bcrepo");
@@ -1797,7 +1947,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
         CUTE_ASSERT(catalog != NULL);
 
-        catalog->bc_version = "1.0.0";
+        catalog->bc_version = BCREPO_METADATA_VERSION;
         catalog->otp = otp;
         catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
         catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
@@ -1806,6 +1956,15 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
         catalog->key_hash_algo_size = get_hash_size("sha3-512");
         catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
         catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
+        catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+        catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+        if (catalog->otp == 0) {
+            catalog->encrypt_data = blackcat_encrypt_data;
+            catalog->decrypt_data = blackcat_decrypt_data;
+        } else {
+            catalog->encrypt_data = blackcat_otp_encrypt_data;
+            catalog->decrypt_data = blackcat_otp_decrypt_data;
+        }
 
         CUTE_ASSERT(catalog->key_hash_algo != NULL);
         CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
@@ -1860,7 +2019,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
         catalog->bc_version = catalog->protection_layer = NULL;
         del_bfs_catalog_ctx(catalog);
-    } while (otp++ < 2);
+    } while (++otp < 2);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(strglob_tests)
@@ -1980,7 +2139,7 @@ CUTE_TEST_CASE(bcrepo_stat_tests)
     CUTE_ASSERT(data_size == 0);
 
     CUTE_ASSERT(catalog->bc_version != NULL);
-    CUTE_ASSERT(strcmp(catalog->bc_version, "1.0.0") == 0);
+    CUTE_ASSERT(strcmp(catalog->bc_version, BCREPO_METADATA_VERSION) == 0);
 
     CUTE_ASSERT(catalog->otp == 0);
 
@@ -2062,7 +2221,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_relpath_ctx files;
     kryptos_u8_t *key = "Goliath";
 
-    catalog.bc_version = "1.0.0";
+    catalog.bc_version = BCREPO_METADATA_VERSION;
     catalog.otp = 0;
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
     catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
@@ -2213,4 +2372,16 @@ char *open_text(const char *filepath, size_t *data_size) {
     }
 
     return data;
+}
+
+int checkpoint(void *args) {
+    struct checkpoint_ctx *ckpt = (struct checkpoint_ctx *) args;
+    char temp[4096];
+    int no_error = bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp),
+                                ckpt->rootpath), ckpt->catalog, ckpt->key, ckpt->key_size);
+    if (no_error != 1) {
+        fprintf(stderr, "ERROR: Unable to update the catalog file.\n");
+    }
+
+    return no_error;
 }
