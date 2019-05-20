@@ -274,7 +274,7 @@ blackcat_cmd_init_epilogue:
 
 int blackcat_cmd_init_help(void) {
     fprintf(stdout, "use: blackcat init --catalog-hash=<hash> --key-hash=<hash> --protection-layer-hash=<hash>\n"
-                    "                   --protection-layer=<algorithm layers> [--keyed-alike --encoder=<encoder>]\n");
+                    "                   --protection-layer=<algorithm layers> [--keyed-alike --encoder=<encoder> --otp]\n");
     return 0;
 }
 

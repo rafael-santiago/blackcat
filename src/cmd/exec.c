@@ -27,6 +27,8 @@
 #include <cmd/detach.h>
 #include <cmd/attach.h>
 #include <cmd/untouch.h>
+#include <cmd/config.h>
+#include <cmd/do.h>
 #if !defined(_WIN32)
 # include <cmd/lkm.h>
 # include <cmd/paranoid.h>
@@ -67,7 +69,9 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(info),
     BLACKCAT_COMMAND_TABLE_ENTRY(detach),
     BLACKCAT_COMMAND_TABLE_ENTRY(attach),
-    BLACKCAT_COMMAND_TABLE_ENTRY(untouch)
+    BLACKCAT_COMMAND_TABLE_ENTRY(untouch),
+    BLACKCAT_COMMAND_TABLE_ENTRY(config),
+    BLACKCAT_COMMAND_TABLE_ENTRY(do)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)
