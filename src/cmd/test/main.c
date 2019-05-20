@@ -2162,6 +2162,41 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("p.txt");
     rmdir("etc");
 
+    // INFO(Rafael): Config tests.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=8 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc --keyed-alike",
+                         "Zzz\nZzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("config --update", "Zzz", NULL) != 0);
+
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG", "boo!!", 5) == 1);
+
+    CUTE_ASSERT(blackcat("config --update", "Zzz!!", NULL) != 0);
+    CUTE_ASSERT(blackcat("config --update", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("config --check-integrity", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("config --check-integrity", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG", "boo!", 4) == 1);
+
+    CUTE_ASSERT(blackcat("config --check-integrity", "Zzz", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("config --update", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("config --check-integrity", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("config --remove", "Zzza", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("config --remove", "Zzz", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("deinit", "Zzz", NULL) == 0);
+
 #if !defined(SKIP_NET_TESTS)
 
     remove("ntool-test.db");

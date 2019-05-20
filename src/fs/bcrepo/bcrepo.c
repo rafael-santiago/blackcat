@@ -244,7 +244,7 @@ int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath
     memcpy(ktask->in, config_data, config_data_size);
     memcpy(ktask->in + config_data_size, salt, salt_size);
 
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->catalog_key_hash_algo(&ktask, 1);
 
     if (kryptos_last_task_succeed(ktask) == 0) {
         fprintf(stderr, "ERROR: During hash computation.\n");
@@ -290,7 +290,7 @@ int bcrepo_config_update(bfs_catalog_ctx **catalog, const char *rootpath, const 
 
     cp = *catalog;
 
-    salt_size = cp->key_hash_algo_size();
+    salt_size = cp->catalog_key_hash_algo_size();
     if ((salt = kryptos_get_random_block(salt_size)) == NULL) {
         fprintf(stderr, "ERROR: Unable to get a random block.\n");
         goto bcrepo_config_update_epilogue;
@@ -331,7 +331,7 @@ int bcrepo_config_update(bfs_catalog_ctx **catalog, const char *rootpath, const 
     memcpy(ktask->in, config_data, config_data_size);
     memcpy(ktask->in + config_data_size, salt, salt_size);
 
-    cp->key_hash_algo(&ktask, 1);
+    cp->catalog_key_hash_algo(&ktask, 1);
 
     if (kryptos_last_task_succeed(ktask) == 0) {
         fprintf(stderr, "ERROR: During hash computation.\n");

@@ -76,63 +76,60 @@ void blackcat_set_argc_argv(int argc, char **argv) {
         g_blackcat_argv = NULL;
         g_blackcat_argc = 0;
     } else {
-        if ((cfg = bcrepo_ld_config()) == NULL) {
+        if ((cfg = bcrepo_ld_config()) == NULL || bcrepo_config_get_section(cfg, BCREPO_CONFIG_SECTION_DEFAULT_ARGS) == 0) {
             g_blackcat_cmd = argv[1];
             g_blackcat_argv = &argv[2];
             g_blackcat_argc = argc - 2;
         } else {
-            if (bcrepo_config_get_section(cfg, BCREPO_CONFIG_SECTION_DEFAULT_ARGS) != 0) {
-
-                cmdline_size = 0;
-                for (a = 1; a < argc; a++) {
-                    cmdline_size += strlen(argv[a]) + 1;
-                }
-
-                while (bcrepo_config_get_next_word(cfg) != 0) {
-                    cmdline_size += cfg->word_end - cfg->word + 1;
-                }
-
-                cmdline_size += 64;
-
-                if ((cmdline = (char *) kryptos_newseg(cmdline_size)) == NULL) {
-                    goto blackcat_set_argc_argv_epilogue;
-                }
-
-
-                memset(cmdline, 0, cmdline_size);
-                cp = cmdline;
-
-                for (a = 1; a < argc; a++) {
-                    temp_size = strlen(argv[a]);
-                    memcpy(cp, argv[a], temp_size);
-                    *(cp + temp_size) = ' ';
-                    cp += temp_size + 1;
-                }
-
-                bcrepo_config_get_section(cfg, BCREPO_CONFIG_SECTION_DEFAULT_ARGS);
-
-                while (bcrepo_config_get_next_word(cfg) != 0) {
-                    temp_size = cfg->word_end - cfg->word;
-                    memcpy(cp, cfg->word, temp_size);
-                    *(cp + temp_size) = ' ';
-                    cp += temp_size + 1;
-                }
-
-                // INFO(Rafael): Nasty trick for clearing original command line arguments easily.
-
-                g_blackcat_argv_head = NULL;
-
-                g_blackcat_cmd = argv[1];
-                g_blackcat_argv = &argv[2];
-                g_blackcat_argc = argc - 2;
-                blackcat_clear_options();
-
-                g_blackcat_argv_head = mkargv(g_blackcat_argv_head, cmdline, cmdline_size, &g_blackcat_argc);
-
-                g_blackcat_cmd = g_blackcat_argv_head[1];
-                g_blackcat_argv = &g_blackcat_argv_head[2];
-                g_blackcat_argc = g_blackcat_argc;
+            cmdline_size = 0;
+            for (a = 1; a < argc; a++) {
+                cmdline_size += strlen(argv[a]) + 1;
             }
+
+            while (bcrepo_config_get_next_word(cfg) != 0) {
+                cmdline_size += cfg->word_end - cfg->word + 1;
+            }
+
+            cmdline_size += 64;
+
+            if ((cmdline = (char *) kryptos_newseg(cmdline_size)) == NULL) {
+                goto blackcat_set_argc_argv_epilogue;
+            }
+
+
+            memset(cmdline, 0, cmdline_size);
+            cp = cmdline;
+
+            for (a = 1; a < argc; a++) {
+                temp_size = strlen(argv[a]);
+                memcpy(cp, argv[a], temp_size);
+                *(cp + temp_size) = ' ';
+                cp += temp_size + 1;
+            }
+
+            bcrepo_config_get_section(cfg, BCREPO_CONFIG_SECTION_DEFAULT_ARGS);
+
+            while (bcrepo_config_get_next_word(cfg) != 0) {
+                temp_size = cfg->word_end - cfg->word;
+                memcpy(cp, cfg->word, temp_size);
+                *(cp + temp_size) = ' ';
+                cp += temp_size + 1;
+            }
+
+            // INFO(Rafael): Nasty trick for clearing original command line arguments easily.
+
+            g_blackcat_argv_head = NULL;
+
+            g_blackcat_cmd = argv[1];
+            g_blackcat_argv = &argv[2];
+            g_blackcat_argc = argc - 2;
+            blackcat_clear_options();
+
+            g_blackcat_argv_head = mkargv(g_blackcat_argv_head, cmdline, cmdline_size, &g_blackcat_argc);
+
+            g_blackcat_cmd = g_blackcat_argv_head[1];
+            g_blackcat_argv = &g_blackcat_argv_head[2];
+            g_blackcat_argc = g_blackcat_argc;
         }
     }
 
