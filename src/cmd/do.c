@@ -36,7 +36,7 @@ static char **get_cmds(const char *cmd_name, const blackcat_exec_session_ctx *se
 
     if (bcrepo_check_config_integrity(session->catalog, session->rootpath, session->rootpath_size) == 0) {
         fprintf(stderr, "ERROR: The config file seems corrupted. Open .bcrepo/CONFIG check it "
-                        "and run 'blackcat config --update' if OK.\n");
+                        "and try to run 'blackcat config --update' if OK.\n");
         goto get_cmds_epilogue;
     }
 

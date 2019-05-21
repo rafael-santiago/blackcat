@@ -1150,6 +1150,107 @@ Now Alice in her system uses her private parameters and connects to Bob's host:
 Done. They have estabilished a secure chat session. Now Netcat is using strong encryption
 with ephemeral keys per message.
 
+The .bcrepo/CONFIG file
+=======================
+
+This file is intended to hold specific configurations of a repository. Due to security issues this file
+is not automatically loaded. When you create a CONFIG file you must to indicate that the current content
+can be read and loaded. There is a command to do that:
+
+    Bob@ConfigSampe:~/config# blackcat config --update
+    Bob@ConfigSampe:~/config# _
+
+Notice that everytime you change/add some data to CONFIG file you need to run an update.
+
+If for some reason you do not want the CONFIG file anymore, remove it in the following way:
+
+    Bob@ConfigSampe:~/config# blackcat config --remove
+    Bob@ConfigSampe:~/config# _
+
+If you want to check if the CONFIG file has changed since the last edition:
+
+    Bob@ConfigSampe:~/config# blackcat config --check-integrity
+    Bob@ConfigSampe:~/config# _
+
+Inside the CONFIG file the configuration is divided into sections. A section is merely a label
+following this form: 'label:'. The configuration data can be words or lines.
+
+A word is separated by spaces, tabulations or line feeds. A line is separated by line feed.
+
+A section is ended by two consecutive line feeds. Sample of a section:
+
+    'sample:
+        word0 word1
+        line0
+        line1
+        last_line
+
+    '
+
+Defining default arguments for any command executed into a repository
+=====================================================================
+
+Blackcat has some default arguments that can be used with any command. In order to avoid typing
+every single time this option explicitly. You can load and include this option through 'CONFIG/default-args'.
+
+Let's avoid RAM swap for every blackcat command. The 'default-args' section expects words, each word must be
+a well-known blackcat command line option. So let's open the .bcrepo/CONFIG and add the following section:
+
+    'default-args:
+        --no-swap
+
+    '
+
+    Alice@DefaultArgsLoading:~/sample# blackcat config --update
+    Alice@DefaultArgsLoading:~/sample# _
+
+
+Now the option '--no-swap' will be included when running any command inside those repo.
+
+User defined commands
+=====================
+
+Sometimes depending on the workflow and the repo layout there will be commands that could be executed
+repeatedly. You can define those set of commands or macros and call it by using a pseudo-command name
+also defined by you. It can be done by using 'CONFIG/user-commands'.
+
+The section 'user-commnads' registers a user set of commands. The set of commmands is merely another
+section having a command per line. The section name will be the pseudo-command name.
+
+Supposing that Alice has files inside sub-directory src and when she re-encrypt it she also needs to
+untouch all files inside there.
+
+    'user-commands:
+        decrypt-src
+        encrtpt-src
+
+    decrypt-src:
+        blackcat unlock src/*
+
+    encrypt-src:
+        blackcat lock src/*
+        blackcat untouch --hard
+
+    '
+
+Now Alice has to run and update:
+
+    Alice@WonderLandLabs:~/crazy-stuff# blackcat config --update
+
+There is a command to execute user command: 'do'.
+
+According to this sample Alice can decrypt all files under src by doing:
+
+    Alice@WonderLandLabs:~/crazy-stuff# blackcat do --decrypt-src
+
+and encrypt and untouching just by doing:
+
+    Alice@WonderLandLabs:~/crazy-stuff# blackcat do --encrypt-src
+
+It is also possible to execute any shell command. Do not worry because when someone changes the CONFIG
+file this change will be detected and the CONFIG data will not be loaded. Since the update process
+requires the repo password only you will be able to actually change the CONFIG file.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
