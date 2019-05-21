@@ -1229,7 +1229,7 @@ untouch all files inside there.
 
     encrypt-src:
         blackcat lock src/*
-        blackcat untouch --hard
+        blackcat untouch src/* --hard
 
     '
 
@@ -1237,7 +1237,7 @@ Now Alice has to run and update:
 
     Alice@WonderLandLabs:~/crazy-stuff# blackcat config --update
 
-There is a command to execute user command: 'do'.
+There is a suggestive blackcat command to execute pre-defined user commands: 'do'.
 
 According to this sample Alice can decrypt all files under src by doing:
 
