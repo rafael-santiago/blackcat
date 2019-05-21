@@ -2197,6 +2197,102 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("deinit", "Zzz", NULL) == 0);
 
+    // INFO(Rafael): Do tests.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--catalog-hash=sha3-384 "
+                         "--key-hash=bcrypt "
+                         "--bcrypt-cost=8 "
+                         "--protection-layer-hash=sha-512 "
+                         "--protection-layer=aes-128-cbc --keyed-alike",
+                         "Zzzoldar\nZzzoldar", NULL) == 0);
+
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG",
+                            "user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                            "lock-s1:\n\t../../../bin/blackcat lock s1.txt<dummy\n\n"
+                            "lock-s3:\n\t../../../bin/blackcat lock s3.txt<dummy\n\n"
+                            "unlock-s1:\n\t../../../bin/blackcat unlock s1.txt<dummy\n\n"
+                            "unlock-s3:\n\t../../../bin/blackcat unlock s3.txt<dummy\n\n",
+                            strlen("user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                                    "lock-s1:\n\t../../../bin/blackcat lock s1.txt<dummy\n\n"
+                                    "lock-s3:\n\t../../../bin/blackcat lock s3.txt<dummy\n\n"
+                                    "unlock-s1:\n\t../../../bin/blackcat unlock s1.txt<dummy\n\n"
+                                    "unlock-s3:\n\t../../../bin/blackcat unlock s3.txt<dummy\n\n")) == 1);
+
+    CUTE_ASSERT(blackcat("config --update", "Zzzoldar", NULL) == 0);
+
+    CUTE_ASSERT(create_file("dummy", "Zzzoldar\n", strlen("Zzzoldar\n")) == 1);
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    CUTE_ASSERT(blackcat("add s1.txt", "Zzzoldar", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt", "Zzzoldar", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("do --me-wrong", "Zzzoldar", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("do --lock-s1", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --unlock-s1", "Zzzoldar!", NULL) != 0);
+    CUTE_ASSERT(blackcat("do --unlock-s1", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --lock-s3", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --unlock-s3", "Soldar", NULL) != 0);
+    CUTE_ASSERT(blackcat("do --unlock-s3", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit", "Zzzoldar", NULL) == 0);
+    remove("s1.txt");
+    remove("s3.txt");
+    remove("dummy");
+
 #if !defined(SKIP_NET_TESTS)
 
     remove("ntool-test.db");

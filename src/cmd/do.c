@@ -19,9 +19,9 @@ static char **get_cmds(const char *cmd_name, const blackcat_exec_session_ctx *se
 static int is_registered_command(const char *cmd_name);
 
 static char **get_cmds(const char *cmd_name, const blackcat_exec_session_ctx *session, int *argc) {
-    char **argv = NULL;
     struct bcrepo_config_ctx *cfg = NULL;
     int no_error = 0;
+    char **argv = NULL;
 
     if (cmd_name == NULL || session == NULL || argc == NULL) {
         goto get_cmds_epilogue;
@@ -40,21 +40,48 @@ static char **get_cmds(const char *cmd_name, const blackcat_exec_session_ctx *se
         goto get_cmds_epilogue;
     }
 
-    if ((argv = (char **) kryptos_newseg(sizeof(char *))) == NULL) {
+    cfg = bcrepo_ld_config();
+
+    if (bcrepo_config_get_section(cfg, cmd_name) == 0) {
+        fprintf(stderr, "ERROR: Command body not found.\n");
+        goto get_cmds_epilogue;
+    }
+
+    while (bcrepo_config_get_next_line(cfg) != 0) {
+        (*argc)++;
+    }
+
+    if ((argv = (char **) kryptos_newseg((*argc) * sizeof(char *))) == NULL) {
         fprintf(stderr, "ERROR: Not enough memory.\n");
         goto get_cmds_epilogue;
     }
 
     no_error = 1;
 
+    *argc = 0;
+
+    bcrepo_config_get_section(cfg, cmd_name);
+
     while (bcrepo_config_get_next_line(cfg) != 0) {
-        if ((argv[*argc] = (char *) kryptos_newseg(cfg->line_end - cfg->line + 1)) == NULL) {
+        while (*cfg->line == '\t' || *cfg->line == ' ' && cfg->line != cfg->line_end) {
+            cfg->line++;
+        }
+
+        if (cfg->line == cfg->line_end) {
+            continue;
+        }
+
+        argv[*argc] = (char *) kryptos_newseg(cfg->line_end - cfg->line + 1);
+
+        if (argv[*argc] == NULL) {
             fprintf(stderr, "ERROR: Not enough memory.\n");
             no_error = 0;
             goto get_cmds_epilogue;
         }
+
         memset(argv[*argc], 0, cfg->line_end - cfg->line + 1);
         memcpy(argv[*argc], cfg->line, cfg->line_end - cfg->line);
+
         (*argc)++;
     }
 
@@ -124,23 +151,25 @@ int blackcat_cmd_do(void) {
 
     exit_code = 0;
 
+    do_param = blackcat_get_argv(0);
+
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   do_param,
                                   {
-                                    if ((argv = get_cmds(do_param, session, &argc)) == NULL) {
-                                        exit_code = EINVAL;
-                                        goto blackcat_cmd_do_epilogue;
-                                    }
-                                    for (aa = 0; exit_code == 0 && aa < argc; aa++) {
-                                        exit_code = system(argv[a]);
-                                    }
-                                    if (exit_code == 0) {
-                                        fprintf(stderr, "ERROR: While executing user command set. Aborted.\n");
-                                        goto blackcat_cmd_do_epilogue;
-                                    }
-                                    freeargv(argv, argc);
-                                    argv = NULL;
-                                    argc = 0;
+                                      if (do_param == NULL || (argv = get_cmds(do_param + 2, session, &argc)) == NULL) {
+                                          exit_code = EINVAL;
+                                          goto blackcat_cmd_do_epilogue;
+                                      }
+                                      for (aa = 0; exit_code == 0 && aa < argc; aa++) {
+                                          exit_code = system(argv[aa]);
+                                      }
+                                      if (exit_code != 0) {
+                                          fprintf(stderr, "ERROR: While executing user command set. Aborted.\n");
+                                          goto blackcat_cmd_do_epilogue;
+                                      }
+                                      freeargv(argv, argc);
+                                      argv = NULL;
+                                      argc = 0;
                                   })
 
     chdir(cwd);
