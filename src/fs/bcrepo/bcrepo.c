@@ -2930,8 +2930,8 @@ static int root_dir_reached(const char *cwd) {
 static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
                            blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
                            const ssize_t size) {
-    size_t k, hs;
-    kryptos_u8_t *kp = NULL, *kp_end;
+    size_t k, hs, key_hash_size;
+    kryptos_u8_t *kp = NULL, *kp_end, *key_hash = NULL;
     kryptos_task_ctx t, *ktask = &t;
 
     if (hash == NULL || hash_size == NULL || size <= 0 ||
@@ -2948,6 +2948,46 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
     ktask->in = (kryptos_u8_t *)key;
     ktask->in_size = key_size;
 
+    hash(&ktask, 0);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        kryptos_freeseg(kp, size);
+        kp = NULL;
+        goto bckdf_epilogue;
+    }
+
+    ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->out_size + key_size);
+
+    if (ktask->in == NULL) {
+        kryptos_freeseg(ktask->out, ktask->out_size);
+        kryptos_freeseg(kp, size);
+        kp = NULL;
+        goto bckdf_epilogue;
+    }
+
+    memcpy(ktask->in, ktask->out, ktask->out_size >> 1);
+    memcpy(ktask->in + (ktask->out_size >> 1), key, key_size);
+    memcpy(ktask->in + (ktask->out_size >> 1) + key_size, ktask->out + (ktask->out_size >> 1), ktask->out_size >> 1);
+
+    kryptos_freeseg(ktask->out, ktask->out_size);
+
+    hash(&ktask, 0);
+
+    kryptos_freeseg(ktask->in, ktask->in_size);
+    ktask->in = NULL;
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        kryptos_freeseg(kp, size);
+        kp = NULL;
+        goto bckdf_epilogue;
+    }
+
+    key_hash = ktask->out;
+    key_hash_size = ktask->out_size;
+
+    ktask->in = ktask->out;
+    ktask->in_size = ktask->out_size;
+
     while (kp < kp_end) {
         hash(&ktask, 0);
 
@@ -2957,16 +2997,16 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
             goto bckdf_epilogue;
         }
 
-        *kp = ktask->out[key[k] % hs];
+        *kp = ktask->out[key_hash[k] % hs];
 
-        if (ktask->in != key) {
+        if (ktask->in != key_hash) {
             kryptos_task_free(ktask, KRYPTOS_TASK_IN);
         }
 
         ktask->in = ktask->out;
         ktask->in_size = ktask->out_size;
 
-        k = (k + 1) % key_size;
+        k = (k + 1) % key_hash_size;
         kp += 1;
     }
 
@@ -2977,8 +3017,13 @@ bckdf_epilogue:
     kp_end = NULL;
     k = hs = 0;
 
-    if (ktask->in != key) {
+    if (ktask->in != key_hash) {
         kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+    }
+
+    if (key_hash != NULL) {
+        kryptos_freeseg(key_hash, key_hash_size);
+        key_hash_size = 0;
     }
 
     kryptos_task_init_as_null(ktask);
