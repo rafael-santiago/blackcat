@@ -2956,7 +2956,8 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
         goto bckdf_epilogue;
     }
 
-    ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->out_size + key_size);
+    ktask->in_size = ktask->out_size + key_size;
+    ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size);
 
     if (ktask->in == NULL) {
         kryptos_freeseg(ktask->out, ktask->out_size);

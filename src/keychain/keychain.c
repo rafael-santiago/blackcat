@@ -222,7 +222,8 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
         }
 
         kryptos_freeseg(ktask->in, ktask->in_size);
-        ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->out_size + *key_size);
+        ktask->in_size = ktask->out_size + *key_size;
+        ktask->in = (kryptos_u8_t *) kryptos_newseg(ktask->in_size);
         if (ktask->in == NULL) {
             return NULL;
         }
