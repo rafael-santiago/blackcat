@@ -401,7 +401,7 @@ static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx 
     const blackcat_protlayer_chain_ctx *p;
     kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *out;
-    int done, is_hmac = 0;
+    int done, is_hmac_or_gcm = 0;
 
     if (protlayer == NULL || in == NULL || in_size == 0 || out_size == NULL) {
         return NULL;
@@ -414,15 +414,15 @@ static kryptos_u8_t *blackcat_meta_processor(const blackcat_protlayer_chain_ctx 
     ktask->action = action;
 
     if (action == kKryptosDecrypt) {
-        for (p = protlayer->head; p != NULL && !is_hmac; p = p->next) {
-            is_hmac = p->is_hmac;
+        for (p = protlayer->head; p != NULL && !is_hmac_or_gcm; p = p->next) {
+            is_hmac_or_gcm = (p->is_hmac || p->mode == kKryptosGCM);
         }
     }
 
-    if (!is_hmac) {
+    if (!is_hmac_or_gcm) {
         kryptos_task_set_in(ktask, in, in_size);
     } else {
-        // INFO(Rafael): The HMAC when well succeeded changes the allocation of the input, by removing the
+        // INFO(Rafael): The HMAC and GCM when well-succeeded change the allocation of the input, by removing the
         //               hash from the entire cryptogram during the decryption. Let's preserve the original.
 
         ktask->in = (kryptos_u8_t *) kryptos_newseg(in_size);
