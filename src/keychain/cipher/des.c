@@ -58,6 +58,14 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_des, ktask, p_layer,
                                kryptos_run_cipher_hmac(des, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_des, ktask, p_layer,
+                               kryptos_run_cipher_hmac(des, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_des, ktask, p_layer,
+                               kryptos_run_cipher_hmac(des, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(triple_des, ktask, p_layer,
                                kryptos_run_cipher(triple_des, *ktask,
                                                   p_layer->key, p_layer->key_size,
@@ -157,6 +165,22 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_triple_des, ktask, p_layer,
                                                        (kryptos_u8_t *)p_layer->arg[2],
                                                        (size_t *)p_layer->arg[3]))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_triple_des, ktask, p_layer,
+                               kryptos_run_cipher_hmac(triple_des, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (kryptos_u8_t *)p_layer->arg[0],
+                                                       (size_t *)p_layer->arg[1],
+                                                       (kryptos_u8_t *)p_layer->arg[2],
+                                                       (size_t *)p_layer->arg[3]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_triple_des, ktask, p_layer,
+                               kryptos_run_cipher_hmac(triple_des, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (kryptos_u8_t *)p_layer->arg[0],
+                                                       (size_t *)p_layer->arg[1],
+                                                       (kryptos_u8_t *)p_layer->arg[2],
+                                                       (size_t *)p_layer->arg[3]))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(triple_des_ede, ktask, p_layer,
                                kryptos_run_cipher(triple_des_ede, *ktask,
                                                   p_layer->key, p_layer->key_size,
@@ -251,6 +275,22 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_triple_des_ede, ktask, p_layer,
                                kryptos_run_cipher_hmac(triple_des_ede, whirlpool, *ktask,
                                                        p_layer->key, p_layer->key_size,
                                                        p_layer->mode,
+                                                       (kryptos_u8_t *)p_layer->arg[0],
+                                                       (size_t *)p_layer->arg[1],
+                                                       (kryptos_u8_t *)p_layer->arg[2],
+                                                       (size_t *)p_layer->arg[3]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_triple_des_ede, ktask, p_layer,
+                               kryptos_run_cipher_hmac(triple_des_ede, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (kryptos_u8_t *)p_layer->arg[0],
+                                                       (size_t *)p_layer->arg[1],
+                                                       (kryptos_u8_t *)p_layer->arg[2],
+                                                       (size_t *)p_layer->arg[3]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_triple_des_ede, ktask, p_layer,
+                               kryptos_run_cipher_hmac(triple_des_ede, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (kryptos_u8_t *)p_layer->arg[0],
                                                        (size_t *)p_layer->arg[1],
                                                        (kryptos_u8_t *)p_layer->arg[2],

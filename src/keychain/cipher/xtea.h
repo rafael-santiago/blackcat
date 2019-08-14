@@ -32,6 +32,10 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_xtea, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_xtea, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_xtea, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_xtea, ktask, p_layer)
+
 BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(xtea, algo_params, args, args_nr, key, key_size, argc, err_mesg);
 
 #endif

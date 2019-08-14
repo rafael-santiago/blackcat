@@ -69,6 +69,16 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc5, ktask, p_layer,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_rc5, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc5, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_rc5, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc5, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
 BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc5, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
     const char *begin, *end;
     char *arg;

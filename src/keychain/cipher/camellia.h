@@ -57,4 +57,12 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_camellia128, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_camellia192, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_camellia256, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_camellia128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_camellia192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_camellia256, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_camellia128, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_camellia192, ktask, p_layer)
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_camellia256, ktask, p_layer)
+
 #endif

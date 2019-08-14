@@ -51,6 +51,14 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_present80, ktask, p_layer,
                                kryptos_run_cipher_hmac(present80, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_present80, ktask, p_layer,
+                               kryptos_run_cipher_hmac(present80, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_present80, ktask, p_layer,
+                               kryptos_run_cipher_hmac(present80, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(present128, ktask, p_layer,
                                kryptos_run_cipher(present128, *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
 
@@ -92,4 +100,12 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_present128, ktask, p_layer,
 
 IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_present128, ktask, p_layer,
                                kryptos_run_cipher_hmac(present128, whirlpool,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_present128, ktask, p_layer,
+                               kryptos_run_cipher_hmac(present128, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_present128, ktask, p_layer,
+                               kryptos_run_cipher_hmac(present128, blake2b512,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))

@@ -50,3 +50,11 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_idea, ktask, p_layer,
 IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_idea, ktask, p_layer,
                                kryptos_run_cipher_hmac(idea, whirlpool, *ktask,
                                                        p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_idea, ktask, p_layer,
+                               kryptos_run_cipher_hmac(idea, blake2s256, *ktask,
+                                                       p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_idea, ktask, p_layer,
+                               kryptos_run_cipher_hmac(idea, blake2b512, *ktask,
+                                                       p_layer->key, p_layer->key_size, p_layer->mode))

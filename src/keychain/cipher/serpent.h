@@ -32,4 +32,8 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_serpent, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_serpent, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_serpent, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_serpent, ktask, p_layer)
+
 #endif

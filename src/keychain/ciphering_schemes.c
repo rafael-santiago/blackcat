@@ -11,16 +11,18 @@
 #include <string.h>
 #include <stdio.h>
 
-#define is_hmac(processor, cipher) ( processor == blackcat_hmac ## _sha224_ ## cipher   ||\
-                                     processor == blackcat_hmac ## _sha256_ ## cipher   ||\
-                                     processor == blackcat_hmac ## _sha384_ ## cipher   ||\
-                                     processor == blackcat_hmac ## _sha512_ ## cipher   ||\
-                                     processor == blackcat_hmac ## _sha3_224_ ## cipher ||\
-                                     processor == blackcat_hmac ## _sha3_256_ ## cipher ||\
-                                     processor == blackcat_hmac ## _sha3_384_ ## cipher ||\
-                                     processor == blackcat_hmac ## _sha3_512_ ## cipher ||\
-                                     processor == blackcat_hmac ## _tiger_ ## cipher    ||\
-                                     processor == blackcat_hmac ## _whirlpool_ ## cipher )
+#define is_hmac(processor, cipher) ( processor == blackcat_hmac ## _sha224_ ## cipher     ||\
+                                     processor == blackcat_hmac ## _sha256_ ## cipher     ||\
+                                     processor == blackcat_hmac ## _sha384_ ## cipher     ||\
+                                     processor == blackcat_hmac ## _sha512_ ## cipher     ||\
+                                     processor == blackcat_hmac ## _sha3_224_ ## cipher   ||\
+                                     processor == blackcat_hmac ## _sha3_256_ ## cipher   ||\
+                                     processor == blackcat_hmac ## _sha3_384_ ## cipher   ||\
+                                     processor == blackcat_hmac ## _sha3_512_ ## cipher   ||\
+                                     processor == blackcat_hmac ## _tiger_ ## cipher      ||\
+                                     processor == blackcat_hmac ## _whirlpool_ ## cipher  ||\
+                                     processor == blackcat_hmac ## _blake2s256_ ## cipher ||\
+                                     processor == blackcat_hmac ## _blake2b512_ ## cipher )
 
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer) {
     fprintf(stderr,
@@ -177,7 +179,9 @@ int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor
         register_forbidden_usage(sha3_512, sha3_256),
         register_forbidden_usage(sha3_512, sha3_384),
         register_forbidden_usage(tiger, tiger),
-        register_forbidden_usage(whirlpool, whirlpool)
+        register_forbidden_usage(whirlpool, whirlpool),
+        register_forbidden_usage(blake2s256, blake2s256),
+        register_forbidden_usage(blake2b512, blake2b512)
     };
 #undef register_forbidden_usage
     size_t fhfu_nr = sizeof(fhfu) / sizeof(fhfu[0]), f;

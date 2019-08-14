@@ -50,3 +50,11 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_blowfish, ktask, p_layer,
 IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_blowfish, ktask, p_layer,
                                kryptos_run_cipher_hmac(blowfish, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_blowfish, ktask, p_layer,
+                               kryptos_run_cipher_hmac(blowfish, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_blowfish, ktask, p_layer,
+                               kryptos_run_cipher_hmac(blowfish, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))

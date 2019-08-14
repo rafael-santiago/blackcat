@@ -51,6 +51,14 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_noekeon, ktask, p_layer,
                                kryptos_run_cipher_hmac(noekeon, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_noekeon, ktask, p_layer,
+                               kryptos_run_cipher_hmac(noekeon, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_noekeon, ktask, p_layer,
+                               kryptos_run_cipher_hmac(noekeon, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(noekeon_d, ktask, p_layer,
                                kryptos_run_cipher(noekeon_d, *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
 
@@ -92,4 +100,12 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_noekeon_d, ktask, p_layer,
 
 IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_noekeon_d, ktask, p_layer,
                                kryptos_run_cipher_hmac(noekeon_d, whirlpool,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_noekeon_d, ktask, p_layer,
+                               kryptos_run_cipher_hmac(noekeon_d, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_noekeon_d, ktask, p_layer,
+                               kryptos_run_cipher_hmac(noekeon_d, blake2b512,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode))

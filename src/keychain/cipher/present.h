@@ -32,6 +32,10 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_present80, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_present80, ktask, p_layer)
 
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_present80, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_present80, ktask, p_layer)
+
 DECL_BLACKCAT_CIPHER_PROCESSOR(present128, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_present128, ktask, p_layer)
@@ -53,5 +57,9 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha3_512_present128, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_present128, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_present128, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_present128, ktask, p_layer)
+
+DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_present128, ktask, p_layer)
 
 #endif

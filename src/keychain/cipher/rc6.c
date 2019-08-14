@@ -68,6 +68,17 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_128, ktask, p_layer,
                                kryptos_run_cipher_hmac(rc6_128, whirlpool,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_rc6_128, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_128, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_rc6_128, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_128, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(rc6_192, ktask, p_layer,
                                kryptos_run_cipher(rc6_192, *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                   (int *)p_layer->arg[0]))
@@ -122,6 +133,16 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_192, ktask, p_layer,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
 
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_rc6_192, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_192, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_rc6_192, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_192, blake2b512,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
 IMPL_BLACKCAT_CIPHER_PROCESSOR(rc6_256, ktask, p_layer,
                                kryptos_run_cipher(rc6_256, *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                   (int *)p_layer->arg[0]))
@@ -173,6 +194,16 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_tiger_rc6_256, ktask, p_layer,
 
 IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_whirlpool_rc6_256, ktask, p_layer,
                                kryptos_run_cipher_hmac(rc6_256, whirlpool,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2s256_rc6_256, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_256, blake2s256,
+                                                       *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
+                                                       (int *)p_layer->arg[0]))
+
+IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_rc6_256, ktask, p_layer,
+                               kryptos_run_cipher_hmac(rc6_256, blake2b512,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
 
