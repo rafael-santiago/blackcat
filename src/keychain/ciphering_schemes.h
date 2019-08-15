@@ -77,6 +77,9 @@
 #include <keychain/encoder/uuencode.h>
 #include <keychain/encoder/base64.h>
 #include <keychain/steganography/gibberish_wrap.h>
+#include <keychain/kdf/hkdf.h>
+#include <keychain/kdf/pbkdf2.h>
+#include <keychain/kdf/argon2i.h>
 #include <kryptos.h>
 
 struct blackcat_ciphering_scheme_ctx {
@@ -105,6 +108,11 @@ struct blackcat_encoding_algorithms_ctx {
     blackcat_encoder encoder;
 };
 
+struct blackcat_kdf_algorithms_ctx {
+    const char *name;
+    blackcat_kdf_func kdf;
+};
+
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
 int blackcat_NULL_args(const char *algo_params,
@@ -125,6 +133,10 @@ const char *get_hash_processor_name(blackcat_hash_processor processor);
 blackcat_encoder get_encoder(const char *name);
 
 const char *get_encoder_name(blackcat_encoder encoder);
+
+blackcat_kdf_func get_kdf(const char *name);
+
+const char *get_kdf_name(blackcat_kdf_func kdf);
 
 int is_hmac_processor(blackcat_cipher_processor processor);
 
@@ -176,6 +188,14 @@ static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
 };
 
 static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / sizeof(g_blackcat_hashing_algos[0]);
+
+static struct blackcat_kdf_algorithms_ctx g_blackcat_kdf_algos[] = {
+    { "hkdf",    blackcat_hkdf    },
+    { "pbkdf2",  blackcat_pbkdf2  },
+    { "argon2i", blackcat_argon2i }
+};
+
+static size_t g_blackcat_kdf_algos_nr = sizeof(g_blackcat_kdf_algos) / sizeof(g_blackcat_kdf_algos[0]);
 
 #define register_ciphering_scheme(k, n, p, a, m) { (k), (n), blackcat_ ## p, blackcat_ ## a ## _args, kKryptos ## m }
 

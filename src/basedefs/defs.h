@@ -31,6 +31,8 @@ typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_
                                                  kryptos_u8_t *in, size_t in_size,
                                                  size_t *out_size);
 
+typedef kryptos_u8_t *(*blackcat_kdf_func)(kryptos_u8_t *ikm, size_t ikm_size, size_t okm_size, void **args);
+
 #define DECL_BLACKCAT_CIPHER_PROCESSOR(name, ktask, p_layer)\
     void blackcat_ ## name (kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
@@ -65,6 +67,14 @@ typedef kryptos_u8_t *(*blackcat_data_processor)(const blackcat_protlayer_chain_
         kryptos_ ## name ## _processor(ktask);\
         (*ktask)->encoder = kKryptosEncodingNr;\
     }
+
+#define DECL_BLACKCAT_KDF_PROCESSOR(name, ikm, ikm_size, okm_size, args)\
+    kryptos_u8_t *blackcat_ ## name(kryptos_u8_t *ikm, size_t ikm_size, size_t okm_size, void **args);
+
+#define IMPL_BLACKCAT_KDF_PROCESSOR(name, ikm, ikm_size, okm_size, args, stmt)\
+    kryptos_u8_t *blackcat_ ## name(kryptos_u8_t *ikm, size_t ikm_size, size_t okm_size, void **args) {\
+        stmt;\
+    }\
 
 typedef struct blackcat_protlayer_chain {
     struct blackcat_protlayer_chain *head, *tail;

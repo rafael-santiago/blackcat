@@ -337,6 +337,38 @@ int is_pht(blackcat_hash_processor h) {
     return (h == blackcat_bcrypt);
 }
 
+blackcat_kdf_func get_kdf(const char *name) {
+    size_t k;
+
+    if (name == NULL) {
+        return NULL;
+    }
+
+    for (k = 0; k < g_blackcat_kdf_algos_nr; k++) {
+        if (strcmp(g_blackcat_kdf_algos[k].name, name) == 0) {
+            return g_blackcat_kdf_algos[k].kdf;
+        }
+    }
+
+    return NULL;
+}
+
+const char *get_kdf_name(blackcat_kdf_func kdf) {
+    size_t k;
+
+    if (kdf == NULL) {
+        return NULL;
+    }
+
+    for (k = 0; k < g_blackcat_kdf_algos_nr; k++) {
+        if (g_blackcat_kdf_algos[k].kdf == kdf) {
+            return &g_blackcat_kdf_algos[k].name[0];
+        }
+    }
+
+    return NULL;
+}
+
 #define IMPL_BLACKCAT_GET_AVAIL(what, data_vector)\
 kryptos_u8_t *blackcat_get_avail_ ## what(size_t *size) {\
     size_t s, c;\
