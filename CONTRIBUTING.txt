@@ -19,7 +19,7 @@ Firstly, thank you for contributing. You should consider the following before su
       be fair by making it clear in documentation;
     - Hardcoded passwords are silly, thanks but no;
     - Security by obscurity is silly, thanks but no;
-    - Trap doors? Are you serious?
+    - Trap doors? Backdoors? Are you serious?!
     - Details are awesome in a pull request;
     - The first idea is providing a new feature thinking in all supported platforms;
     - Security and secrecy at first place;
@@ -35,7 +35,7 @@ There is no absolute truth (a.k.a unicorn) when talking about code style, anyway
 been taking into consideration here.
 
     - Comments are good;
-    - Tests are awesome (use the testing library adopted by the project);
+    - Tests are awesome (use the testing library adopted by the project <https://github.com/rafael-santiago/cutest>);
     - If your test need a human to drive it your test is a kind of crap;
     - We like C (C, not C with sugar or anything similar);
     - Do not use 'func()' when prototyping use 'func(void)';
@@ -74,7 +74,7 @@ When passing a string pass its size besides assuming it as a null terminated str
 
 When commenting some code use the following format:
 
-    // INFO(your name, or as people know you): This is a information.
+    // INFO(your name, or as people know you): This is an information.
 
     // WARN(your name, or as people know you): This is a warning.
 

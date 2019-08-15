@@ -38,6 +38,8 @@ CUTE_DECLARE_TEST_CASE(is_pht_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_getuserkey_tests);
 CUTE_DECLARE_TEST_CASE(random_printable_padding_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_otp_meta_processor_tests);
+CUTE_DECLARE_TEST_CASE(get_kdf_tests);
+CUTE_DECLARE_TEST_CASE(get_kdf_name_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -50,6 +52,8 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_hash_input_size_tests);
     CUTE_RUN_TEST(get_encoder_tests);
     CUTE_RUN_TEST(get_encoder_name_tests);
+    CUTE_RUN_TEST(get_kdf_tests);
+    CUTE_RUN_TEST(get_kdf_name_tests);
     CUTE_RUN_TEST(is_hmac_processor_tests);
     CUTE_RUN_TEST(get_hmac_key_size_tests);
     CUTE_RUN_TEST(is_weak_hash_funcs_usage_tests);
@@ -391,7 +395,9 @@ CUTE_TEST_CASE(is_weak_hash_funcs_usage_tests)
         add_test_step(whirlpool, whirlpool, 1),
         add_test_step(sha224, sha3_224, 0),
         add_test_step(whirlpool, sha512, 0),
-        add_test_step(tiger, sha3_384, 0)
+        add_test_step(tiger, sha3_384, 0),
+        add_test_step(blake2s256, blake2s256, 1),
+        add_test_step(blake2b512, blake2b512, 1)
     };
 #undef add_test_step
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
@@ -407,22 +413,24 @@ CUTE_TEST_CASE(get_hash_processor_tests)
         blackcat_hash_processor processor;
     };
     struct test_ctx test[] = {
-        { "sha-224",   kryptos_sha224_hash    },
-        { "sha-256",   kryptos_sha256_hash    },
-        { "sha-384",   kryptos_sha384_hash    },
-        { "sha-512",   kryptos_sha512_hash    },
-        { "sha3-224",  kryptos_sha3_224_hash  },
-        { "sha3-256",  kryptos_sha3_256_hash  },
-        { "sha3-384",  kryptos_sha3_384_hash  },
-        { "sha3-512",  kryptos_sha3_512_hash  },
-        { "tiger",     kryptos_tiger_hash     },
-        { "whirlpool", kryptos_whirlpool_hash },
-        { "bcrypt",    blackcat_bcrypt        },
-        { "bug-a-loo", NULL                   },
-        { "sha3_224",  NULL                   },
-        { "sha3_256",  NULL                   },
-        { "sha3_384",  NULL                   },
-        { "sha3_512",  NULL                   }
+        { "sha-224",     kryptos_sha224_hash     },
+        { "sha-256",     kryptos_sha256_hash     },
+        { "sha-384",     kryptos_sha384_hash     },
+        { "sha-512",     kryptos_sha512_hash     },
+        { "sha3-224",    kryptos_sha3_224_hash   },
+        { "sha3-256",    kryptos_sha3_256_hash   },
+        { "sha3-384",    kryptos_sha3_384_hash   },
+        { "sha3-512",    kryptos_sha3_512_hash   },
+        { "tiger",       kryptos_tiger_hash      },
+        { "whirlpool",   kryptos_whirlpool_hash  },
+        { "bcrypt",      blackcat_bcrypt         },
+        { "blake2s-256", kryptos_blake2s256_hash },
+        { "blake2b-512", kryptos_blake2b512_hash },
+        { "bug-a-loo",   NULL                    },
+        { "sha3_224",    NULL                    },
+        { "sha3_256",    NULL                    },
+        { "sha3_384",    NULL                    },
+        { "sha3_512",    NULL                    }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 
@@ -437,22 +445,24 @@ CUTE_TEST_CASE(get_hash_size_tests)
         blackcat_hash_size_func size;
     };
     struct test_ctx test[] = {
-        { "sha-224",   kryptos_sha224_hash_size    },
-        { "sha-256",   kryptos_sha256_hash_size    },
-        { "sha-384",   kryptos_sha384_hash_size    },
-        { "sha-512",   kryptos_sha512_hash_size    },
-        { "sha3-224",  kryptos_sha3_224_hash_size  },
-        { "sha3-256",  kryptos_sha3_256_hash_size  },
-        { "sha3-384",  kryptos_sha3_384_hash_size  },
-        { "sha3-512",  kryptos_sha3_512_hash_size  },
-        { "tiger",     kryptos_tiger_hash_size     },
-        { "whirlpool", kryptos_whirlpool_hash_size },
-        { "bcrypt",    blackcat_bcrypt_size        },
-        { "bug-a-loo", NULL                        },
-        { "sha3_224",  NULL                        },
-        { "sha3_256",  NULL                        },
-        { "sha3_384",  NULL                        },
-        { "sha3_512",  NULL                        }
+        { "sha-224",     kryptos_sha224_hash_size     },
+        { "sha-256",     kryptos_sha256_hash_size     },
+        { "sha-384",     kryptos_sha384_hash_size     },
+        { "sha-512",     kryptos_sha512_hash_size     },
+        { "sha3-224",    kryptos_sha3_224_hash_size   },
+        { "sha3-256",    kryptos_sha3_256_hash_size   },
+        { "sha3-384",    kryptos_sha3_384_hash_size   },
+        { "sha3-512",    kryptos_sha3_512_hash_size   },
+        { "tiger",       kryptos_tiger_hash_size      },
+        { "whirlpool",   kryptos_whirlpool_hash_size  },
+        { "bcrypt",      blackcat_bcrypt_size         },
+        { "blake2s-256", kryptos_blake2s256_hash_size },
+        { "blake2b-512", kryptos_blake2b512_hash_size },
+        { "bug-a-loo",   NULL                         },
+        { "sha3_224",    NULL                         },
+        { "sha3_256",    NULL                         },
+        { "sha3_384",    NULL                         },
+        { "sha3_512",    NULL                         }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 
@@ -467,22 +477,24 @@ CUTE_TEST_CASE(get_hash_input_size_tests)
         blackcat_hash_size_func size;
     };
     struct test_ctx test[] = {
-        { "sha-224",   kryptos_sha224_hash_input_size    },
-        { "sha-256",   kryptos_sha256_hash_input_size    },
-        { "sha-384",   kryptos_sha384_hash_input_size    },
-        { "sha-512",   kryptos_sha512_hash_input_size    },
-        { "sha3-224",  kryptos_sha3_224_hash_input_size  },
-        { "sha3-256",  kryptos_sha3_256_hash_input_size  },
-        { "sha3-384",  kryptos_sha3_384_hash_input_size  },
-        { "sha3-512",  kryptos_sha3_512_hash_input_size  },
-        { "tiger",     kryptos_tiger_hash_input_size     },
-        { "whirlpool", kryptos_whirlpool_hash_input_size },
-        { "bcrypt",    blackcat_bcrypt_input_size        },
-        { "bug-a-loo", NULL                              },
-        { "sha3_224",  NULL                              },
-        { "sha3_256",  NULL                              },
-        { "sha3_384",  NULL                              },
-        { "sha3_512",  NULL                              }
+        { "sha-224",     kryptos_sha224_hash_input_size     },
+        { "sha-256",     kryptos_sha256_hash_input_size     },
+        { "sha-384",     kryptos_sha384_hash_input_size     },
+        { "sha-512",     kryptos_sha512_hash_input_size     },
+        { "sha3-224",    kryptos_sha3_224_hash_input_size   },
+        { "sha3-256",    kryptos_sha3_256_hash_input_size   },
+        { "sha3-384",    kryptos_sha3_384_hash_input_size   },
+        { "sha3-512",    kryptos_sha3_512_hash_input_size   },
+        { "tiger",       kryptos_tiger_hash_input_size      },
+        { "whirlpool",   kryptos_whirlpool_hash_input_size  },
+        { "bcrypt",      blackcat_bcrypt_input_size         },
+        { "blake2s-256", kryptos_blake2s256_hash_input_size },
+        { "blake2b-512", kryptos_blake2b512_hash_input_size },
+        { "bug-a-loo",   NULL                               },
+        { "sha3_224",    NULL                               },
+        { "sha3_256",    NULL                               },
+        { "sha3_384",    NULL                               },
+        { "sha3_512",    NULL                               }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 
@@ -851,7 +863,71 @@ CUTE_TEST_CASE(get_hmac_key_size_tests)
         add_test_step(hmac_whirlpool_shacal1, 64),
         add_test_step(hmac_whirlpool_shacal2, 64),
         add_test_step(hmac_whirlpool_noekeon, 16),
-        add_test_step(hmac_whirlpool_noekeon_d, 16)
+        add_test_step(hmac_whirlpool_noekeon_d, 16),
+        add_test_step(hmac_blake2s256_aes128, 16),
+        add_test_step(hmac_blake2s256_aes192, 24),
+        add_test_step(hmac_blake2s256_aes256, 32),
+        add_test_step(hmac_blake2s256_des, 8),
+        add_test_step(hmac_blake2s256_triple_des, 24),
+        add_test_step(hmac_blake2s256_triple_des_ede, 24),
+        add_test_step(hmac_blake2s256_idea, 16),
+        add_test_step(hmac_blake2s256_rc2, 128),
+        add_test_step(hmac_blake2s256_rc5, 64),
+        add_test_step(hmac_blake2s256_rc6_128, 16),
+        add_test_step(hmac_blake2s256_rc6_192, 24),
+        add_test_step(hmac_blake2s256_rc6_256, 32),
+        add_test_step(hmac_blake2s256_feal, 8),
+        add_test_step(hmac_blake2s256_cast5, 16),
+        add_test_step(hmac_blake2s256_camellia128, 16),
+        add_test_step(hmac_blake2s256_camellia192, 24),
+        add_test_step(hmac_blake2s256_camellia256, 32),
+        add_test_step(hmac_blake2s256_saferk64, 8),
+        add_test_step(hmac_blake2s256_blowfish, 56),
+        add_test_step(hmac_blake2s256_serpent, 32),
+        add_test_step(hmac_blake2s256_tea, 16),
+        add_test_step(hmac_blake2s256_xtea, 16),
+        add_test_step(hmac_blake2s256_misty1, 16),
+        add_test_step(hmac_blake2s256_mars128, 16),
+        add_test_step(hmac_blake2s256_mars192, 24),
+        add_test_step(hmac_blake2s256_mars256, 32),
+        add_test_step(hmac_blake2s256_present80, 10),
+        add_test_step(hmac_blake2s256_present128, 16),
+        add_test_step(hmac_blake2s256_shacal1, 64),
+        add_test_step(hmac_blake2s256_shacal2, 64),
+        add_test_step(hmac_blake2s256_noekeon, 16),
+        add_test_step(hmac_blake2s256_noekeon_d, 16),
+        add_test_step(hmac_blake2b512_aes128, 16),
+        add_test_step(hmac_blake2b512_aes192, 24),
+        add_test_step(hmac_blake2b512_aes256, 32),
+        add_test_step(hmac_blake2b512_des, 8),
+        add_test_step(hmac_blake2b512_triple_des, 24),
+        add_test_step(hmac_blake2b512_triple_des_ede, 24),
+        add_test_step(hmac_blake2b512_idea, 16),
+        add_test_step(hmac_blake2b512_rc2, 128),
+        add_test_step(hmac_blake2b512_rc5, 64),
+        add_test_step(hmac_blake2b512_rc6_128, 16),
+        add_test_step(hmac_blake2b512_rc6_192, 24),
+        add_test_step(hmac_blake2b512_rc6_256, 32),
+        add_test_step(hmac_blake2b512_feal, 8),
+        add_test_step(hmac_blake2b512_cast5, 16),
+        add_test_step(hmac_blake2b512_camellia128, 16),
+        add_test_step(hmac_blake2b512_camellia192, 24),
+        add_test_step(hmac_blake2b512_camellia256, 32),
+        add_test_step(hmac_blake2b512_saferk64, 8),
+        add_test_step(hmac_blake2b512_blowfish, 56),
+        add_test_step(hmac_blake2b512_serpent, 32),
+        add_test_step(hmac_blake2b512_tea, 16),
+        add_test_step(hmac_blake2b512_xtea, 16),
+        add_test_step(hmac_blake2b512_misty1, 16),
+        add_test_step(hmac_blake2b512_mars128, 16),
+        add_test_step(hmac_blake2b512_mars192, 24),
+        add_test_step(hmac_blake2b512_mars256, 32),
+        add_test_step(hmac_blake2b512_present80, 10),
+        add_test_step(hmac_blake2b512_present128, 16),
+        add_test_step(hmac_blake2b512_shacal1, 64),
+        add_test_step(hmac_blake2b512_shacal2, 64),
+        add_test_step(hmac_blake2b512_noekeon, 16),
+        add_test_step(hmac_blake2b512_noekeon_d, 16)
     };
 #undef add_test_step
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
@@ -1221,7 +1297,71 @@ CUTE_TEST_CASE(is_hmac_processor_tests)
         add_test_step(hmac_whirlpool_shacal1, 1),
         add_test_step(hmac_whirlpool_shacal2, 1),
         add_test_step(hmac_whirlpool_noekeon, 1),
-        add_test_step(hmac_whirlpool_noekeon_d, 1)
+        add_test_step(hmac_whirlpool_noekeon_d, 1),
+        add_test_step(hmac_blake2s256_aes128, 1),
+        add_test_step(hmac_blake2s256_aes192, 1),
+        add_test_step(hmac_blake2s256_aes256, 1),
+        add_test_step(hmac_blake2s256_des, 1),
+        add_test_step(hmac_blake2s256_triple_des, 1),
+        add_test_step(hmac_blake2s256_triple_des_ede, 1),
+        add_test_step(hmac_blake2s256_idea, 1),
+        add_test_step(hmac_blake2s256_rc2, 1),
+        add_test_step(hmac_blake2s256_rc5, 1),
+        add_test_step(hmac_blake2s256_rc6_128, 1),
+        add_test_step(hmac_blake2s256_rc6_192, 1),
+        add_test_step(hmac_blake2s256_rc6_256, 1),
+        add_test_step(hmac_blake2s256_feal, 1),
+        add_test_step(hmac_blake2s256_cast5, 1),
+        add_test_step(hmac_blake2s256_camellia128, 1),
+        add_test_step(hmac_blake2s256_camellia192, 1),
+        add_test_step(hmac_blake2s256_camellia256, 1),
+        add_test_step(hmac_blake2s256_saferk64, 1),
+        add_test_step(hmac_blake2s256_blowfish, 1),
+        add_test_step(hmac_blake2s256_serpent, 1),
+        add_test_step(hmac_blake2s256_tea, 1),
+        add_test_step(hmac_blake2s256_xtea, 1),
+        add_test_step(hmac_blake2s256_misty1, 1),
+        add_test_step(hmac_blake2s256_mars128, 1),
+        add_test_step(hmac_blake2s256_mars192, 1),
+        add_test_step(hmac_blake2s256_mars256, 1),
+        add_test_step(hmac_blake2s256_present80, 1),
+        add_test_step(hmac_blake2s256_present128, 1),
+        add_test_step(hmac_blake2s256_shacal1, 1),
+        add_test_step(hmac_blake2s256_shacal2, 1),
+        add_test_step(hmac_blake2s256_noekeon, 1),
+        add_test_step(hmac_blake2s256_noekeon_d, 1),
+        add_test_step(hmac_blake2b512_aes128, 1),
+        add_test_step(hmac_blake2b512_aes192, 1),
+        add_test_step(hmac_blake2b512_aes256, 1),
+        add_test_step(hmac_blake2b512_des, 1),
+        add_test_step(hmac_blake2b512_triple_des, 1),
+        add_test_step(hmac_blake2b512_triple_des_ede, 1),
+        add_test_step(hmac_blake2b512_idea, 1),
+        add_test_step(hmac_blake2b512_rc2, 1),
+        add_test_step(hmac_blake2b512_rc5, 1),
+        add_test_step(hmac_blake2b512_rc6_128, 1),
+        add_test_step(hmac_blake2b512_rc6_192, 1),
+        add_test_step(hmac_blake2b512_rc6_256, 1),
+        add_test_step(hmac_blake2b512_feal, 1),
+        add_test_step(hmac_blake2b512_cast5, 1),
+        add_test_step(hmac_blake2b512_camellia128, 1),
+        add_test_step(hmac_blake2b512_camellia192, 1),
+        add_test_step(hmac_blake2b512_camellia256, 1),
+        add_test_step(hmac_blake2b512_saferk64, 1),
+        add_test_step(hmac_blake2b512_blowfish, 1),
+        add_test_step(hmac_blake2b512_serpent, 1),
+        add_test_step(hmac_blake2b512_tea, 1),
+        add_test_step(hmac_blake2b512_xtea, 1),
+        add_test_step(hmac_blake2b512_misty1, 1),
+        add_test_step(hmac_blake2b512_mars128, 1),
+        add_test_step(hmac_blake2b512_mars192, 1),
+        add_test_step(hmac_blake2b512_mars256, 1),
+        add_test_step(hmac_blake2b512_present80, 1),
+        add_test_step(hmac_blake2b512_present128, 1),
+        add_test_step(hmac_blake2b512_shacal1, 1),
+        add_test_step(hmac_blake2b512_shacal2, 1),
+        add_test_step(hmac_blake2b512_noekeon, 1),
+        add_test_step(hmac_blake2b512_noekeon_d, 1)
     };
 #undef add_test_step
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
@@ -1457,4 +1597,47 @@ CUTE_TEST_CASE(ctx_tests)
 
     del_protlayer_chain_ctx(pchain);
     free(key);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_kdf_tests)
+    struct test_ctx {
+        const char *name;
+        blackcat_kdf_func func;
+    } test_vector[] = {
+        {  NULL,     NULL             },
+        { "hkdf",    blackcat_hkdf    },
+        { "pbkdf2",  blackcat_pbkdf2  },
+        { "argon2i", blackcat_argon2i },
+        { "ni!",     NULL             }
+    };
+    size_t test_vector_nr = sizeof(test_vector) / sizeof(test_vector[0]);
+    size_t t;
+
+    for (t = 0; t < test_vector_nr; t++) {
+        CUTE_ASSERT(get_kdf(test_vector[t].name) == test_vector[t].func);
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_kdf_name_tests)
+    blackcat_kdf_func meow = NULL;
+    struct test_ctx {
+        blackcat_kdf_func func;
+        const char *name;
+    } test_vector[] = {
+        { NULL,                           NULL      },
+        { blackcat_hkdf,                  "hkdf"    },
+        { blackcat_pbkdf2,                "pbkdf2"  },
+        { blackcat_argon2i,               "argon2i" },
+        { meow,                           NULL      }
+    };
+    size_t test_vector_nr = sizeof(test_vector) / sizeof(test_vector[0]);
+    size_t t;
+    const char *name;
+
+    for (t = 0; t < test_vector_nr; t++) {
+        name = get_kdf_name(test_vector[t].func);
+        CUTE_ASSERT((test_vector[t].func == NULL || test_vector[t].func == meow) ?
+                                                                    name == NULL :
+                                          strcmp(name, test_vector[t].name) == 0);
+    }
 CUTE_TEST_CASE_END

@@ -172,19 +172,19 @@ static struct blackcat_encoding_algorithms_ctx g_blackcat_encoding_algos[] = {
 static size_t g_blackcat_encoding_algos_nr = sizeof(g_blackcat_encoding_algos) / sizeof(g_blackcat_encoding_algos[0]);
 
 static struct blackcat_hash_algorithms_ctx g_blackcat_hashing_algos[] = {
-    { "sha-224",    kryptos_sha224_hash,     kryptos_sha224_hash_size,     kryptos_sha224_hash_input_size     },
-    { "sha-256",    kryptos_sha256_hash,     kryptos_sha256_hash_size,     kryptos_sha256_hash_input_size     },
-    { "sha-384",    kryptos_sha384_hash,     kryptos_sha384_hash_size,     kryptos_sha384_hash_input_size     },
-    { "sha-512",    kryptos_sha512_hash,     kryptos_sha512_hash_size,     kryptos_sha512_hash_input_size     },
-    { "sha3-224",   kryptos_sha3_224_hash,   kryptos_sha3_224_hash_size,   kryptos_sha3_224_hash_input_size   },
-    { "sha3-256",   kryptos_sha3_256_hash,   kryptos_sha3_256_hash_size,   kryptos_sha3_256_hash_input_size   },
-    { "sha3-384",   kryptos_sha3_384_hash,   kryptos_sha3_384_hash_size,   kryptos_sha3_384_hash_input_size   },
-    { "sha3-512",   kryptos_sha3_512_hash,   kryptos_sha3_512_hash_size,   kryptos_sha3_512_hash_input_size   },
-    { "tiger",      kryptos_tiger_hash,      kryptos_tiger_hash_size,      kryptos_tiger_hash_input_size      },
-    { "whirlpool",  kryptos_whirlpool_hash,  kryptos_whirlpool_hash_size,  kryptos_whirlpool_hash_input_size  },
-    { "blake2s256", kryptos_blake2s256_hash, kryptos_blake2s256_hash_size, kryptos_blake2s256_hash_input_size },
-    { "blake2b512", kryptos_blake2b512_hash, kryptos_blake2b512_hash_size, kryptos_blake2b512_hash_input_size },
-    { "bcrypt",     blackcat_bcrypt,         blackcat_bcrypt_size,         blackcat_bcrypt_input_size         }
+    { "sha-224",     kryptos_sha224_hash,     kryptos_sha224_hash_size,     kryptos_sha224_hash_input_size     },
+    { "sha-256",     kryptos_sha256_hash,     kryptos_sha256_hash_size,     kryptos_sha256_hash_input_size     },
+    { "sha-384",     kryptos_sha384_hash,     kryptos_sha384_hash_size,     kryptos_sha384_hash_input_size     },
+    { "sha-512",     kryptos_sha512_hash,     kryptos_sha512_hash_size,     kryptos_sha512_hash_input_size     },
+    { "sha3-224",    kryptos_sha3_224_hash,   kryptos_sha3_224_hash_size,   kryptos_sha3_224_hash_input_size   },
+    { "sha3-256",    kryptos_sha3_256_hash,   kryptos_sha3_256_hash_size,   kryptos_sha3_256_hash_input_size   },
+    { "sha3-384",    kryptos_sha3_384_hash,   kryptos_sha3_384_hash_size,   kryptos_sha3_384_hash_input_size   },
+    { "sha3-512",    kryptos_sha3_512_hash,   kryptos_sha3_512_hash_size,   kryptos_sha3_512_hash_input_size   },
+    { "tiger",       kryptos_tiger_hash,      kryptos_tiger_hash_size,      kryptos_tiger_hash_input_size      },
+    { "whirlpool",   kryptos_whirlpool_hash,  kryptos_whirlpool_hash_size,  kryptos_whirlpool_hash_input_size  },
+    { "blake2s-256", kryptos_blake2s256_hash, kryptos_blake2s256_hash_size, kryptos_blake2s256_hash_input_size },
+    { "blake2b-512", kryptos_blake2b512_hash, kryptos_blake2b512_hash_size, kryptos_blake2b512_hash_input_size },
+    { "bcrypt",      blackcat_bcrypt,         blackcat_bcrypt_size,         blackcat_bcrypt_input_size         }
 };
 
 static size_t g_blackcat_hashing_algos_nr = sizeof(g_blackcat_hashing_algos) / sizeof(g_blackcat_hashing_algos[0]);
