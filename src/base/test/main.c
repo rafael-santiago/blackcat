@@ -11,6 +11,7 @@
 #include <keychain/keychain.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
+#include <keychain/kdf/kdf_utils.h>
 #include <kbd/kbd.h>
 #include <util/random.h>
 #include <string.h>
@@ -40,6 +41,8 @@ CUTE_DECLARE_TEST_CASE(random_printable_padding_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_otp_meta_processor_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_name_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_kdf_clockwork_ctx_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -67,6 +70,8 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(is_pht_tests);
     CUTE_RUN_TEST(blackcat_getuserkey_tests);
     CUTE_RUN_TEST(random_printable_padding_tests);
+    CUTE_RUN_TEST(blackcat_kdf_clockwork_ctx_tests);
+    CUTE_RUN_TEST(blackcat_kdf_usr_params_get_next_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
@@ -1640,4 +1645,88 @@ CUTE_TEST_CASE(get_kdf_name_tests)
                                                                     name == NULL :
                                           strcmp(name, test_vector[t].name) == 0);
     }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_kdf_clockwork_ctx_tests)
+    struct blackcat_kdf_clockwork_ctx *clockwork;
+    void *nil = NULL; // WARN(Rafael): 'Eu tenho um jarro de terra, eu tenho um jarro de terra, adivinha o que tem dentro...'
+                      //                                                                                  -- Jack Sparrow
+
+    new_blackcat_kdf_clockwork_ctx(clockwork, {});
+    CUTE_ASSERT(clockwork != NULL);
+
+    clockwork->arg_data[0] = (void *) kryptos_newseg(10);
+    clockwork->arg_size[0] = 10;
+    clockwork->arg_data[1] = &nil;
+    clockwork->arg_size[1] = 0;
+    // INFO(Rafael): If it is exploding we will know.
+    //               If it is not freeing memory accordingly the memory leak
+    //               check system will complain at the end of the tests.
+    del_blackcat_kdf_clockwork_ctx(clockwork);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests)
+    const char *usr_params = "hkdf:sha-224:radix-64-salt-stuff:radix-64-info-stuff";
+    size_t usr_params_size = strlen(usr_params);
+    char *next;
+    char *out;
+    size_t out_size, delta_offset = 0;
+
+    out_size = 101;
+    out = blackcat_kdf_usr_params_get_next(NULL, usr_params_size, &next, &out_size, &delta_offset);
+    CUTE_ASSERT(out == NULL && out_size == 0);
+
+    out_size = 101;
+    out = blackcat_kdf_usr_params_get_next(usr_params, 0, &next, &out_size, &delta_offset);
+    CUTE_ASSERT(out == NULL && out_size == 0);
+
+    out_size = 101;
+    out = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, NULL, &out_size, &delta_offset);
+    CUTE_ASSERT(out == NULL && out_size == 0);
+
+    out = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, NULL, &delta_offset);
+    CUTE_ASSERT(out == NULL);
+
+    out_size = 101;
+    out = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &out_size, NULL);
+    CUTE_ASSERT(out == NULL && out_size == 0);
+
+    out = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &out_size, &delta_offset);
+
+    CUTE_ASSERT(next != NULL);
+    CUTE_ASSERT(out != NULL);
+    CUTE_ASSERT(out_size == 4);
+    CUTE_ASSERT(strcmp(out, "hkdf") == 0);
+
+    kryptos_freeseg(out, out_size);
+
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+
+    CUTE_ASSERT(next != NULL);
+    CUTE_ASSERT(out != NULL);
+    CUTE_ASSERT(out_size == 7);
+    CUTE_ASSERT(strcmp(out, "sha-224") == 0);
+
+    kryptos_freeseg(out, out_size);
+
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    CUTE_ASSERT(next != NULL);
+    CUTE_ASSERT(out != NULL);
+    CUTE_ASSERT(out_size == 19);
+    CUTE_ASSERT(strcmp(out, "radix-64-salt-stuff") == 0);
+
+    kryptos_freeseg(out, out_size);
+
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    CUTE_ASSERT(next == NULL);
+    CUTE_ASSERT(out != NULL);
+    CUTE_ASSERT(out_size == 19);
+    CUTE_ASSERT(strcmp(out, "radix-64-info-stuff") == 0);
+
+    kryptos_freeseg(out, out_size);
+
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    CUTE_ASSERT(next == NULL);
+    CUTE_ASSERT(out == NULL);
+    CUTE_ASSERT(out_size == 0);
 CUTE_TEST_CASE_END

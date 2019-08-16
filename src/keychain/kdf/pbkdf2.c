@@ -20,3 +20,5 @@ IMPL_BLACKCAT_KDF_PROCESSOR(pbkdf2, ikm, ikm_size, okm_size, args,
                                                          *((size_t *)args[5]),
                                                          okm_size);
                             })
+
+//TODO(Rafael): Write get_pbkdf2_clockwork().

@@ -25,3 +25,5 @@ IMPL_BLACKCAT_KDF_PROCESSOR(argon2i, ikm, ikm_size, okm_size, args,
                                                          *((size_t *)args[7]),
                                                          kArgon2i);
                             })
+
+//TODO(Rafael): Write get_argon2i_clockwork().

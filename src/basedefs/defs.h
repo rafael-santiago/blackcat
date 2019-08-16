@@ -76,6 +76,14 @@ typedef kryptos_u8_t *(*blackcat_kdf_func)(kryptos_u8_t *ikm, size_t ikm_size, s
         stmt;\
     }\
 
+#define BLACKCAT_KDF_ARGS_NR 10
+
+struct blackcat_kdf_clockwork_ctx {
+    blackcat_kdf_func kdf;
+    void *arg_data[BLACKCAT_KDF_ARGS_NR];
+    size_t arg_size[BLACKCAT_KDF_ARGS_NR];
+};
+
 typedef struct blackcat_protlayer_chain {
     struct blackcat_protlayer_chain *head, *tail;
     int is_hmac;
