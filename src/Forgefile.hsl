@@ -43,6 +43,7 @@ blackcat.prologue() {
     if ($option.count() > 0) {
         hefesto.sys.rm("lib/kryptos/lib/libkryptos.a");
         hefesto.sys.rm("lib/cutest/src/lib/libcutest.a");
+        hefesto.sys.rm("lib/accacia/lib/libaccacia.a");
     }
 
     var subforges type list;
