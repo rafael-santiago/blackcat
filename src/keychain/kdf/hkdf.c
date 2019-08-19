@@ -29,7 +29,7 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
                                                       char *err_msg) {
     //INFO(Rafael): This function expects this kind of user parameter string:
     //              'hkdf:<hash>:<salt-radix-64>:<info-radix-64>'.
-    char *arg = NULL, *next;
+    char *arg = NULL, *next = NULL;
     size_t arg_size = 0, delta_offset = 0;
     struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
     kryptos_task_ctx t, *ktask = &t;
