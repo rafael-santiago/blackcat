@@ -42,9 +42,9 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
 
     arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
 
-    if (strcmp(arg, "hkdf") != 0) {
+    if (arg == NULL || strcmp(arg, "hkdf") != 0) {
         if (err_msg != NULL) {
-            sprintf(err_msg, "ERROR: wrong clockwork processor it would be '%s'.", arg);
+            sprintf(err_msg, "ERROR: wrong clockwork processor; it should be '%s'.", arg);
         }
         goto get_hkdf_clockwork_epilogue;
     }
@@ -52,7 +52,7 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto get_hkdf_clockwork_epilogue);
 
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {
@@ -81,7 +81,7 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
     kdf_clockwork->arg_size[2] = 0;
 
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {
@@ -112,7 +112,7 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
     ktask->out = NULL;
 
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {

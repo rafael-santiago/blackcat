@@ -12,4 +12,7 @@
 
 DECL_BLACKCAT_KDF_PROCESSOR(pbkdf2, ikm, ikm_size, okm_size, args)
 
+struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, const size_t usr_params_size,
+                                                        char *err_msg);
+
 #endif

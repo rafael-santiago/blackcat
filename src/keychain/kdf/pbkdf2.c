@@ -6,7 +6,13 @@
  *
  */
 #include <keychain/kdf/pbkdf2.h>
+#include <keychain/kdf/kdf_utils.h>
+#include <keychain/ciphering_schemes.h>
+#include <keychain/keychain.h>
 #include <kryptos.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 IMPL_BLACKCAT_KDF_PROCESSOR(pbkdf2, ikm, ikm_size, okm_size, args,
                             {
@@ -21,4 +27,135 @@ IMPL_BLACKCAT_KDF_PROCESSOR(pbkdf2, ikm, ikm_size, okm_size, args,
                                                          okm_size);
                             })
 
-//TODO(Rafael): Write get_pbkdf2_clockwork().
+struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, const size_t usr_params_size,
+                                                        char *err_msg) {
+    //INFO(Rafael): This function expects this kind of user parameter string:
+    //              'pbkdf2:<hash>:<salt-radix-64>:<count-as-decimal-string>'.
+
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    kryptos_task_ctx t, *ktask = &t;
+    char *arg = NULL, *next = NULL;
+    size_t arg_size, delta_offset = 0;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (usr_params == NULL || usr_params_size == 0) {
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+
+    if (arg == NULL || strcmp(arg, "pbkdf2") != 0) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: wrong clockwork processor; it should be '%s'.", arg);
+        }
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto get_pbkdf2_clockwork_epilogue);
+
+    kryptos_freeseg(arg, arg_size);
+    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+
+    if (arg == NULL) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: while parsing hash algorithm.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    kdf_clockwork->arg_data[0] = get_hash_processor(arg);
+    kdf_clockwork->arg_size[0] = 0;
+
+    if (kdf_clockwork->arg_data[0] == NULL) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: unknown hash algorithm : '%s'.", arg);
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    kdf_clockwork->arg_data[1] = get_hash_size(arg);
+    kdf_clockwork->arg_size[1] = 0;
+
+    kdf_clockwork->arg_data[2] = get_hash_input_size(arg);
+    kdf_clockwork->arg_size[2] = 0;
+
+    kryptos_freeseg(arg, arg_size);
+    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+
+    if (arg == NULL) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: while parsing pbkdf2 salt parameter.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    kryptos_task_set_decode_action(ktask);
+    kryptos_run_encoder(base64, ktask, arg, arg_size);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: while decoding pbkdf2 salt parameter.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    kdf_clockwork->arg_data[3] = ktask->out;
+    kdf_clockwork->arg_size[3] = ktask->out_size;
+    kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
+    kdf_clockwork->arg_size[4] = 0;
+    ktask->out = NULL;
+
+    kryptos_freeseg(arg, arg_size);
+    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+
+    if (arg == NULL) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: while parsing pbkdf2 count parameter.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    if (!blackcat_is_dec(arg, arg_size)) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: pbkdf2 count parameter must be a decimal number.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    kdf_clockwork->arg_data[5] = (size_t *) kryptos_newseg(sizeof(size_t));
+    if (kdf_clockwork->arg_data[5] == NULL) {
+        if (err_msg != NULL) {
+            sprintf(err_msg, "ERROR: not enough memory to pbkdf2 count parameter.");
+        }
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto get_pbkdf2_clockwork_epilogue;
+    }
+
+    *((size_t *)kdf_clockwork->arg_data[5]) = strtoul(arg, NULL, 10);
+    kdf_clockwork->arg_size[5] = sizeof(size_t);
+
+get_pbkdf2_clockwork_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    if (arg != NULL) {
+        kryptos_freeseg(arg, arg_size);
+        arg_size = 0;
+    }
+
+    return kdf_clockwork;
+}

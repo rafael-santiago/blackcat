@@ -21,7 +21,7 @@ char *blackcat_kdf_usr_params_get_next(const char *usr_params, const size_t usr_
     }
 
     up = usr_params;
-    up_end = up + usr_params_size;
+    up_end = up + usr_params_size - *delta_offset;
 
     if (*up == 0 || up == up_end) {
         *out_size = 0;

@@ -1700,7 +1700,7 @@ CUTE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests)
 
     kryptos_freeseg(out, out_size);
 
-    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &out_size, &delta_offset);
 
     CUTE_ASSERT(next != NULL);
     CUTE_ASSERT(out != NULL);
@@ -1709,7 +1709,7 @@ CUTE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests)
 
     kryptos_freeseg(out, out_size);
 
-    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &out_size, &delta_offset);
     CUTE_ASSERT(next != NULL);
     CUTE_ASSERT(out != NULL);
     CUTE_ASSERT(out_size == 19);
@@ -1717,7 +1717,7 @@ CUTE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests)
 
     kryptos_freeseg(out, out_size);
 
-    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &out_size, &delta_offset);
     CUTE_ASSERT(next == NULL);
     CUTE_ASSERT(out != NULL);
     CUTE_ASSERT(out_size == 19);
@@ -1725,7 +1725,7 @@ CUTE_TEST_CASE(blackcat_kdf_usr_params_get_next_tests)
 
     kryptos_freeseg(out, out_size);
 
-    out = blackcat_kdf_usr_params_get_next(next, usr_params_size - delta_offset, &next, &out_size, &delta_offset);
+    out = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &out_size, &delta_offset);
     CUTE_ASSERT(next == NULL);
     CUTE_ASSERT(out == NULL);
     CUTE_ASSERT(out_size == 0);
