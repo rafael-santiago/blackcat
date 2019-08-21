@@ -51,6 +51,8 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
 
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto get_hkdf_clockwork_epilogue);
 
+    kdf_clockwork->kdf = blackcat_hkdf;
+
     kryptos_freeseg(arg, arg_size);
     arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 

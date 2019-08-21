@@ -54,8 +54,10 @@ struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, 
 
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto get_pbkdf2_clockwork_epilogue);
 
+    kdf_clockwork->kdf = blackcat_pbkdf2;
+
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {
@@ -85,7 +87,7 @@ struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, 
     kdf_clockwork->arg_size[2] = 0;
 
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {
@@ -115,7 +117,7 @@ struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, 
     ktask->out = NULL;
 
     kryptos_freeseg(arg, arg_size);
-    arg = blackcat_kdf_usr_params_get_next(usr_params, usr_params_size, &next, &arg_size, &delta_offset);
+    arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
 
     if (arg == NULL) {
         if (err_msg != NULL) {

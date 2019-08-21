@@ -19,10 +19,13 @@ char *blackcat_kdf_usr_params_get_next(const char *usr_params, const size_t usr_
         esc_stmt;\
     }\
     (c)->kdf = NULL;\
-    memset((c)->arg_data, 0, sizeof((c)->arg_data) / sizeof((c)->arg_data[0]));\
-    memset((c)->arg_size, 0, sizeof((c)->arg_size) / sizeof((c)->arg_size[0]));\
+    memset((c)->arg_data, 0, (sizeof((c)->arg_data) / sizeof((c)->arg_data[0])) * sizeof((c)->arg_data[0]));\
+    memset((c)->arg_size, 0, (sizeof((c)->arg_size) / sizeof((c)->arg_size[0])) * sizeof((c)->arg_size[0]));\
 }
 
 void del_blackcat_kdf_clockwork_ctx(struct blackcat_kdf_clockwork_ctx *kdf_clockwork);
+
+#define get_kdf_clockwork(kdf_algo, usr_params, usr_params_size, err_msg)\
+    get_ ## kdf_algo ## _clockwork((usr_params), (usr_params_size), (err_msg))
 
 #endif
