@@ -98,23 +98,26 @@ struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, 
         goto get_pbkdf2_clockwork_epilogue;
     }
 
-    kryptos_task_set_decode_action(ktask);
-    kryptos_run_encoder(base64, ktask, arg, arg_size);
+    if (arg_size > 0) {
+        kryptos_task_set_decode_action(ktask);
+        kryptos_run_encoder(base64, ktask, arg, arg_size);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        if (err_msg != NULL) {
-            sprintf(err_msg, "ERROR: while decoding pbkdf2 salt parameter.");
+        if (!kryptos_last_task_succeed(ktask)) {
+            if (err_msg != NULL) {
+                sprintf(err_msg, "ERROR: while decoding pbkdf2 salt parameter.");
+            }
+            del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+            kdf_clockwork = NULL;
+            goto get_pbkdf2_clockwork_epilogue;
         }
-        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-        kdf_clockwork = NULL;
-        goto get_pbkdf2_clockwork_epilogue;
+
+        kdf_clockwork->arg_data[3] = ktask->out;
+        kdf_clockwork->arg_size[3] = ktask->out_size;
+        ktask->out = NULL;
     }
 
-    kdf_clockwork->arg_data[3] = ktask->out;
-    kdf_clockwork->arg_size[3] = ktask->out_size;
     kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
     kdf_clockwork->arg_size[4] = 0;
-    ktask->out = NULL;
 
     kryptos_freeseg(arg, arg_size);
     arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
@@ -172,7 +175,6 @@ char *get_pbkdf2_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwo
 
     if (kdf_clockwork == NULL || out_size == NULL ||
         kdf_clockwork->arg_data[0] == NULL ||
-        kdf_clockwork->arg_data[3] == NULL || kdf_clockwork->arg_size[3] == 0 ||
         kdf_clockwork->arg_data[5] == NULL || kdf_clockwork->arg_size[5] != sizeof(size_t)) {
         goto get_pbkdf2_usr_params_epilogue;
     }
@@ -202,20 +204,22 @@ char *get_pbkdf2_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwo
     *tp = ':';
     tp += 1;
 
-    kryptos_task_set_encode_action(ktask);
-    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+    if (kdf_clockwork->arg_size[3] > 0) {
+        kryptos_task_set_encode_action(ktask);
+        kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        goto get_pbkdf2_usr_params_epilogue;
+        if (!kryptos_last_task_succeed(ktask)) {
+            goto get_pbkdf2_usr_params_epilogue;
+        }
+
+        if ((tp + ktask->out_size + 1) >= tp_end) {
+            goto get_pbkdf2_usr_params_epilogue;
+        }
+
+        memcpy(tp, ktask->out, ktask->out_size);
+        tp += ktask->out_size;
+        kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
     }
-
-    if ((tp + ktask->out_size + 1) >= tp_end) {
-        goto get_pbkdf2_usr_params_epilogue;
-    }
-
-    memcpy(tp, ktask->out, ktask->out_size);
-    tp += ktask->out_size;
-    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
 
     *tp = ':';
     tp += 1;

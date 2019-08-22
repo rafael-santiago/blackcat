@@ -26,11 +26,6 @@ char *blackcat_kdf_usr_params_get_next(const char *usr_params, const size_t usr_
     up = usr_params;
     up_end = up + usr_params_size - *delta_offset;
 
-    if (*up == 0 || up == up_end) {
-        *out_size = 0;
-        return NULL;
-    }
-
     while (up != up_end && *up != ':') {
         up++;
     }
@@ -56,7 +51,10 @@ void del_blackcat_kdf_clockwork_ctx(struct blackcat_kdf_clockwork_ctx *kdf_clock
         return;
     }
 
-    for (a = 0; a < BLACKCAT_KDF_ARGS_NR && kdf_clockwork->arg_data[a] != NULL; a++) {
+    for (a = 0; a < BLACKCAT_KDF_ARGS_NR; a++) {
+        if (kdf_clockwork->arg_data[a] == NULL) {
+            continue;
+        }
         if (kdf_clockwork->arg_size[a] > 0) {
             kryptos_freeseg(kdf_clockwork->arg_data[a], kdf_clockwork->arg_size[a]);
             kdf_clockwork->arg_size[a] = 0;

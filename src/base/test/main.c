@@ -1813,6 +1813,29 @@ CUTE_TEST_CASE(get_hkdf_clockwork_tests)
     CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[6]) == 3);
 
     del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+
+    // INFO(Rafael): User parameter string with empty parameters.
+
+    usr_params = "hkdf:sha-384::";
+    CUTE_ASSERT((kdf_clockwork = get_hkdf_clockwork(usr_params, strlen(usr_params), err)) != NULL);
+
+    CUTE_ASSERT(kdf_clockwork->kdf == blackcat_hkdf);
+    CUTE_ASSERT(kdf_clockwork->arg_data[0] == (void *) get_hash_processor("sha-384"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[0] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[1] == (void *) get_hash_size("sha-384"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[1] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[2] == (void *) get_hash_input_size("sha-384"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[2] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_size[3] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[3] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[4] == 0);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[4]) == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_size[5] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[5] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[6] == 0);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[6]) == 0);
+
+    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_pbkdf2_clockwork_tests)
@@ -1870,6 +1893,28 @@ CUTE_TEST_CASE(get_pbkdf2_clockwork_tests)
     CUTE_ASSERT(kdf_clockwork->arg_size[4] == 0);
     CUTE_ASSERT(kdf_clockwork->arg_data[4] != NULL);
     CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[4]) == 6);
+    CUTE_ASSERT(kdf_clockwork->arg_size[5] == sizeof(size_t));
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[5]) == 10);
+
+    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+
+    // INFO(Rafael): User parameter string passing an empty salt.
+
+    usr_params = "pbkdf2:blake2b-512::10";
+    CUTE_ASSERT((kdf_clockwork = get_pbkdf2_clockwork(usr_params, strlen(usr_params), err)) != NULL);
+
+    CUTE_ASSERT(kdf_clockwork->kdf == blackcat_pbkdf2);
+    CUTE_ASSERT(kdf_clockwork->arg_data[0] == (void *) get_hash_processor("blake2b-512"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[0] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[1] == (void *) get_hash_size("blake2b-512"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[1] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[2] == (void *) get_hash_input_size("blake2b-512"));
+    CUTE_ASSERT(kdf_clockwork->arg_size[2] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_size[3] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[3] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[4] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[4] != NULL);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[4]) == 0);
     CUTE_ASSERT(kdf_clockwork->arg_size[5] == sizeof(size_t));
     CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[5]) == 10);
 
@@ -1944,6 +1989,33 @@ CUTE_TEST_CASE(get_argon2i_clockwork_tests)
     CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[7]) == 3);
 
     del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+
+    // INFO(Rafael): User string parameter with null salt, key and associated data parameters.
+
+    usr_params = "argon2i::32:38::";
+    CUTE_ASSERT((kdf_clockwork = get_argon2i_clockwork(usr_params, strlen(usr_params), err)) != NULL);
+
+    CUTE_ASSERT(kdf_clockwork->kdf == blackcat_argon2i);
+    CUTE_ASSERT(kdf_clockwork->arg_size[0] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[0] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[1] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[1] != NULL);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[1]) == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_size[2] == sizeof(kryptos_u32_t));
+    CUTE_ASSERT(kdf_clockwork->arg_data[2] != NULL);
+    CUTE_ASSERT(*((kryptos_u32_t *)kdf_clockwork->arg_data[2]) == 32);
+    CUTE_ASSERT(kdf_clockwork->arg_size[3] == sizeof(kryptos_u32_t));
+    CUTE_ASSERT(*((kryptos_u32_t *)kdf_clockwork->arg_data[3]) == 38);
+    CUTE_ASSERT(kdf_clockwork->arg_size[4] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[4] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[5] == 0);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[5]) == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_size[6] == 0);
+    CUTE_ASSERT(kdf_clockwork->arg_data[6] == NULL);
+    CUTE_ASSERT(kdf_clockwork->arg_size[7] == 0);
+    CUTE_ASSERT(*((size_t *)kdf_clockwork->arg_data[7]) == 0);
+
+    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_kdf_clockwork_tests)
@@ -1974,7 +2046,10 @@ CUTE_TEST_CASE(get_kdf_usr_params_tests)
     } test_vector[] = {
         { "hkdf:sha-384:Zm9vYmFy:Zm9v",       get_hkdf_clockwork    },
         { "pbkdf2:blake2b-512:Zm9vYmFy:10",   get_pbkdf2_clockwork  },
-        { "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy", get_argon2i_clockwork }
+        { "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy", get_argon2i_clockwork },
+        { "hkdf:sha-384::",                   get_hkdf_clockwork    },
+        { "pbkdf2:blake2b-512::10",           get_pbkdf2_clockwork  },
+        { "argon2i::32:38::",                 get_argon2i_clockwork }
     };
     size_t test_vector_nr = sizeof(test_vector) / sizeof(test_vector[0]), t;
     struct blackcat_kdf_clockwork_ctx *kdf_clockwork;

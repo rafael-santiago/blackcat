@@ -94,24 +94,27 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
         goto get_hkdf_clockwork_epilogue;
     }
 
-    kryptos_task_set_decode_action(ktask);
-    kryptos_run_encoder(base64, ktask, arg, arg_size);
+    if (arg_size > 0) {
+        kryptos_task_set_decode_action(ktask);
+        kryptos_run_encoder(base64, ktask, arg, arg_size);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        if (err_msg != NULL) {
-            sprintf(err_msg, "ERROR: while decoding hkdf salt parameter.");
+        if (!kryptos_last_task_succeed(ktask)) {
+            if (err_msg != NULL) {
+                sprintf(err_msg, "ERROR: while decoding hkdf salt parameter.");
+            }
+            del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+            kdf_clockwork = NULL;
+            goto get_hkdf_clockwork_epilogue;
         }
-        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-        kdf_clockwork = NULL;
-        goto get_hkdf_clockwork_epilogue;
+
+        kdf_clockwork->arg_data[3] = ktask->out;
+        kdf_clockwork->arg_size[3] = ktask->out_size;
+        ktask->out = NULL;
     }
 
-    kdf_clockwork->arg_data[3] = ktask->out;
-    kdf_clockwork->arg_size[3] = ktask->out_size;
     // INFO(Rafael): Nasty trick to avoid allocating memory.
     kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
     kdf_clockwork->arg_size[4] = 0;
-    ktask->out = NULL;
 
     kryptos_freeseg(arg, arg_size);
     arg = blackcat_kdf_usr_params_get_next(next, usr_params_size, &next, &arg_size, &delta_offset);
@@ -125,24 +128,29 @@ struct blackcat_kdf_clockwork_ctx *get_hkdf_clockwork(const char *usr_params, co
         goto get_hkdf_clockwork_epilogue;
     }
 
-    kryptos_task_set_decode_action(ktask);
-    kryptos_run_encoder(base64, ktask, arg, arg_size);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        if (err_msg != NULL) {
-            sprintf(err_msg, "ERROR: while decoding hkdf info parameter.");
+    if (arg_size > 0) {
+        kryptos_task_set_decode_action(ktask);
+        kryptos_run_encoder(base64, ktask, arg, arg_size);
+
+        if (!kryptos_last_task_succeed(ktask)) {
+            if (err_msg != NULL) {
+                sprintf(err_msg, "ERROR: while decoding hkdf info parameter.");
+            }
+            del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+            kdf_clockwork = NULL;
+            goto get_hkdf_clockwork_epilogue;
         }
-        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-        kdf_clockwork = NULL;
-        goto get_hkdf_clockwork_epilogue;
+
+        kdf_clockwork->arg_data[5] = ktask->out;
+        kdf_clockwork->arg_size[5] = ktask->out_size;
+        ktask->out = NULL;
     }
 
-    kdf_clockwork->arg_data[5] = ktask->out;
-    kdf_clockwork->arg_size[5] = ktask->out_size;
     // INFO(Rafael): Nasty trick to avoid allocating memory.
     kdf_clockwork->arg_data[6] = &kdf_clockwork->arg_size[5];
     kdf_clockwork->arg_size[6] = 0;
-    ktask->out = NULL;
+
 
 get_hkdf_clockwork_epilogue:
 
@@ -165,10 +173,7 @@ char *get_hkdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork
 
     kryptos_task_init_as_null(ktask);
 
-    if (kdf_clockwork == NULL || out_size == NULL ||
-        kdf_clockwork->arg_data[0] == NULL ||
-        kdf_clockwork->arg_data[3] == NULL || kdf_clockwork->arg_size[3] == 0 ||
-        kdf_clockwork->arg_data[5] == NULL || kdf_clockwork->arg_size[5] == 0) {
+    if (kdf_clockwork == NULL || out_size == NULL || kdf_clockwork->arg_data[0] == NULL) {
         goto get_hkdf_usr_params_epilogue;
     }
 
@@ -199,38 +204,41 @@ char *get_hkdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork
     *tp = ':';
     tp += 1;
 
-    kryptos_task_set_encode_action(ktask);
-    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+    if (kdf_clockwork->arg_size[3] > 0) {
+        kryptos_task_set_encode_action(ktask);
+        kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        goto get_hkdf_usr_params_epilogue;
+        if (!kryptos_last_task_succeed(ktask)) {
+            goto get_hkdf_usr_params_epilogue;
+        }
+
+        if ((tp + ktask->out_size + 1) >= tp_end) {
+            goto get_hkdf_usr_params_epilogue;
+        }
+
+        memcpy(tp, ktask->out, ktask->out_size);
+        tp += ktask->out_size;
+        kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
     }
-
-    if ((tp + ktask->out_size + 1) >= tp_end) {
-        goto get_hkdf_usr_params_epilogue;
-    }
-
-    memcpy(tp, ktask->out, ktask->out_size);
-    tp += ktask->out_size;
 
     *tp = ':';
     tp += 1;
 
-    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+    if (kdf_clockwork->arg_size[5] > 0) {
+        kryptos_task_set_encode_action(ktask);
+        kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[5], kdf_clockwork->arg_size[5]);
 
-    kryptos_task_set_encode_action(ktask);
-    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[5], kdf_clockwork->arg_size[5]);
+        if (!kryptos_last_task_succeed(ktask)) {
+            goto get_hkdf_usr_params_epilogue;
+        }
 
-    if (!kryptos_last_task_succeed(ktask)) {
-        goto get_hkdf_usr_params_epilogue;
+        if ((tp + ktask->out_size) >= tp_end) {
+            goto get_hkdf_usr_params_epilogue;
+        }
+
+        memcpy(tp, ktask->out, ktask->out_size);
+        tp += ktask->out_size;
     }
-
-    if ((tp + ktask->out_size) >= tp_end) {
-        goto get_hkdf_usr_params_epilogue;
-    }
-
-    memcpy(tp, ktask->out, ktask->out_size);
-    tp += ktask->out_size;
 
     *out_size = tp - &temp[0];
 
