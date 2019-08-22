@@ -73,7 +73,11 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(add_composite_ciphers_to_chain_tests);
     CUTE_RUN_TEST(blackcat_bcrypt_tests);
     CUTE_RUN_TEST(is_pht_tests);
-    CUTE_RUN_TEST(blackcat_getuserkey_tests);
+    if (CUTE_GET_OPTION("skip-kbd-tests") == NULL) {
+        CUTE_RUN_TEST(blackcat_getuserkey_tests);
+    } else {
+        printf("== WARN: blackcat_getuserkey_tests was skipped due to '--skip-kbd-tests' option.\n");
+    }
     CUTE_RUN_TEST(random_printable_padding_tests);
     CUTE_RUN_TEST(blackcat_kdf_clockwork_ctx_tests);
     CUTE_RUN_TEST(blackcat_kdf_usr_params_get_next_tests);

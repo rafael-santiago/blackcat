@@ -87,19 +87,26 @@ local function get_appname() : result type string {
 local function run_test() : result type int {
     var cmdline type string;
     var option type list;
+    var skip_kbd_tests type int;
 
-    var fp type file;
-    $fp = hefesto.sys.fopen(".kbd_data", "w");
-    if ($fp == 0) {
-        hefesto.project.abort(1);
+    $option = hefesto.sys.get_option("skip-kbd-tests");
+
+    $skip_kbd_tests = $option.count();
+
+    if ($skip_kbd_tests == 0) {
+        var fp type file;
+        $fp = hefesto.sys.fopen(".kbd_data", "w");
+        if ($fp == 0) {
+            hefesto.project.abort(1);
+        }
+
+        var kbd_data type string;
+        $kbd_data = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\\xDE\\xaD\\xBe\\xef\\x00\\x00\\x01\n";
+
+        hefesto.sys.fwrite($kbd_data, $kbd_data.len(), $fp);
+
+        hefesto.sys.fclose($fp);
     }
-
-    var kbd_data type string;
-    $kbd_data = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\\xDE\\xaD\\xBe\\xef\\x00\\x00\\x01\n";
-
-    hefesto.sys.fwrite($kbd_data, $kbd_data.len(), $fp);
-
-    hefesto.sys.fclose($fp);
 
     $option = hefesto.sys.get_option("bin-output-dir");
     $cmdline = "";
@@ -110,13 +117,19 @@ local function run_test() : result type int {
         $cmdline = "./";
     }
 
-    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes " + hefesto.project.cmdline() + " < .kbd_data";
+    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes " + hefesto.project.cmdline();
+
+    if ($skip_kbd_tests == 0) {
+        $cmdline = $cmdline + " < .kbd_data";
+    }
 
     var exit_code type int;
 
     $exit_code = hefesto.sys.run($cmdline);
 
-    hefesto.sys.rm(".kbd_data");
+    if ($skip_kbd_tests == 0) {
+        hefesto.sys.rm(".kbd_data");
+    }
 
     result $exit_code;
 }
