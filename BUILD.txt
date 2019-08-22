@@ -100,7 +100,7 @@ If you want to skip the net module tests:
 you@Hellfire:~/src/blackcat/src# hefesto --skip-net-tests
 ---------------------------------------------------------
 
-To skip any keyboard related tests use the build option '--skip-kbd-tests':
+To skip any keyboard related test use the build option '--skip-kbd-tests':
 
 ---------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --skip-kbd-tests
