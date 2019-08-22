@@ -2066,6 +2066,11 @@ CUTE_TEST_CASE(get_kdf_usr_params_tests)
     kdf_clockwork->kdf = NULL;
     CUTE_ASSERT(get_kdf_usr_params(kdf_clockwork, &out_size) == NULL);
 
+    // INFO(Rafael): Alien kdf function case.
+
+    kdf_clockwork->kdf = (void *)0xDEADBEEF;
+    CUTE_ASSERT(get_kdf_usr_params(kdf_clockwork, &out_size) == NULL);
+
     del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
 
     for (t = 0; t < test_vector_nr; t++) {
