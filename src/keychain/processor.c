@@ -139,7 +139,7 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
     //                  - encrypt r with the cascade from protlayer until m -> (r');
     //                  - encrypt (in ^ r) with the cascade from m until its end;
     //                  - [Additional step]: encode (in ^ r)' and r' as PEM -> ep'
-    //                  - [Additional step]: generate random random pads with random lengths l and r;
+    //                  - [Additional step]: generate random pads with random lengths l and r;
     //                  - [Additional step]: concatenate l || ep' || r -> LEPR'
     //                  - [Additional step]: encrypt LEPR' with the entire cascade -> C';
     //

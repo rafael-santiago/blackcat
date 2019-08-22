@@ -11,7 +11,7 @@
 #include <string.h>
 
 // WARN(Rafael): Maybe "gibberish" could have a double meaning when cascading. Use it at your own risk.
-//               In almost cases it tends to make harder a CPA. Keeping secret (of course) its parameters.
+//               In almost all cases it tends to make harder a CPA. Keeping secret (of course) its parameters.
 
 static void gibberish_wrap(kryptos_task_ctx **ktask, const size_t pfx_size, const size_t sfx_size);
 
