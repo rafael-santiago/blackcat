@@ -28,4 +28,6 @@ void del_blackcat_kdf_clockwork_ctx(struct blackcat_kdf_clockwork_ctx *kdf_clock
 #define get_kdf_clockwork(kdf_algo, usr_params, usr_params_size, err_msg)\
     get_ ## kdf_algo ## _clockwork((usr_params), (usr_params_size), (err_msg))
 
+char *get_kdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size);
+
 #endif

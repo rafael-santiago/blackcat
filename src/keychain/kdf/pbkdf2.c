@@ -161,3 +161,93 @@ get_pbkdf2_clockwork_epilogue:
 
     return kdf_clockwork;
 }
+
+char *get_pbkdf2_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size) {
+    char temp[65535];
+    char *tp, *out = NULL, *data, count[10], *tp_end;
+    size_t data_size;
+    kryptos_task_ctx t, *ktask = &t;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (kdf_clockwork == NULL || out_size == NULL ||
+        kdf_clockwork->arg_data[0] == NULL ||
+        kdf_clockwork->arg_data[3] == NULL || kdf_clockwork->arg_size[3] == 0 ||
+        kdf_clockwork->arg_data[5] == NULL || kdf_clockwork->arg_size[5] != sizeof(size_t)) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    *out_size = 0;
+
+    memset(temp, 0, sizeof(temp));
+    tp = &temp[0];
+    tp_end = tp + sizeof(temp);
+
+    memcpy(tp, "pbkdf2:", 7);
+    tp += 7;
+
+    data = (char *)get_hash_processor_name((blackcat_hash_processor)kdf_clockwork->arg_data[0]);
+
+    if (data == NULL) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    data_size = strlen(data);
+    memcpy(tp, data, data_size);
+    tp += data_size;
+
+    data = NULL;
+    data_size = 0;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size + 1) >= tp_end) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    *tp = ':';
+    tp += 1;
+
+    sprintf(count, "%d", *((size_t *)kdf_clockwork->arg_data[5]));
+
+    data_size = strlen(count);
+
+    if ((tp + data_size) >= tp_end) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    memcpy(tp, count, data_size);
+    tp += data_size;
+
+    data_size = 0;
+    memset(count, 0, sizeof(count));
+
+    *out_size = tp - &temp[0];
+
+    if ((out = (char *)kryptos_newseg(*out_size + 1)) == NULL) {
+        goto get_pbkdf2_usr_params_epilogue;
+    }
+
+    memset(out, 0, *out_size + 1);
+    memcpy(out, temp, *out_size);
+
+get_pbkdf2_usr_params_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    memset(temp, 0, sizeof(temp));
+
+    return out;
+}

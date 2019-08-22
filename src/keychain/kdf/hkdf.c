@@ -156,3 +156,96 @@ get_hkdf_clockwork_epilogue:
 
     return kdf_clockwork;
 }
+
+char *get_hkdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size) {
+    char temp[65535];
+    char *out = NULL, *tp, *data, *tp_end;
+    kryptos_task_ctx t, *ktask = &t;
+    size_t data_size;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (kdf_clockwork == NULL || out_size == NULL ||
+        kdf_clockwork->arg_data[0] == NULL ||
+        kdf_clockwork->arg_data[3] == NULL || kdf_clockwork->arg_size[3] == 0 ||
+        kdf_clockwork->arg_data[5] == NULL || kdf_clockwork->arg_size[5] == 0) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    *out_size = 0;
+
+    tp = &temp[0];
+    tp_end = tp + sizeof(temp);
+
+    memset(tp, 0, sizeof(temp));
+
+    memcpy(tp, "hkdf:", 5);
+    tp += 5;
+
+    data = (char *)get_hash_processor_name((blackcat_hash_processor)kdf_clockwork->arg_data[0]);
+
+    if (data == NULL) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    data_size = strlen(data);
+
+    memcpy(tp, data, data_size);
+    tp += data_size;
+
+    data = NULL;
+    data_size = 0;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size + 1) >= tp_end) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[5], kdf_clockwork->arg_size[5]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size) >= tp_end) {
+        goto get_hkdf_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+
+    *out_size = tp - &temp[0];
+
+    if ((out = (char *)kryptos_newseg(*out_size + 1)) == NULL) {
+        *out_size = 0;
+    }
+
+    memset(out, 0, *out_size + 1);
+    memcpy(out, temp, *out_size);
+
+get_hkdf_usr_params_epilogue:
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    memset(temp, 0, sizeof(temp));
+
+    return out;
+}

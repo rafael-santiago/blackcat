@@ -15,4 +15,6 @@ DECL_BLACKCAT_KDF_PROCESSOR(argon2i, ikm, ikm_size, okm_size, args)
 struct blackcat_kdf_clockwork_ctx *get_argon2i_clockwork(const char *usr_params, const size_t usr_params_size,
                                                          char *err_msg);
 
+char *get_argon2i_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size);
+
 #endif

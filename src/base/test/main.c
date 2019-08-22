@@ -47,6 +47,7 @@ CUTE_DECLARE_TEST_CASE(get_hkdf_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_pbkdf2_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_argon2i_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_clockwork_tests);
+CUTE_DECLARE_TEST_CASE(get_kdf_usr_params_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -80,6 +81,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_pbkdf2_clockwork_tests);
     CUTE_RUN_TEST(get_argon2i_clockwork_tests);
     CUTE_RUN_TEST(get_kdf_clockwork_tests);
+    CUTE_RUN_TEST(get_kdf_usr_params_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
@@ -1963,4 +1965,42 @@ CUTE_TEST_CASE(get_kdf_clockwork_tests)
     usr_params = "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy";
     CUTE_ASSERT((kdf_clockwork = get_kdf_clockwork(argon2i, usr_params, strlen(usr_params), err)) != NULL);
     del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(get_kdf_usr_params_tests)
+    struct test_ctx {
+        char *usr_params;
+        struct blackcat_kdf_clockwork_ctx *(*get_clockwork)(const char *, const size_t, char *);
+    } test_vector[] = {
+        { "hkdf:sha-384:Zm9vYmFy:Zm9v",       get_hkdf_clockwork    },
+        { "pbkdf2:blake2b-512:Zm9vYmFy:10",   get_pbkdf2_clockwork  },
+        { "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy", get_argon2i_clockwork }
+    };
+    size_t test_vector_nr = sizeof(test_vector) / sizeof(test_vector[0]), t;
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork;
+    size_t out_size, usr_params_size;
+    char *out;
+
+    CUTE_ASSERT(get_kdf_usr_params(NULL, &out_size) == NULL);
+
+    kdf_clockwork = test_vector[0].get_clockwork(test_vector[0].usr_params, strlen(test_vector[0].usr_params), NULL);
+    CUTE_ASSERT(kdf_clockwork != NULL);
+
+    CUTE_ASSERT(get_kdf_usr_params(kdf_clockwork, NULL) == NULL);
+
+    kdf_clockwork->kdf = NULL;
+    CUTE_ASSERT(get_kdf_usr_params(kdf_clockwork, &out_size) == NULL);
+
+    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+
+    for (t = 0; t < test_vector_nr; t++) {
+        usr_params_size = strlen(test_vector[t].usr_params);
+        kdf_clockwork = test_vector[t].get_clockwork(test_vector[t].usr_params, usr_params_size, NULL);
+        CUTE_ASSERT(kdf_clockwork != NULL);
+        out = get_kdf_usr_params(kdf_clockwork, &out_size);
+        CUTE_ASSERT(out_size == usr_params_size);
+        CUTE_ASSERT(memcmp(out, test_vector[t].usr_params, out_size) == 0);
+        kryptos_freeseg(out, out_size);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    }
 CUTE_TEST_CASE_END

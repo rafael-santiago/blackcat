@@ -6,6 +6,9 @@
  *
  */
 #include <keychain/kdf/kdf_utils.h>
+#include <keychain/kdf/hkdf.h>
+#include <keychain/kdf/pbkdf2.h>
+#include <keychain/kdf/argon2i.h>
 #include <kryptos.h>
 
 char *blackcat_kdf_usr_params_get_next(const char *usr_params, const size_t usr_params_size,
@@ -63,4 +66,24 @@ void del_blackcat_kdf_clockwork_ctx(struct blackcat_kdf_clockwork_ctx *kdf_clock
     }
 
     kryptos_freeseg(kdf_clockwork, sizeof(struct blackcat_kdf_clockwork_ctx));
+}
+
+char *get_kdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size) {
+    if (kdf_clockwork == NULL || out_size == NULL) {
+        return NULL;
+    }
+
+    if (kdf_clockwork->kdf == blackcat_hkdf) {
+        return get_hkdf_usr_params(kdf_clockwork, out_size);
+    }
+
+    if (kdf_clockwork->kdf == blackcat_pbkdf2) {
+        return get_pbkdf2_usr_params(kdf_clockwork, out_size);
+    }
+
+    if (kdf_clockwork->kdf == blackcat_argon2i) {
+        return get_argon2i_usr_params(kdf_clockwork, out_size);
+    }
+
+    return NULL;
 }

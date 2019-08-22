@@ -228,3 +228,123 @@ get_argon2i_clockwork_epilogue:
 
     return kdf_clockwork;
 }
+
+char *get_argon2i_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size) {
+    kryptos_task_ctx t, *ktask = &t;
+    char *tp, *data, *out = NULL, *tp_end;
+    char temp[65535], buf[10];
+    size_t data_size;
+
+    kryptos_task_init_as_null(ktask);
+
+    if (kdf_clockwork == NULL || out_size == NULL ||
+        kdf_clockwork->arg_data[0] == NULL || kdf_clockwork->arg_size[0] == 0 ||
+        kdf_clockwork->arg_data[2] == NULL || kdf_clockwork->arg_size[2] != sizeof(kryptos_u32_t) ||
+        kdf_clockwork->arg_data[3] == NULL || kdf_clockwork->arg_size[3] != sizeof(kryptos_u32_t) ||
+        kdf_clockwork->arg_data[4] == NULL || kdf_clockwork->arg_size[4] == 0 ||
+        kdf_clockwork->arg_data[6] == NULL || kdf_clockwork->arg_size[6] == 0) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memset(temp, 0, sizeof(temp));
+    tp = &temp[0];
+    tp_end = tp + sizeof(temp);
+    memcpy(tp, "argon2i:", 8);
+    tp += 8;
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[0], kdf_clockwork->arg_size[0]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size + 1) >= tp_end) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    sprintf(buf, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[2]));
+    data_size = strlen(buf);
+
+    if ((tp + data_size + 1) >= tp_end) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memcpy(tp, buf, data_size);
+    tp += data_size;
+
+    *tp = ':';
+    tp += 1;
+
+    sprintf(buf, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[3]));
+    data_size = strlen(buf);
+
+    if ((tp + data_size + 1) >= tp_end) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memcpy(tp, buf, data_size);
+    tp += data_size;
+    data_size = 0;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[4], kdf_clockwork->arg_size[4]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size + 1) >= tp_end) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+
+    *tp = ':';
+    tp += 1;
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, kdf_clockwork->arg_data[6], kdf_clockwork->arg_size[6]);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    if ((tp + ktask->out_size) >= tp_end) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memcpy(tp, ktask->out, ktask->out_size);
+    tp += ktask->out_size;
+
+    *out_size = tp - &temp[0];
+
+    if ((out = (char *)kryptos_newseg(*out_size + 1)) == NULL) {
+        goto get_argon2i_usr_params_epilogue;
+    }
+
+    memset(out, 0, *out_size + 1);
+    memcpy(out, temp, *out_size);
+
+get_argon2i_usr_params_epilogue:
+
+    memset(temp, 0, sizeof(temp));
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
+
+    return out;
+}
