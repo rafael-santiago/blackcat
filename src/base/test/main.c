@@ -48,6 +48,7 @@ CUTE_DECLARE_TEST_CASE(get_pbkdf2_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_argon2i_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_usr_params_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_kdf_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -86,6 +87,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_argon2i_clockwork_tests);
     CUTE_RUN_TEST(get_kdf_clockwork_tests);
     CUTE_RUN_TEST(get_kdf_usr_params_tests);
+    CUTE_RUN_TEST(blackcat_kdf_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
@@ -2085,6 +2087,33 @@ CUTE_TEST_CASE(get_kdf_usr_params_tests)
         CUTE_ASSERT(out_size == usr_params_size);
         CUTE_ASSERT(memcmp(out, test_vector[t].usr_params, out_size) == 0);
         kryptos_freeseg(out, out_size);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_kdf_tests)
+    struct test_ctx {
+        char *usr_params;
+        size_t okm_size;
+        struct blackcat_kdf_clockwork_ctx *(*get_clockwork)(const char *, const size_t, char *);
+    } test_vector[] = {
+        { "hkdf:sha-384:Zm9vYmFy:Zm9v",        16, get_hkdf_clockwork    },
+        { "pbkdf2:blake2b-512:Zm9vYmFy:10",    32, get_pbkdf2_clockwork  },
+        { "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy",  64, get_argon2i_clockwork },
+        { "hkdf:sha-384::",                    96, get_hkdf_clockwork    },
+        { "pbkdf2:blake2b-512::10",           128, get_pbkdf2_clockwork  },
+        { "argon2i::32:38::",                 160, get_argon2i_clockwork }
+    };
+    size_t test_vector_nr = sizeof(test_vector) / sizeof(test_vector[0]), t;
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    kryptos_u8_t *okm;
+
+    for (t = 0; t < test_vector_nr; t++) {
+        kdf_clockwork = test_vector[t].get_clockwork(test_vector[t].usr_params, strlen(test_vector[t].usr_params), NULL);
+        CUTE_ASSERT(kdf_clockwork != NULL);
+        okm = kdf_clockwork->kdf("meow", 4, test_vector[t].okm_size, kdf_clockwork->arg_data);
+        CUTE_ASSERT(okm != NULL);
+        kryptos_freeseg(okm, test_vector[t].okm_size);
         del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
     }
 CUTE_TEST_CASE_END
