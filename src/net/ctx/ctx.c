@@ -55,6 +55,7 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
                                            blackcat_hash_processor hash,
                                            blackcat_encoder encoder) {
     bnt_channel_rule_ctx *hp, *cp;
+    struct blackcat_keychain_handle_ctx handle;
 
     if (ruleid == NULL || protection_layer == NULL) {
         return rules;
@@ -86,8 +87,13 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
     memcpy(cp->ruleid, ruleid, cp->ruleid_size);
     memcpy(&cp->assertion, &assertion, sizeof(struct bnt_channel_rule_assertion));
 
+    handle.hash = hash;
+    handle.kdf_clockwork = NULL;
+
     cp->pchain = add_composite_protlayer_to_chain(cp->pchain,
-                                                  protection_layer, key, key_size, hash, encoder);
+                                                  protection_layer, key, key_size, &handle, encoder);
+
+    handle.hash = NULL;
 
     return hp;
 }

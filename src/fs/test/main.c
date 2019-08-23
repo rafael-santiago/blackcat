@@ -110,6 +110,7 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     char *config_data = "default-args:\n"
                         "\t--no-swap\n\n";
     struct checkpoint_ctx ckpt;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): The painful handmade bootstrapping arrrgh!
 
@@ -153,9 +154,12 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     memcpy(protkey, "ready to forget", 15);
     protkey_size = 15;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -321,6 +325,7 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     char oldcwd[4096];
     FILE *fp;
     struct stat st_old, st_curr;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -370,9 +375,12 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     memcpy(protkey, "aeroplane", 9);
     protkey_size = 9;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -517,6 +525,7 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     char oldcwd[4096];
     FILE *fp;
     struct stat st;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -566,9 +575,12 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     memcpy(protkey, "aeroplane", 9);
     protkey_size = 9;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -829,6 +841,7 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     size_t protkey_size;
     char oldcwd[4096];
     FILE *fp;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -876,9 +889,12 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     memcpy(protkey, "aeroplane", 9);
     protkey_size = 9;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -1024,6 +1040,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     kryptos_u8_t *new_protlayer_key;
     size_t new_protlayer_key_size;
     int otp = 0;
+    struct blackcat_keychain_handle_ctx handle;
 
     do {
         CUTE_ASSERT(otp >= 0 && otp <= 1);
@@ -1079,9 +1096,13 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         memcpy(protkey, "aeroplane", 9);
         protkey_size = 9;
 
+
+        handle.hash = catalog->protlayer_key_hash_algo;
+        handle.kdf_clockwork = NULL;
+
         catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                               catalog->protection_layer,
-                                                              &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                              &protkey, &protkey_size, &handle,
                                                               catalog->encoder);
 
         CUTE_ASSERT(protkey == NULL);
@@ -1255,6 +1276,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     size_t protkey_size;
     char oldcwd[4096];
     const char *config_data = ".default-options:\n--no-swap\n\n";
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -1309,9 +1331,12 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     memcpy(protkey, "aeroplane", 9);
     protkey_size = 9;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -1515,6 +1540,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     size_t data_size;
     kryptos_u8_t *protkey;
     size_t protkey_size;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): Bootstrapping the test repo.
 
@@ -1561,9 +1587,12 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     memcpy(protkey, "mumbo gumbo", 11);
     protkey_size = 11;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);
@@ -1672,6 +1701,7 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     size_t data_size;
     kryptos_u8_t *protkey;
     size_t protkey_size;
+    struct blackcat_keychain_handle_ctx handle;
 
     // INFO(Rafael): The painful handmade bootstrapping arrrgh!
 
@@ -1715,9 +1745,12 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     memcpy(protkey, "ready to forget", 15);
     protkey_size = 15;
 
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           catalog->protection_layer,
-                                                          &protkey, &protkey_size, catalog->protlayer_key_hash_algo,
+                                                          &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
     CUTE_ASSERT(protkey == NULL);

@@ -57,6 +57,7 @@ int blackcat_netdb_add(const char *rule_id,
     size_t buf_size;
     int err = EINVAL;
     bnt_channel_rule_ctx *rule = NULL;
+    struct blackcat_keychain_handle_ctx handle;
 
     if (rule_id == NULL || rule_type == NULL || hash == NULL || pchain == NULL || error == NULL || key == NULL) {
         goto blackcat_netdb_add_epilogue;
@@ -114,9 +115,14 @@ int blackcat_netdb_add(const char *rule_id,
 
     temp_key_size = 8;
 
+    handle.hash = get_hash_processor(hash);
+    handle.kdf_clockwork = NULL;
+
     p_layer = add_composite_protlayer_to_chain(p_layer,
                                                pchain, &temp_key, &temp_key_size,
-                                               get_hash_processor(hash), get_encoder(encoder));
+                                               &handle, get_encoder(encoder));
+
+    handle.hash = NULL;
 
     if (temp_key != NULL) {
         kryptos_freeseg(temp_key, temp_key_size);

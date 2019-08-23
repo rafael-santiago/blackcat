@@ -31,6 +31,7 @@ int blackcat_cmd_setkey(void) {
     blackcat_protlayer_chain_ctx *p_layer = NULL;
     void *key_hash_algo_args = NULL;
     int cost;
+    struct blackcat_keychain_handle_ctx handle;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_setkey_epilogue;
@@ -203,9 +204,15 @@ int blackcat_cmd_setkey(void) {
         new_key_size[2] = 4;
         memcpy(new_key[2], "meow", 4);
 
+        handle.hash = protection_layer_hash_proc;
+        handle.kdf_clockwork = NULL;
+
         p_layer = add_composite_protlayer_to_chain(p_layer,
                                                    protection_layer, &new_key[2], &new_key_size[2],
-                                                   protection_layer_hash_proc, encoder_proc);
+                                                   &handle, encoder_proc);
+
+        handle.hash = NULL;
+        handle.kdf_clockwork = NULL;
 
         if (p_layer == NULL) {
             fprintf(stderr, "ERROR: Invalid protection layer.\n");

@@ -27,12 +27,12 @@ static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer
 
 blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
                                                                const char *piped_ciphers, kryptos_u8_t **key,
-                                                               size_t *key_size, blackcat_hash_processor hash,
+                                                               size_t *key_size, struct blackcat_keychain_handle_ctx *handle,
                                                                blackcat_encoder encoder) {
     char curr_algo_param[100];
     const char *p, *p_end, *cp;
 
-    if (piped_ciphers == NULL || key == NULL || key_size == NULL || hash == NULL) {
+    if (piped_ciphers == NULL || key == NULL || key_size == NULL || handle == NULL) {
         return chain;
     }
 
@@ -59,7 +59,7 @@ blackcat_protlayer_chain_ctx *add_composite_protlayer_to_chain(blackcat_protlaye
 
         memcpy(curr_algo_param, cp, p - cp);
 
-        chain = add_protlayer_to_chain(chain, curr_algo_param, key, key_size, hash);
+        chain = add_protlayer_to_chain(chain, curr_algo_param, key, key_size, handle);
 
         if (chain == NULL) {
             fprintf(stderr, "ERROR: Invalid algorithm '%s'.\n", curr_algo_param);
@@ -87,9 +87,13 @@ add_composite_protlayer_to_chain_epilogue:
 
 blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ctx *chain,
                                                      const char *algo_params, kryptos_u8_t **key, size_t *key_size,
-                                                     blackcat_hash_processor hash) {
+                                                     struct blackcat_keychain_handle_ctx *handle) {
     blackcat_protlayer_chain_ctx *hp, *cp;
     char err_mesg[1024] = "";
+
+    if (handle == NULL) {
+        return chain;
+    }
 
     hp = cp = chain;
 
@@ -104,7 +108,7 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         hp->head = hp->tail = cp = hp;
     }
 
-    if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, hash, err_mesg) == 0) {
+    if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, handle, err_mesg) == 0) {
         fprintf(stderr, "%s", err_mesg);
         del_protlayer_chain_ctx(hp);
         hp = NULL;

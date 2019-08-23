@@ -32,6 +32,7 @@ int blackcat_cmd_init(void) {
     char *rootpath = NULL;
     void *key_hash_algo_args = NULL;
     int cost;
+    struct blackcat_keychain_handle_ctx handle;
 
     if ((rootpath = bcrepo_get_rootpath()) != NULL) {
         fprintf(stderr, "ERROR: This is already a blackcat repo.\n");
@@ -202,9 +203,15 @@ int blackcat_cmd_init(void) {
 
     temp_key_size = protlayer_key_size;
 
+    handle.hash = protlayer_hash_proc;
+    handle.kdf_clockwork = NULL;
+
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
                                                           protection_layer, &temp_key, &temp_key_size,
-                                                          protlayer_hash_proc, catalog->encoder);
+                                                          &handle, catalog->encoder);
+
+    handle.hash = NULL;
+    handle.kdf_clockwork = NULL;
 
     if (catalog->protlayer == NULL) {
         goto blackcat_cmd_init_epilogue;

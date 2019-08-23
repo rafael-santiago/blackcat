@@ -84,6 +84,11 @@ struct blackcat_kdf_clockwork_ctx {
     size_t arg_size[BLACKCAT_KDF_ARGS_NR];
 };
 
+struct blackcat_keychain_handle_ctx {
+    blackcat_hash_processor hash;
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork;
+};
+
 typedef struct blackcat_protlayer_chain {
     struct blackcat_protlayer_chain *head, *tail;
     int is_hmac;

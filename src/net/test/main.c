@@ -221,6 +221,7 @@ CUTE_TEST_CASE(ctx_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL, *p;
     kryptos_u8_t *keystream, *ksp;
     size_t keystream_size;
+    struct blackcat_keychain_handle_ctx handle;
 
     key = (kryptos_u8_t *) kryptos_newseg(8);
     memset(key, 'Z', 8);
@@ -375,9 +376,12 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(key != NULL);
     key_size = 9;
 
+    handle.hash = get_hash_processor("whirlpool");
+    handle.kdf_clockwork = NULL;
+
     pchain = add_composite_protlayer_to_chain(pchain,
                                               "aes-128-cbc,des-cbc,aes-256-cbc,hmac-sha-224-shacal1-ctr", &key, &key_size,
-                                              get_hash_processor("whirlpool"), NULL);
+                                              &handle, NULL);
 
     CUTE_ASSERT(init_bnt_keyset(&keyset, pchain, 50,
                                 get_hash_processor("sha3-512"), get_hash_input_size("sha3-512"), get_hash_size("sha3-512"),

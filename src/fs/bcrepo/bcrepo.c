@@ -889,6 +889,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     int no_error = 1;
     size_t temp_size;
     int inv_cascade_type;
+    struct blackcat_keychain_handle_ctx handle;
 
     inv_cascade_type = (cp->otp && cp->encrypt_data != blackcat_otp_encrypt_data) ||
                        (!cp->otp && cp->encrypt_data != blackcat_encrypt_data);
@@ -943,9 +944,15 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             cp->protlayer = NULL;
         }
 
+        handle.hash = protlayer_hash_proc;
+        handle.kdf_clockwork = NULL;
+
         cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
                                                          protlayer_key, protlayer_key_size,
-                                                         protlayer_hash_proc, cp->encoder);
+                                                         &handle, cp->encoder);
+
+        handle.hash = NULL;
+        handle.kdf_clockwork = NULL;
 
         if (cp->protlayer == NULL) {
             fprintf(stderr, "ERROR: While reconstructing the protection layer.\n");

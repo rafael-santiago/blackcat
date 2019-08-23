@@ -20,6 +20,7 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     size_t catalog_data_size;
     char temp[4096];
     blackcat_exec_session_ctx *es = NULL;
+    struct blackcat_keychain_handle_ctx handle;
 
     if (session == NULL) {
         return EINVAL;
@@ -130,9 +131,15 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
         // INFO(Rafael): We need the protection layer because some removed files may be encrypted and
         //               they will be decrypted before being actually removed from the catalog.
 
+        handle.hash = es->catalog->protlayer_key_hash_algo;
+        handle.kdf_clockwork = NULL;
+
         es->catalog->protlayer = add_composite_protlayer_to_chain(es->catalog->protlayer,
                                                                   es->catalog->protection_layer, &es->key[1], &es->key_size[1],
-                                                                  es->catalog->protlayer_key_hash_algo, es->catalog->encoder);
+                                                                  &handle, es->catalog->encoder);
+
+        handle.hash = NULL;
+        handle.kdf_clockwork = NULL;
 
         if (es->catalog->protlayer == NULL) {
             fprintf(stderr, "ERROR: While building the protection layer.\n");
