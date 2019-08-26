@@ -42,6 +42,64 @@ static int clear_syshook(void);
 
 static int has_tcpdump(void);
 
+static char hkdf_path[] = "";
+static char hkdf_cmd[] = "meow";
+static char hkdf_arg2[] = "--kdf=hkdf";
+static char hkdf_arg3[] = "--hkdf-salt=foobar";
+static char hkdf_arg4[] = "--hkdf-info=foo";
+static char hkdf_arg5[] = "--protection-layer-hash=sha-384";
+
+static char *hkdf_argv[] = {
+    hkdf_path,
+    hkdf_cmd,
+    hkdf_arg2,
+    hkdf_arg3,
+    hkdf_arg4,
+    hkdf_arg5
+};
+
+static int hkdf_argc = sizeof(hkdf_argv) / sizeof(hkdf_argv[0]);
+
+static char pbkdf2_path[] = "";
+static char pbkdf2_cmd[] = "meow";
+static char pbkdf2_arg2[] = "--kdf=pbkdf2";
+static char pbkdf2_arg3[] = "--pbkdf2-salt=foobar";
+static char pbkdf2_arg4[] = "--pbkdf2-count=10";
+static char pbkdf2_arg5[] = "--protection-layer-hash=blake2b-512";
+
+static char *pbkdf2_argv[] = {
+    pbkdf2_path,
+    pbkdf2_cmd,
+    pbkdf2_arg2,
+    pbkdf2_arg3,
+    pbkdf2_arg4,
+    pbkdf2_arg5
+};
+
+static int pbkdf2_argc = sizeof(pbkdf2_argv) / sizeof(pbkdf2_argv[0]);
+
+static char argon2i_path[] = "";
+static char argon2i_cmd[] = "meow";
+static char argon2i_arg2[] = "--kdf=argon2i";
+static char argon2i_arg3[] = "--argon2i-salt=foobar";
+static char argon2i_arg4[] = "--argon2i-memory=32";
+static char argon2i_arg5[] = "--argon2i-iterations=38";
+static char argon2i_arg6[] = "--argon2i-key=foo";
+static char argon2i_arg7[] = "--argon2i-aad=bar";
+
+static char *argon2i_argv[] = {
+    argon2i_path,
+    argon2i_cmd,
+    argon2i_arg2,
+    argon2i_arg3,
+    argon2i_arg4,
+    argon2i_arg5,
+    argon2i_arg6,
+    argon2i_arg7
+};
+
+static int argon2i_argc = sizeof(argon2i_argv) / sizeof(argon2i_argv[0]);
+
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
 
@@ -56,7 +114,6 @@ static char cmd_default_args[] = "meow";
 static char arg2_default_args[] = "--foo=bar";
 static char arg3_default_args[] = "--bar=foo";
 static char arg4_default_args[] = "--bool";
-
 
 static char *argv[] = {
     path,
@@ -82,8 +139,41 @@ CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_dev_tests);
 CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
+
+CUTE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests)
+    char *out;
+    size_t out_size;
+
+    // INFO(Rafael): Simulating HKDF user passing.
+
+    blackcat_set_argc_argv(hkdf_argc, hkdf_argv);
+    out = blackcat_get_kdf_usr_params_from_cmdline(&out_size);
+    CUTE_ASSERT(out_size == 26);
+    CUTE_ASSERT(memcmp(out, "hkdf:sha-384:Zm9vYmFy:Zm9v", out_size) == 0);
+    kryptos_freeseg(out, out_size);
+    blackcat_clear_options();
+
+    // INFO(Rafael): Simulating PBKDF2 user passing.
+
+    blackcat_set_argc_argv(pbkdf2_argc, pbkdf2_argv);
+    out = blackcat_get_kdf_usr_params_from_cmdline(&out_size);
+    CUTE_ASSERT(out_size == 30);
+    CUTE_ASSERT(memcmp(out, "pbkdf2:blake2b-512:Zm9vYmFy:10", out_size) == 0);
+    kryptos_freeseg(out, out_size);
+    blackcat_clear_options();
+
+    // INFO(Rafael): Simulating ARGON2I user passing.
+
+    blackcat_set_argc_argv(argon2i_argc, argon2i_argv);
+    out = blackcat_get_kdf_usr_params_from_cmdline(&out_size);
+    CUTE_ASSERT(out_size == 32);
+    CUTE_ASSERT(memcmp(out, "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy", out_size) == 0);
+    kryptos_freeseg(out, out_size);
+    blackcat_clear_options();
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests)
     char *default_args_data = BCREPO_CONFIG_SECTION_DEFAULT_ARGS ":\n"
@@ -168,6 +258,7 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(levenshtein_distance_tests);
     CUTE_RUN_TEST(mkargv_freeargv_tests);
     CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
+    CUTE_RUN_TEST(blackcat_get_kdf_usr_params_from_cmdline_tests);
     // INFO(Rafael): If all is okay, time to poke this shit.
     CUTE_RUN_TEST(blackcat_poking_tests);
     CUTE_RUN_TEST(blackcat_dev_tests);

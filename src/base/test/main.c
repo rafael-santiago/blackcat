@@ -49,6 +49,7 @@ CUTE_DECLARE_TEST_CASE(get_argon2i_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_usr_params_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_kdf_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_fmt_str_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -56,6 +57,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(ctx_tests);
     CUTE_RUN_TEST(keychain_arg_parsing_tests);
     CUTE_RUN_TEST(blackcat_is_dec_tests);
+    CUTE_RUN_TEST(blackcat_fmt_str_tests);
     CUTE_RUN_TEST(get_hash_processor_tests);
     CUTE_RUN_TEST(get_hash_size_tests);
     CUTE_RUN_TEST(get_hash_input_size_tests);
@@ -2138,5 +2140,33 @@ CUTE_TEST_CASE(blackcat_kdf_tests)
         CUTE_ASSERT(okm != NULL);
         kryptos_freeseg(okm, test_vector[t].okm_size);
         del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_fmt_str_tests)
+    struct test_ctx {
+        const char *fmt;
+        kryptos_u8_t *exp;
+        size_t exp_size;
+    } test_vector[] = {
+        { "foobar",                         "foobar",                  6 },
+        { "f\\x00\\obar",                   "f\x00obar",               6 },
+        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF",  "\n\t\r\xDE\xAD\xBE\xEF",  7 },
+        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF.", "\n\t\r\xDE\xAD\xBE\xEF.", 8 }
+    };
+    size_t t, tv_nr = sizeof(test_vector) / sizeof(test_vector[0]);
+    kryptos_u8_t *out;
+    size_t out_size = 101;
+
+    CUTE_ASSERT(blackcat_fmt_str("", NULL) == NULL);
+    CUTE_ASSERT(blackcat_fmt_str(NULL, &out_size) == NULL);
+    CUTE_ASSERT(out_size == 0);
+
+    for (t = 0; t < tv_nr; t++) {
+        out = blackcat_fmt_str(test_vector[t].fmt, &out_size);
+        CUTE_ASSERT(out != NULL);
+        CUTE_ASSERT(out_size == test_vector[t].exp_size);
+        CUTE_ASSERT(memcmp(out, test_vector[t].exp, out_size) == 0);
+        kryptos_freeseg(out, out_size);
     }
 CUTE_TEST_CASE_END

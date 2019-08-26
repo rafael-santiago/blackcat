@@ -36,4 +36,6 @@ int blackcat_is_dec(const char *buf, const size_t buf_size);
 
 void blackcat_xor_keychain_protkey(blackcat_protlayer_chain_ctx *protlayer, const kryptos_u8_t *seed, const size_t seed_size);
 
+kryptos_u8_t *blackcat_fmt_str(const char *str, size_t *out_size);
+
 #endif

@@ -295,3 +295,85 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
 
     return skey;
 }
+
+kryptos_u8_t *blackcat_fmt_str(const char *str, size_t *out_size) {
+    kryptos_u8_t buf[65535];
+    kryptos_u8_t *bp, *bp_end;
+    const char *sp, *sp_end;
+    kryptos_u8_t *out = NULL;
+
+    if (out_size == NULL) {
+        return NULL;
+    }
+
+    if (str == NULL) {
+        *out_size = 0;
+        return NULL;
+    }
+
+    memset(buf, 0, sizeof(buf));
+
+    bp = &buf[0];
+    bp_end = bp + sizeof(buf);
+
+    sp = &str[0];
+    sp_end = sp + strlen(sp);
+
+#define get_nibble(n) ( ((n) >= '0' && (n) <= '9') ? (n) - '0' : toupper((n)) - 55 )
+
+    while (bp < bp_end && sp < sp_end) {
+        if (*sp == '\\') {
+            sp++;
+            switch (*sp) {
+                case 'n':
+                    *bp = '\n';
+                    break;
+
+                case 't':
+                    *bp = '\t';
+                    break;
+
+                case 'r':
+                    *bp = '\r';
+                    break;
+
+                case 'x':
+                    sp++;
+                    while (bp < bp_end && sp < sp_end && isxdigit(*sp)) {
+                        *bp = (kryptos_u8_t) get_nibble(*sp);
+                        sp++;
+                        if (isxdigit(*sp)) {
+                            *bp = *bp << 4 | get_nibble(*sp);
+                            sp++;
+                            bp++;
+                        }
+                    }
+                    sp--;
+                    bp--;
+                    break;
+
+                default:
+                    *bp = *sp;
+                    break;
+            }
+        } else {
+            *bp = *sp;
+        }
+        bp++;
+        sp++;
+    }
+
+#undef get_nibble
+
+    *out_size = 0;
+
+    out = (kryptos_u8_t *) kryptos_newseg((bp - &buf[0]) + 1);
+
+    if (out != NULL) {
+        *out_size = bp - &buf[0];
+        memset(out, 0, *out_size + 1);
+        memcpy(out, buf, *out_size);
+    }
+
+    return out;
+}

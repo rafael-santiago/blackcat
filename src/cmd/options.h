@@ -48,4 +48,6 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc);
 
 void freeargv(char **argv, const int argc);
 
+char *blackcat_get_kdf_usr_params_from_cmdline(size_t *out_size);
+
 #endif

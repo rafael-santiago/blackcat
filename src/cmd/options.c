@@ -7,6 +7,9 @@
  */
 #include <cmd/options.h>
 #include <fs/bcrepo/config.h>
+#include <keychain/keychain.h>
+#include <keychain/kdf/kdf_utils.h>
+#include <keychain/ciphering_schemes.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -17,6 +20,12 @@ static char **g_blackcat_argv = NULL;
 static int g_blackcat_argc = 0;
 
 static char  **g_blackcat_argv_head = NULL;
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_hkdf(void);
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_pbkdf2(void);
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void);
 
 char *blackcat_get_option(const char *option, char *default_option) {
     char temp[4096];
@@ -68,7 +77,7 @@ void blackcat_set_argc_argv(int argc, char **argv) {
 
     if (g_blackcat_argv_head != NULL) {
         blackcat_clear_options();
-        g_blackcat_argv_head = NULL;
+        //g_blackcat_argv_head = NULL;
     }
 
     if (argv == NULL) {
@@ -175,6 +184,7 @@ void blackcat_clear_options(void) {
     g_blackcat_cmd = NULL;
     g_blackcat_argv = NULL;
     g_blackcat_argc = 0;
+    g_blackcat_argv_head = NULL;
     size = 0;
 }
 
@@ -197,6 +207,9 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc) {
             bp++;
         } else if (*bp == ' ' || *bp == '\t' || *bp == 0) {
             (*argc)++;
+            if (*bp == 0) {
+                break;
+            }
             while (*bp == ' ' || *bp == '\t') {
                 bp++;
             }
@@ -204,11 +217,15 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc) {
         bp++;
     }
 
-    if ((argv = (char **) kryptos_newseg(sizeof(char *) * (*argc))) == NULL) {
+    if ((argv = (char **) kryptos_newseg(sizeof(char *) * (*argc + 1))) == NULL) {
         return NULL;
     }
 
-    argv[0] = NULL; // INFO(Rafael): Dummy entry.
+    for (a = 0; a < *argc + 1; a++) {
+        argv[a] = NULL;
+    }
+
+    //argv[0] = NULL; // INFO(Rafael): Dummy entry.
     a = 1;
 
     bp = bp_off = buf;
@@ -225,6 +242,9 @@ char **mkargv(char **argv, const char *buf, const size_t buf_size, int *argc) {
             memset(argv[a], 0, a_size);
             memcpy(argv[a], bp_off, a_size - 1);
             a++;
+            if (*bp == 0) {
+                break;
+            }
             while (*bp == ' ') {
                 bp++;
             }
@@ -250,4 +270,203 @@ void freeargv(char **argv, const int argc) {
     }
 
     kryptos_freeseg(argv, sizeof(char *) * argc);
+}
+
+char *blackcat_get_kdf_usr_params_from_cmdline(size_t *out_size) {
+    char *kdf;
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    char *out = NULL;
+
+    if ((kdf = blackcat_get_option("kdf", NULL)) == NULL) {
+        return NULL;
+    }
+
+    if (strcmp(kdf, "hkdf") == 0) {
+        kdf_clockwork = blackcat_kdf_usr_params_hkdf();
+    } else if (strcmp(kdf, "pbkdf2") == 0) {
+        kdf_clockwork = blackcat_kdf_usr_params_pbkdf2();
+    } else if (strcmp(kdf, "argon2i") == 0) {
+        kdf_clockwork = blackcat_kdf_usr_params_argon2i();
+    }
+
+    if (kdf_clockwork != NULL) {
+        out = get_kdf_usr_params(kdf_clockwork, out_size);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    }
+
+    return out;
+}
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_hkdf(void) {
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    char *option;
+
+    new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_hkdf_epilogue);
+
+    option = blackcat_get_option("protection-layer-hash", NULL);
+
+    if (option == NULL) {
+        fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_hkdf_epilogue;
+    }
+
+    kdf_clockwork->kdf = blackcat_hkdf;
+
+    kdf_clockwork->arg_data[0] = (void *) get_hash_processor(option);
+
+    kdf_clockwork->arg_data[3] = blackcat_fmt_str(blackcat_get_option("hkdf-salt", NULL), &kdf_clockwork->arg_size[3]);
+    kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
+    kdf_clockwork->arg_size[4] = 0;
+    kdf_clockwork->arg_data[5] = blackcat_fmt_str(blackcat_get_option("hkdf-info", NULL), &kdf_clockwork->arg_size[5]);
+    kdf_clockwork->arg_data[6] = &kdf_clockwork->arg_size[5];
+    kdf_clockwork->arg_size[6] = 0;
+
+blackcat_kdf_usr_params_hkdf_epilogue:
+
+    option = NULL;
+
+    return kdf_clockwork;
+}
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_pbkdf2(void) {
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    char *option;
+
+    new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_pbkdf2_epilogue);
+
+    option = blackcat_get_option("protection-layer-hash", NULL);
+
+    if (option == NULL) {
+        fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    }
+
+    kdf_clockwork->kdf = blackcat_pbkdf2;
+
+    kdf_clockwork->arg_data[0] = (void *) get_hash_processor(option);
+
+    kdf_clockwork->arg_data[3] = blackcat_fmt_str(blackcat_get_option("pbkdf2-salt", NULL), &kdf_clockwork->arg_size[3]);
+    kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
+    kdf_clockwork->arg_size[4] = 0;
+
+    option = blackcat_get_option("pbkdf2-count", NULL);
+
+    if (option == NULL) {
+        fprintf(stderr, "ERROR: The '--pbkdf2-count' option is missing.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    }
+
+    if (!blackcat_is_dec(option, strlen(option))) {
+        fprintf(stderr, "ERROR: The '--pbkdf2-count' must be a valid decimal number.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    }
+
+    kdf_clockwork->arg_data[5] = (size_t *)kryptos_newseg(sizeof(size_t));
+
+    if (kdf_clockwork->arg_data[5] == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to get data from '--pbkdf2-count' option.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    }
+
+    kdf_clockwork->arg_size[5] = sizeof(size_t);
+    *((size_t *)kdf_clockwork->arg_data[5]) = strtoul(option, NULL, 10);
+
+blackcat_kdf_usr_params_pbkdf2_epilogue:
+
+    option = NULL;
+
+    return kdf_clockwork;
+}
+
+static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void) {
+    char *option;
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+
+    new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_argon2i_epilogue);
+
+    kdf_clockwork->kdf = blackcat_argon2i;
+
+    kdf_clockwork->arg_data[0] = blackcat_fmt_str(blackcat_get_option("argon2i-salt", NULL), &kdf_clockwork->arg_size[0]);
+    kdf_clockwork->arg_data[1] = &kdf_clockwork->arg_size[0];
+    kdf_clockwork->arg_size[1] = 0;
+
+    option = blackcat_get_option("argon2i-memory", NULL);
+
+    if (option == NULL) {
+        fprintf(stderr, "ERROR: The '--argon2i-memory' option is missing.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    if (!blackcat_is_dec(option, strlen(option))) {
+        fprintf(stderr, "ERROR: The option '--argon2i-memory' must be a valid decimal number.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    kdf_clockwork->arg_data[2] = (kryptos_u32_t *)kryptos_newseg(sizeof(kryptos_u32_t));
+
+    if (kdf_clockwork->arg_data[2] == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to get data from '--argon2i-memory' option.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    *((kryptos_u32_t *)kdf_clockwork->arg_data[2]) = atoi(option);
+    kdf_clockwork->arg_size[2] = sizeof(kryptos_u32_t);
+
+    option = blackcat_get_option("argon2i-iterations", NULL);
+
+    if (option == NULL) {
+        fprintf(stderr, "ERROR: The '--argon2i-iterations' option is missing.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    if (!blackcat_is_dec(option, strlen(option))) {
+        fprintf(stderr, "ERROR: The option '--argon2i-iterations' must be a valid decimal number.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    kdf_clockwork->arg_data[3] = (kryptos_u32_t *)kryptos_newseg(sizeof(kryptos_u32_t));
+
+    if (kdf_clockwork->arg_data[3] == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to get data from '--argon2i-iterations' option.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+    *((kryptos_u32_t *)kdf_clockwork->arg_data[3]) = atoi(option);
+    kdf_clockwork->arg_size[3] = sizeof(kryptos_u32_t);
+
+    kdf_clockwork->arg_data[4] = blackcat_fmt_str(blackcat_get_option("argon2i-key", NULL), &kdf_clockwork->arg_size[4]);
+    kdf_clockwork->arg_data[5] = &kdf_clockwork->arg_size[4];
+    kdf_clockwork->arg_size[5] = 0;
+
+    kdf_clockwork->arg_data[6] = blackcat_fmt_str(blackcat_get_option("argon2i-aad", NULL), &kdf_clockwork->arg_size[6]);
+    kdf_clockwork->arg_data[7] = &kdf_clockwork->arg_size[6];
+    kdf_clockwork->arg_size[7] = 0;
+
+blackcat_kdf_usr_params_argon2i_epilogue:
+
+    option = NULL;
+
+    return kdf_clockwork;
 }
