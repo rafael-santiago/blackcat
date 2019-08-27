@@ -392,6 +392,10 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void) 
     char *option;
     struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
 
+    // INFO(Rafael): ARGON2 is really picky about its parameters... Let's check...
+
+#define BLACKCAT_ARGON2I_LIMIT (0xFFFFFFFF >> 3)
+
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_argon2i_epilogue);
 
     kdf_clockwork->kdf = blackcat_argon2i;
@@ -400,14 +404,17 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void) 
     kdf_clockwork->arg_data[1] = &kdf_clockwork->arg_size[0];
     kdf_clockwork->arg_size[1] = 0;
 
-    option = blackcat_get_option("argon2i-memory", NULL);
-
-    if (option == NULL) {
-        fprintf(stderr, "ERROR: The '--argon2i-memory' option is missing.\n");
+    if (kdf_clockwork->arg_size[0] > BLACKCAT_ARGON2I_LIMIT) {
+        fprintf(stderr, "ERROR: The '--argon2i-salt' option exceeds its limit.\n");
         del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
         kdf_clockwork = NULL;
         goto blackcat_kdf_usr_params_argon2i_epilogue;
     }
+
+    // INFO(Rafael): We will use parallelism equals to 1 here in blackcat. It explains why to use a default of 8 kb.
+    //               Any doubt take a look at ARGON2's standard spec.
+
+    option = blackcat_get_option("argon2i-memory", "8");
 
     if (!blackcat_is_dec(option, strlen(option))) {
         fprintf(stderr, "ERROR: The option '--argon2i-memory' must be a valid decimal number.\n");
@@ -427,6 +434,13 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void) 
 
     *((kryptos_u32_t *)kdf_clockwork->arg_data[2]) = atoi(option);
     kdf_clockwork->arg_size[2] = sizeof(kryptos_u32_t);
+
+    if (*((kryptos_u32_t *)kdf_clockwork->arg_data[2]) > BLACKCAT_ARGON2I_LIMIT) {
+        fprintf(stderr, "ERROR: The option '--argon2i-memory' exceeds its limit.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
 
     option = blackcat_get_option("argon2i-iterations", NULL);
 
@@ -456,13 +470,36 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void) 
     *((kryptos_u32_t *)kdf_clockwork->arg_data[3]) = atoi(option);
     kdf_clockwork->arg_size[3] = sizeof(kryptos_u32_t);
 
+    if (*((kryptos_u32_t *)kdf_clockwork->arg_data[3]) > BLACKCAT_ARGON2I_LIMIT) {
+        fprintf(stderr, "ERROR: The option '--argon2i-iterations' exceeds its limit.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
     kdf_clockwork->arg_data[4] = blackcat_fmt_str(blackcat_get_option("argon2i-key", NULL), &kdf_clockwork->arg_size[4]);
     kdf_clockwork->arg_data[5] = &kdf_clockwork->arg_size[4];
     kdf_clockwork->arg_size[5] = 0;
 
+    if (kdf_clockwork->arg_size[4] > BLACKCAT_ARGON2I_LIMIT) {
+        fprintf(stderr, "ERROR: The option '--argon2i-key' exceeds its limit.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
     kdf_clockwork->arg_data[6] = blackcat_fmt_str(blackcat_get_option("argon2i-aad", NULL), &kdf_clockwork->arg_size[6]);
     kdf_clockwork->arg_data[7] = &kdf_clockwork->arg_size[6];
     kdf_clockwork->arg_size[7] = 0;
+
+    if (kdf_clockwork->arg_size[6] > BLACKCAT_ARGON2I_LIMIT) {
+        fprintf(stderr, "ERROR: The option '--argon2i-aad' exceeds its limit.\n");
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_argon2i_epilogue;
+    }
+
+#undef BLACKCAT_ARGON2I_LIMIT
 
 blackcat_kdf_usr_params_argon2i_epilogue:
 
