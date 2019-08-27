@@ -2050,24 +2050,28 @@ CUTE_TEST_CASE(get_argon2i_clockwork_tests)
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_kdf_clockwork_tests)
-    char *usr_params = NULL;
     char err[1024];
     struct blackcat_kdf_clockwork_ctx *kdf_clockwork = NULL;
+    const char *usr_params[] = {
+        "hkdf:sha-384:Zm9vYmFy:Zm9v",
+        "pbkdf2:blake2b-512:Zm9vYmFy:10",
+        "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy"
+    };
+    const char **up, **up_end;
+
+    CUTE_ASSERT(get_kdf_clockwork("alien1:bobobo:bubu", strlen("alien1:bobobo:bubu"), err) == NULL);
 
     // INFO(Rafael): Here we do not mind about if the kdf parsers are indeed returning correct data.
     //               It was already done in kdf function dedicated test. Here non-null means correct.
 
-    usr_params = "hkdf:sha-384:Zm9vYmFy:Zm9v";
-    CUTE_ASSERT((kdf_clockwork = get_kdf_clockwork(hkdf, usr_params, strlen(usr_params), err)) != NULL);
-    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    up = usr_params;
+    up_end = up + sizeof(usr_params) / sizeof(usr_params[0]);
 
-    usr_params = "pbkdf2:blake2b-512:Zm9vYmFy:10";
-    CUTE_ASSERT((kdf_clockwork = get_kdf_clockwork(pbkdf2, usr_params, strlen(usr_params), err)) != NULL);
-    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-
-    usr_params = "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy";
-    CUTE_ASSERT((kdf_clockwork = get_kdf_clockwork(argon2i, usr_params, strlen(usr_params), err)) != NULL);
-    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+    while (up != up_end) {
+        CUTE_ASSERT((kdf_clockwork = get_kdf_clockwork(*up, strlen(*up), err)) != NULL);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        up++;
+    }
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_kdf_usr_params_tests)

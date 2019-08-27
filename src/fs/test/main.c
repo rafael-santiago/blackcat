@@ -641,7 +641,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
     struct test_ctx tests[] = {
         { "0.0.1", 0 },
         { "1.0.0", 1 },
-        { "1.1.0", 1 }
+        { "1.1.0", 1 },
+        { "1.2.0", 1 }
     };
     size_t tests_nr = sizeof(tests) / sizeof(tests[0]), t;
 
@@ -658,6 +659,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         catalog.encoder = get_encoder("uuencode");
         catalog.encrypt_data = blackcat_encrypt_data;
         catalog.decrypt_data = blackcat_decrypt_data;
+        catalog.kdf_params = NULL;
+        catalog.kdf_params_size = 0;
 
         catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
         CUTE_ASSERT(catalog.key_hash != NULL);
@@ -1155,6 +1158,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                                "gibberish-wrap/448-128,"
                                                "rc6-128-cbc/96,"
                                                "gibberish-wrap/101-11",
+                                               NULL, 0,
                                                get_hash_processor("whirlpool"),
                                                get_hash_processor("sha3-512"),
                                                NULL,
@@ -2254,6 +2258,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_relpath_ctx files;
     kryptos_u8_t *key = "Goliath";
 
+    // INFO(Rafael): First let's test a repo which uses a KDF (HKDF).
+
     catalog.bc_version = BCREPO_METADATA_VERSION;
     catalog.otp = 0;
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
@@ -2264,6 +2270,42 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
     catalog.encoder = get_encoder("uuencode");
+    catalog.kdf_params = "hkdf:sha-384:Zm9vYmFy:Zm9v";
+    catalog.kdf_params_size = 26;
+
+    catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
+    CUTE_ASSERT(catalog.key_hash != NULL);
+
+    catalog.protection_layer = "aes-256-ctr,hmac-whirlpool-cast5-cbc";
+    catalog.files = &files;
+
+    files.head = &files;
+    files.tail = &files;
+    files.path = "a/b/c.txt";
+    files.path_size = strlen("a/b/c.txt");
+    files.status = 'U';
+    files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
+    files.seed_size = 8;
+    sprintf(files.timestamp, "%s", "123456789");
+    files.last = NULL;
+    files.next = NULL;
+
+    CUTE_ASSERT(bcrepo_write(BCREPO_DATA, &catalog, "parangaricutirimirruaru", strlen("parangaricutirimirruaru")) == 1);
+
+    kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
+
+    catalog.bc_version = BCREPO_METADATA_VERSION;
+    catalog.otp = 0;
+    catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
+    catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
+    catalog.hmac_scheme = get_hmac_catalog_scheme("hmac-sha3-256-tea-ofb");
+    catalog.key_hash_algo = get_hash_processor("sha-224");
+    catalog.key_hash_algo_size = get_hash_size("sha-224");
+    catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
+    catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
+    catalog.encoder = get_encoder("uuencode");
+    catalog.kdf_params = NULL;
+    catalog.kdf_params_size = 0;
 
     catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
     CUTE_ASSERT(catalog.key_hash != NULL);

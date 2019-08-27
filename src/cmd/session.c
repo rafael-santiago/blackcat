@@ -9,6 +9,7 @@
 #include <cmd/options.h>
 #include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <keychain/kdf/kdf_utils.h>
 #include <kryptos_memory.h>
 #include <accacia.h>
 #include <stdio.h>
@@ -132,14 +133,27 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
         //               they will be decrypted before being actually removed from the catalog.
 
         handle.hash = es->catalog->protlayer_key_hash_algo;
-        handle.kdf_clockwork = NULL;
+        handle.kdf_clockwork = (es->catalog->kdf_params != NULL) ? get_kdf_clockwork(es->catalog->kdf_params,
+                                                                                     es->catalog->kdf_params_size,
+                                                                                     NULL) : NULL;
+
+        if (es->catalog->kdf_params != NULL && handle.kdf_clockwork == NULL) {
+            handle.hash = NULL;
+            fprintf(stderr, "ERROR: Unable to create KDF clockwork.\n");
+            exit_code = EFAULT;
+            goto new_blackcat_exec_session_ctx_epilogue;
+        }
 
         es->catalog->protlayer = add_composite_protlayer_to_chain(es->catalog->protlayer,
                                                                   es->catalog->protection_layer, &es->key[1], &es->key_size[1],
                                                                   &handle, es->catalog->encoder);
 
         handle.hash = NULL;
-        handle.kdf_clockwork = NULL;
+
+        if (handle.kdf_clockwork != NULL) {
+            del_blackcat_kdf_clockwork_ctx(handle.kdf_clockwork);
+            handle.kdf_clockwork = NULL;
+        }
 
         if (es->catalog->protlayer == NULL) {
             fprintf(stderr, "ERROR: While building the protection layer.\n");

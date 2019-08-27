@@ -212,6 +212,11 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
         del_bfs_catalog_relpath_ctx(catalog->files);
     }
 
+    if (catalog->kdf_params != NULL) {
+        kryptos_freeseg(catalog->kdf_params, catalog->kdf_params_size);
+        catalog->kdf_params_size = 0;
+    }
+
     free(catalog);
 }
 
@@ -229,6 +234,8 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
         catalog->encoder = NULL;
         catalog->config_hash = NULL;
         catalog->config_hash_size = 0;
+        catalog->kdf_params = NULL;
+        catalog->kdf_params_size = 0;
     }
     return catalog;
 }

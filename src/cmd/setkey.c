@@ -231,6 +231,7 @@ int blackcat_cmd_setkey(void) {
                                    session->rootpath, session->rootpath_size,
                                    new_key[0], new_key_size[0], &new_key[1], &new_key_size[1],
                                    protection_layer,
+                                   NULL, 0, // TODO(Rafael): Read possible new KDF parameters (The char pointer read here will be freed later by blackcat).
                                    catalog_hash_proc, key_hash_proc, key_hash_algo_args, protection_layer_hash_proc,
                                    encoder_proc,
                                    blackcat_checkpoint,

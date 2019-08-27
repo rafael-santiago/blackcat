@@ -85,3 +85,25 @@ char *get_kdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork,
 
     return NULL;
 }
+
+struct blackcat_kdf_clockwork_ctx *get_kdf_clockwork(const char *usr_params, const size_t usr_params_size, char *error) {
+    char *up;
+
+    if (usr_params == NULL) {
+        return NULL;
+    }
+
+    if ((up = strstr(usr_params, "hkdf:")) != NULL && up == usr_params) {
+        return get_hkdf_clockwork(usr_params, usr_params_size, error);
+    }
+
+    if ((up = strstr(usr_params, "pbkdf2:")) != NULL && up == usr_params) {
+        return get_pbkdf2_clockwork(usr_params, usr_params_size, error);
+    }
+
+    if ((up = strstr(usr_params, "argon2i:")) != NULL && up == usr_params) {
+        return get_argon2i_clockwork(usr_params, usr_params_size, error);
+    }
+
+    return NULL;
+}

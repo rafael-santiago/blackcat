@@ -25,8 +25,7 @@ char *blackcat_kdf_usr_params_get_next(const char *usr_params, const size_t usr_
 
 void del_blackcat_kdf_clockwork_ctx(struct blackcat_kdf_clockwork_ctx *kdf_clockwork);
 
-#define get_kdf_clockwork(kdf_algo, usr_params, usr_params_size, err_msg)\
-    get_ ## kdf_algo ## _clockwork((usr_params), (usr_params_size), (err_msg))
+struct blackcat_kdf_clockwork_ctx *get_kdf_clockwork(const char *usr_params, const size_t usr_params_size, char *error);
 
 char *get_kdf_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwork, size_t *out_size);
 

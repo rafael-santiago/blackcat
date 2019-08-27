@@ -14,7 +14,7 @@
 // INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
 //               tool will generate unsupported data for the fs module.
 
-#define BCREPO_METADATA_VERSION                 "1.1.0"
+#define BCREPO_METADATA_VERSION                 "1.2.0"
 
 #define BCREPO_HIDDEN_DIR ".bcrepo"
 #define BCREPO_HIDDEN_DIR_SIZE 7
@@ -76,6 +76,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                kryptos_u8_t *catalog_key, const size_t catalog_key_size,
                                kryptos_u8_t **protlayer_key, size_t *protlayer_key_size,
                                const char *protection_layer,
+                               char *kdf_params, size_t kdf_params_size,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
                                void *key_hash_proc_args,

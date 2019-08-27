@@ -10,6 +10,7 @@
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
 #include <keychain/keychain.h>
+#include <keychain/kdf/kdf_utils.h>
 #include <ctx/ctx.h>
 #include <fs/ctx/fsctx.h>
 #include <fs/strglob.h>
@@ -38,6 +39,7 @@
 #define BCREPO_CATALOG_FILES                    "files: "
 #define BCREPO_CATALOG_OTP                      "otp: "
 #define BCREPO_CATALOG_CONFIG_HASH              "config-hash: "
+#define BCREPO_CATALOG_KDF_PARAMS               "kdf-params: "
 
 #define BCREPO_PEM_KEY_HASH_ALGO_HDR "BCREPO KEY HASH ALGO"
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
@@ -79,6 +81,8 @@ static kryptos_u8_t *otp_w(kryptos_u8_t *out, const size_t out_size, const bfs_c
 
 static kryptos_u8_t *config_hash_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
+static kryptos_u8_t *kdf_params_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
+
 static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *data_size,
                                                   const kryptos_u8_t *key, const size_t key_size,
                                                   bfs_catalog_ctx *catalog);
@@ -102,6 +106,8 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
 static int otp_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
 static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
+
+static int kdf_params_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
 static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size);
 
@@ -877,6 +883,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
                                kryptos_u8_t *catalog_key, const size_t catalog_key_size,
                                kryptos_u8_t **protlayer_key, size_t *protlayer_key_size,
                                const char *protection_layer,
+                               char *kdf_params, size_t kdf_params_size,
                                blackcat_hash_processor catalog_hash_proc,
                                blackcat_hash_processor key_hash_proc,
                                void *key_hash_proc_args,
@@ -944,15 +951,33 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             cp->protlayer = NULL;
         }
 
+        if (cp->kdf_params != NULL) {
+            kryptos_freeseg(cp->kdf_params, cp->kdf_params_size);
+        }
+
+        cp->kdf_params = kdf_params;
+        cp->kdf_params_size = kdf_params_size;
+
         handle.hash = protlayer_hash_proc;
-        handle.kdf_clockwork = NULL;
+        handle.kdf_clockwork = (cp->kdf_params != NULL) ? get_kdf_clockwork(cp->kdf_params, cp->kdf_params_size, NULL) : NULL;
+
+        if (cp->kdf_params != NULL && handle.kdf_clockwork == NULL) {
+            handle.hash = NULL;
+            no_error = 0;
+            fprintf(stderr, "ERROR: Unable to create KDF clockwork.\n");
+            goto bcrepo_reset_repo_settings_epilogue;
+        }
 
         cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
                                                          protlayer_key, protlayer_key_size,
                                                          &handle, cp->encoder);
 
         handle.hash = NULL;
-        handle.kdf_clockwork = NULL;
+
+        if (handle.kdf_clockwork != NULL) {
+            del_blackcat_kdf_clockwork_ctx(handle.kdf_clockwork);
+            handle.kdf_clockwork = NULL;
+        }
 
         if (cp->protlayer == NULL) {
             fprintf(stderr, "ERROR: While reconstructing the protection layer.\n");
@@ -3179,7 +3204,8 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
             strlen(BCREPO_CATALOG_PROTECTION_LAYER) + 1 +
             strlen(BCREPO_CATALOG_FILES) + 1 +
             strlen(BCREPO_CATALOG_OTP) + 1 +
-            strlen(BCREPO_CATALOG_CONFIG_HASH) + 2;
+            strlen(BCREPO_CATALOG_CONFIG_HASH) + 1 +
+            strlen(BCREPO_CATALOG_KDF_PARAMS) + 2;
 
     hash_name = NULL;
 
@@ -3206,14 +3232,16 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
         { BCREPO_CATALOG_PROTECTION_LAYER,        protection_layer_w,        0 },
         { BCREPO_CATALOG_FILES,                   files_w,                   0 },
         { BCREPO_CATALOG_OTP,                     otp_w,                     0 },
-        { BCREPO_CATALOG_CONFIG_HASH,             config_hash_w,             0 }
+        { BCREPO_CATALOG_CONFIG_HASH,             config_hash_w,             0 },
+        { BCREPO_CATALOG_KDF_PARAMS,              kdf_params_w,              0 }
     };
     static size_t dumpers_nr = sizeof(dumpers) / sizeof(dumpers[0]), d;
     kryptos_u8_t *o;
     // WARN(Rafael): All dumpers must be included during this check. If you have added a new one in dumpers[] add its
     //               writing verification here.
 #define all_dump_done(d) ( (d)[0].done && (d)[1].done && (d)[2].done &&\
-                           (d)[3].done && (d)[4].done && (d)[5].done && (d)[6].done && (d)[7].done )
+                           (d)[3].done && (d)[4].done && (d)[5].done &&\
+                           (d)[6].done && (d)[7].done && (d)[8].done )
 
     for (d = 0; d < dumpers_nr; d++) {
         dumpers[d].done = 0;
@@ -3328,6 +3356,21 @@ static kryptos_u8_t *config_hash_w(kryptos_u8_t *out, const size_t out_size, con
     return o;
 }
 
+static kryptos_u8_t *kdf_params_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog) {
+    size_t size;
+    kryptos_u8_t *o = out;
+    if (catalog->kdf_params != NULL) {
+        size = strlen(BCREPO_CATALOG_KDF_PARAMS);
+        memcpy(o, BCREPO_CATALOG_KDF_PARAMS, size);
+        o += size;
+        memcpy(o, catalog->kdf_params, catalog->kdf_params_size);
+        o += catalog->kdf_params_size;
+        *o = '\n';
+        o += 1;
+    }
+    return o;
+}
+
 static kryptos_u8_t *files_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog) {
     kryptos_u8_t *o;
     bfs_catalog_relpath_ctx *f;
@@ -3388,7 +3431,8 @@ static int read_catalog_data(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, 
         protection_layer_r,
         files_r,
         otp_r,
-        config_hash_r
+        config_hash_r,
+        kdf_params_r
     };
     static size_t read_nr = sizeof(read) /  sizeof(read[0]), r;
     int no_error = 1;
@@ -3453,7 +3497,13 @@ static int is_metadata_compatible(const char *version) {
     // INFO(Rafael): If you are changing something here and it will not break compatibility with the current
     //               cmd tool's version, include its version here, otherwise erase this version entry.
     static const char *compatible_versions[] = {
-        BCREPO_METADATA_VERSION, "1.0.0"
+        BCREPO_METADATA_VERSION,
+        "1.1.0", // INFO(Rafael): Metadata version 1.2.0 has introduced the kdf-params during key crunching
+                 // besides new algorithms and modes. Anyway is still possible to read 1.1.0 metadata and
+                 // handle it accordingly. If a setkey is done over 1.1.0 stuff it will overwrite the repo's
+                 // metadata version making it incompatible for prior blackcat versions. So everything will
+                 // be fine and sane as we like.
+        "1.0.0"
     };
     static const size_t compatible_versions_nr = sizeof(compatible_versions) / sizeof(compatible_versions[0]);
     size_t c;
@@ -3571,6 +3621,15 @@ static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, cons
     cp->config_hash_size =  (cp->config_hash != NULL) ? strlen(cp->config_hash) : 0;
 
     return 1; // INFO(Rafael): This catalog field is optional so always its reading will return true.
+}
+
+static int kdf_params_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
+    bfs_catalog_ctx *cp = *catalog;
+
+    cp->kdf_params = get_catalog_field(BCREPO_CATALOG_KDF_PARAMS, in, in_size);
+    cp->kdf_params_size = (cp->kdf_params != NULL) ? strlen(cp->kdf_params) : 0;
+
+    return 1; // INFO(Rafael): This catalog field is also optional.
 }
 
 static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
