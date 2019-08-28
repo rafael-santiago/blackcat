@@ -655,6 +655,9 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     if (catalog->key_hash_algo == blackcat_bcrypt) {
         fprintf(stdout, " (cost=%d)", (catalog->key_hash[4] - '0') * 10 + (catalog->key_hash[5] - '0'));
     }
+    if (catalog->kdf_params != NULL) {
+        fprintf(stdout, " |_ kdf-params: %s\n", catalog->kdf_params);
+    }
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
     fprintf(stdout, " |_ protection-layer: %s\n", catalog->protection_layer);
