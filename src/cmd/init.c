@@ -223,7 +223,7 @@ int blackcat_cmd_init(void) {
     // WARN(Rafael): catalog->hmac_scheme will be random at each catalog writing task. There is no
     //               reason for picking one HMAC scheme at this point.
 
-    catalog->bc_version = (char *) get_blackcat_version();
+    catalog->bc_version = (char *) bcrepo_metadata_version();
     catalog->catalog_key_hash_algo = catalog_hash_proc;
     catalog->catalog_key_hash_algo_size = get_hash_size(catalog_hash);
     catalog->key_hash_algo = key_hash_proc;

@@ -193,6 +193,10 @@ static int is_metadata_compatible(const char *version);
 
 static int setfilectime(const char *path);
 
+const char *bcrepo_metadata_version(void) {
+    return BCREPO_METADATA_VERSION;
+}
+
 int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath, const size_t rootpath_size) {
     kryptos_u8_t *config_data = NULL;
     size_t config_data_size;
@@ -894,9 +898,10 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     bfs_catalog_ctx *cp = *catalog;
     char filepath[4096];
     int no_error = 1;
-    size_t temp_size;
+    size_t temp_size, temp_size2;
     int inv_cascade_type;
     struct blackcat_keychain_handle_ctx handle;
+    char *temp = NULL;
 
     inv_cascade_type = (cp->otp && cp->encrypt_data != blackcat_otp_encrypt_data) ||
                        (!cp->otp && cp->encrypt_data != blackcat_encrypt_data);
@@ -909,6 +914,22 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
 
     if (inv_cascade_type) {
         cp->otp = !cp->otp;
+    }
+
+    if ((temp_size = strlen(cp->bc_version)) < (temp_size2 = strlen(BCREPO_METADATA_VERSION))) {
+        temp = cp->bc_version;
+        cp->bc_version = (char *) kryptos_newseg(temp_size2 + 1);
+        if (cp->bc_version == NULL) {
+            temp = NULL;
+        }
+    }
+
+    memset(cp->bc_version, 0, temp_size2 + 1);
+    memcpy(cp->bc_version, BCREPO_METADATA_VERSION, temp_size2);
+
+    if (temp != NULL) {
+        kryptos_freeseg(temp, temp_size);
+        temp = NULL;
     }
 
     cp->catalog_key_hash_algo = catalog_hash_proc;
@@ -3865,6 +3886,7 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 #undef BCREPO_CATALOG_PROTECTION_LAYER
 #undef BCREPO_CATALOG_FILES
 #undef BCREPO_CATALOG_OTP
+#undef BCREPO_CATALOG_KDF_PARAMS
 
 #undef BCREPO_PEM_KEY_HASH_ALGO_HDR
 #undef BCREPO_PEM_HMAC_HDR

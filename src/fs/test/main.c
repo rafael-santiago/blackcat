@@ -45,6 +45,7 @@ CUTE_DECLARE_TEST_CASE(bcrepo_detach_attach_metainfo_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_untouch_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_config_module_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_config_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_metadata_version_tests);
 
 struct checkpoint_ctx {
     bfs_catalog_ctx *catalog;
@@ -61,6 +62,7 @@ int checkpoint(void *args);
 CUTE_MAIN(fs_tests);
 
 CUTE_TEST_CASE(fs_tests)
+    CUTE_RUN_TEST(bcrepo_metadata_version_tests);
     CUTE_RUN_TEST(bcrepo_incompatibility_tests);
     CUTE_ASSERT(save_text("aes", 3, "o/aes.o") == 1);
     CUTE_ASSERT(save_text("des", 3, "o/des.o") == 1);
@@ -97,6 +99,12 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_untouch_tests);
     CUTE_RUN_TEST(bcrepo_config_module_tests);
     CUTE_RUN_TEST(bcrepo_config_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_metadata_version_tests)
+    const char *version = bcrepo_metadata_version();
+    CUTE_ASSERT(version != NULL);
+    CUTE_ASSERT(strcmp(version, BCREPO_METADATA_VERSION) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_config_tests)
@@ -1057,7 +1065,11 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
 
         CUTE_ASSERT(catalog != NULL);
 
-        catalog->bc_version = BCREPO_METADATA_VERSION;
+        //catalog->bc_version = BCREPO_METADATA_VERSION;
+        catalog->bc_version = (char *) kryptos_newseg(strlen("0.0.0") + 1);
+        CUTE_ASSERT(catalog->bc_version != NULL);
+        memset(catalog->bc_version, 0, strlen("0.0.0") + 1);
+        memcpy(catalog->bc_version, "0.0.0", 5);
         catalog->otp = otp;
         catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
         catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -1165,6 +1177,11 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                                get_hash_processor("sha-384"),
                                                get_encoder("base64"), NULL, NULL) == 1);
 
+        // INFO(Rafael): When a bcrepo_reset occurs it overwrites the prior bc_version to the current BCREPO_METADATA_VERSION.
+
+        CUTE_ASSERT(catalog->bc_version != NULL);
+        CUTE_ASSERT(strcmp(catalog->bc_version, bcrepo_metadata_version()) == 0);
+
         // INFO(Rafael): We reset the catalog's key for paranoia issues.
 
         CUTE_ASSERT(memcmp(new_key, "Sham time", new_key_size) != 0);
@@ -1200,7 +1217,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         remove("plain.txt");
 
         kryptos_freeseg(rootpath, rootpath_size);
-        catalog->bc_version = NULL;
+        //catalog->bc_version = NULL;
         del_bfs_catalog_ctx(catalog);
     } while (++otp < 2);
 CUTE_TEST_CASE_END

@@ -38,6 +38,8 @@ kryptos_u8_t *bcrepo_hash_key(const kryptos_u8_t *key,
 
 char *bcrepo_get_rootpath(void);
 
+const char *bcrepo_metadata_version(void);
+
 int bcrepo_add(bfs_catalog_ctx **catalog,
                const char *rootpath, const size_t rootpath_size,
                const char *pattern, const size_t pattern_size, const int plain);
