@@ -3218,6 +3218,7 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
 
     size += strlen(catalog->bc_version) + strlen(catalog->protection_layer) + catalog->key_hash_size + strlen(hash_name) +
             catalog->config_hash_size +
+            catalog->kdf_params_size +
             strlen(BCREPO_CATALOG_BC_VERSION) + 1 +
             strlen(BCREPO_CATALOG_KEY_HASH_ALGO) + 1 +
             strlen(BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO) + 1 +

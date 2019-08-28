@@ -2275,8 +2275,6 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_relpath_ctx files;
     kryptos_u8_t *key = "Goliath";
 
-    // INFO(Rafael): First let's test a repo which uses a KDF (HKDF).
-
     catalog.bc_version = BCREPO_METADATA_VERSION;
     catalog.otp = 0;
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
@@ -2287,8 +2285,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
     catalog.encoder = get_encoder("uuencode");
-    catalog.kdf_params = "hkdf:sha-384:Zm9vYmFy:Zm9v";
-    catalog.kdf_params_size = 26;
+    catalog.kdf_params = NULL;
+    catalog.kdf_params_size = 0;
 
     catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
     CUTE_ASSERT(catalog.key_hash != NULL);
@@ -2311,6 +2309,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
 
     kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
 
+    // INFO(Rafael): Let's test a repo which uses a KDF (HKDF).
+
     catalog.bc_version = BCREPO_METADATA_VERSION;
     catalog.otp = 0;
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
@@ -2321,8 +2321,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
     catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
     catalog.encoder = get_encoder("uuencode");
-    catalog.kdf_params = NULL;
-    catalog.kdf_params_size = 0;
+    catalog.kdf_params = "hkdf:sha-384:Zm9vYmFy:Zm9v";
+    catalog.kdf_params_size = 26;
 
     catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
     CUTE_ASSERT(catalog.key_hash != NULL);
