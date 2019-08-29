@@ -1352,7 +1352,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     CUTE_ASSERT(strcmp(catalog->bc_version, bcrepo_metadata_version()) == 0);
 
     // INFO(Rafael): Now KDF must be NULL. The key derivation is indirectly tested by unlocking files. Notice that
-    //               not only the password has changed but also the internal method of it is derived.
+    //               not only the password has changed but also the internal method of how it is derived.
     CUTE_ASSERT(catalog->kdf_params == NULL && catalog->kdf_params_size == 0);
 
     // INFO(Rafael): We reset the catalog's key for paranoia issues.
