@@ -979,12 +979,11 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             cp->protlayer = NULL;
         }
 
-        if (cp->kdf_params != NULL) {
+        if (cp->kdf_params != NULL && kdf_params != cp->kdf_params) {
             kryptos_freeseg(cp->kdf_params, cp->kdf_params_size);
+            cp->kdf_params = kdf_params;
+            cp->kdf_params_size = kdf_params_size;
         }
-
-        cp->kdf_params = kdf_params;
-        cp->kdf_params_size = kdf_params_size;
 
         handle.hash = protlayer_hash_proc;
         handle.kdf_clockwork = (cp->kdf_params != NULL) ? get_kdf_clockwork(cp->kdf_params, cp->kdf_params_size, NULL) : NULL;

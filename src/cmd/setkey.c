@@ -21,6 +21,8 @@
 int blackcat_cmd_setkey(void) {
     int exit_code = EINVAL;
     char *catalog_hash, *key_hash, *protection_layer_hash, *encoder, *protection_layer, *bcrypt_cost;
+    char *kdf_params;
+    size_t kdf_params_size;
     blackcat_exec_session_ctx *session = NULL;
     int keyed_alike;
     blackcat_hash_processor catalog_hash_proc, key_hash_proc, protection_layer_hash_proc;
@@ -227,11 +229,26 @@ int blackcat_cmd_setkey(void) {
 
     session->catalog->otp = blackcat_get_bool_option("otp", 0);
 
+    if (blackcat_get_bool_option("no-kdf", 0)) {
+        kdf_params = NULL;
+        kdf_params_size = 0;
+    } else {
+        // INFO(Rafael): This cooked KDF parameter string read here will be freed later by blackcat internals,
+        //               do not worry about memory leak.
+        kdf_params = blackcat_get_kdf_usr_params_from_cmdline(&kdf_params_size);
+        if (kdf_params == NULL) {
+            // INFO(Rafael): We will just re-write.
+            kdf_params = session->catalog->kdf_params;
+            kdf_params_size = session->catalog->kdf_params_size;
+        }
+    }
+
     if (bcrepo_reset_repo_settings(&session->catalog,
                                    session->rootpath, session->rootpath_size,
                                    new_key[0], new_key_size[0], &new_key[1], &new_key_size[1],
                                    protection_layer,
-                                   NULL, 0, // TODO(Rafael): Read possible new KDF parameters (The char pointer read here will be freed later by blackcat).
+                                   kdf_params,
+                                   kdf_params_size,
                                    catalog_hash_proc, key_hash_proc, key_hash_algo_args, protection_layer_hash_proc,
                                    encoder_proc,
                                    blackcat_checkpoint,
@@ -277,6 +294,6 @@ blackcat_cmd_setkey_epilogue:
 int blackcat_cmd_setkey_help(void) {
     fprintf(stdout, "use: blackcat setkey [--keyed-alike --catalog-hash=<hash> "
                     "--key-hash=<hash> --protection-layer-hash=<hash> --encoder=<encoder> "
-                    "--protection-layer=<algorithm layers>]\n");
+                    "--protection-layer=<algorithm layers> --otp --no-kdf]\n");
     return 0;
 }

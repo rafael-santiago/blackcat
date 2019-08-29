@@ -245,6 +245,8 @@ int blackcat_cmd_init(void) {
 
     catalog->otp = blackcat_get_bool_option("otp", 0);
 
+    catalog->kdf_params = blackcat_get_kdf_usr_params_from_cmdline(&catalog->kdf_params_size);
+
     if (bcrepo_init(catalog, catalog_key, catalog_key_size)) {
         exit_code = 0;
     }
