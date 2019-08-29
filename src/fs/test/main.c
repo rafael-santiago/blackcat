@@ -13,6 +13,7 @@
 #include <bcrepo/config.h>
 #include <keychain/ciphering_schemes.h>
 #include <keychain/processor.h>
+#include <keychain/kdf/kdf_utils.h>
 #include <fs/strglob.h>
 #include <kryptos_pem.h>
 #include <stdio.h>
@@ -1217,9 +1218,175 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         remove("plain.txt");
 
         kryptos_freeseg(rootpath, rootpath_size);
-        //catalog->bc_version = NULL;
         del_bfs_catalog_ctx(catalog);
     } while (++otp < 2);
+
+    // INFO(Rafael): Testing all dynamics of changing and removing a (pre-)configured KDF.
+
+    // INFO(Rafael): Bootstrapping the test repo.
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = (char *) kryptos_newseg(strlen("0.0.0") + 1);
+    CUTE_ASSERT(catalog->bc_version != NULL);
+    memset(catalog->bc_version, 0, strlen("0.0.0") + 1);
+    memcpy(catalog->bc_version, "0.0.0", 5);
+    catalog->otp = 0;
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-sha-384-mars-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha-512");
+    catalog->key_hash_algo_size = get_hash_size("sha-512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha3-512");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->encoder = get_encoder("uuencode");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+
+    catalog->kdf_params = (char *) kryptos_newseg(100);
+    CUTE_ASSERT(catalog->kdf_params != NULL);
+    sprintf(catalog->kdf_params, "pbkdf2:blake2b-512:Zm9vYmFy:10");
+    catalog->kdf_params_size = strlen(catalog->kdf_params);
+
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+    CUTE_ASSERT(catalog->encoder != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha-224-blowfish-ctr,shacal1-ctr,gibberish-wrap/38-42,shacal1-ofb,mars-192-ctr,"
+                                "hmac-sha3-512-shacal2-cbc";
+
+    protkey = (kryptos_u8_t *) kryptos_newseg(9);
+    CUTE_ASSERT(protkey != NULL);
+    memcpy(protkey, "aeroplane", 9);
+    protkey_size = 9;
+
+
+    handle.hash = catalog->protlayer_key_hash_algo;
+    handle.kdf_clockwork = get_kdf_clockwork(catalog->kdf_params, catalog->kdf_params_size, NULL);
+    CUTE_ASSERT(handle.kdf_clockwork != NULL);
+
+    catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
+                                                          catalog->protection_layer,
+                                                          &protkey, &protkey_size, &handle,
+                                                          catalog->encoder);
+
+    CUTE_ASSERT(protkey == NULL);
+    CUTE_ASSERT(protkey_size == 0);
+
+    del_blackcat_kdf_clockwork_ctx(handle.kdf_clockwork);
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+    CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
+
+    pattern = "sensitive.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->head);
+
+    pattern = "plain.txt";
+    CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 1) == 1);
+
+    CUTE_ASSERT(catalog->files != NULL);
+    CUTE_ASSERT(catalog->files->head == catalog->files);
+    CUTE_ASSERT(catalog->files->tail == catalog->files->next);
+
+    // INFO(Rafael): The files must be decrypted and re-encrypted with the new key setting.
+    CUTE_ASSERT(bcrepo_lock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
+
+    new_key_size = strlen("Sham time");
+    new_key = (kryptos_u8_t *)kryptos_newseg(new_key_size);
+    CUTE_ASSERT(new_key != NULL);
+    memcpy(new_key, "Sham time", new_key_size);
+
+    new_protlayer_key_size = strlen("That mother fucker always spiked with pain");
+    new_protlayer_key = (kryptos_u8_t *)kryptos_newseg(new_protlayer_key_size);
+    CUTE_ASSERT(new_protlayer_key != NULL);
+    memcpy(new_protlayer_key, "That mother fucker always spiked with pain", new_protlayer_key_size);
+
+    catalog->otp = 1;
+
+    CUTE_ASSERT(bcrepo_reset_repo_settings(&catalog, rootpath, rootpath_size,
+                                           new_key, new_key_size,
+                                           &new_protlayer_key, &new_protlayer_key_size,
+                                           "hmac-tiger-blowfish-ofb,"
+                                           "gibberish-wrap/448-128,"
+                                           "rc6-128-cbc/96,"
+                                           "gibberish-wrap/101-11",
+                                           NULL, 0, // INFO(Rafael): It will remove the configured KDF.
+                                           get_hash_processor("whirlpool"),
+                                           get_hash_processor("sha3-512"),
+                                           NULL,
+                                           get_hash_processor("sha-384"),
+                                           get_encoder("base64"), NULL, NULL) == 1);
+
+    // INFO(Rafael): When a bcrepo_reset occurs it overwrites the prior bc_version to the current BCREPO_METADATA_VERSION.
+
+    CUTE_ASSERT(catalog->bc_version != NULL);
+    CUTE_ASSERT(strcmp(catalog->bc_version, bcrepo_metadata_version()) == 0);
+
+    // INFO(Rafael): We reset the catalog's key for paranoia issues.
+
+    CUTE_ASSERT(memcmp(new_key, "Sham time", new_key_size) != 0);
+
+    kryptos_freeseg(new_protlayer_key, 0);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    CUTE_ASSERT(data_size != strlen(sensitive));
+    CUTE_ASSERT(memcmp(data, sensitive, strlen(sensitive)) != 0);
+
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(bcrepo_unlock(&catalog, rootpath, rootpath_size, "*", 1, NULL, NULL) == 1);
+
+    data = open_text("sensitive.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+
+    CUTE_ASSERT(data_size == strlen(sensitive));
+    CUTE_ASSERT(memcmp(data, sensitive, data_size) == 0);
+
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) != 1);
+
+    memcpy(new_key, "Sham time", new_key_size);
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, new_key, new_key_size) == 1);
+
+    kryptos_freeseg(new_key, new_key_size);
+
+    remove("sensitive.txt");
+    remove("plain.txt");
+
+    kryptos_freeseg(rootpath, rootpath_size);
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
@@ -2074,6 +2241,87 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
         catalog->bc_version = catalog->protection_layer = NULL;
         del_bfs_catalog_ctx(catalog);
     } while (++otp < 2);
+
+    // INFO(Rafael): Initializing/Deinitializing a repo which uses a KDF
+
+    remove(".bcrepo/CATALOG");
+    rmdir(".bcrepo");
+    rmdir("../.bcrepo");
+
+    catalog = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(catalog != NULL);
+
+    catalog->bc_version = BCREPO_METADATA_VERSION;
+    catalog->otp = 0;
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-384");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-384");
+    catalog->hmac_scheme = get_hmac_catalog_scheme("hmac-tiger-aes-256-cbc");
+    catalog->key_hash_algo = get_hash_processor("sha3-512");
+    catalog->key_hash_algo_size = get_hash_size("sha3-512");
+    catalog->protlayer_key_hash_algo = get_hash_processor("sha-256");
+    catalog->protlayer_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->catalog_key_hash_algo = get_hash_processor("sha-256");
+    catalog->catalog_key_hash_algo_size = get_hash_size("sha-256");
+    catalog->encrypt_data = blackcat_encrypt_data;
+    catalog->decrypt_data = blackcat_decrypt_data;
+    catalog->kdf_params = "argon2i:Zm9vYmFy:32:38:Zm9v:YmFy";
+    catalog->kdf_params_size = strlen(catalog->kdf_params);
+
+    CUTE_ASSERT(catalog->key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->key_hash_algo_size != NULL);
+
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
+    CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
+
+    ktask->in = key;
+    ktask->in_size = strlen(key);
+    catalog->key_hash_algo(&ktask, 1);
+
+    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+
+    catalog->key_hash = ktask->out;
+    catalog->key_hash_size = ktask->out_size;
+    catalog->protection_layer = "hmac-sha3-512-camellia-192-cbc,des-cbc|mars-128-ctr,shacal1-cbc,hmac-tiger-aes-128-cbc";
+
+    // INFO(Rafael): An init attempt inside previously initialized repos must fail.
+
+    CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+    CUTE_ASSERT(rmdir(".bcrepo") == 0);
+
+    // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
+    //                a bcrepo_init() call will fail.
+
+    CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
+    CUTE_ASSERT(rmdir("../.bcrepo") == 0);
+
+    // INFO(Rafael): Cute cases where everything is marvelously perfect. Wow!
+
+    CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath != NULL);
+
+    rootpath_size = strlen(rootpath);
+
+    // INFO(Rafael): The correct master key must match, otherwise it will fail.
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, "sp4c3 c4d3t", strlen("sp4c3 c4d3t")) == 0);
+
+    CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
+
+    kryptos_freeseg(rootpath, rootpath_size);
+
+    rootpath = bcrepo_get_rootpath();
+
+    CUTE_ASSERT(rootpath == NULL); // INFO(Rafael): This is not a repo anymore.
+
+    catalog->kdf_params_size = 0;
+    catalog->bc_version = catalog->protection_layer = catalog->kdf_params = NULL;
+    del_bfs_catalog_ctx(catalog);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(strglob_tests)
