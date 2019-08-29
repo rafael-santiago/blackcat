@@ -193,6 +193,10 @@ static int is_metadata_compatible(const char *version);
 
 static int setfilectime(const char *path);
 
+static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data_size);
+
+static void bcrepo_info_kdf_params(const char *kdf_params, const size_t kdf_params_size);
+
 const char *bcrepo_metadata_version(void) {
     return BCREPO_METADATA_VERSION;
 }
@@ -656,7 +660,7 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
         fprintf(stdout, " (cost=%d)", (catalog->key_hash[4] - '0') * 10 + (catalog->key_hash[5] - '0'));
     }
     if (catalog->kdf_params != NULL) {
-        fprintf(stdout, " |_ kdf-params: %s\n", catalog->kdf_params);
+        bcrepo_info_kdf_params(catalog->kdf_params, catalog->kdf_params_size);
     }
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
@@ -1279,6 +1283,63 @@ bcrepo_unpack_epilogue:
     }
 
     return no_error;
+}
+
+static void bcrepo_info_kdf_params(const char *kdf_params, const size_t kdf_params_size) {
+    struct blackcat_kdf_clockwork_ctx *kdf_clockwork = get_kdf_clockwork(kdf_params, kdf_params_size, NULL);
+
+    if (kdf_clockwork == NULL) {
+        // INFO(Rafael): In normal conditions it should never happen.
+        fprintf(stderr, "ERROR: Unable to get KDF clockwork.\n");
+        return;
+    }
+
+    fprintf(stdout, " |_ kdf-params: %s\n", get_kdf_name(kdf_clockwork->kdf));
+
+    if (kdf_clockwork->kdf == blackcat_hkdf) {
+        fprintf(stdout, "                |_ hkdf-hash: %s\n",
+                get_hash_processor_name((blackcat_hash_processor)kdf_clockwork->arg_data[0]));
+        fprintf(stdout, "                |_ hkdf-salt: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "                |_ hkdf-info: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[5], kdf_clockwork->arg_size[5]);
+        fprintf(stdout, "\n");
+    } else if (kdf_clockwork->kdf == blackcat_pbkdf2) {
+        fprintf(stdout, "                |_ pbkdf2-hash: %s\n",
+                get_hash_processor_name((blackcat_hash_processor)kdf_clockwork->arg_data[0]));
+        fprintf(stdout, "                |_ pbkdf2-salt: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[3], kdf_clockwork->arg_size[3]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "                |_ pbkdf2-count: %d\n", *((size_t *)kdf_clockwork->arg_data[5]));
+    } else if (kdf_clockwork->kdf == blackcat_argon2i) {
+        fprintf(stdout, "                |_ argon2i-salt: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[0], kdf_clockwork->arg_size[0]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "                |_ argon2i-memory: %d\n", *((kryptos_u32_t *)kdf_clockwork->arg_data[2]));
+        fprintf(stdout, "                |_ argon2i-iterations: %d\n", *((kryptos_u32_t *)kdf_clockwork->arg_data[3]));
+        fprintf(stdout, "                |_ argon2i-key: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[4], kdf_clockwork->arg_size[4]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "                |_ argon2i-aad: ");
+        bcrepo_info_print_ext_ascii_data(kdf_clockwork->arg_data[6], kdf_clockwork->arg_size[6]);
+        fprintf(stdout, "\n");
+    }
+
+    del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+}
+
+static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data_size) {
+    const kryptos_u8_t *d = (const kryptos_u8_t *)data, *d_end = (const kryptos_u8_t *)d + data_size;
+
+    while (d != d_end) {
+        if (!isprint(*d)) {
+            fprintf(stdout, "\\x%.2X", *d);
+        } else {
+            fprintf(stdout, "%c", *d);
+        }
+        d++;
+    }
 }
 
 static int setfilectime(const char *path) {

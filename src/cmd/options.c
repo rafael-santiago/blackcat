@@ -303,18 +303,26 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_hkdf(void) {
 
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_hkdf_epilogue);
 
-    option = blackcat_get_option("protection-layer-hash", NULL);
-
-    if (option == NULL) {
-        fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
-        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-        kdf_clockwork = NULL;
-        goto blackcat_kdf_usr_params_hkdf_epilogue;
+    if ((option = blackcat_get_option("hkdf-hash", NULL)) == NULL) {
+        option = blackcat_get_option("protection-layer-hash", NULL);
+        if (option == NULL) {
+            fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
+            del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+            kdf_clockwork = NULL;
+            goto blackcat_kdf_usr_params_hkdf_epilogue;
+        }
     }
 
     kdf_clockwork->kdf = blackcat_hkdf;
 
     kdf_clockwork->arg_data[0] = (void *) get_hash_processor(option);
+
+    if (kdf_clockwork->arg_data[0] == NULL) {
+        fprintf(stderr, "ERROR: Unknown hash function : '%s'.\n", option);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_hkdf_epilogue;
+    }
 
     kdf_clockwork->arg_data[3] = blackcat_fmt_str(blackcat_get_option("hkdf-salt", NULL), &kdf_clockwork->arg_size[3]);
     kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
@@ -336,18 +344,26 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_pbkdf2(void) {
 
     new_blackcat_kdf_clockwork_ctx(kdf_clockwork, goto blackcat_kdf_usr_params_pbkdf2_epilogue);
 
-    option = blackcat_get_option("protection-layer-hash", NULL);
-
-    if (option == NULL) {
-        fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
-        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
-        kdf_clockwork = NULL;
-        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    if ((option = blackcat_get_option("pbkdf2-hash", NULL)) == NULL) {
+        option = blackcat_get_option("protection-layer-hash", NULL);
+        if (option == NULL) {
+            fprintf(stderr, "ERROR: The '--protection-layer-hash' option is missing.\n");
+            del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+            kdf_clockwork = NULL;
+            goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+        }
     }
 
     kdf_clockwork->kdf = blackcat_pbkdf2;
 
     kdf_clockwork->arg_data[0] = (void *) get_hash_processor(option);
+
+    if (kdf_clockwork->arg_data[0] == NULL) {
+        fprintf(stderr, "ERROR: Unknown hash function : '%s'.\n", option);
+        del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
+        kdf_clockwork = NULL;
+        goto blackcat_kdf_usr_params_pbkdf2_epilogue;
+    }
 
     kdf_clockwork->arg_data[3] = blackcat_fmt_str(blackcat_get_option("pbkdf2-salt", NULL), &kdf_clockwork->arg_size[3]);
     kdf_clockwork->arg_data[4] = &kdf_clockwork->arg_size[3];
