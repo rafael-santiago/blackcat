@@ -30,6 +30,7 @@ int blackcat_cmd_init(void) {
     kryptos_task_ctx t, *ktask = &t;
     char *info = NULL;
     char *rootpath = NULL;
+    char *kdf = NULL;
     void *key_hash_algo_args = NULL;
     int cost;
     struct blackcat_keychain_handle_ctx handle;
@@ -246,6 +247,14 @@ int blackcat_cmd_init(void) {
     catalog->otp = blackcat_get_bool_option("otp", 0);
 
     catalog->kdf_params = blackcat_get_kdf_usr_params_from_cmdline(&catalog->kdf_params_size);
+
+    if (catalog->kdf_params == NULL && (kdf = blackcat_get_option("kdf", NULL)) != NULL) {
+        if (get_kdf(kdf) == NULL) {
+            fprintf(stderr, "ERROR: Unknown KDF was passed : '%s'.\n", kdf);
+        }
+        exit_code = EINVAL;
+        goto blackcat_cmd_init_epilogue;
+    }
 
     if (bcrepo_init(catalog, catalog_key, catalog_key_size)) {
         exit_code = 0;

@@ -33,6 +33,7 @@ int blackcat_cmd_setkey(void) {
     blackcat_protlayer_chain_ctx *p_layer = NULL;
     void *key_hash_algo_args = NULL;
     int cost;
+    char *kdf = NULL;
     struct blackcat_keychain_handle_ctx handle;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
@@ -232,14 +233,32 @@ int blackcat_cmd_setkey(void) {
     if (blackcat_get_bool_option("no-kdf", 0)) {
         kdf_params = NULL;
         kdf_params_size = 0;
+        if (protection_layer == NULL) {
+            exit_code = EFAULT;
+            fprintf(stderr, "ERROR: If you want to disable the KDF usage you need to inform the protection-layer too.\n");
+            goto blackcat_cmd_setkey_epilogue;
+        }
     } else {
         // INFO(Rafael): This cooked KDF parameter string read here will be freed later by blackcat internals,
         //               do not worry about memory leak.
         kdf_params = blackcat_get_kdf_usr_params_from_cmdline(&kdf_params_size);
+
+        if (kdf_params == NULL && (kdf = blackcat_get_option("kdf", NULL)) != NULL) {
+            exit_code = EINVAL;
+            if (get_kdf(kdf) == NULL) {
+                fprintf(stderr, "ERROR: Unknown KDF was passed : '%s'.\n", kdf);
+            }
+            goto blackcat_cmd_setkey_epilogue;
+        }
+
         if (kdf_params == NULL) {
             // INFO(Rafael): We will just re-write.
             kdf_params = session->catalog->kdf_params;
             kdf_params_size = session->catalog->kdf_params_size;
+        } else if (protection_layer == NULL) {
+            exit_code = EFAULT;
+            fprintf(stderr, "ERROR: If you want to change the KDF you need to inform the protection-layer too.\n");
+            goto blackcat_cmd_setkey_epilogue;
         }
     }
 

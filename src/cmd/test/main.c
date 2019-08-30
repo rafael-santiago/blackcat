@@ -2384,6 +2384,469 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s3.txt");
     remove("dummy");
 
+    // INFO(Rafael): Blackcat repository with KDF usage.
+
+    // INFO(Rafael): Invalid KDF will fail.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--key-hash=sha3-512 "
+                         "--catalog-hash=blake2s-256 "
+                         "--protection-layer-hash=sha-512 "
+                         "--kdf=BufferLowChip "
+                         "--protection-layer=aes-128-cbc --keyed-alike",
+                         "Manolete\nManolete", NULL) != 0);
+
+    // INFO(Rafael): Now HKDF will be configured to derive protection layer keys.
+
+    CUTE_ASSERT(blackcat("init "
+                         "--key-hash=sha3-512 "
+                         "--catalog-hash=blake2s-256 "
+                         "--protection-layer-hash=sha-512 "
+                         "--kdf=hkdf "
+                         "--hkdf-salt=GhostBeach "
+                         "--hkdf-info=Catamaran "
+                         "--protection-layer=aes-128-cbc,camellia-192-cbc --keyed-alike",
+                         "Manolete\nManolete", NULL) == 0);
+
+    // INFO(Rafael): Getting repo info.
+
+    CUTE_ASSERT(blackcat("info", "Manolete", NULL) == 0);
+
+    // INFO(Rafael): Repository poking...
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    CUTE_ASSERT(blackcat("add s1.txt s2.txt --lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("add s3.txt", "Manolete", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("add p.txt --plain", "MANOleTE", NULL) != 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "Manolete", NULL) == 0);
+    CUTE_ASSERT(blackcat("lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): Unknown KDF will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--kdf=PerpetualOyster ",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): Known KDF but with null hash function will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--kdf=pbkdf2 ",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): PBKDF2 with invalid count parameter will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--kdf=pbkdf2 "
+                         "--pbkdf2-hash=blake2b-512 "
+                         "--pbkdf2-salt=Perpetual0yster "
+                         "--pbkdf2-count=1+18 ",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): Try to set the KDF without explicity protection layer passing will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--kdf=pbkdf2 "
+                         "--pbkdf2-hash=blake2b-512 "
+                         "--pbkdf2-salt=Perpetual0yster "
+                         "--pbkdf2-count=19 ",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): Finally, we will put PBKDF2 to work on.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--protection-layer=aes-128-cbc,camellia-192-cbc "
+                         "--kdf=pbkdf2 "
+                         "--pbkdf2-hash=blake2b-512 "
+                         "--pbkdf2-salt=Perpetual0yster "
+                         "--pbkdf2-count=19 ",
+                         "Manolete\nManolete\nManolete", "") == 0);
+
+    // INFO(Rafael): Getting info.
+
+    CUTE_ASSERT(blackcat("info", "Manolete", NULL) == 0);
+
+    // INFO(Rafael): Blackcat's sandbox poking...
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): ARGON2I without protection-layer passing will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--kdf=argon2i "
+                         "--argon2i-salt=IMakeWierdChoices "
+                         "--argon2i-key=Maced0ni4nLines "
+                         "--argon2i-iterations=20 "
+                         "--argon2i-aad=SonnyBonoMemorialFreeway",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): Now we will got ARGON2I as KDF in this repository.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--protection-layer=aes-128-cbc,camellia-192-cbc "
+                         "--kdf=argon2i "
+                         "--argon2i-salt=IMakeWierdChoices "
+                         "--argon2i-key=Maced0ni4nLines "
+                         "--argon2i-iterations=20 "
+                         "--argon2i-aad=SonnyBonoMemorialFreeway",
+                         "Manolete\nManolete\nManolete", "") == 0);
+
+    // INFO(Rafael): Getting info.
+
+    CUTE_ASSERT(blackcat("info", "Manolete", NULL) == 0);
+
+    // INFO(Rafael): Repo poking...
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): Using the internal blackcat protection layer derivation instead of some external standard KDF.
+
+    // INFO(Rafael): Try to remove the previously configured KDF without passing the protection layer configuration
+    //               will fail.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--no-kdf",
+                         "Manolete\nManolete\nManolete", "") != 0);
+
+    // INFO(Rafael): Stop using the previously configured KDF.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--protection-layer=aes-128-cbc,camellia-192-cbc "
+                         "--no-kdf",
+                         "Manolete\nManolete\nManolete", "") == 0);
+
+    // INFO(Rafael): Try to remove a KDF without having a KDF must not explode.
+
+    CUTE_ASSERT(blackcat("setkey --keyed-alike "
+                         "--protection-layer=aes-128-cbc,camellia-192-cbc "
+                         "--no-kdf",
+                         "Manolete\nManolete\nManolete", "") == 0);
+
+    // INFO(Rafael): Getting some info.
+
+    CUTE_ASSERT(blackcat("info", "Manolete", NULL) == 0);
+
+    // INFO(Rafael): Repository poking stuff.
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("unlock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("lock", "Manolete", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    // INFO(Rafael): We done here. All KDF stuff seems to be okay.
+
+    CUTE_ASSERT(blackcat("deinit", "Manolete", NULL) == 0);
+    remove("s1.txt");
+    remove("s2.txt");
+    remove("p.txt");
+    remove("s3.txt");
+
 #if !defined(SKIP_NET_TESTS)
 
     remove("ntool-test.db");
