@@ -1329,7 +1329,15 @@ static void bcrepo_info_kdf_params(const char *kdf_params, const size_t kdf_para
 }
 
 static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data_size) {
-    const kryptos_u8_t *d = (const kryptos_u8_t *)data, *d_end = (const kryptos_u8_t *)d + data_size;
+    const kryptos_u8_t *d, *d_end;
+
+    if (data == NULL || data_size == 0) {
+        fprintf(stdout, "(null)");
+        return;
+    }
+
+    d = (const kryptos_u8_t *)data;
+    d_end = (const kryptos_u8_t *)d + data_size;
 
     while (d != d_end) {
         if (!isprint(*d)) {
