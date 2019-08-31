@@ -1256,7 +1256,7 @@ Using a KDF to derive your protection layer keys
 ================================================
 
 On version 1.2.0 blackcat started implementing the possibility of using some standard KDF instead of
-its regular method of deriving keys from your master/second layer key.
+its regular method of deriving keys from user's master/second layer key.
 
 Until now there are three available algorithms: HKDF, PBKDF2 and ARGON2I.
 
