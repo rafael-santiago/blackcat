@@ -91,7 +91,8 @@ Blackcat also implements HMACs and (in this case) the naming convention is:
 
                 hmac-<hash-algorithm>-<algorithm>-<bit-size-if-it-has-one>-<mode>
 
-Until now blackcat only implements the following encryption operation modes: cbc, ctr, ofb.
+Until now blackcat only implements the following encryption operation modes: cbc, ctr, ofb and
+gcm (for ciphers suitable with this mode).
 
 The application counts with more than one thousand encryption schemes to be used in your
 protection layer.
@@ -1250,6 +1251,96 @@ and encrypt and untouching just by doing:
 It is also possible to execute any shell command. Do not worry because when someone changes the CONFIG
 file this change will be detected and the CONFIG data will not be loaded. Since the update process
 requires the repo password only you will be able to actually change the CONFIG file.
+
+Using a KDF to derive your protection layer keys
+================================================
+
+From version 1.2.0 blackcat starts implementing the possibility of using some standard KDF instead of
+its regular method of deriving keys of your master/second layer key.
+
+Until now there are three available algorithms: HKDF, PBKDF2 and ARGON2I.
+
+In order to use one of them in replacement to the standard internal method you need to specify this
+intention at the repo initializing moment. The option which indicates this intention is '--kdf'. It
+should be set to the desired key derivation function algorithm ('hkdf', 'pbkdf2' or 'argon2i').
+
+Depending on the picked algorithm will be necessary other additional parameters:
+
+    +-----------+--------------------------+----------------------------------------------------+
+    | Algorithm |   Additional parameters  |                   Description                      |
+    +-----------+--------------------------+----------------------------------------------------+
+    |           | --hkdf-hash=<hash>       | Specifies the hash function used by HKDF           |
+    |           |                          | --protection-layer-hash is considered when         |
+    |           |                          | --hkdf-hash is not passed.                         |
+    |           |                          +----------------------------------------------------+
+    |   HKDF    | --hkdf-salt=<data>       | Specifies data used as salt.                       |
+    |           |                          | Extended ascii can be expressed as hexadecimals    |
+    |           |                          | in the following way: \xXX.                        |
+    |           |                          +----------------------------------------------------+
+    |           | --hkdf-info=<data>       | Specifies the info parameter of HKDF.              |
+    |           |                          | Similarly --hkdf-salt it accepts extended ascii.   |
+    +-----------+--------------------------+----------------------------------------------------+
+    |           | --pbkd2-hash=<hash>      | Specifies the hash function used by HKDF           |
+    |           |                          | --protection-layer-hash is considered when         |
+    |           |                          | --pbkdf2-hash is not passed.                       |
+    |           |                          +----------------------------------------------------+
+    |  PBKDF2   | --pbkdf2-salt=<data>     | Specifies data used as salt by PBKDF2. It accepts  |
+    |           |                          | extended ascii.                                    |
+    |           |                          +----------------------------------------------------+
+    |           | --pbkdf2-count=<n>       | Specifies the count parameter of PBKDF2. It should |
+    |           |                          | be a valid decimal number.                         |
+    +-----------+--------------------------+----------------------------------------------------+
+    |           | --argon2i-salt=<data>    | Specifies data used as salt by ARGON2I. It accepts |
+    |           |                          | extended ascii.                                    |
+    |           |                          +----------------------------------------------------+
+    |           | --argon2i-memory=<n>     | Specifies the memory parameter used by ARGON2I. It |
+    |           |                          | should be a valid decimal number. When not passed  |
+    |           |                          | the default "8" is taken.                          |
+    |           |                          +----------------------------------------------------+
+    |  ARGON2I  | --argon2i-iterations=<n> | Specifies the total of iterations done by ARGON2I. |
+    |           |                          | It should be a valid decimal number.               |
+    |           |                          +----------------------------------------------------+
+    |           | --argon2i-key=<data>     | Specifies the key used by ARGON2I. The passed data |
+    |           |                          | can be extended ascii.                             |
+    |           |                          +----------------------------------------------------+
+    |           | --argon-aad=<data>       | Specifies the associated data used by ARGON2I. The |
+    |           |                          | passed data can be extended ascii.                 |
+    +-----------+--------------------------+----------------------------------------------------+
+
+Follows an example of a init command which specifies a KDF function:
+
+
+    Alice@CraterLake:~/sample# blackcat init --key-hash=sha3-512 \
+    > --catalog-hash=blake2s-256 \
+    > --protection-layer-hash=sha-512 \
+    > --kdf=hkdf \
+    > --hkdf-salt=GhostBeach \
+    > --hkdf-info=Catamaran \
+    > --protection-layer=aes-128-cbc,camellia-192-cbc --keyed-alike
+    Alice@CraterLake:~/sample# _
+
+Now let's suppose that Alice wants to change the KDF from HKDF to ARGON2I:
+
+    Alice@CraterLake:~/sample# blackcat setkey --kdf=argon2i \
+    > --argon2i-salt=IMakeWierdChoices \
+    > --argon2i-key=Maced0n14nLines \
+    > --argon2i-iterations=20 \
+    > --argon2i-aad=SonnyBonoMemorialFreeway \
+    > --protection-layer=aes-128-cbc,camellia-192-cbc --keyed-alike
+    Alice@CraterLake:~/sample# _
+
+In the last command sample we got a rule of thumb for KDF changing:
+
+        * When changing anything related to KDFs you need to specify the protection layer. Otherwise
+            you will got an error.
+
+Now let's suppose that Alice does not want a KDF anymore:
+
+    Alice@CraterLake:~/sample# blackcat setkey --no-kdf \
+    > --protection-layer=aes-128-cbc,camellia-192-cbc --keyed-alike
+    Alice@CraterLake:~/sample# _
+
+Even when you want to just remove the KDF usage, the protection-layer passing is necessary.
 
 Few tips for not being a tracked average sheep out there
 ========================================================

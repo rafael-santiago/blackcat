@@ -12,9 +12,14 @@ Including:
     - Two ways of encrypting by cascading: single cascading, one-time pad based cascading;
 
     - HMACs for every block cipher supported. By using the following hash functions:
-      SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, Tiger, Whirlpool;
+      SHA-224, SHA-256, SHA-384, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, Tiger, Whirlpool,
+      Blake2s-256, Blake2b-512;
+
+    - Block ciphers available in the following modes: CBC, OFB, CTR and GCM.
 
     - Bcrypt is also an option for password hashing (if you like it);
+
+    - Configurable key derivation functions. The available KDFs are: HKDF, PBKDF2 and ARGON2I.
 
     - The possibility of encoding the encrypted data by using: UUEncode or Radix-64;
 
