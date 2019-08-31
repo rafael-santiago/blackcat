@@ -322,7 +322,7 @@ CUTE_TEST_CASE(blackcat_get_argv_tests)
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_blackcat_version_tests)
-    CUTE_ASSERT(strcmp(get_blackcat_version(), "1.0.0") == 0);
+    CUTE_ASSERT(strcmp(get_blackcat_version(), "1.2.0") == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_clear_options_tests)

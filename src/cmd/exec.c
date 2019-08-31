@@ -29,6 +29,7 @@
 #include <cmd/untouch.h>
 #include <cmd/config.h>
 #include <cmd/do.h>
+#include <fs/bcrepo/bcrepo.h>
 #if !defined(_WIN32)
 # include <cmd/lkm.h>
 # include <cmd/paranoid.h>
@@ -113,6 +114,11 @@ int blackcat_exec(int argc, char **argv) {
 
     if (strcmp(command, "--version") == 0) {
         return blackcat_cmd_version();
+    }
+
+    if (strcmp(command, "--metadata-version") == 0) {
+        fprintf(stdout, "bcrepo-metadata-v%s\n", bcrepo_metadata_version());
+        return 0;
     }
 
     for (c = 0; c < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands); c++) {
