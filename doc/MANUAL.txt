@@ -1255,12 +1255,12 @@ requires the repo password only you will be able to actually change the CONFIG f
 Using a KDF to derive your protection layer keys
 ================================================
 
-From version 1.2.0 blackcat starts implementing the possibility of using some standard KDF instead of
-its regular method of deriving keys of your master/second layer key.
+On version 1.2.0 blackcat started implementing the possibility of using some standard KDF instead of
+its regular method of deriving keys from your master/second layer key.
 
 Until now there are three available algorithms: HKDF, PBKDF2 and ARGON2I.
 
-In order to use one of them in replacement to the standard internal method you need to specify this
+In order to use one of them in replacement of the standard internal method you need to specify this
 intention at the repo initializing moment. The option which indicates this intention is '--kdf'. It
 should be set to the desired key derivation function algorithm ('hkdf', 'pbkdf2' or 'argon2i').
 
@@ -1339,7 +1339,8 @@ Now let's suppose that Alice does not want a KDF anymore:
     > --protection-layer=aes-128-cbc,camellia-192-cbc --keyed-alike
     Alice@CraterLake:~/sample# _
 
-Even when you want to just remove the KDF usage, the protection-layer passing is necessary.
+Even when you want to just remove the KDF usage, the protection-layer passing is necessary. When
+no KDF is specified the internal stantard derivation method is used instead.
 
 Few tips for not being a tracked average sheep out there
 ========================================================
