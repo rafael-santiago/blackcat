@@ -1309,7 +1309,6 @@ Depending on the picked algorithm will be necessary other additional parameters:
 
 Follows an example of a init command which specifies a KDF function:
 
-
     Alice@CraterLake:~/sample# blackcat init --key-hash=sha3-512 \
     > --catalog-hash=blake2s-256 \
     > --protection-layer-hash=sha-512 \
