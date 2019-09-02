@@ -8,6 +8,11 @@
 #ifndef BLACKCAT_TEST_HUGE_PROTCHAIN_H
 #define BLACKCAT_TEST_HUGE_PROTCHAIN_H 1
 
+#include <string.h>
+#include <time.h>
+
+static int get_test_funcs_flag = 0;
+
 static char *huge_protchain[] = {
 #if defined(BLACKCAT_WITH_ARC4)
     "arc4",
@@ -668,6 +673,61 @@ static char *huge_protchain[] = {
 };
 
 static size_t huge_protchain_sz = sizeof(huge_protchain) / sizeof(huge_protchain[0]);
+
+char *get_test_protlayer(const int allocate, const size_t protlayer_size) {
+    // INFO(Rafael): Always use this function to get a test protlayer.
+    char buf[65535], *bp, *bp_end;
+    size_t p, a_size, a;
+    FILE *fp;
+
+    if (huge_protchain_sz == 1) {
+        fprintf(stderr, "TEST ERROR: No ciphers were configured. I cannot run any test.\n");
+        return NULL;
+    }
+
+    if (get_test_funcs_flag == 0) {
+        srand(time(0));
+        get_test_funcs_flag = 1;
+    }
+
+    memset(buf, 0, sizeof(buf));
+
+    bp = &buf[0];
+    bp_end = bp + sizeof(buf);
+
+    for (p = 0; p < protlayer_size; p++) {
+        a = rand() % (huge_protchain_sz - 1);
+        a_size = strlen(huge_protchain[a]);
+
+        memcpy(bp, huge_protchain[a], a_size);
+
+        bp += a_size;
+
+        if ((p + 1) != protlayer_size) {
+            *bp = ',';
+        }
+
+        bp += 1;
+    }
+
+    if (!allocate) {
+        bp = &buf[0];
+    } else {
+        a_size = bp - &buf[0];
+        if ((bp = (char *) malloc(a_size + 1)) == NULL) {
+            return NULL;
+        }
+        memset(bp, 0, a_size + 1);
+        memcpy(bp, buf, a_size);
+    }
+
+    if ((fp = fopen(".get_test_protlayer", "w")) != NULL) {
+        fprintf(fp, "%s", bp);
+        fclose(fp);
+    }
+
+    return bp;
+}
 
 static char *hmac_schemes[] = {
 #if defined(BLACKCAT_WITH_AES)
@@ -1629,5 +1689,38 @@ static char *hmac_schemes[] = {
 };
 
 static size_t hmac_schemes_nr = sizeof(hmac_schemes) / sizeof(hmac_schemes[0]);
+
+char *get_test_hmac(const int allocate) {
+    // INFO(Rafael): Alwaus use this function to get a test HMAC scheme.
+    char *scheme = hmac_schemes[rand() % hmac_schemes_nr];
+    size_t scheme_size;
+    char *p;
+    FILE *fp;
+
+    if (get_test_funcs_flag == 0) {
+        srand(time(0));
+        get_test_funcs_flag = 1;
+    }
+
+    if (!allocate) {
+        return scheme;
+    }
+
+    scheme_size = strlen(scheme);
+
+    if ((p = (char *) malloc(scheme_size + 1)) == NULL) {
+        return NULL;
+    }
+
+    memset(p, 0, scheme_size + 1);
+    memcpy(p, scheme, scheme_size);
+
+    if ((fp = fopen(".get_test_hmac", "w")) != NULL) {
+        fprintf(fp, "%s\n", p);
+        fclose(fp);
+    }
+
+    return p;
+}
 
 #endif

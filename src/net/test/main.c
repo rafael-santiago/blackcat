@@ -6,11 +6,13 @@
  *
  */
 #include <cutest.h>
+#include <base/test/huge_protchain.h>
 #include <ctx/ctx.h>
 #include <net/ctx/ctx.h>
 #include <net/db/db.h>
 #include <net/dh/dh.h>
 #include <keychain/ciphering_schemes.h>
+#include <ctype.h>
 #include <string.h>
 #include <errno.h>
 
@@ -55,6 +57,9 @@ CUTE_TEST_CASE(net_db_io_tests)
     kryptos_u8_t *rule_key = NULL;
     size_t rule_key_size = 0;
     int lock;
+    char *protlayer = get_test_protlayer(0, 3);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     for (lock = 0; lock < 2; lock++) {
         remove("stub.io");
@@ -64,7 +69,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
@@ -74,7 +79,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "(inval)",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
@@ -84,7 +89,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "af_inet",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
@@ -94,27 +99,31 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-227",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
                                        strlen("OnBattleshipHill")) == EINVAL);
 
-        CUTE_ASSERT(blackcat_netdb_add("sock-rule",
-                                       "socket",
-                                       "sha-224",
-                                       NULL,
-                                       "ae5-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
-                                       "uuencode",
-                                       error,
-                                       "OnBattleshipHill",
-                                       strlen("OnBattleshipHill")) == EINVAL);
+        protlayer[0] = toupper(protlayer[0]);
 
         CUTE_ASSERT(blackcat_netdb_add("sock-rule",
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
+                                       "uuencode",
+                                       error,
+                                       "OnBattleshipHill",
+                                       strlen("OnBattleshipHill")) == EINVAL);
+
+        protlayer[0] = tolower(protlayer[0]);
+
+        CUTE_ASSERT(blackcat_netdb_add("sock-rule",
+                                       "socket",
+                                       "sha-224",
+                                       NULL,
+                                       protlayer,
                                        "uuenc0de",
                                        error,
                                        "OnBattleshipHill",
@@ -124,7 +133,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        NULL,
                                        "OnBattleshipHill",
@@ -134,7 +143,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        NULL,
@@ -144,7 +153,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
@@ -154,7 +163,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        "uuencode",
                                        error,
                                        "OnBattleshipHill",
@@ -174,7 +183,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        NULL,
                                        error,
                                        "OnBattleshipHill",
@@ -184,7 +193,7 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "socket",
                                        "sha-224",
                                        NULL,
-                                       "aes-192-ctr,rc5-cbc/60,rc6-256-ofb/128",
+                                       protlayer,
                                        NULL,
                                        error,
                                        "OnBattleshipHill",
@@ -222,13 +231,14 @@ CUTE_TEST_CASE(ctx_tests)
     kryptos_u8_t *keystream, *ksp;
     size_t keystream_size;
     struct blackcat_keychain_handle_ctx handle;
+    char *protlayer = get_test_protlayer(0, 2);
 
     key = (kryptos_u8_t *) kryptos_newseg(8);
     memset(key, 'Z', 8);
     key_size = 8;
 
     memset(&assertion, 'A', sizeof(assertion));
-    rules = add_bnt_channel_rule(rules, "ABC", assertion, "hmac-sha-384-aes-192-cbc,misty1-ctr", &key, &key_size,
+    rules = add_bnt_channel_rule(rules, "ABC", assertion, protlayer, &key, &key_size,
                                  get_hash_processor("whirlpool"), get_encoder("base64"));
 
     CUTE_ASSERT(rules != NULL);
@@ -245,7 +255,7 @@ CUTE_TEST_CASE(ctx_tests)
     key_size = 8;
 
     memset(&assertion, 'D', sizeof(assertion));
-    rules = add_bnt_channel_rule(rules, "DEFG", assertion, "hmac-sha-384-aes-192-cbc,misty1-ctr", &key, &key_size,
+    rules = add_bnt_channel_rule(rules, "DEFG", assertion, protlayer, &key, &key_size,
                                  get_hash_processor("whirlpool"), get_encoder("base64"));
 
     CUTE_ASSERT(rules->next != NULL);
@@ -260,7 +270,7 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(key_size == 0);
 
     memset(&assertion, 'H', sizeof(assertion));
-    rules = add_bnt_channel_rule(rules, "HI", assertion, "hmac-sha-384-aes-192-cbc,misty1-ctr", &key, &key_size,
+    rules = add_bnt_channel_rule(rules, "HI", assertion, protlayer, &key, &key_size,
                                  get_hash_processor("whirlpool"), get_encoder("base64"));
 
     CUTE_ASSERT(rules->next->next != NULL);
@@ -380,7 +390,7 @@ CUTE_TEST_CASE(ctx_tests)
     handle.kdf_clockwork = NULL;
 
     pchain = add_composite_protlayer_to_chain(pchain,
-                                              "aes-128-cbc,des-cbc,aes-256-cbc,hmac-sha-224-shacal1-ctr", &key, &key_size,
+                                              get_test_protlayer(0, 4), &key, &key_size,
                                               &handle, NULL);
 
     CUTE_ASSERT(init_bnt_keyset(&keyset, pchain, 50,

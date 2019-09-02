@@ -107,11 +107,15 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     pass[1] = 0xAD;
     pass[2] = 0xBE;
     pass[3] = 0xEF;
-    kryptos_u8_t *cascade[] = { "blowfish-cbc",
-                                "blowfish-cbc,hmac-sha3-512-blowfish-ofb",
-                                "blowfish-cbc,hmac-sha3-512-blowfish-ofb,blowfish-ofb",
-                                "blowfish-cbc,blowfish-ctr,hmac-sha3-512-blowfish-ofb,blowfish-ofb" };
-    size_t cascade_nr = sizeof(cascade) / sizeof(cascade[0]), c;
+    kryptos_u8_t *cascade[4];
+    size_t cascade_nr = 4, c;
+
+    cascade[0] = get_test_protlayer(1, 1);
+    cascade[1] = get_test_protlayer(1, 2);
+    cascade[2] = get_test_protlayer(1, 3);
+    cascade[3] = get_test_protlayer(1, 4);
+
+    CUTE_ASSERT(cascade[0] != NULL && cascade[1] != NULL && cascade[2] != NULL && cascade[3] != NULL);
 
     handle.hash = get_hash_processor("tiger");
     handle.kdf_clockwork = NULL;
@@ -135,6 +139,11 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
         del_protlayer_chain_ctx(protlayer);
         protlayer = NULL;
     }
+
+    free(cascade[0]);
+    free(cascade[1]);
+    free(cascade[2]);
+    free(cascade[3]);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(random_printable_padding_tests)
@@ -165,18 +174,20 @@ CUTE_TEST_CASE(is_pht_tests)
         int is;
     };
     struct test_ctx test[] = {
-        { kryptos_sha224_hash,    0 },
-        { kryptos_sha256_hash,    0 },
-        { kryptos_sha384_hash,    0 },
-        { kryptos_sha512_hash,    0 },
-        { kryptos_sha3_224_hash,  0 },
-        { kryptos_sha3_256_hash,  0 },
-        { kryptos_sha3_384_hash,  0 },
-        { kryptos_sha3_512_hash,  0 },
-        { kryptos_tiger_hash,     0 },
-        { kryptos_whirlpool_hash, 0 },
-        { blackcat_bcrypt,        1 },
-        { NULL,                   0 }
+        { kryptos_sha224_hash,     0 },
+        { kryptos_sha256_hash,     0 },
+        { kryptos_sha384_hash,     0 },
+        { kryptos_sha512_hash,     0 },
+        { kryptos_sha3_224_hash,   0 },
+        { kryptos_sha3_256_hash,   0 },
+        { kryptos_sha3_384_hash,   0 },
+        { kryptos_sha3_512_hash,   0 },
+        { kryptos_tiger_hash,      0 },
+        { kryptos_whirlpool_hash,  0 },
+        { kryptos_blake2s256_hash, 0 },
+        { kryptos_blake2b512_hash, 0 },
+        { blackcat_bcrypt,         1 },
+        { NULL,                    0 }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
 
@@ -309,7 +320,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     memcpy(key, "test", 4);
     key_size = 4;
 
-    chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc", &key, &key_size, &handle, NULL);
+    chain = add_composite_protlayer_to_chain(chain, get_test_protlayer(0, 1), &key, &key_size, &handle, NULL);
 
     CUTE_ASSERT(chain != NULL);
     CUTE_ASSERT(chain->next == NULL);
@@ -326,7 +337,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
 
     chain = NULL;
     chain = add_composite_protlayer_to_chain(chain,
-                                             "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr,feal-cbc/167",
+                                             get_test_protlayer(0, 4),
                                              &key, &key_size, &handle, NULL);
 
     CUTE_ASSERT(chain != NULL);
@@ -365,18 +376,20 @@ CUTE_TEST_CASE(get_hash_processor_name_tests)
         const char *n;
     };
     struct test_ctx test[] = {
-        { kryptos_sha224_hash,     "sha224"    },
-        { kryptos_sha256_hash,     "sha256"    },
-        { kryptos_sha384_hash,     "sha384"    },
-        { kryptos_sha512_hash,     "sha512"    },
-        { kryptos_sha3_224_hash,   "sha3-224"  },
-        { kryptos_sha3_256_hash,   "sha3-256"  },
-        { kryptos_sha3_384_hash,   "sha3-384"  },
-        { kryptos_sha3_512_hash,   "sha3-512"  },
-        { kryptos_tiger_hash,      "tiger"     },
-        { kryptos_whirlpool_hash,  "whirlpool" },
-        { blackcat_bcrypt,         "bcrypt"    },
-        { NULL,                    NULL        },
+        { kryptos_sha224_hash,     "sha224"       },
+        { kryptos_sha256_hash,     "sha256"       },
+        { kryptos_sha384_hash,     "sha384"       },
+        { kryptos_sha512_hash,     "sha512"       },
+        { kryptos_sha3_224_hash,   "sha3-224"     },
+        { kryptos_sha3_256_hash,   "sha3-256"     },
+        { kryptos_sha3_384_hash,   "sha3-384"     },
+        { kryptos_sha3_512_hash,   "sha3-512"     },
+        { kryptos_tiger_hash,      "tiger"        },
+        { kryptos_whirlpool_hash,  "whirlpool"    },
+        { blackcat_bcrypt,         "bcrypt"       },
+        { kryptos_blake2s256_hash, "blake2s256"   },
+        { kryptos_blake2b512_hash, "blake2b512"   },
+        { NULL,                     NULL          },
         { (blackcat_hash_processor)&test[0], NULL }
     };
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
@@ -1608,11 +1621,11 @@ CUTE_TEST_CASE(ctx_tests)
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", &key, &key_size, NULL);
+    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "seal/2-156-293", &key, &key_size, &handle);
+    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, &handle);
 
     CUTE_ASSERT(pchain != NULL);
 
@@ -1624,7 +1637,7 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-sha-224-aes-256-cbc", &key, &key_size, &handle);
+    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, &handle);
 
     CUTE_ASSERT(pchain != NULL);
 
