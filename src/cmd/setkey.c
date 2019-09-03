@@ -104,7 +104,14 @@ int blackcat_cmd_setkey(void) {
         goto blackcat_cmd_setkey_epilogue;
     }
 
-    protection_layer = blackcat_get_option("protection-layer", NULL);
+    // INFO(Rafael): The protection layer will be reconstructed always.
+    //               Performance cost here is minimal and if the key actually changes the risk of
+    //               corrupt data is high without re-building the protection layer.
+    //
+    //               Following nullity checkings related to protectio_layer is just for the sake of
+    //               paranoia. When null it is not built again, as a result the repository can be
+    //               totally lose, if some key has change.
+    protection_layer = blackcat_get_option("protection-layer", session->catalog->protection_layer);
 
     keyed_alike = blackcat_get_bool_option("keyed-alike", 0);
 
@@ -228,13 +235,6 @@ int blackcat_cmd_setkey(void) {
 
         del_protlayer_chain_ctx(p_layer);
         p_layer = NULL;
-    } else {
-        if (is_protlayer_required(session->catalog->protlayer)) {
-            exit_code = EFAULT;
-            fprintf(stderr, "ERROR: The protection layer passing is required. "
-                            "It seems that your cascade got HMACs or/and GCMs.\n");
-            goto blackcat_cmd_setkey_epilogue;
-        }
     }
 
     session->catalog->otp = blackcat_get_bool_option("otp", 0);
@@ -323,20 +323,5 @@ int blackcat_cmd_setkey_help(void) {
     fprintf(stdout, "use: blackcat setkey [--keyed-alike --catalog-hash=<hash> "
                     "--key-hash=<hash> --protection-layer-hash=<hash> --encoder=<encoder> "
                     "--protection-layer=<algorithm layers> --otp --no-kdf]\n");
-    return 0;
-}
-
-static int is_protlayer_required(blackcat_protlayer_chain_ctx *protlayer) {
-    // INFO(Rafael): Since a new key(s) can be passed. If we have at least one HMAC or GCM
-    //               in the chain is better to rebuild the whole protection layer, otherwise
-    //               the files could stay locked forever with possible old key(s) that would
-    //               not match the catalog accessing rules anymore.
-    blackcat_protlayer_chain_ctx *p;
-    for (p = protlayer; p != NULL; p = p->next) {
-        if (p->is_hmac || p->mode == kKryptosGCM) {
-            return 1;
-        }
-    }
-
     return 0;
 }

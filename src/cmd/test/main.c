@@ -1782,16 +1782,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("lock", "Stang's Swang", "Rock-N-Roll'e") == 0);
     CUTE_ASSERT(blackcat("status", "Stang's Swang", "Rock-N-Roll'e") == 0);
 
-    // INFO(Rafael): Here the setkey will fail 'cause we are using HMAC. It takes into consideration the
-    //               derived key from user's key. Since it can change, blackcat will detect it and asks
-    //               user to pass the whole protection layer (again or setting a new one, it does not matter).
-
-    CUTE_ASSERT(blackcat("setkey", "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
-
-    sprintf(bcmd, "setkey "
-                  "--protection-layer=%s ", protlayer);
-
-    CUTE_ASSERT(blackcat(bcmd, "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") == 0);
+    CUTE_ASSERT(blackcat("setkey", "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") == 0);
 
     CUTE_ASSERT(blackcat("status", "Stang's Swang", NULL) != 0);
     CUTE_ASSERT(blackcat("status", "Gardenia", NULL) == 0);
@@ -2687,15 +2678,6 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--pbkdf2-count=1+18 ",
                          "Manolete\nManolete\nManolete", "") != 0);
 
-    // INFO(Rafael): Try to set the KDF without explicity protection layer passing will fail.
-
-    CUTE_ASSERT(blackcat("setkey --keyed-alike "
-                         "--kdf=pbkdf2 "
-                         "--pbkdf2-hash=blake2b-512 "
-                         "--pbkdf2-salt=Perpetual0yster "
-                         "--pbkdf2-count=19 ",
-                         "Manolete\nManolete\nManolete", "") != 0);
-
     // INFO(Rafael): Finally, we will put PBKDF2 to work on.
 
     protlayer = get_test_protlayer(0, 2);
@@ -2794,7 +2776,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
     kryptos_freeseg(data, data_size);
 
-    // INFO(Rafael): ARGON2I without protection-layer passing will fail.
+    // INFO(Rafael): Now we will got ARGON2I as KDF in this repository.
 
     CUTE_ASSERT(blackcat("setkey --keyed-alike "
                          "--kdf=argon2i "
@@ -2802,19 +2784,6 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                          "--argon2i-key=Maced0ni4nLines "
                          "--argon2i-iterations=20 "
                          "--argon2i-aad=SonnyBonoMemorialFreeway",
-                         "Manolete\nManolete\nManolete", "") != 0);
-
-    // INFO(Rafael): Now we will got ARGON2I as KDF in this repository.
-
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--protection-layer=%s "
-                  "--kdf=argon2i "
-                  "--argon2i-salt=IMakeWierdChoices "
-                  "--argon2i-key=Maced0ni4nLines "
-                  "--argon2i-iterations=20 "
-                  "--argon2i-aad=SonnyBonoMemorialFreeway", protlayer);
-
-    CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete\nManolete", "") == 0);
 
     // INFO(Rafael): Getting info.
@@ -2901,20 +2870,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     // INFO(Rafael): Using the internal blackcat protection layer derivation instead of some external standard KDF.
 
-    // INFO(Rafael): Try to remove the previously configured KDF without passing the protection layer configuration
-    //               will fail.
+    // INFO(Rafael): Stop using the previously configured KDF.
 
     CUTE_ASSERT(blackcat("setkey --keyed-alike "
                          "--no-kdf",
-                         "Manolete\nManolete\nManolete", "") != 0);
-
-    // INFO(Rafael): Stop using the previously configured KDF.
-
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--protection-layer=%s "
-                  "--no-kdf", protlayer);
-
-    CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete\nManolete", "") == 0);
 
     // INFO(Rafael): Try to remove a KDF without having a KDF must not explode.

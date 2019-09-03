@@ -652,7 +652,7 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
         goto bcrepo_info_epilogue;
     }
 
-    fprintf(stdout, ".bcrepo\n");
+    fprintf(stdout, " .bcrepo\n");
     fprintf(stdout, " |_ bc-version: %s\n", catalog->bc_version);
     fprintf(stdout, " |_ catalog-hash: %s\n", get_hash_processor_name(catalog->catalog_key_hash_algo));
     fprintf(stdout, " |_ key-hash: %s", get_hash_processor_name(catalog->key_hash_algo));
