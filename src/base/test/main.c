@@ -554,423 +554,917 @@ CUTE_TEST_CASE(get_hmac_key_size_tests)
     };
 #define add_test_step(c, k) { blackcat_ ## c, k }
     struct test_ctx test[] = {
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(aes128, 0),
         add_test_step(aes192, 0),
         add_test_step(aes256, 0),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(des, 0),
         add_test_step(triple_des, 0),
         add_test_step(triple_des_ede, 0),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(idea, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(rc2, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(rc5, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(rc6_128, 0),
         add_test_step(rc6_192, 0),
         add_test_step(rc6_256, 0),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(feal, 0),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(cast5, 0),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(camellia128, 0),
         add_test_step(camellia192, 0),
         add_test_step(camellia256, 0),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(saferk64, 0),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(blowfish, 0),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(serpent, 0),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(tea, 0),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(xtea, 0),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(misty1, 0),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(mars128, 0),
         add_test_step(mars192, 0),
         add_test_step(mars256, 0),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(present80, 0),
         add_test_step(present128, 0),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(shacal1, 0),
         add_test_step(shacal2, 0),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(noekeon, 0),
         add_test_step(noekeon_d, 0),
+#endif
         add_test_step(gibberish_wrap, 0),
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha224_aes128, 16),
         add_test_step(hmac_sha224_aes192, 24),
         add_test_step(hmac_sha224_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha224_des, 8),
         add_test_step(hmac_sha224_triple_des, 24),
         add_test_step(hmac_sha224_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha224_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha224_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha224_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha224_rc6_128, 16),
         add_test_step(hmac_sha224_rc6_192, 24),
         add_test_step(hmac_sha224_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha224_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha224_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha224_camellia128, 16),
         add_test_step(hmac_sha224_camellia192, 24),
         add_test_step(hmac_sha224_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha224_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha224_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha224_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha224_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha224_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha224_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha224_mars128, 16),
         add_test_step(hmac_sha224_mars192, 24),
         add_test_step(hmac_sha224_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha224_present80, 10),
         add_test_step(hmac_sha224_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha224_shacal1, 64),
         add_test_step(hmac_sha224_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha224_noekeon, 16),
         add_test_step(hmac_sha224_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha256_aes128, 16),
         add_test_step(hmac_sha256_aes192, 24),
         add_test_step(hmac_sha256_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha256_des, 8),
         add_test_step(hmac_sha256_triple_des, 24),
         add_test_step(hmac_sha256_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha256_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha256_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha256_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha256_rc6_128, 16),
         add_test_step(hmac_sha256_rc6_192, 24),
         add_test_step(hmac_sha256_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha256_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha256_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha256_camellia128, 16),
         add_test_step(hmac_sha256_camellia192, 24),
         add_test_step(hmac_sha256_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha256_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha256_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha256_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha256_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha256_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha256_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha256_mars128, 16),
         add_test_step(hmac_sha256_mars192, 24),
         add_test_step(hmac_sha256_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha256_present80, 10),
         add_test_step(hmac_sha256_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha256_shacal1, 64),
         add_test_step(hmac_sha256_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha256_noekeon, 16),
         add_test_step(hmac_sha256_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha384_aes128, 16),
         add_test_step(hmac_sha384_aes192, 24),
         add_test_step(hmac_sha384_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha384_des, 8),
         add_test_step(hmac_sha384_triple_des, 24),
         add_test_step(hmac_sha384_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha384_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha384_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha384_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha384_rc6_128, 16),
         add_test_step(hmac_sha384_rc6_192, 24),
         add_test_step(hmac_sha384_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha384_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha384_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha384_camellia128, 16),
         add_test_step(hmac_sha384_camellia192, 24),
         add_test_step(hmac_sha384_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha384_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha384_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha384_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha384_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha384_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha384_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha384_mars128, 16),
         add_test_step(hmac_sha384_mars192, 24),
         add_test_step(hmac_sha384_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha384_present80, 10),
         add_test_step(hmac_sha384_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha384_shacal1, 64),
         add_test_step(hmac_sha384_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha384_noekeon, 16),
         add_test_step(hmac_sha384_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha512_aes128, 16),
         add_test_step(hmac_sha512_aes192, 24),
         add_test_step(hmac_sha512_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha512_des, 8),
         add_test_step(hmac_sha512_triple_des, 24),
         add_test_step(hmac_sha512_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha512_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha512_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha512_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha512_rc6_128, 16),
         add_test_step(hmac_sha512_rc6_192, 24),
         add_test_step(hmac_sha512_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha512_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha512_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha512_camellia128, 16),
         add_test_step(hmac_sha512_camellia192, 24),
         add_test_step(hmac_sha512_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha512_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha512_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha512_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha512_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha512_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha512_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha512_mars128, 16),
         add_test_step(hmac_sha512_mars192, 24),
         add_test_step(hmac_sha512_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha512_present80, 10),
         add_test_step(hmac_sha512_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha512_shacal1, 64),
         add_test_step(hmac_sha512_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha512_noekeon, 16),
         add_test_step(hmac_sha512_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_224_aes128, 16),
         add_test_step(hmac_sha3_224_aes192, 24),
         add_test_step(hmac_sha3_224_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_224_des, 8),
         add_test_step(hmac_sha3_224_triple_des, 24),
         add_test_step(hmac_sha3_224_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_224_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_224_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_224_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_224_rc6_128, 16),
         add_test_step(hmac_sha3_224_rc6_192, 24),
         add_test_step(hmac_sha3_224_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_224_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_224_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_224_camellia128, 16),
         add_test_step(hmac_sha3_224_camellia192, 24),
         add_test_step(hmac_sha3_224_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_224_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_224_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_224_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_224_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_224_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_224_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_224_mars128, 16),
         add_test_step(hmac_sha3_224_mars192, 24),
         add_test_step(hmac_sha3_224_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_224_present80, 10),
         add_test_step(hmac_sha3_224_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_224_shacal1, 64),
         add_test_step(hmac_sha3_224_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_224_noekeon, 16),
         add_test_step(hmac_sha3_224_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_256_aes128, 16),
         add_test_step(hmac_sha3_256_aes192, 24),
         add_test_step(hmac_sha3_256_aes256, 32),
+#endif
+#if defined(BLACKAT_WITH_DES)
         add_test_step(hmac_sha3_256_des, 8),
         add_test_step(hmac_sha3_256_triple_des, 24),
         add_test_step(hmac_sha3_256_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_256_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_256_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_256_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_256_rc6_128, 16),
         add_test_step(hmac_sha3_256_rc6_192, 24),
         add_test_step(hmac_sha3_256_rc6_256, 32),
+#endif
+#if defined(BLACKAT_WITH_FEAL)
         add_test_step(hmac_sha3_256_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_256_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_256_camellia128, 16),
         add_test_step(hmac_sha3_256_camellia192, 24),
         add_test_step(hmac_sha3_256_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_256_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_256_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_256_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_256_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_256_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_256_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_256_mars128, 16),
         add_test_step(hmac_sha3_256_mars192, 24),
         add_test_step(hmac_sha3_256_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_256_present80, 10),
         add_test_step(hmac_sha3_256_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_256_shacal1, 64),
         add_test_step(hmac_sha3_256_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_256_noekeon, 16),
         add_test_step(hmac_sha3_256_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_384_aes128, 16),
         add_test_step(hmac_sha3_384_aes192, 24),
         add_test_step(hmac_sha3_384_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_384_des, 8),
         add_test_step(hmac_sha3_384_triple_des, 24),
         add_test_step(hmac_sha3_384_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_384_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_384_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_384_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_384_rc6_128, 16),
         add_test_step(hmac_sha3_384_rc6_192, 24),
         add_test_step(hmac_sha3_384_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_384_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_384_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_384_camellia128, 16),
         add_test_step(hmac_sha3_384_camellia192, 24),
         add_test_step(hmac_sha3_384_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_384_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_384_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_384_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_384_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_384_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_384_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_384_mars128, 16),
         add_test_step(hmac_sha3_384_mars192, 24),
         add_test_step(hmac_sha3_384_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_384_present80, 10),
         add_test_step(hmac_sha3_384_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_384_shacal1, 64),
         add_test_step(hmac_sha3_384_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_384_noekeon, 16),
         add_test_step(hmac_sha3_384_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_512_aes128, 16),
         add_test_step(hmac_sha3_512_aes192, 24),
         add_test_step(hmac_sha3_512_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_512_des, 8),
         add_test_step(hmac_sha3_512_triple_des, 24),
         add_test_step(hmac_sha3_512_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_512_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_512_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_512_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_512_rc6_128, 16),
         add_test_step(hmac_sha3_512_rc6_192, 24),
         add_test_step(hmac_sha3_512_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_512_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_512_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_512_camellia128, 16),
         add_test_step(hmac_sha3_512_camellia192, 24),
         add_test_step(hmac_sha3_512_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_512_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_512_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_512_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_512_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_512_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_512_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_512_mars128, 16),
         add_test_step(hmac_sha3_512_mars192, 24),
         add_test_step(hmac_sha3_512_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_512_present80, 10),
         add_test_step(hmac_sha3_512_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_512_shacal1, 64),
         add_test_step(hmac_sha3_512_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_512_noekeon, 16),
         add_test_step(hmac_sha3_512_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_tiger_aes128, 16),
         add_test_step(hmac_tiger_aes192, 24),
         add_test_step(hmac_tiger_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_tiger_des, 8),
         add_test_step(hmac_tiger_triple_des, 24),
         add_test_step(hmac_tiger_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_tiger_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_tiger_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_tiger_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_tiger_rc6_128, 16),
         add_test_step(hmac_tiger_rc6_192, 24),
         add_test_step(hmac_tiger_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_tiger_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_tiger_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_tiger_camellia128, 16),
         add_test_step(hmac_tiger_camellia192, 24),
         add_test_step(hmac_tiger_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_tiger_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_tiger_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_tiger_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_tiger_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_tiger_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_tiger_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_tiger_mars128, 16),
         add_test_step(hmac_tiger_mars192, 24),
         add_test_step(hmac_tiger_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_tiger_present80, 10),
         add_test_step(hmac_tiger_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_tiger_shacal1, 64),
         add_test_step(hmac_tiger_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_tiger_noekeon, 16),
         add_test_step(hmac_tiger_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_whirlpool_aes128, 16),
         add_test_step(hmac_whirlpool_aes192, 24),
         add_test_step(hmac_whirlpool_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_whirlpool_des, 8),
         add_test_step(hmac_whirlpool_triple_des, 24),
         add_test_step(hmac_whirlpool_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_whirlpool_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_whirlpool_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_whirlpool_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_whirlpool_rc6_128, 16),
         add_test_step(hmac_whirlpool_rc6_192, 24),
         add_test_step(hmac_whirlpool_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_whirlpool_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_whirlpool_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_whirlpool_camellia128, 16),
         add_test_step(hmac_whirlpool_camellia192, 24),
         add_test_step(hmac_whirlpool_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_whirlpool_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_whirlpool_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_whirlpool_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_whirlpool_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_whirlpool_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_whirlpool_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_whirlpool_mars128, 16),
         add_test_step(hmac_whirlpool_mars192, 24),
         add_test_step(hmac_whirlpool_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_whirlpool_present80, 10),
         add_test_step(hmac_whirlpool_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_whirlpool_shacal1, 64),
         add_test_step(hmac_whirlpool_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_whirlpool_noekeon, 16),
         add_test_step(hmac_whirlpool_noekeon_d, 16),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_blake2s256_aes128, 16),
         add_test_step(hmac_blake2s256_aes192, 24),
         add_test_step(hmac_blake2s256_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_blake2s256_des, 8),
         add_test_step(hmac_blake2s256_triple_des, 24),
         add_test_step(hmac_blake2s256_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_blake2s256_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_blake2s256_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_blake2s256_rc5, 64),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_blake2s256_rc6_128, 16),
         add_test_step(hmac_blake2s256_rc6_192, 24),
         add_test_step(hmac_blake2s256_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_blake2s256_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_blake2s256_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_blake2s256_camellia128, 16),
         add_test_step(hmac_blake2s256_camellia192, 24),
         add_test_step(hmac_blake2s256_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_blake2s256_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_blake2s256_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_blake2s256_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_blake2s256_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_blake2s256_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_blake2s256_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_blake2s256_mars128, 16),
         add_test_step(hmac_blake2s256_mars192, 24),
         add_test_step(hmac_blake2s256_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_blake2s256_present80, 10),
         add_test_step(hmac_blake2s256_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_blake2s256_shacal1, 64),
         add_test_step(hmac_blake2s256_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_blake2s256_noekeon, 16),
         add_test_step(hmac_blake2s256_noekeon_d, 16),
+#endif
+#if defined(BLACKAT_WITH_AES)
         add_test_step(hmac_blake2b512_aes128, 16),
         add_test_step(hmac_blake2b512_aes192, 24),
         add_test_step(hmac_blake2b512_aes256, 32),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_blake2b512_des, 8),
         add_test_step(hmac_blake2b512_triple_des, 24),
         add_test_step(hmac_blake2b512_triple_des_ede, 24),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_blake2b512_idea, 16),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_blake2b512_rc2, 128),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_blake2b512_rc5, 64),
+#endif
+#if defined(BLACKAT_WITH_RC6)
         add_test_step(hmac_blake2b512_rc6_128, 16),
         add_test_step(hmac_blake2b512_rc6_192, 24),
         add_test_step(hmac_blake2b512_rc6_256, 32),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_blake2b512_feal, 8),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_blake2b512_cast5, 16),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_blake2b512_camellia128, 16),
         add_test_step(hmac_blake2b512_camellia192, 24),
         add_test_step(hmac_blake2b512_camellia256, 32),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_blake2b512_saferk64, 8),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_blake2b512_blowfish, 56),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_blake2b512_serpent, 32),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_blake2b512_tea, 16),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_blake2b512_xtea, 16),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_blake2b512_misty1, 16),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_blake2b512_mars128, 16),
         add_test_step(hmac_blake2b512_mars192, 24),
         add_test_step(hmac_blake2b512_mars256, 32),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_blake2b512_present80, 10),
         add_test_step(hmac_blake2b512_present128, 16),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_blake2b512_shacal1, 64),
         add_test_step(hmac_blake2b512_shacal2, 64),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_blake2b512_noekeon, 16),
         add_test_step(hmac_blake2b512_noekeon_d, 16)
+#endif
     };
 #undef add_test_step
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
@@ -988,423 +1482,917 @@ CUTE_TEST_CASE(is_hmac_processor_tests)
 #define add_test_step(c, i) { blackcat_ ## c, i }
 
     struct test_ctx test[] = {
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(aes128, 0),
         add_test_step(aes192, 0),
         add_test_step(aes256, 0),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(des, 0),
         add_test_step(triple_des, 0),
         add_test_step(triple_des_ede, 0),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(idea, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(rc2, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(rc5, 0),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(rc6_128, 0),
         add_test_step(rc6_192, 0),
         add_test_step(rc6_256, 0),
+#endif
+#if defined(BLACKAT_WITH_FEAL)
         add_test_step(feal, 0),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(cast5, 0),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(camellia128, 0),
         add_test_step(camellia192, 0),
         add_test_step(camellia256, 0),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(saferk64, 0),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(blowfish, 0),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(serpent, 0),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(tea, 0),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(xtea, 0),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(misty1, 0),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(mars128, 0),
         add_test_step(mars192, 0),
         add_test_step(mars256, 0),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(present80, 0),
         add_test_step(present128, 0),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(shacal1, 0),
         add_test_step(shacal2, 0),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(noekeon, 0),
         add_test_step(noekeon_d, 0),
+#endif
         add_test_step(gibberish_wrap, 0),
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha224_aes128, 1),
         add_test_step(hmac_sha224_aes192, 1),
         add_test_step(hmac_sha224_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha224_des, 1),
         add_test_step(hmac_sha224_triple_des, 1),
         add_test_step(hmac_sha224_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha224_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha224_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha224_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha224_rc6_128, 1),
         add_test_step(hmac_sha224_rc6_192, 1),
         add_test_step(hmac_sha224_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha224_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha224_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha224_camellia128, 1),
         add_test_step(hmac_sha224_camellia192, 1),
         add_test_step(hmac_sha224_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha224_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha224_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha224_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha224_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha224_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha224_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha224_mars128, 1),
         add_test_step(hmac_sha224_mars192, 1),
         add_test_step(hmac_sha224_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha224_present80, 1),
         add_test_step(hmac_sha224_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha224_shacal1, 1),
         add_test_step(hmac_sha224_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha224_noekeon, 1),
         add_test_step(hmac_sha224_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha256_aes128, 1),
         add_test_step(hmac_sha256_aes192, 1),
         add_test_step(hmac_sha256_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha256_des, 1),
         add_test_step(hmac_sha256_triple_des, 1),
         add_test_step(hmac_sha256_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha256_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha256_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha256_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha256_rc6_128, 1),
         add_test_step(hmac_sha256_rc6_192, 1),
         add_test_step(hmac_sha256_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha256_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha256_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha256_camellia128, 1),
         add_test_step(hmac_sha256_camellia192, 1),
         add_test_step(hmac_sha256_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha256_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha256_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha256_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha256_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha256_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha256_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha256_mars128, 1),
         add_test_step(hmac_sha256_mars192, 1),
         add_test_step(hmac_sha256_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha256_present80, 1),
         add_test_step(hmac_sha256_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha256_shacal1, 1),
         add_test_step(hmac_sha256_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha256_noekeon, 1),
         add_test_step(hmac_sha256_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha384_aes128, 1),
         add_test_step(hmac_sha384_aes192, 1),
         add_test_step(hmac_sha384_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha384_des, 1),
         add_test_step(hmac_sha384_triple_des, 1),
         add_test_step(hmac_sha384_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha384_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha384_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha384_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha384_rc6_128, 1),
         add_test_step(hmac_sha384_rc6_192, 1),
         add_test_step(hmac_sha384_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha384_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha384_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha384_camellia128, 1),
         add_test_step(hmac_sha384_camellia192, 1),
         add_test_step(hmac_sha384_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha384_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha384_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha384_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha384_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha384_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha384_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha384_mars128, 1),
         add_test_step(hmac_sha384_mars192, 1),
         add_test_step(hmac_sha384_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha384_present80, 1),
         add_test_step(hmac_sha384_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha384_shacal1, 1),
         add_test_step(hmac_sha384_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha384_noekeon, 1),
         add_test_step(hmac_sha384_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha512_aes128, 1),
         add_test_step(hmac_sha512_aes192, 1),
         add_test_step(hmac_sha512_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha512_des, 1),
         add_test_step(hmac_sha512_triple_des, 1),
         add_test_step(hmac_sha512_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha512_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha512_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha512_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha512_rc6_128, 1),
         add_test_step(hmac_sha512_rc6_192, 1),
         add_test_step(hmac_sha512_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha512_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha512_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha512_camellia128, 1),
         add_test_step(hmac_sha512_camellia192, 1),
         add_test_step(hmac_sha512_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha512_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha512_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha512_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha512_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha512_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha512_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha512_mars128, 1),
         add_test_step(hmac_sha512_mars192, 1),
         add_test_step(hmac_sha512_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha512_present80, 1),
         add_test_step(hmac_sha512_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha512_shacal1, 1),
         add_test_step(hmac_sha512_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha512_noekeon, 1),
         add_test_step(hmac_sha512_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_224_aes128, 1),
         add_test_step(hmac_sha3_224_aes192, 1),
         add_test_step(hmac_sha3_224_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_224_des, 1),
         add_test_step(hmac_sha3_224_triple_des, 1),
         add_test_step(hmac_sha3_224_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_224_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_224_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_224_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_224_rc6_128, 1),
         add_test_step(hmac_sha3_224_rc6_192, 1),
         add_test_step(hmac_sha3_224_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_224_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_224_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_224_camellia128, 1),
         add_test_step(hmac_sha3_224_camellia192, 1),
         add_test_step(hmac_sha3_224_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_224_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_224_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_224_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_224_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_224_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_224_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_224_mars128, 1),
         add_test_step(hmac_sha3_224_mars192, 1),
         add_test_step(hmac_sha3_224_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_224_present80, 1),
         add_test_step(hmac_sha3_224_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_224_shacal1, 1),
         add_test_step(hmac_sha3_224_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_224_noekeon, 1),
         add_test_step(hmac_sha3_224_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_256_aes128, 1),
         add_test_step(hmac_sha3_256_aes192, 1),
         add_test_step(hmac_sha3_256_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_256_des, 1),
         add_test_step(hmac_sha3_256_triple_des, 1),
         add_test_step(hmac_sha3_256_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_256_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_256_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_256_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_256_rc6_128, 1),
         add_test_step(hmac_sha3_256_rc6_192, 1),
         add_test_step(hmac_sha3_256_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_256_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_256_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_256_camellia128, 1),
         add_test_step(hmac_sha3_256_camellia192, 1),
         add_test_step(hmac_sha3_256_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_256_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_256_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_256_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_256_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_256_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_256_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_256_mars128, 1),
         add_test_step(hmac_sha3_256_mars192, 1),
         add_test_step(hmac_sha3_256_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_256_present80, 1),
         add_test_step(hmac_sha3_256_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_256_shacal1, 1),
         add_test_step(hmac_sha3_256_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_256_noekeon, 1),
         add_test_step(hmac_sha3_256_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_384_aes128, 1),
         add_test_step(hmac_sha3_384_aes192, 1),
         add_test_step(hmac_sha3_384_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_384_des, 1),
         add_test_step(hmac_sha3_384_triple_des, 1),
         add_test_step(hmac_sha3_384_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_384_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_384_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_384_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_384_rc6_128, 1),
         add_test_step(hmac_sha3_384_rc6_192, 1),
         add_test_step(hmac_sha3_384_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_384_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_384_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_384_camellia128, 1),
         add_test_step(hmac_sha3_384_camellia192, 1),
         add_test_step(hmac_sha3_384_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_384_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_384_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_384_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_384_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_384_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_384_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_384_mars128, 1),
         add_test_step(hmac_sha3_384_mars192, 1),
         add_test_step(hmac_sha3_384_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_384_present80, 1),
         add_test_step(hmac_sha3_384_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_384_shacal1, 1),
         add_test_step(hmac_sha3_384_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_384_noekeon, 1),
         add_test_step(hmac_sha3_384_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_sha3_512_aes128, 1),
         add_test_step(hmac_sha3_512_aes192, 1),
         add_test_step(hmac_sha3_512_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_sha3_512_des, 1),
         add_test_step(hmac_sha3_512_triple_des, 1),
         add_test_step(hmac_sha3_512_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_sha3_512_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_sha3_512_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_sha3_512_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_sha3_512_rc6_128, 1),
         add_test_step(hmac_sha3_512_rc6_192, 1),
         add_test_step(hmac_sha3_512_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_sha3_512_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_sha3_512_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_sha3_512_camellia128, 1),
         add_test_step(hmac_sha3_512_camellia192, 1),
         add_test_step(hmac_sha3_512_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_sha3_512_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_sha3_512_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_sha3_512_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_sha3_512_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_sha3_512_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_sha3_512_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_sha3_512_mars128, 1),
         add_test_step(hmac_sha3_512_mars192, 1),
         add_test_step(hmac_sha3_512_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_sha3_512_present80, 1),
         add_test_step(hmac_sha3_512_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_sha3_512_shacal1, 1),
         add_test_step(hmac_sha3_512_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_sha3_512_noekeon, 1),
         add_test_step(hmac_sha3_512_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_tiger_aes128, 1),
         add_test_step(hmac_tiger_aes192, 1),
         add_test_step(hmac_tiger_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_tiger_des, 1),
         add_test_step(hmac_tiger_triple_des, 1),
         add_test_step(hmac_tiger_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_tiger_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_tiger_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_tiger_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_tiger_rc6_128, 1),
         add_test_step(hmac_tiger_rc6_192, 1),
         add_test_step(hmac_tiger_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_tiger_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_tiger_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_tiger_camellia128, 1),
         add_test_step(hmac_tiger_camellia192, 1),
         add_test_step(hmac_tiger_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_tiger_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_tiger_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_tiger_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_tiger_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_tiger_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_tiger_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_tiger_mars128, 1),
         add_test_step(hmac_tiger_mars192, 1),
         add_test_step(hmac_tiger_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_tiger_present80, 1),
         add_test_step(hmac_tiger_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_tiger_shacal1, 1),
         add_test_step(hmac_tiger_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_tiger_noekeon, 1),
         add_test_step(hmac_tiger_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_whirlpool_aes128, 1),
         add_test_step(hmac_whirlpool_aes192, 1),
         add_test_step(hmac_whirlpool_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_whirlpool_des, 1),
         add_test_step(hmac_whirlpool_triple_des, 1),
         add_test_step(hmac_whirlpool_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_whirlpool_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_whirlpool_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_whirlpool_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_whirlpool_rc6_128, 1),
         add_test_step(hmac_whirlpool_rc6_192, 1),
         add_test_step(hmac_whirlpool_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_whirlpool_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_whirlpool_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_whirlpool_camellia128, 1),
         add_test_step(hmac_whirlpool_camellia192, 1),
         add_test_step(hmac_whirlpool_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_whirlpool_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_whirlpool_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_whirlpool_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_whirlpool_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_whirlpool_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_whirlpool_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_whirlpool_mars128, 1),
         add_test_step(hmac_whirlpool_mars192, 1),
         add_test_step(hmac_whirlpool_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_whirlpool_present80, 1),
         add_test_step(hmac_whirlpool_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_whirlpool_shacal1, 1),
         add_test_step(hmac_whirlpool_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_whirlpool_noekeon, 1),
         add_test_step(hmac_whirlpool_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_blake2s256_aes128, 1),
         add_test_step(hmac_blake2s256_aes192, 1),
         add_test_step(hmac_blake2s256_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_blake2s256_des, 1),
         add_test_step(hmac_blake2s256_triple_des, 1),
         add_test_step(hmac_blake2s256_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_blake2s256_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_blake2s256_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_blake2s256_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_blake2s256_rc6_128, 1),
         add_test_step(hmac_blake2s256_rc6_192, 1),
         add_test_step(hmac_blake2s256_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_blake2s256_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_blake2s256_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_blake2s256_camellia128, 1),
         add_test_step(hmac_blake2s256_camellia192, 1),
         add_test_step(hmac_blake2s256_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_blake2s256_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_blake2s256_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_blake2s256_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_blake2s256_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_blake2s256_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_blake2s256_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_blake2s256_mars128, 1),
         add_test_step(hmac_blake2s256_mars192, 1),
         add_test_step(hmac_blake2s256_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_blake2s256_present80, 1),
         add_test_step(hmac_blake2s256_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_blake2s256_shacal1, 1),
         add_test_step(hmac_blake2s256_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_blake2s256_noekeon, 1),
         add_test_step(hmac_blake2s256_noekeon_d, 1),
+#endif
+#if defined(BLACKCAT_WITH_AES)
         add_test_step(hmac_blake2b512_aes128, 1),
         add_test_step(hmac_blake2b512_aes192, 1),
         add_test_step(hmac_blake2b512_aes256, 1),
+#endif
+#if defined(BLACKCAT_WITH_DES)
         add_test_step(hmac_blake2b512_des, 1),
         add_test_step(hmac_blake2b512_triple_des, 1),
         add_test_step(hmac_blake2b512_triple_des_ede, 1),
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
         add_test_step(hmac_blake2b512_idea, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC2)
         add_test_step(hmac_blake2b512_rc2, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC5)
         add_test_step(hmac_blake2b512_rc5, 1),
+#endif
+#if defined(BLACKCAT_WITH_RC6)
         add_test_step(hmac_blake2b512_rc6_128, 1),
         add_test_step(hmac_blake2b512_rc6_192, 1),
         add_test_step(hmac_blake2b512_rc6_256, 1),
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
         add_test_step(hmac_blake2b512_feal, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
         add_test_step(hmac_blake2b512_cast5, 1),
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
         add_test_step(hmac_blake2b512_camellia128, 1),
         add_test_step(hmac_blake2b512_camellia192, 1),
         add_test_step(hmac_blake2b512_camellia256, 1),
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
         add_test_step(hmac_blake2b512_saferk64, 1),
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
         add_test_step(hmac_blake2b512_blowfish, 1),
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
         add_test_step(hmac_blake2b512_serpent, 1),
+#endif
+#if defined(BLACKCAT_WITH_TEA)
         add_test_step(hmac_blake2b512_tea, 1),
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
         add_test_step(hmac_blake2b512_xtea, 1),
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
         add_test_step(hmac_blake2b512_misty1, 1),
+#endif
+#if defined(BLACKCAT_WITH_MARS)
         add_test_step(hmac_blake2b512_mars128, 1),
         add_test_step(hmac_blake2b512_mars192, 1),
         add_test_step(hmac_blake2b512_mars256, 1),
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
         add_test_step(hmac_blake2b512_present80, 1),
         add_test_step(hmac_blake2b512_present128, 1),
+#endif
+#if defined(BLACKCAT_WITH_SHACAL)
         add_test_step(hmac_blake2b512_shacal1, 1),
         add_test_step(hmac_blake2b512_shacal2, 1),
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
         add_test_step(hmac_blake2b512_noekeon, 1),
         add_test_step(hmac_blake2b512_noekeon_d, 1)
+#endif
     };
 #undef add_test_step
     size_t test_nr = sizeof(test) / sizeof(test[0]), t;
