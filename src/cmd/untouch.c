@@ -44,7 +44,7 @@ int blackcat_cmd_untouch(void) {
                                     untouch_nr += bcrepo_untouch(session->catalog, session->rootpath, session->rootpath_size,
                                                                  (untouch_param != NULL) ? untouch_param : "*",
                                                                  (untouch_param != NULL) ? strlen(untouch_param) : 1, hard);
-                                  })
+                                  }, 1)
 
     if (untouch_param == NULL) {
         chdir(cwd);

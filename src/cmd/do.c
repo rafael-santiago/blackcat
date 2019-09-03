@@ -170,7 +170,7 @@ int blackcat_cmd_do(void) {
                                       freeargv(argv, argc);
                                       argv = NULL;
                                       argc = 0;
-                                  })
+                                  }, 1)
 
     chdir(cwd);
     memset(cwd, 0, sizeof(cwd));

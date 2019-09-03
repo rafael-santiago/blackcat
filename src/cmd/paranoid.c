@@ -56,7 +56,7 @@ DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_paranoid_commands)
 static int arg = 0;
 
 int blackcat_cmd_paranoid(void) {
-    int exit_code = EINVAL;
+    int exit_code = 0;
     char *sub_command;
     size_t c;
 
@@ -109,7 +109,7 @@ static int dig_up(void) {
         goto dig_up_epilogue;
     }
 
-    if ((dig_up_param = blackcat_get_argv(arg + 1)) != NULL) {
+    if ((dig_up_param = blackcat_get_argv(arg)) != NULL) {
         dig_up_param = remove_go_ups_from_path(dig_up_param, strlen(dig_up_param) + 1);
     }
 
@@ -119,7 +119,7 @@ static int dig_up(void) {
                                     dig_up_nr += bcrepo_dig_up(&session->catalog, session->rootpath, session->rootpath_size,
                                                                (dig_up_param != NULL) ? dig_up_param : "*",
                                                                (dig_up_param != NULL) ? strlen(dig_up_param) : 1);
-                                  });
+                                  }, arg + 1);
 
     if (dig_up_nr > 0) {
         fprintf(stdout, "%d file(s) shown.\n", dig_up_nr);
@@ -148,7 +148,7 @@ static int bury(void) {
         goto bury_epilogue;
     }
 
-    if ((bury_param = blackcat_get_argv(arg + 1)) != NULL) {
+    if ((bury_param = blackcat_get_argv(arg)) != NULL) {
         bury_param = remove_go_ups_from_path(bury_param, strlen(bury_param) + 1);
     }
 
@@ -158,7 +158,7 @@ static int bury(void) {
                                     bury_nr += bcrepo_bury(&session->catalog, session->rootpath, session->rootpath_size,
                                                            (bury_param != NULL) ? bury_param : "*",
                                                            (bury_param != NULL) ? strlen(bury_param) : 1);
-                                  });
+                                  }, arg + 1);
 
     if (bury_nr > 0) {
         fprintf(stdout, "%d file(s) hidden.\n", bury_nr);

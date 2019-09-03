@@ -29,8 +29,8 @@ char *blackcat_get_argv(const int v);
     }\
 }
 
-#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt) {\
-    ac = 1;\
+#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt, continue_from) {\
+    ac = continue_from;\
     do {\
         consume_stmt;\
         do {\
