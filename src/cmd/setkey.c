@@ -110,7 +110,7 @@ int blackcat_cmd_setkey(void) {
     //
     //               Following nullity checkings related to protectio_layer is just for the sake of
     //               paranoia. When null it is not built again, as a result the repository can be
-    //               totally lose, if some key has change.
+    //               totally lost, if some key has change.
     protection_layer = blackcat_get_option("protection-layer", session->catalog->protection_layer);
 
     keyed_alike = blackcat_get_bool_option("keyed-alike", 0);
