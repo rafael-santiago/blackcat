@@ -295,4 +295,3 @@ int blackcat_cmd_init_help(void) {
                     "                   --protection-layer=<algorithm layers> [--keyed-alike --encoder=<encoder> --otp]\n");
     return 0;
 }
-

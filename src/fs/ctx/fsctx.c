@@ -217,6 +217,11 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
         catalog->kdf_params_size = 0;
     }
 
+    if (catalog->salt != NULL) {
+        kryptos_freeseg(catalog->salt, catalog->salt_size);
+        catalog->salt_size = 0;
+    }
+
     free(catalog);
 }
 
@@ -236,6 +241,9 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
         catalog->config_hash_size = 0;
         catalog->kdf_params = NULL;
         catalog->kdf_params_size = 0;
+        // INFO(Rafael): From v1.2.0 first-layer key is always salted.
+        catalog->salt = NULL;
+        catalog->salt_size = 0;
     }
     return catalog;
 }

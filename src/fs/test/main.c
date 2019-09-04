@@ -674,6 +674,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         catalog.decrypt_data = blackcat_decrypt_data;
         catalog.kdf_params = NULL;
         catalog.kdf_params_size = 0;
+        catalog.salt = NULL;
+        catalog.salt_size = 0;
 
         catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
         CUTE_ASSERT(catalog.key_hash != NULL);
@@ -2532,6 +2534,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     catalog.encoder = get_encoder("uuencode");
     catalog.kdf_params = NULL;
     catalog.kdf_params_size = 0;
+    catalog.salt = NULL;
+    catalog.salt_size = 0;
 
     catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
     CUTE_ASSERT(catalog.key_hash != NULL);

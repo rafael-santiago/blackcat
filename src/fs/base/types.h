@@ -36,6 +36,8 @@ typedef struct bfs_catalog {
     blackcat_hash_processor key_hash_algo, protlayer_key_hash_algo, catalog_key_hash_algo;
     blackcat_hash_size_func key_hash_algo_size, protlayer_key_hash_algo_size, catalog_key_hash_algo_size;
     blackcat_encoder encoder;
+    kryptos_u8_t *salt;
+    size_t salt_size;
     kryptos_u8_t *key_hash;
     size_t key_hash_size;
     kryptos_u8_t *config_hash;

@@ -45,6 +45,7 @@
 #define BCREPO_PEM_HMAC_HDR "BCREPO HMAC SCHEME"
 #define BCREPO_PEM_CATALOG_DATA_HDR "BCREPO CATALOG DATA"
 #define BCREPO_PEM_ENCODER_HDR "BCREPO ENCODER"
+#define BCREPO_PEM_SALT_DATA_HDR "BCREPO SALT DATA"
 
 #define BCREPO_CATALOG_FILE "CATALOG"
 #define BCREPO_CATALOG_FILE_SIZE 7
@@ -184,7 +185,7 @@ static int bstat(const char *pathname, struct stat *buf);
 
 static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
                            blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
-                           const ssize_t size);
+                           const ssize_t size, const kryptos_u8_t *salt, const size_t salt_size);
 
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size);
@@ -196,6 +197,8 @@ static int setfilectime(const char *path);
 static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data_size);
 
 static void bcrepo_info_kdf_params(const char *kdf_params, const size_t kdf_params_size);
+
+static kryptos_u8_t *get_random_catalog_salt(size_t *out_size);
 
 const char *bcrepo_metadata_version(void) {
     return BCREPO_METADATA_VERSION;
@@ -2715,7 +2718,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     o_size += pfx_size + sfx_size;
 
     if (encrypt_catalog_data(&o, &o_size, key, key_size, catalog) == kKryptosSuccess) {
-        fprintf(stderr, "ERROR: Error while encrypting the catalog data.\n");
+        fprintf(stderr, "ERROR: While encrypting catalog data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -2732,7 +2735,19 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
                              BCREPO_PEM_KEY_HASH_ALGO_HDR,
                              key_hash_algo,
                              strlen(key_hash_algo)) != kKryptosSuccess) {
-        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
+        fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
+        no_error = 0;
+        goto bcrepo_write_epilogue;
+    }
+
+    // INFO(Rafael): From v1.2.0 first-layer key is salted by default. Anyway if old data has arrived here,
+    //               it must not break things.
+
+    if (catalog->salt != NULL && catalog->salt_size > 0 && kryptos_pem_put_data(&pem_buf, &pem_buf_size,
+                                                                                BCREPO_PEM_SALT_DATA_HDR,
+                                                                                catalog->salt,
+                                                                                catalog->salt_size) != kKryptosSuccess) {
+        fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -2741,7 +2756,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
                              BCREPO_PEM_HMAC_HDR,
                              catalog->hmac_scheme->name,
                              strlen(catalog->hmac_scheme->name)) != kKryptosSuccess) {
-        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
+        fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -2757,7 +2772,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                                  BCREPO_PEM_ENCODER_HDR,
                                  encoder, strlen(encoder)) != kKryptosSuccess) {
-            fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
+            fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
             no_error = 0;
             encoder = NULL;
             goto bcrepo_write_epilogue;
@@ -2769,7 +2784,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_CATALOG_DATA_HDR,
                              o, o_size) != kKryptosSuccess) {
-        fprintf(stderr, "ERROR: Error while writing the catalog PEM data.\n");
+        fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -2783,7 +2798,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
     }
 
     if (fwrite(pem_buf, 1, pem_buf_size, fp) == -1) {
-        fprintf(stderr, "ERROR: While writing the PEM data to disk.\n");
+        fprintf(stderr, "ERROR: While writing PEM data to disk.\n");
         no_error = 0;
         goto bcrepo_write_epilogue;
     }
@@ -2892,6 +2907,8 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
         *out_size = 0;
         goto bcrepo_read_epilogue;
     }
+
+    catalog->salt = kryptos_pem_get_data(BCREPO_PEM_SALT_DATA_HDR, o, *out_size, &catalog->salt_size);
 
     hmac_scheme = get_hmac_catalog_scheme(hmac_algo);
 
@@ -3056,7 +3073,7 @@ static int root_dir_reached(const char *cwd) {
 
 static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
                            blackcat_hash_processor hash, blackcat_hash_size_func hash_size,
-                           const ssize_t size) {
+                           const ssize_t size, const kryptos_u8_t *salt, const size_t salt_size) {
     size_t k, hs, key_hash_size;
     kryptos_u8_t *kp = NULL, *kp_end, *key_hash = NULL;
     kryptos_task_ctx t, *ktask = &t;
@@ -3072,8 +3089,19 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
 
     kryptos_task_init_as_null(ktask);
 
-    ktask->in = (kryptos_u8_t *)key;
-    ktask->in_size = key_size;
+
+    if (salt == NULL || salt_size == 0) {
+        ktask->in = (kryptos_u8_t *)key;
+        ktask->in_size = key_size;
+    } else {
+        ktask->in_size = key_size + salt_size;
+        if ((ktask->in = (kryptos_u8_t *)kryptos_newseg(ktask->in_size)) == NULL) {
+            fprintf(stderr, "ERROR: Unable to allocate memory for key and salt data.\n");
+            goto bckdf_epilogue;
+        }
+        memcpy(ktask->in, key, key_size);
+        memcpy(ktask->in + key_size, salt, salt_size);
+    }
 
     hash(&ktask, 0);
 
@@ -3081,6 +3109,10 @@ static kryptos_u8_t *bckdf(const kryptos_u8_t *key, const size_t key_size,
         kryptos_freeseg(kp, size);
         kp = NULL;
         goto bckdf_epilogue;
+    }
+
+    if (ktask->in != key) {
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
     }
 
     ktask->in_size = ktask->out_size + key_size;
@@ -3177,7 +3209,7 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
     p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
     p_layer.key = bckdf(key, key_size,
                         catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
-                        p_layer.key_size);
+                        p_layer.key_size, catalog->salt, catalog->salt_size);
     p_layer.mode = catalog->hmac_scheme->mode;
 
     ktask->in = kryptos_pem_get_data(BCREPO_PEM_CATALOG_DATA_HDR, *data, *data_size, &ktask->in_size);
@@ -3195,6 +3227,11 @@ static kryptos_task_result_t decrypt_catalog_data(kryptos_u8_t **data, size_t *d
         kryptos_freeseg(*data, *data_size);
         *data = ktask->out;
         *data_size = ktask->out_size;
+
+        if (catalog->salt == NULL) {
+            // INFO(Rafael): If it came from an older writer, we will refresh it and start applying salt from now on.
+            catalog->salt = get_random_catalog_salt(&catalog->salt_size);
+        }
     }
 
     result = ktask->result;
@@ -3229,10 +3266,22 @@ static kryptos_task_result_t encrypt_catalog_data(kryptos_u8_t **data, size_t *d
 
     catalog->hmac_scheme = get_random_hmac_catalog_scheme();
 
+    if (catalog->salt != NULL) {
+        kryptos_freeseg(catalog->salt, catalog->salt_size);
+        // INFO(Rafael): It is a little freak paranoid since salt once would efficiently difficult a dictionary attack.
+        //               Anyway, using a new salt will not hurt.
+        if ((catalog->salt = get_random_catalog_salt(&catalog->salt_size)) == NULL) {
+            // INFO(Rafael): From v1.2.0 first-layer key salting is mandatory.
+            fprintf(stderr, "ERROR: Unable to get a random first-layer key salt.\n");
+            result = kKryptosProcessError;
+            goto encrypt_catalog_data_epilogue;
+        }
+    }
+
     p_layer.key_size = get_hmac_key_size(catalog->hmac_scheme->processor);
     p_layer.key = bckdf(key, key_size,
                         catalog->catalog_key_hash_algo, catalog->catalog_key_hash_algo_size,
-                        p_layer.key_size);
+                        p_layer.key_size, catalog->salt, catalog->salt_size);
     p_layer.mode = catalog->hmac_scheme->mode;
 
     kryptos_task_set_in(ktask, *data, *data_size);
@@ -3954,6 +4003,26 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 
 }
 
+static kryptos_u8_t *get_random_catalog_salt(size_t *out_size) {
+    // INFO(Rafael): Salts for first-layer key; 32, 64, 96, 128, 160, 192, 224 and 256 bits respectivelly.
+    static size_t salt_size[] = { 4, 8, 12, 16, 20, 24, 28, 32 };
+    static size_t salt_size_nr = sizeof(salt_size) / sizeof(salt_size[0]);
+    kryptos_u8_t *out = NULL;
+
+    if (out_size == NULL) {
+        goto get_random_catalog_salt_epilogue;
+    }
+
+    *out_size = salt_size[kryptos_get_random_byte() % salt_size_nr];
+    if ((out = (kryptos_u8_t *)kryptos_get_random_block(*out_size)) == NULL) {
+        *out_size = 0;
+    }
+
+get_random_catalog_salt_epilogue:
+
+    return out;
+}
+
 #undef BCREPO_CATALOG_BC_VERSION
 #undef BCREPO_CATALOG_KEY_HASH_ALGO
 #undef BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO
@@ -3967,6 +4036,7 @@ static void bcrepo_hex_to_seed(kryptos_u8_t **seed, size_t *seed_size, const cha
 #undef BCREPO_PEM_HMAC_HDR
 #undef BCREPO_PEM_CATALOG_DATA_HDR
 #undef BCREPO_PEM_ENCODER_HDR
+#undef BCREPO_PEM_SALT_DATA_HDR
 
 #undef BCREPO_CATALOG_FILE
 #undef BCREPO_CATALOG_FILE_SIZE

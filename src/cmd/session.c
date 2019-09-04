@@ -7,8 +7,8 @@
  */
 #include <cmd/session.h>
 #include <cmd/options.h>
-#include <ctx/ctx.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <ctx/ctx.h>
 #include <keychain/kdf/kdf_utils.h>
 #include <kryptos_memory.h>
 #include <accacia.h>
