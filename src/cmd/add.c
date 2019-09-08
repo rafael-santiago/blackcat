@@ -33,7 +33,6 @@ int blackcat_cmd_add(void) {
 
     if (add_param == NULL) {
         fprintf(stderr, "ERROR: A relative file path or a glob pattern is missing.\n");
-        exit_code = ENOTSUP;
         goto blackcat_cmd_add_epilogue;
     }
 

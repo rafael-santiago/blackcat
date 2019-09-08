@@ -30,13 +30,15 @@
 #include <cmd/config.h>
 #include <cmd/do.h>
 #include <fs/bcrepo/bcrepo.h>
-#if !defined(_WIN32)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # include <cmd/lkm.h>
+#endif
+#if defined(__unix__)
 # include <cmd/paranoid.h>
 # include <cmd/net.h>
 #endif
 #include <cmd/levenshtein_distance.h>
-#if !defined(_WIN32)
+#if defined(__unix__)
 # include <sys/mman.h>
 #endif
 #include <stdlib.h>
@@ -44,7 +46,12 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <sys/resource.h>
+#if defined(__unix__)
+# include <sys/resource.h>
+#endif
+#if defined(_WIN32)
+# include <windows.h>
+#endif
 
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(help),
@@ -59,8 +66,10 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(show),
     BLACKCAT_COMMAND_TABLE_ENTRY(pack),
     BLACKCAT_COMMAND_TABLE_ENTRY(unpack),
-#if !defined(_WIN32)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
     BLACKCAT_COMMAND_TABLE_ENTRY(lkm),
+#endif
+#if defined(__unix__)
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid),
     BLACKCAT_COMMAND_TABLE_ENTRY(net),
 #endif
@@ -86,7 +95,7 @@ int blackcat_exec(int argc, char **argv) {
 
     blackcat_set_argc_argv(argc, argv);
 
-#if !defined(_WIN32)
+#if defined(__unix__)
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
         // WARN(Rafael): If the user suspend the machine this will be useless.
         if ((err = mlockall(MCL_CURRENT | MCL_FUTURE)) != 0) {
@@ -100,10 +109,24 @@ int blackcat_exec(int argc, char **argv) {
     if (blackcat_get_bool_option("set-high-priority", 0) == 1) {
         // WARN(Rafael): Yes, it is a paranoid care. This only seeks to mitigate the preemption, there is no guarantee.
         //               In fact, the best case would be a real-time OS, but...
+#if defined(__unix__)
         if ((err = setpriority(PRIO_PROCESS, 0, -20)) == -1) {
-            fprintf(stderr, "ERROR: While setting the process' priority as high.\n");
+            fprintf(stderr, "ERROR: While setting the process priority as high.\n");
             return err;
         }
+#elif defined(_WIN32)
+        if (SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS) == 0) {
+            // WARN(Rafael): Until now I am not considering to use REALTIME_PRIORITY_CLASS.
+            //               We just want to the job done as fast as possible, not break all the Windows! \:p
+            //               Less time running less possibility of kernel screwing something up related to blackcat instance,
+            //               by preempting it.
+            fprintf(stderr, "ERROR: While setting the process priority as high.\n");
+            return GetLastError();
+        }
+#else
+        fprintf(stderr, "ERROR: The option '--set-high-priority' is not supported.\n"); // WARN(Rafael): Poor girl, poor boy!
+        return ENOSYS;
+#endif
     }
 
     command = blackcat_get_command();

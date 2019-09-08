@@ -23,7 +23,6 @@ int blackcat_cmd_show(void) {
 
     if (show_param == NULL) {
         fprintf(stderr, "ERROR: What I should show?\n");
-        exit_code = ENOTSUP;
         goto blackcat_cmd_show_epilogue;
     }
 

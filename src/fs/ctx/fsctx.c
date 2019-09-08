@@ -34,6 +34,9 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
     bfs_catalog_relpath_ctx *h, *c;
     kryptos_u8_t *p;
     size_t p_d = 0;
+#if defined(_WIN32)
+    kryptos_u8_t *rp;
+#endif
 
     if (files == NULL) {
         new_relpath_ctx(files);
@@ -69,14 +72,38 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
 
     p = path;
 
+#if defined(__unix__)
     if (*p == '/') {
         p += 1;
         p_d = 1;
     }
+#elif defined(_WIN32)
+    if (*p == '\\' || *p == '/') {
+        p += 1;
+        p_d = 1;
+    } else if ((rp = strstr(p, ":\\")) != NULL || (rp = strstr(p, ":/")) != NULL) {
+        p = rp;
+        p += 2;
+        p_d = 2;
+    }
+#else
+# error Some code wanted.
+#endif
 
     memset(c->path, 0, path_size + 1);
     c->path_size = path_size - p_d;
     memcpy(c->path, p, c->path_size);
+
+#if defined(_WIN32)
+    // INFO(Rafael): Internally, let's normalize path to a more sane standard.
+    rp = c->path;
+    while (*rp != 0) {
+        if (*rp == '\\') {
+            *rp = '/';
+        }
+        rp++;
+    }
+#endif
 
     if (timestamp != NULL) {
         sprintf(c->timestamp, "%s", timestamp);
@@ -128,11 +155,16 @@ bfs_catalog_relpath_ctx *del_file_from_relpath_ctx(bfs_catalog_relpath_ctx *file
 bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *files, const kryptos_u8_t *path) {
     bfs_catalog_relpath_ctx *rp;
     const kryptos_u8_t *p;
+#if defined(_WIN32)
+    const kryptos_u8_t *p_head;
+    kryptos_u8_t temp[4096];
+#endif
 
     if (path == NULL) {
         return NULL;
     }
 
+#if defined(__unix__)
     p = path;
 
     if (*p == '/') {
@@ -144,6 +176,45 @@ bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *fil
             return rp;
         }
     }
+#elif defined(_WIN32)
+    p_head = NULL;
+    p = path;
+
+    if (*p == '/' || *p == '\\') {
+        p += 1;
+        p_head = p;
+    } else if ((p_head = strstr(p, ":\\")) != NULL || (p_head = strstr(p, ":/")) != NULL) {
+        p_head += 2;
+        p = p_head;
+    }
+
+    if (p_head == NULL) {
+        p_head = p;
+    }
+
+    for (; *p != 0; p++)
+        ;
+
+    if ((p - p_head) >= sizeof(temp)) {
+        return NULL;
+    }
+
+    memset(temp, 0, sizeof(temp));
+    memcpy(temp, p_head, p - p_head);
+
+    for (rp = files; rp != NULL; rp = rp->next) {
+        if (strcmp(rp->path, temp) == 0) {
+            memset(temp, 0, sizeof(temp));
+            p = p_head = NULL;
+            return rp;
+        }
+    }
+
+    memset(temp, 0, sizeof(temp));
+    p = p_head = NULL;
+#else
+# error Some code wanted.
+#endif
 
     return NULL;
 }

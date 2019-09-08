@@ -26,8 +26,9 @@ blackcat-cmd-tests.preloading() {
 }
 
 blackcat-cmd-tests.prologue() {
-    build("hdev");
-    build("ntool");
+    if (hefesto.sys.os_name() != "windows") {
+        build("hdev");
+    }
 
     $src.ls(".*\\.c$");
 
@@ -55,13 +56,17 @@ blackcat-cmd-tests.prologue() {
         $ldflags.add_item("-lexecinfo");
         $ldflags.add_item("-lpthread");
         $ldflags.add_item("-lprop");
+    } else if (hefesto.sys.os_name() == "windows") {
+        $ldflags.del_item("-lbcnet");
     }
 
     var option type list;
     $option = hefesto.sys.get_option("skip-net-tests");
 
-    if ($option.count() > 0) {
+    if ($option.count() > 0 || hefesto.sys.os_name() == "windows") {
         $cflags.add_item("-DSKIP_NET_TESTS=1");
+    } else {
+        build("ntool");
     }
 
     if (hefesto.sys.os_name() != "windows") {
@@ -136,6 +141,23 @@ local function get_cmd_objects(ldflags type list) : result type list {
                 break;
             }
             $o = $o + 1;
+        }
+
+        if (hefesto.sys.os_name() == "windows" && $objs.count() > 0) {
+            var done type int;
+
+            $done = 0;
+
+            while ($done == 0) {
+                var curr_obj type string;
+                $curr_obj = $objs.item(0);
+                $done = $curr_obj.match("^\\\".*\\\"$");
+                if ($done == 1) {
+                   continue;
+                }
+                $objs.add_item("\"" + $curr_obj + "\"");
+                $objs.del_index(0);
+           }
         }
 
         # INFO(Rafael): GCC has this 'problem'; if some flat object file depends on some previous ldflag

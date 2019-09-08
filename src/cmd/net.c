@@ -5,6 +5,8 @@
  * be found in the COPYING file.
  *
  */
+#if defined(__unix__)
+
 #include <cmd/net.h>
 #include <cmd/defs.h>
 #include <cmd/options.h>
@@ -783,6 +785,8 @@ static void skey_print(const kryptos_u8_t *skey, const size_t skey_size) {
     fprintf(stdout, "'.\n");
     sp = sp_end = NULL;
 }
+
+#endif
 
 #undef BLACKCAT_NET_DB_HOME
 #undef BLACKCAT_BCSCK_LIB_HOME

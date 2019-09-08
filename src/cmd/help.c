@@ -48,10 +48,12 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(show_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(pack_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(unpack_help),
-#if !defined(_WIN32)
+#if defined(__unix__)
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid_help),
-    BLACKCAT_COMMAND_TABLE_ENTRY(lkm_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(net_help),
+#endif
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
+    BLACKCAT_COMMAND_TABLE_ENTRY(lkm_help),
 #endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(undo_help),
@@ -114,9 +116,14 @@ blackcat_cmd_help_epilogue:
 int blackcat_cmd_help_help(void) {
     fprintf(stdout, "usage: blackcat <command> [options]\n\n"
            "*** If you want to know more about some command you should try: \"blackcat help <command>\".\n"
+#if defined(__unix__)
            "    Do not you know any command name? Welcome newbie! It is time to read some documentation: "
-           "\"man blackcat\".\n________\n"
-           "blackcat is Copyright (C) 2004-2019 by Rafael Santiago.\n\n"
+           "\"man blackcat\"."
+#elif defined(_WIN32)
+           "    Do not you know any command name? Welcome newbie! It is time to read some documentation. "
+           "Give it a try by reading 'MANUAL.txt' (probably installed together with your executable).\n"
+#endif
+           "________\nblackcat is Copyright (C) 2004-2019 by Rafael Santiago.\n\n"
            "Bug reports, feedback, etc: <voidbrainvoid@tutanota.com> or "
            "<https://github.com/rafael-santiago/blackcat/issues>\n");
     return 0;

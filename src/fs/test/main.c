@@ -220,7 +220,13 @@ CUTE_TEST_CASE(bcrepo_config_module_tests)
     cfg = bcrepo_ld_config();
     CUTE_ASSERT(cfg == NULL);
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir(".bcrepo") == 0);
+#else
+# error Some code wanted.
+#endif
 
     fp = fopen(".bcrepo/CONFIG", "w");
     CUTE_ASSERT(fp != NULL);
@@ -431,7 +437,8 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
 
     CUTE_ASSERT(stat("sensitive.txt", &st_curr) == 0);
 
-#define BLACKCAT_EPOCH 26705100
+#if defined(__unix__)
+# define BLACKCAT_EPOCH 26705100
 
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
     CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
@@ -449,8 +456,30 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
     CUTE_ASSERT(st_curr.st_ctim.tv_sec == BLACKCAT_EPOCH);
+# undef BLACKCAT_EPOCH
+#elif defined(_WIN32)
+# define BLACKCAT_EPOCH 26705100
 
-#undef BLACKCAT_EPOCH
+    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
+    //CUTE_ASSERT(st_curr.st_atime == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
+    //CUTE_ASSERT(st_curr.st_mtime == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) == 0);
+
+    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "sensitive.txt", 13, 1) == 1);
+
+    CUTE_ASSERT(stat("sensitive.txt", &st_curr) == 0);
+
+    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
+    //CUTE_ASSERT(st_curr.st_atime == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
+    //CUTE_ASSERT(st_curr.st_mtime == BLACKCAT_EPOCH);
+    CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) != 0);
+    //CUTE_ASSERT(st_curr.st_ctime == BLACKCAT_EPOCH);
+# undef BLACKCAT_EPOCH
+#else
+# error Some code wanted.
+#endif
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
@@ -1633,7 +1662,13 @@ CUTE_TEST_CASE(remove_go_ups_from_path_tests)
     CUTE_ASSERT(chdir("../../") == 0);
     CUTE_ASSERT(getcwd(path, sizeof(path) - 1) != NULL);
     strncpy(exp_path, path, sizeof(exp_path) - 1);
+#if defined(__unix__)
     strcat(path, "../../");
+#elif defined(_WIN32)
+    strcat(path, "/../../");
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(chdir(cwd) == 0);
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);
@@ -1650,10 +1685,17 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(bcrepo_catalog_file_tests)
     char temp[4096];
     char *retval;
-    char *expret = "/root/alk/crosscut-saw/.bcrepo/CATALOG";
+#if defined(__unix__)
+    char *expect = "/root/alk/crosscut-saw/.bcrepo/CATALOG";
     retval = bcrepo_catalog_file(temp, sizeof(temp), "/root/alk/crosscut-saw");
+#elif defined(_WIN32)
+    char *expect = "\\root\\alk\\crosscut-saw\\.bcrepo\\CATALOG";
+    retval = bcrepo_catalog_file(temp, sizeof(temp), "\\root\\alk\\crosscut-saw");
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(retval == &temp[0]);
-    CUTE_ASSERT(memcmp(temp, expret, strlen(expret)) == 0);
+    CUTE_ASSERT(memcmp(temp, expect, strlen(expect)) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
@@ -2204,14 +2246,26 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
         // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
+#if defined(__unix__)
         CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+        CUTE_ASSERT(mkdir(".bcrepo") == 0);
+#else
+# error Some code wanted.
+#endif
         CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
         CUTE_ASSERT(rmdir(".bcrepo") == 0);
 
         // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
         //                a bcrepo_init() call will fail.
 
+#if defined(__unix__)
         CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+        CUTE_ASSERT(mkdir("../.bcrepo") == 0);
+#else
+# error Some code wanted.
+#endif
         CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
         CUTE_ASSERT(rmdir("../.bcrepo") == 0);
 
@@ -2285,14 +2339,26 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
 
     // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir(".bcrepo") == 0);
+#else
+# error Some error wanted.
+#endif
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
     CUTE_ASSERT(rmdir(".bcrepo") == 0);
 
     // INFO(Rafael): It does not matter if you are at the toplevel or anywhere else. Inside a previously initialized repo
     //                a bcrepo_init() call will fail.
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("../.bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("../.bcrepo") == 0);
+#else
+# error Some error wanted.
+#endif
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 0);
     CUTE_ASSERT(rmdir("../.bcrepo") == 0);
 
@@ -2370,7 +2436,13 @@ CUTE_TEST_CASE(bcrepo_get_rootpath_tests)
     rootpath = bcrepo_get_rootpath();
     CUTE_ASSERT(rootpath == NULL);
 
+#if defined(__unix__)
     mkdir(".bcrepo", 0666);
+#elif defined(_WIN32)
+    mkdir(".bcrepo");
+#else
+# error Some error wanted.
+#endif
 
     rootpath = bcrepo_get_rootpath();
     CUTE_ASSERT(rootpath != NULL);
@@ -2384,7 +2456,13 @@ CUTE_TEST_CASE(bcrepo_get_rootpath_tests)
     getcwd(cwd, sizeof(cwd));
 
     rmdir(".bcrepo");
+#if defined(__unix__)
     mkdir(".bcrepo", 0666);
+#elif defined(_WIN32)
+    mkdir(".bcrepo");
+#else
+# error Some error wanted.
+#endif
     chdir("test");
 
     rootpath = bcrepo_get_rootpath();

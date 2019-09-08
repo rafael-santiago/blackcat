@@ -190,7 +190,13 @@ CUTE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests)
     argv[3] = arg3_default_args;
     argv[4] = arg4_default_args;
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir(".bcrepo", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir(".bcrepo") == 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(create_file(".bcrepo/CONFIG", default_args_data, strlen(default_args_data)) == 1);
 
     blackcat_set_argc_argv(argc, argv);
@@ -527,7 +533,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
     CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
@@ -1303,7 +1315,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat(bcmd, "PaperScratcher", "PaperScratcher") != 0);
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
 
@@ -1546,7 +1564,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#endif
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
 
@@ -1948,7 +1970,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "Talking head\nTalking head", "Who knows\nWho knows") == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
@@ -1997,7 +2025,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "Talking head\nTalking head", "Who knows\nWho knows") == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
@@ -2089,7 +2123,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat(bcmd, "HazeJaneII", "HazeJaneII") == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
@@ -2292,7 +2332,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(blackcat("detach --dest=metainfo.yyz", "", NULL) != 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wantred.
+#endif
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
     CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
@@ -2336,7 +2382,13 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     // INFO(Rafael): Untouch tests.
 
+#if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
 
     sprintf(bcmd, "init "
                   "--catalog-hash=sha3-384 "
@@ -2357,6 +2409,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("add etc/s2.txt --lock", "Exempt", NULL) == 0);
     CUTE_ASSERT(blackcat("add p.txt --plain", "Exempt", NULL) == 0);
     CUTE_ASSERT(blackcat("add s3.txt --lock", "Exempt", NULL) == 0);
+
+#if defined(__unix__)
 
 #define BLACKCAT_EPOCH 26705100
 
@@ -2384,6 +2438,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(st_curr.st_ctim.tv_sec == BLACKCAT_EPOCH);
 
 #undef BLACKCAT_EPOCH
+
+#endif
 
     CUTE_ASSERT(blackcat("deinit", "Exempt", NULL) == 0);
 
@@ -2975,7 +3031,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("p.txt");
     remove("s3.txt");
 
-#if !defined(SKIP_NET_TESTS)
+#if !defined(SKIP_NET_TESTS) && !defined(_WIN32)
 
     protlayer = get_test_protlayer(0, 2);
 
@@ -3702,6 +3758,8 @@ static int try_unload_blackcat_lkm(void) {
         "kldunload blackcat.ko";
 #elif defined(__NetBSD__)
         "modunload blackcat.kmod";
+#else
+        "(null)";
 #endif
     return system(cmdline);
 }
@@ -3776,4 +3834,4 @@ static int clear_syshook(void) {
 #else
     return 1;
 #endif
-}
+}

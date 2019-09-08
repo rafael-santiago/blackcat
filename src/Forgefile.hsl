@@ -52,8 +52,10 @@ blackcat.prologue() {
     if ($subforges.count() == 0) {
         $subforges.add_item("base");
         $subforges.add_item("fs");
-        $subforges.add_item("net");
-        $subforges.add_item("socket");
+        if (hefesto.sys.os_name() != "windows") {
+            $subforges.add_item("net");
+            $subforges.add_item("socket");
+        }
 
         $option = hefesto.sys.get_option("no-dev");
 

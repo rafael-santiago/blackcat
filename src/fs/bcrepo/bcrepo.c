@@ -24,7 +24,11 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
+#if defined(__unix__)
+# include <sys/ioctl.h>
+#elif defined(_WIN32)
+# include <windows.h>
+#endif
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -56,7 +60,12 @@
 
 #define BLACKCAT_DEVPATH "/dev/" CDEVNAME
 
-#define BLACKCAT_EPOCH 26705100
+#if defined(__unix__)
+# define BLACKCAT_EPOCH 26705100
+#elif defined(_WIN32)
+# define BLACKCAT_EPOCH_L 0xAB905E00
+# define BLACKCAT_EPOCH_H 0x019EA46C
+#endif
 
 typedef kryptos_u8_t *(*bcrepo_dumper)(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog);
 
@@ -174,7 +183,11 @@ char *remove_go_ups_from_path(char *path, const size_t path_size);
 
 static int bcrepo_mkdtree(const char *dirtree);
 
+#if defined(__unix__)
 static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size);
+#elif defined(_WIN32)
+static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size);
+#endif
 
 static int bdup_handle(unsigned long cmd,
                  bfs_catalog_ctx **catalog,
@@ -192,7 +205,11 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
 
 static int is_metadata_compatible(const char *version);
 
+#if defined(__unix__)
 static int setfilectime(const char *path);
+#elif defined(_WIN32)
+static int setfiletime(const char *path, const int hard);
+#endif
 
 static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data_size);
 
@@ -408,10 +425,19 @@ int bcrepo_config_remove(bfs_catalog_ctx **catalog, const char *rootpath, const 
     bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
                   BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
 
+#if defined(__unix__)
     if (remove(temp) != 0) {
         fprintf(stderr, "ERROR: Unable to remove the config file.\n");
         goto bcrepo_config_remove_epilogue;
     }
+#elif defined(_WIN32)
+    if (DeleteFile(temp) == 0) {
+        fprintf(stderr, "ERROR: Unable to remove the config file.\n");
+        goto bcrepo_config_remove_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     cp = *catalog;
 
@@ -428,6 +454,7 @@ bcrepo_config_remove_epilogue:
     return no_error;
 }
 
+#if defined(__unix__)
 int bcrepo_untouch(bfs_catalog_ctx *catalog,
                    const char *rootpath, const size_t rootpath_size,
                    const char *pattern, const size_t pattern_size, const int hard) {
@@ -459,6 +486,34 @@ bcrepo_untouch_epilogue:
 
     return touch_nr;
 }
+#elif defined(_WIN32)
+int bcrepo_untouch(bfs_catalog_ctx *catalog,
+                   const char *rootpath, const size_t rootpath_size,
+                   const char *pattern, const size_t pattern_size, const int hard) {
+    int touch_nr = 0;
+    char fullpath[4096];
+    bfs_catalog_relpath_ctx *fp;
+
+    if (catalog == NULL) {
+        goto bcrepo_untouch_epilogue;
+    }
+
+    for (fp = catalog->files; fp != NULL; fp = fp->next) {
+        if (pattern == NULL || strglob(fp->path, pattern)) {
+            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, fp->path, fp->path_size);            
+            if (setfiletime(fullpath, hard) == 0) {
+                touch_nr++;
+            } else {
+                fprintf(stderr, "WARN: Unable to set file time attributes for '%s'.\n", fullpath);
+            }
+        }
+    }
+
+bcrepo_untouch_epilogue:
+
+    return touch_nr;
+}
+#endif
 
 int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
     int no_error = 0;
@@ -481,14 +536,26 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
 
     rootpath_size = strlen(rootpath);
 
+#if defined(__unix__)
     sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_RESCUE_FILE, rootpath);
+#elif defined(_WIN32)
+    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_RESCUE_FILE, rootpath);
+#else
+# error Some code wanted.
+#endif
 
     if (bstat(temp, &st) == 0) {
         fprintf(stderr, "ERROR: This repo is locked due to a rescue file. You must handle this issue before detaching.\n");
         goto bcrepo_detach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, rootpath);
+#elif defined(_WIN32)
+    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, rootpath);
+#else
+# error Some code wanted.
+#endif
 
     if ((fp = fopen(temp, "r")) == NULL) {
         fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", temp);
@@ -504,10 +571,20 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
         goto bcrepo_detach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     if (fread(data, 1, data_size, fp) != data_size) {
-        fprintf(stderr, "ERROR: While reading catalog's data.\n");
+        fprintf(stderr, "ERROR: While reading catalog's data. '%s'\n", data);
         goto bcrepo_detach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    fread(data, 1, data_size, fp);
+    if (ferror(fp) != 0) {
+        fprintf(stderr, "ERROR: While reading catalog's data. '%s'\n", data);
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     fclose(fp);
 
@@ -516,33 +593,77 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
         goto bcrepo_detach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     if (fwrite(data, 1, data_size, fp) != data_size) {
         fprintf(stderr, "ERROR: While writing catalog's data.\n");
         goto bcrepo_detach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    fwrite(data, 1, data_size, fp);
+    if (ferror(fp) != 0) {
+        fprintf(stderr, "ERROR: While writing catalog's data.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     fclose(fp);
     fp = NULL;
 
-
+#if defined(__unix__)
     if (bfs_data_wiping(rootpath, rootpath_size,
                         BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, strlen(BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE),
                         data_size) == 0) {
         fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
         goto bcrepo_detach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    if (bfs_data_wiping(rootpath, rootpath_size,
+                        BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, strlen(BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE),
+                        data_size) == 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
+#if defined(__unix__)
     if (remove(temp) != 0) {
         fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
         goto bcrepo_detach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    if (DeleteFile(temp) == 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metainfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
+#if defined(__unix__)
     sprintf(temp, "%s/" BCREPO_HIDDEN_DIR, rootpath);
+#elif defined(_WIN32)
+    sprintf(temp, "%s\\", BCREPO_HIDDEN_DIR, rootpath);
+#else
+# error Some code wanted.
+#endif
 
+#if defined(__unix__)
     if (remove(temp) != 0) {
         fprintf(stderr, "ERROR: Unable to erase the repo metatinfo.\n");
         goto bcrepo_detach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    if (RemoveDirectory(temp) == 0) {
+        fprintf(stderr, "ERROR: Unable to erase the repo metainfo.\n");
+        goto bcrepo_detach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     no_error = 1;
 
@@ -592,7 +713,13 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
         goto bcrepo_attach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, cwd);
+#elif defined(_WIN32)
+    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, cwd);
+#else
+# error Some code wanted.
+#endif
 
     if (bcrepo_mkdtree(BCREPO_HIDDEN_DIR) != 0) {
         fprintf(stderr, "ERROR: Unable to create the .bcrepo metainfo directory.\n");
@@ -613,10 +740,20 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
         goto bcrepo_attach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     if (fread(data, 1, data_size, fp) != data_size) {
         fprintf(stderr, "ERROR: While reading metainfo data from '%s'.\n", src);
         goto bcrepo_attach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    fread(data, 1, data_size, fp);
+    if (ferror(fp) != 0) {
+        fprintf(stderr, "ERROR: While reading metainfo data from '%s'.\n", src);
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     fclose(fp);
 
@@ -625,10 +762,20 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
         goto bcrepo_attach_metainfo_epilogue;
     }
 
+#if defined(__unix__)
     if (fwrite(data, 1, data_size, fp) != data_size) {
         fprintf(stderr, "ERROR: While writing catalog's data.\n");
         goto bcrepo_attach_metainfo_epilogue;
     }
+#elif defined(_WIN32)
+    fwrite(data, 1, data_size, fp);
+    if (ferror(fp) != 0) {
+        fprintf(stderr, "ERROR: While writing catalog's data.\n");
+        goto bcrepo_attach_metainfo_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     fclose(fp);
     fp = NULL;
@@ -753,7 +900,13 @@ bcrepo_decoy_epilogue:
     }
 
     if (no_error == 0 && del_file) {
+#if defined(__unix__)
         remove(filepath);
+#elif defined(_WIN32)
+        DeleteFile(filepath);
+#else
+# error Some code wanted.
+#endif
     }
 
     if (encoder != NULL) {
@@ -822,6 +975,8 @@ int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const s
 
     if ((file = get_entry_from_relpath_ctx(catalog->files, rp)) == NULL) {
         fprintf(stderr, "ERROR: There is nothing to restore.\n");
+        fclose(fp);
+        fp = NULL;
         bcrepo_remove_rescue_file(rootpath, rootpath_size); // INFO(Rafael): MUaAhauahuahauhauah!
         goto bcrepo_restore_epilogue;
     }
@@ -1134,7 +1289,13 @@ bcrepo_pack_epilogue:
 
     if (wp != NULL) {
         fclose(wp);
+#if defined(__unix__)
         remove(wpath);
+#elif defined(_WIN32)
+        DeleteFile(wpath);
+#else
+# error Some code wanted.
+#endif
     }
 
     cp = NULL;
@@ -1355,6 +1516,7 @@ static void bcrepo_info_print_ext_ascii_data(const void *data, const size_t data
     }
 }
 
+#if defined(__unix__)
 static int setfilectime(const char *path) {
     // WARN(Rafael): As you should know, in Unix by default (Yo!), we cannot set the creation time (ctime) of a file
     //               by using any Posix function. Functions such as utime(), utimes() are capable of only set
@@ -1419,6 +1581,32 @@ setfilectime_epilogue:
 
     return err;
 }
+#elif defined(_WIN32)
+static int setfiletime(const char *path, const int hard) {
+    // INFO(Rafael): It sets the creation date time to "BLACKCAT_EPOCH" (11/05/1970 16:05:00)
+    FILETIME ftime;
+    HANDLE h;
+    int err;
+
+    if ((h = CreateFile(path,
+                        GENERIC_WRITE,
+                        0,
+                        NULL,
+                        OPEN_EXISTING,
+                        0, NULL)) == INVALID_HANDLE_VALUE) {
+        return ENOENT;
+    }
+   
+    ftime.dwLowDateTime = BLACKCAT_EPOCH_L;
+    ftime.dwHighDateTime = BLACKCAT_EPOCH_H;
+
+    err = (SetFileTime(h, (hard) ? &ftime : NULL, &ftime, &ftime) != 0) ? 0 : EFAULT;
+
+    CloseHandle(h);
+    
+    return err;
+}
+#endif
 
 static int create_rescue_file(const char *rootpath, const size_t rootpath_size, const char *path, const size_t path_size,
                               const kryptos_u8_t *data, const size_t data_size) {
@@ -1489,6 +1677,7 @@ static int bdup_handle(unsigned long cmd,
     return count;
 }
 
+#if defined(__unix__)
 static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size) {
     int dev;
     int err = 0;
@@ -1518,6 +1707,11 @@ static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t p
 
     return err;
 }
+#elif defined(_WIN32)
+static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t path_size) {
+    return 1;
+}
+#endif
 
 static int bcrepo_mkdtree(const char *dirtree) {
     mode_t oldmask;
@@ -1550,7 +1744,11 @@ static int bcrepo_mkdtree(const char *dirtree) {
         memset(dir, 0, sizeof(dir));
         memcpy(dir, s, d - s);
 
+#if defined(__unix__)
         exit_code = mkdir(dir, 0644);
+#else
+        exit_code = mkdir(dir);
+#endif
 
         if (exit_code == 0) {
             exit_code = chdir(dir);
@@ -1572,7 +1770,13 @@ char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath
     if ((strlen(rootpath) + BCREPO_HIDDEN_DIR_SIZE + BCREPO_CATALOG_FILE_SIZE) >= buf_size - 1) {
         return buf;
     }
+#if defined(__unix__)
     sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+#elif defined(_WIN32)
+    sprintf(buf, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+#else
+# error Some code wanted.
+#endif
     return buf;
 }
 
@@ -1584,7 +1788,13 @@ char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath)
     if ((strlen(rootpath) + BCREPO_HIDDEN_DIR_SIZE + BCREPO_RESCUE_FILE_SIZE) >= buf_size - 1) {
         return buf;
     }
+#if defined(__unix__)
     sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
+#elif defined(_WIN32)
+    sprintf(buf, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
+#else
+# error Some code wanted.
+#endif
     return buf;
 }
 
@@ -1609,11 +1819,19 @@ int bcrepo_init(bfs_catalog_ctx *catalog, const kryptos_u8_t *key, const size_t 
         goto bcrepo_init_epilogue;
     }
 
+#if defined(__unix__)
     if (mkdir(BCREPO_HIDDEN_DIR, 0644) != 0) {
         no_error = 0;
         fprintf(stderr, "ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
         goto bcrepo_init_epilogue;
     }
+#else
+    if (mkdir(BCREPO_HIDDEN_DIR) != 0) {
+        no_error = 0;
+        fprintf(stderr, "ERROR: Unable to initialize the current working directory as a blackcat repo.\n");
+        goto bcrepo_init_epilogue;
+    }
+#endif
 
     bcrepo_mkpath(filepath, sizeof(filepath),
                   BCREPO_HIDDEN_DIR, BCREPO_HIDDEN_DIR_SIZE,
@@ -1688,11 +1906,21 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
 
     temp_size = 0;
 
+#if defined(__unix__)
     if (remove(filepath) != 0) {
         no_error = 0;
         fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
         goto bcrepo_deinit_epilogue;
     }
+#elif defined(_WIN32)
+    if (DeleteFile(filepath) == 0) {
+        no_error = 0;
+        fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
+        goto bcrepo_deinit_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
 
     temp_size = bcrepo_mkpath(filepath, sizeof(filepath), rootpath, rootpath_size,
                               BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE,
@@ -1706,12 +1934,22 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
                             " over your entire storage device.\n");
         }
 
+#if defined(__unix__)
         if (remove(filepath) != 0) {
             no_error = 0;
             fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
             goto bcrepo_deinit_epilogue;
         }
+#elif defined(_WIN32)
+        if (DeleteFile(filepath) == 0) {
+            no_error = 0;
+            fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
+            goto bcrepo_deinit_epilogue;
+        }
     }
+#else
+# error Some code wanted.
+#endif
 
     temp_size = 0;
 
@@ -2230,7 +2468,7 @@ unl_handle_epilogue:
 }
 
 static size_t bcrepo_mkpath(char *path, const size_t path_size,
-                          const char *root, const size_t root_size, const char *sub, const size_t sub_size) {
+                            const char *root, const size_t root_size, const char *sub, const size_t sub_size) {
     char *p;
     const char *s, *t;
     size_t s_d = 0, subdir_size;
@@ -2245,23 +2483,52 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
 
     memset(path, 0, path_size);
 
+#if defined(__unix__)
     p = path;
+#elif defined(_WIN32)
+    if ((p = strstr(path, ":\\")) != NULL ||
+        (p = strstr(path, ":/")) != NULL)  {        
+        p += 1;
+    } else {
+        p = path;
+    }
+#else
+# error Some code wanted.
+#endif
 
     memcpy(p, root, root_size);
 
     p += root_size;
 
+#if defined(__unix__)
     if (*(p - 1) != '/') {
         *(p) = '/';
         p += 1;
     }
+#elif defined(_WIN32)
+    if (*(p - 1) != '/' && *(p - 1) != '\\') {
+        *(p) = '/';
+        p += 1;
+    }
+#else
+# error Some code wanted.
+#endif
 
     s = sub;
 
+#if defined(__unix__)
     if (*s == '/') {
         s++;
         s_d = 1;
     }
+#elif defined(_WIN32)
+    if (*s == '/' || *s == '\\') {
+        s++;
+        s_d = 1;
+    }
+#else
+# error Some code wanted.
+#endif
 
     // !-!--!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-+!
     // WARN(Rafael): This function take into consideration the possibility of having: 'a/b/c' and 'c/y.z' as parameters. |
@@ -2271,17 +2538,33 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
 
     t = s + sub_size - s_d;
 
+#if defined(__unix__)
     while (t != s && *t != '/') {
         t--;
     }
+#elif defined(_WIN32)
+    while (t != s && *t != '/' && *t != '\\') {
+        t--;
+    }
+#else
+# error Some code wanted.
+#endif
 
     if (t > s) {
         memset(subdir, 0, sizeof(subdir));
         subdir_size = t - s;
         memcpy(subdir, s, subdir_size);
+#if defined(__unix__)
         if (subdir[subdir_size - 1] != '/') {
             subdir[subdir_size++] = '/';
         }
+#elif defined(_WIN32)
+        if (subdir[subdir_size - 1] != '/' && subdir[subdir_size - 1] != '\\') {
+            subdir[subdir_size++] = '/';
+        }
+#else
+# error Some code wanted.
+#endif
         t = strstr(path, subdir);
         if (t != NULL && *(t + subdir_size) == 0) {
             s += subdir_size;
@@ -2294,6 +2577,7 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
     return strlen(path);
 }
 
+#if defined(__unix__)
 static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_ctx *dest_files,
                           const char *rootpath, const size_t rootpath_size,
                           const char *pattern, const size_t pattern_size, int *recur_level, const int recur_max_level) {
@@ -2343,7 +2627,6 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         fp = filepath;
         fp_end = fp + filepath_size;
 
-#ifndef _WIN32
         while (fp != fp_end && *fp_end != '/') {
             fp_end--;
         }
@@ -2375,9 +2658,6 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
 
         for (fp = filepath; fp != fp_end && *fp != 0; fp++)
             ;
-#else
-# error Implement me... (__FILE__)
-#endif
     }
 
     files_p = *files;
@@ -2452,6 +2732,159 @@ get_file_list_epilogue:
         closedir(dirp);
     }
 }
+#elif defined(_WIN32)
+static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_ctx *dest_files,
+                          const char *rootpath, const size_t rootpath_size,
+                          const char *pattern, const size_t pattern_size, int *recur_level, const int recur_max_level) {
+    int matches;
+    char *filepath = NULL, *fp = NULL, *fp_end = NULL, *glob = NULL, *filename;
+    size_t filepath_size, glob_size, filename_size, cwd_size, tmp_size, filepath_delta_size;
+    struct stat st;
+    bfs_catalog_relpath_ctx *files_p;
+    DIR *dirp = NULL;
+    struct dirent *dt;
+    char cwd[4096], tmp[4096];
+
+    if (*recur_level > recur_max_level) {
+        fprintf(stderr, "ERROR: get_file_list() recursiveness level limit hit.\n");
+        goto get_file_list_epilogue;
+    }
+
+    if (files == NULL || rootpath == NULL || rootpath_size == 0 || pattern == NULL || pattern_size == 0) {
+        goto get_file_list_epilogue;
+    }
+
+    memset(cwd, 0, sizeof(cwd));
+    if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
+        fprintf(stderr, "ERROR: Unable to get the current cwd.\n");
+        goto get_file_list_epilogue;
+    }
+
+    if (strstr(cwd, rootpath) != &cwd[0]) {
+        // INFO(Rafael): It should never happen in normal conditions.
+        goto get_file_list_epilogue;
+    }
+
+    cwd_size = strlen(cwd);
+
+    filepath_size = rootpath_size + cwd_size + pattern_size;
+    filepath = (char *) kryptos_newseg(filepath_size + 4096);
+
+    if (filepath == NULL) {
+        fprintf(stderr, "ERROR: Unable to allocate memory!\n");
+        goto get_file_list_epilogue;
+    }
+
+    tmp_size = bcrepo_mkpath(tmp, sizeof(tmp), rootpath, rootpath_size, cwd + rootpath_size, cwd_size - rootpath_size);
+    filepath_size = bcrepo_mkpath(filepath, filepath_size + 2, tmp, tmp_size, pattern, pattern_size);
+
+    if (strstr(filepath, "*") != NULL || strstr(filepath, "?") != NULL || strstr(filepath, "[") != NULL) {
+        fp = filepath;
+        fp_end = fp + filepath_size;
+
+        while (fp != fp_end && *fp_end != '/' && *fp_end != '\\') {
+            fp_end--;
+        }
+
+        *fp_end = 0;
+
+        fp = fp_end + 1;
+        fp_end = filepath + filepath_size;
+
+        glob_size = fp_end - fp;
+        glob = (char *) kryptos_newseg(glob_size + 1);
+
+        if (glob == NULL) {
+            fprintf(stderr, "ERROR: Unable to allocate memory!\n");
+            goto get_file_list_epilogue;
+        }
+
+        memset(glob, 0, glob_size + 1);
+        memcpy(glob, fp, glob_size);
+
+        filepath = (char *) kryptos_realloc(filepath, 4096);
+
+        if (filepath == NULL) {
+            fprintf(stderr, "ERROR: Unable to allocate memory!\n");
+            goto get_file_list_epilogue;
+        }
+
+        fp_end = filepath + 4095;
+
+        for (fp = filepath; fp != fp_end && *fp != 0; fp++)
+            ;
+    }
+
+    files_p = *files;
+
+    if (bstat(filepath, &st) == 0) {
+        // INFO(Rafael): We are only interested in regular files and directories.
+        if (st.st_mode & S_IFREG) {
+            // INFO(Rafael): However, only regular files are really relevant for us.
+            if (get_entry_from_relpath_ctx(dest_files, filepath + rootpath_size) == NULL) {
+                files_p = add_file_to_relpath_ctx(files_p,
+                                                  filepath + rootpath_size,
+                                                  filepath_size - rootpath_size, kBfsFileStatusUnlocked, NULL);
+            }
+        } else if (st.st_mode & S_IFDIR) {
+            if ((dirp = opendir(filepath)) == NULL) {
+                fprintf(stderr, "ERROR: Unable to access '%s'.\n", filepath);
+                goto get_file_list_epilogue;
+            }
+
+            memset(cwd, 0, sizeof(cwd));
+            memcpy(cwd, filepath, filepath_size % sizeof(cwd));
+            cwd_size = strlen(cwd);
+
+            while ((dt = readdir(dirp)) != NULL) {
+                filename = dt->d_name;
+
+                if (strcmp(filename, ".") == 0 || strcmp(filename, BCREPO_HIDDEN_DIR) == 0 || strcmp(filename, "..") == 0) {
+                    continue;
+                }
+
+                matches = (glob == NULL || *glob == 0 || strglob(filename, glob) == 1);
+
+                if (!matches) {
+                    continue;
+                }
+
+                filename_size = strlen(filename);
+
+                filepath_size = bcrepo_mkpath(filepath, 4096, cwd, cwd_size, filename, filename_size);
+
+                *recur_level += 1;
+
+                get_file_list(&files_p,
+                              dest_files,
+                              rootpath, rootpath_size,
+                              filepath + rootpath_size, filepath_size - rootpath_size,
+                              recur_level, recur_max_level);
+
+                *recur_level -= 1;
+            }
+        }
+    }
+
+    (*files) = files_p;
+
+get_file_list_epilogue:
+
+    if (filepath != NULL) {
+        kryptos_freeseg(filepath, strlen(filepath));
+    }
+
+    if (glob != NULL) {
+        kryptos_freeseg(glob, 0);
+    }
+
+    if (dirp != NULL) {
+        closedir(dirp);
+    }
+}
+#else
+# error get_file_list() must be implemented.
+#endif
 
 char *bcrepo_get_rootpath(void) {
     char oldcwd[4096], cwd[4096];
@@ -2659,7 +3092,13 @@ int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) 
         temp_size = strlen(temp);
         bfs_data_wiping(temp, temp_size, BCREPO_RESCUE_FILE, BCREPO_RESCUE_FILE_SIZE, rescue_file_size);
         rescue_file_size = 0;
+#if defined(__unix__)
         no_error = (remove(rescue_filepath) == 0);
+#elif defined(_WIN32)
+        no_error = (DeleteFile(rescue_filepath) != 0);
+#else
+# error Some code wanted.
+#endif
     }
 
     return no_error;
@@ -2994,6 +3433,9 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
     char cwd[4096];
     int go_up_nr = 0;
     char *p, *p_end;
+#if defined(_WIN32)
+    char *rp;
+#endif
     size_t cwd_size;
 
     getcwd(cwd, sizeof(cwd) - 1);
@@ -3002,15 +3444,23 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
         return path;
     }
 
-    // TODO(Rafael): When in Windows also test '..\\'.
-
     p = path;
     p_end = path + strlen(path);
 
+#if defined(__unix__)
     while (p < p_end && (p = strstr(p, "../")) != NULL) {
         go_up_nr++;
         p += 3;
     }
+#elif defined(_WIN32)
+    while (p < p_end && ((rp = strstr(p, "../")) != NULL || (rp = strstr(p, "..\\")) != NULL)) {
+        p = rp;
+        go_up_nr++;
+        p += 3;
+    }
+#else
+# error Some code wanted.
+#endif
 
     if (go_up_nr == 0) {
         goto remove_go_ups_from_path_epilogue;
@@ -3019,9 +3469,17 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
     p = &cwd[strlen(cwd) - 1];
 
     while (p != &cwd[0] && go_up_nr > 0) {
+#if defined(__unix__)
         while (p != &cwd[0] && *p != '/') {
             p--;
         }
+#elif defined(_WIN32)
+        while (p != &cwd[0] && *p != '/' && *p != '\\') {
+            p--;
+        }
+#else
+# error Some code wanted.
+#endif
         go_up_nr -= 1;
         p -= (go_up_nr != 0);
     }
@@ -3042,6 +3500,7 @@ remove_go_ups_from_path_epilogue:
     cwd_size = 0;
 
     while (p < p_end) {
+#if defined(__unix__)
         if ((p + 1) < p_end && p[0] == '.' && p[1] == '/') {
             p += 2;
             if (p == p_end) {
@@ -3053,6 +3512,21 @@ remove_go_ups_from_path_epilogue:
                 continue;
             }
         }
+#elif defined(_WIN32)
+        if ((p + 1) < p_end && p[0] == '.' && (p[1] == '/' || p[1] == '\\')) {
+            p += 2;
+            if (p == p_end) {
+                continue;
+            }
+        } else if ((p + 2) < p_end && p[0] == '.' && p[1] == '.' && (p[2] == '/' || p[2] == '\\')) {
+            p += 3;
+            if (p == p_end) {
+                continue;
+            }
+        }
+#else
+# error Some code wanted.
+#endif
         cwd[cwd_size++] = *p;
         p++;
     }
@@ -3064,10 +3538,28 @@ remove_go_ups_from_path_epilogue:
 }
 
 static int root_dir_reached(const char *cwd) {
-#ifndef _WIN32
-    return (strcmp(cwd, "/") == 0);
+#if defined(__unix__)
+    return (cwd != NULL && (strcmp(cwd, "/") == 0));
+#elif defined(_WIN32)
+    char *p;
+
+    if (cwd == NULL) {
+        return 0;
+    }
+
+    if (strcmp(cwd, "/") == 0) {
+        return 1;
+    }
+
+    if ((p = strstr(cwd, ":\\")) == NULL) {
+        if ((p = strstr(cwd, ":/")) == NULL) {
+            return (strcmp(cwd, "\\") == 0);
+        }
+    }
+
+    return (p != NULL && p[2] == 0);
 #else
-    return 1;
+# error Some code wanted.
 #endif
 }
 
@@ -4047,4 +4539,9 @@ get_random_catalog_salt_epilogue:
 
 #undef BLACKCAT_DEVPATH
 
-#undef BLACKCAT_EPOCH
+#if defined(__unix__)
+# undef BLACKCAT_EPOCH
+#elif defined(_WIN32)
+# undef BLACKCAT_EPOCH_L
+# undef BLACKCAT_EPOCH_H
+#endif

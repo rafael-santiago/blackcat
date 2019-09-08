@@ -40,6 +40,10 @@ blackcat-cmd.prologue() {
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    if (hefesto.sys.os_name() == "windows") {
+        $ldflags.del_item("-lbcnet");
+    }
+
     setup_ciphering_schemes($cflags);
 
     if (hefesto.sys.os_name() == "netbsd") {

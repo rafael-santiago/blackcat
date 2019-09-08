@@ -5,6 +5,8 @@
  * be found in the COPYING file.
  *
  */
+#if defined(__unix__)
+
 #include <cmd/paranoid.h>
 #include <cmd/defs.h>
 #include <cmd/options.h>
@@ -20,6 +22,8 @@
 
 #define BLACKCAT_DEVPATH "/dev/" CDEVNAME
 
+# if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
+
 static int dig_up(void);
 
 static int bury(void);
@@ -30,22 +34,26 @@ static int dig_up_repo(void);
 
 static int find_hooks(void);
 
+static int do_ioctl(unsigned long cmd, ...);
+
+static int br_dgur_handle(unsigned long cmd);
+
+# endif
+
 static int disable_history(void);
 
 static int enable_history(void);
 
 static int clear_history(void);
 
-static int do_ioctl(unsigned long cmd, ...);
-
-static int br_dgur_handle(unsigned long cmd);
-
 DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
     { "--bury",            bury            },
     { "--dig-up",          dig_up          },
     { "--bury-repo",       bury_repo       },
     { "--dig-up-repo",     dig_up_repo     },
     { "--find-hooks",      find_hooks      },
+#endif
     { "--disable-history", disable_history },
     { "--enable-history",  enable_history  },
     { "--clear-history",   clear_history   }
@@ -78,6 +86,8 @@ int blackcat_cmd_paranoid_help(void) {
                     "--find-hooks | --disable-history | --enable-history | --clear-history]\n");
     return 0;
 }
+
+# if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
 
 static int bury_repo(void) {
     int exit_code = br_dgur_handle(BLACKCAT_BURY);
@@ -207,65 +217,6 @@ find_hooks_epilogue:
     return err;
 }
 
-static int enable_history(void) {
-    int err = 1;
-    char *shell = getenv("SHELL");
-
-    if (shell == NULL) {
-        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
-        goto enable_history_epilogue;
-    }
-
-    if (strstr(shell, "/bash") != NULL) {
-        err = system("set -o history");
-    } else if (strstr(shell, "/sh") != NULL) {
-        err = system("unset HISTSIZE");
-    } else if (strstr(shell, "/ksh") != NULL) {
-        // TODO(Rafael): Implement.
-        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
-    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
-        err = system("set history = 500");
-    } else {
-        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
-    }
-
-enable_history_epilogue:
-
-    return err;
-}
-
-static int disable_history(void) {
-    int err = 1;
-    char *shell = getenv("SHELL");
-
-    if (shell == NULL) {
-        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
-        goto disable_history_epilogue;
-    }
-
-    if (strstr(shell, "/bash") != NULL) {
-        err = system("set +o history");
-    } else if (strstr(shell, "/sh") != NULL) {
-        err = system("export HISTSIZE=0");
-    } else if (strstr(shell, "/ksh") != NULL) {
-        // TODO(Rafael): Implement.
-        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
-    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
-        err = system("unset history");
-    } else {
-        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
-    }
-
-disable_history_epilogue:
-
-    return err;
-}
-
-static int clear_history(void) {
-    // TODO(Rafael): Try to implement it independent of the current user shell.
-    return 1;
-}
-
 static int br_dgur_handle(unsigned long cmd) {
     int exit_code = 1;
     blackcat_exec_session_ctx *session = NULL;
@@ -331,5 +282,68 @@ static int do_ioctl(unsigned long cmd, ...) {
 
     return err;
 }
+
+# endif
+
+static int enable_history(void) {
+    int err = 1;
+    char *shell = getenv("SHELL");
+
+    if (shell == NULL) {
+        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
+        goto enable_history_epilogue;
+    }
+
+    if (strstr(shell, "/bash") != NULL) {
+        err = system("set -o history");
+    } else if (strstr(shell, "/sh") != NULL) {
+        err = system("unset HISTSIZE");
+    } else if (strstr(shell, "/ksh") != NULL) {
+        // TODO(Rafael): Implement.
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
+        err = system("set history = 500");
+    } else {
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    }
+
+enable_history_epilogue:
+
+    return err;
+}
+
+static int disable_history(void) {
+    int err = 1;
+    char *shell = getenv("SHELL");
+
+    if (shell == NULL) {
+        fprintf(stdout, "ERROR: Unable to find out your current shell.\n");
+        goto disable_history_epilogue;
+    }
+
+    if (strstr(shell, "/bash") != NULL) {
+        err = system("set +o history");
+    } else if (strstr(shell, "/sh") != NULL) {
+        err = system("export HISTSIZE=0");
+    } else if (strstr(shell, "/ksh") != NULL) {
+        // TODO(Rafael): Implement.
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    } else if (strstr(shell, "/csh") != NULL || strstr(shell, "/tcsh") != NULL) {
+        err = system("unset history");
+    } else {
+        fprintf(stdout, "ERROR: No support for your current shell. Do it on your own.\n");
+    }
+
+disable_history_epilogue:
+
+    return err;
+}
+
+static int clear_history(void) {
+    // TODO(Rafael): Try to implement it independent of the current user shell.
+    return 1;
+}
+
+#endif
 
 #undef BLACKCAT_DEVPATH
