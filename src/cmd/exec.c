@@ -104,6 +104,11 @@ int blackcat_exec(int argc, char **argv) {
             return err;
         }
     }
+#else
+    if (blackcat_get_bool_option("no-swap", 0) == 1) {
+        fprintf(stderr, "ERROR: The option '--no-swap' is not supported in this platform.\n");
+        return ENOSYS;
+    }
 #endif
 
     if (blackcat_get_bool_option("set-high-priority", 0) == 1) {
