@@ -431,16 +431,44 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help help", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help pack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
+#if defined(__unix__)
     CUTE_ASSERT(blackcat("help paranoid", "", NULL) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(blackcat("help paranoid", "", NULL) != 0);
+#else
+# error Some code wanted.
+#endif
+
+#if defined(__unix__)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(blackcat("help lkm", "", NULL) != 0);
+#else
+# error Some code wanted.
+#endif
     CUTE_ASSERT(blackcat("help setkey", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help undo", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help decoy", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help info", "", NULL) == 0);
+
+#if defined(__unix__)
     CUTE_ASSERT(blackcat("help net", "", NULL) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(blackcat("help net", "", NULL) != 0);
+#else
+# error Some code wanted.
+#endif
+
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy info net", "", NULL) != 0);
+
+#if defined(__unix__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net", "", NULL) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info", "", NULL) == 0);
+#else
+# error Some code wanted.
+#endif
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -2498,6 +2526,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "Zzzoldar\nZzzoldar", NULL) == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(create_file(".bcrepo/CONFIG",
                             "user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
                             "lock-s1:\n\t../../../bin/blackcat lock s1.txt<dummy\n\n"
@@ -2509,6 +2538,21 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                                     "lock-s3:\n\t../../../bin/blackcat lock s3.txt<dummy\n\n"
                                     "unlock-s1:\n\t../../../bin/blackcat unlock s1.txt<dummy\n\n"
                                     "unlock-s3:\n\t../../../bin/blackcat unlock s3.txt<dummy\n\n")) == 1);
+#elif defined(_WIN32)
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG",
+                            "user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                            "lock-s1:\n\t..\\..\\..\\bin\\blackcat.exe lock s1.txt<dummy\n\n"
+                            "lock-s3:\n\t..\\..\\..\\bin\\blackcat.exe lock s3.txt<dummy\n\n"
+                            "unlock-s1:\n\t..\\..\\..\\bin\\blackcat.exe unlock s1.txt<dummy\n\n"
+                            "unlock-s3:\n\t..\\..\\..\\bin\\blackcat.exe unlock s3.txt<dummy\n\n",
+                            strlen("user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                                    "lock-s1:\n\t..\\..\\..\\bin\\blackcat.exe lock s1.txt<dummy\n\n"
+                                    "lock-s3:\n\t..\\..\\..\\bin\\blackcat.exe lock s3.txt<dummy\n\n"
+                                    "unlock-s1:\n\t..\\..\\..\\bin\\blackcat.exe unlock s1.txt<dummy\n\n"
+                                    "unlock-s3:\n\t..\\..\\..\\bin\\blackcat.exe unlock s3.txt<dummy\n\n")) == 1);
+#else
+# error Some code wanted.
+#endif
 
     CUTE_ASSERT(blackcat("config --update", "Zzzoldar", NULL) == 0);
 
@@ -3621,14 +3665,29 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
         return 0;
     }
 
+#if defined(__unix__)
     strncpy(cmdline, "../", sizeof(cmdline) - 1);
-
     sprintf(bin, "%sbin/blackcat", cmdline);
+#elif defined(_WIN32)
+    strncpy(cmdline, "..\\", sizeof(cmdline) - 1);
+    sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+#else
+# error Some code wanted.
+#endif
 
+#if defined(__unix__)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "../");
         sprintf(bin, "%sbin/blackcat", cmdline);
     }
+#elif defined(_WIN32)
+    while (stat(bin, &st) != 0) {
+        strcat(cmdline, "..\\");
+        sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+    }
+#else
+# error Some code wanted.
+#endif
 
     sprintf(cmdline, "%s\n", p1);
 
@@ -3660,14 +3719,29 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
         return 0;
     }
 
+#if defined(__unix__)
     strncpy(cmdline, "../", sizeof(cmdline) - 1);
-
     sprintf(bin, "%sbin/blackcat", cmdline);
+#elif defined(_WIN32)
+    strncpy(cmdline, "..\\", sizeof(cmdline) - 1);
+    sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+#else
+# error Some code wanted.
+#endif
 
+#if defined(__unix__)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "../");
         sprintf(bin, "%sbin/blackcat", cmdline);
     }
+#elif defined(_WIN32)
+    while (stat(bin, &st) != 0) {
+        strcat(cmdline, "..\\");
+        sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+    }
+#else
+# error Some code wanted.
+#endif
 
     sprintf(cmdline, "%s\n", p1);
 
@@ -3765,6 +3839,7 @@ static int try_unload_blackcat_lkm(void) {
 }
 
 static int file_is_hidden(const char *filepath) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
     int is_hidden;
     char cmdline[4096];
     FILE *fp = NULL;
@@ -3786,6 +3861,9 @@ static int file_is_hidden(const char *filepath) {
     pclose(fp);
 
     return is_hidden;
+#else
+    return 0;
+#endif
 }
 
 static int test_env_housekeeping(void) {
