@@ -7,3 +7,4 @@
 *.kmod
 *.ko
 *.so
+*.get_test_protlayer
