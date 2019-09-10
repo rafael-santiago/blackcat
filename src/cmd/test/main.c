@@ -3912,4 +3912,4 @@ static int clear_syshook(void) {
 #else
     return 1;
 #endif
-}
+}

@@ -1596,14 +1596,14 @@ static int setfiletime(const char *path, const int hard) {
                         0, NULL)) == INVALID_HANDLE_VALUE) {
         return ENOENT;
     }
-   
+
     ftime.dwLowDateTime = BLACKCAT_EPOCH_L;
     ftime.dwHighDateTime = BLACKCAT_EPOCH_H;
 
     err = (SetFileTime(h, (hard) ? &ftime : NULL, &ftime, &ftime) != 0) ? 0 : EFAULT;
 
     CloseHandle(h);
-    
+
     return err;
 }
 #endif
@@ -1946,10 +1946,10 @@ int bcrepo_deinit(const char *rootpath, const size_t rootpath_size, const krypto
             fprintf(stderr, "ERROR: Unable to remove the file '%s'.\n", filepath);
             goto bcrepo_deinit_epilogue;
         }
-    }
 #else
 # error Some code wanted.
 #endif
+    }
 
     temp_size = 0;
 
