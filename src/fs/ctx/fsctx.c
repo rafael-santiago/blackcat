@@ -13,14 +13,18 @@
 #include <stdio.h>
 #include <time.h>
 
-#define new_relpath_ctx(r) ( (r) = (bfs_catalog_relpath_ctx *) kryptos_newseg(sizeof(bfs_catalog_relpath_ctx)),\
-                             (r)->head = (r)->tail = (r)->last = (r)->next = NULL,\
-                             (r)->path = NULL,\
-                             memset((r)->timestamp, 0, sizeof((r)->timestamp)),\
-                             (r)->status = kBfsFileStatusNr,\
-                             (r)->path_size = 0,\
-                             (r)->seed = NULL,\
-                             (r)->seed_size = 0 )
+#define new_relpath_ctx(r) {\
+    (r) = (bfs_catalog_relpath_ctx *) kryptos_newseg(sizeof(bfs_catalog_relpath_ctx));\
+    if ((r) != NULL) {\
+        (r)->head = (r)->tail = (r)->last = (r)->next = NULL;\
+        (r)->path = NULL;\
+        memset((r)->timestamp, 0, sizeof((r)->timestamp));\
+        (r)->status = kBfsFileStatusNr;\
+        (r)->path_size = 0;\
+        (r)->seed = NULL;\
+        (r)->seed_size = 0;\
+    }\
+}
 
 #define BLACKCAT_FILE_SEED_BYTES_NR 8
 
@@ -40,6 +44,11 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
 
     if (files == NULL) {
         new_relpath_ctx(files);
+        if (files == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            h = NULL;
+            goto add_file_to_relpath_ctx_epilogue;
+        }
         files->head = files;
         files->tail = files;
         h = c = files;
@@ -57,6 +66,11 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
         }
 
         new_relpath_ctx(c->next);
+
+        if (c->next == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_file_to_relpath_ctx_epilogue;
+        }
 
         c->next->last = c;
         c = c->next;

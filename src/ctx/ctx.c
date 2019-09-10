@@ -14,13 +14,15 @@
 
 #define new_blackcat_protlayer_chain_ctx(b) {\
     (b) = (blackcat_protlayer_chain_ctx *) kryptos_newseg(sizeof(blackcat_protlayer_chain_ctx));\
-    (b)->head = (b)->tail = (b)->next = (b)->last = NULL;\
-    (b)->key = NULL;\
-    (b)->key_size = 0;\
-    (b)->processor = NULL;\
-    (b)->argc = 0;\
-    (b)->is_hmac = 0;\
-    (b)->encoder = NULL;\
+    if ((b) != NULL) {\
+        (b)->head = (b)->tail = (b)->next = (b)->last = NULL;\
+        (b)->key = NULL;\
+        (b)->key_size = 0;\
+        (b)->processor = NULL;\
+        (b)->argc = 0;\
+        (b)->is_hmac = 0;\
+        (b)->encoder = NULL;\
+    }\
 }
 
 static blackcat_protlayer_chain_ctx *get_protlayer_chain_tail(blackcat_protlayer_chain_ctx *chain);
@@ -100,12 +102,20 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
     if (hp != NULL) {
         cp = (hp->tail == NULL) ? get_protlayer_chain_tail(hp) : hp->tail;
         new_blackcat_protlayer_chain_ctx(cp->next);
+        if (cp->next == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory to add protection layer to chain.\n");
+            goto add_protlayer_to_chain_epilogue;
+        }
         cp->next->last = cp;
         cp = cp->next;
         hp->tail = cp;
     } else {
         new_blackcat_protlayer_chain_ctx(hp);
         hp->head = hp->tail = cp = hp;
+        if (hp == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory to add protection layer to chain.\n");
+            goto add_protlayer_to_chain_epilogue;
+        }
     }
 
     if (blackcat_set_keychain(&cp, algo_params, key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, handle, err_mesg) == 0) {
@@ -113,6 +123,8 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
         del_protlayer_chain_ctx(hp);
         hp = NULL;
     }
+
+add_protlayer_to_chain_epilogue:
 
     return hp;
 }

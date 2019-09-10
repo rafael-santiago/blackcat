@@ -13,22 +13,28 @@
 
 #define new_bnt_channel_rule_ctx(r) {\
     (r) = (bnt_channel_rule_ctx *) kryptos_newseg(sizeof(bnt_channel_rule_ctx));\
-    memset(&(r)->assertion, 0, sizeof(struct bnt_channel_rule_assertion));\
-    (r)->head = (r)->tail = (r)->next = (r)->last = NULL;\
-    (r)->pchain = NULL;\
+    if ((r) != NULL) {\
+        memset(&(r)->assertion, 0, sizeof(struct bnt_channel_rule_assertion));\
+        (r)->head = (r)->tail = (r)->next = (r)->last = NULL;\
+        (r)->pchain = NULL;\
+    }\
 }
 
 #define new_bnt_keychunk_ctx(k) {\
     (k) = (bnt_keychunk_ctx *) kryptos_newseg(sizeof(bnt_keychunk_ctx));\
-    (k)->data = NULL;\
-    (k)->data_size = 0;\
-    (k)->next = (k)->tail = NULL;\
+    if ((k) != NULL) {\
+        (k)->data = NULL;\
+        (k)->data_size = 0;\
+        (k)->next = (k)->tail = NULL;\
+    }\
 }
 
 #define new_bnt_keychain_ctx(k) {\
     (k) = (bnt_keychain_ctx *) kryptos_newseg(sizeof(bnt_keychain_ctx));\
-    (k)->tail = (k)->next = (k)->last = NULL;\
-    k->key = NULL;\
+    if ((k) != NULL) {\
+        (k)->tail = (k)->next = (k)->last = NULL;\
+        k->key = NULL;\
+    }\
 }
 
 struct bnt_keyset_priv_ctx {
@@ -64,10 +70,18 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
     if (rules == NULL) {
         new_bnt_channel_rule_ctx(rules);
         hp = cp = rules;
+        if (rules == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_channel_rule_epilogue;
+        }
     } else {
         hp = rules;
         cp = rules->tail;
         new_bnt_channel_rule_ctx(cp->next);
+        if (cp->next == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_channel_rule_epilogue
+        }
         cp->next->last = cp;
         cp = cp->next;
     }
@@ -94,6 +108,8 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
                                                   protection_layer, key, key_size, &handle, encoder);
 
     handle.hash = NULL;
+
+add_bnt_channel_rule_epilogue:
 
     return hp;
 }
@@ -167,8 +183,16 @@ bnt_keychunk_ctx *add_bnt_keychunk(bnt_keychunk_ctx *kchunk, const kryptos_u8_t 
     if (kchunk == NULL) {
         new_bnt_keychunk_ctx(kchunk);
         hp = cp = kchunk->tail = kchunk;
+        if (hp == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_keychunk_epilogue;
+        }
     } else {
         new_bnt_keychunk_ctx(kchunk->tail->next);
+        if (kchunk->tail->next == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_keychunk_epilogue;
+        }
         kchunk->tail = kchunk->tail->next;
         hp = kchunk;
         cp = kchunk->tail;
@@ -177,6 +201,8 @@ bnt_keychunk_ctx *add_bnt_keychunk(bnt_keychunk_ctx *kchunk, const kryptos_u8_t 
     cp->data = (kryptos_u8_t *) kryptos_newseg(data_size);
     cp->data_size = data_size;
     memcpy(cp->data, data, data_size);
+
+add_bnt_keychunk_epilogue:
 
     return hp;
 }
@@ -189,14 +215,25 @@ bnt_keychain_ctx *add_bnt_keychain(bnt_keychain_ctx *kchain, const kryptos_u64_t
 
     if (kchain == NULL) {
         new_bnt_keychain_ctx(kchain);
+        if (kchain == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_keychain_epilogue;
+        }
         kchain->seqno = seqno;
         kchain->tail = kchain;
     } else {
         new_bnt_keychain_ctx(kchain->tail->next);
+        if (kchain->tail->next == NULL) {
+            fprintf(stderr, "ERROR: Not enough memory.\n");
+            goto add_bnt_keychain_epilogue;
+        }
         kchain->tail->next->last = kchain->tail;
         kchain->tail = kchain->tail->next;
         kchain->tail->seqno = seqno;
     }
+
+add_bnt_keychain_epilogue:
+
     return kchain;
 }
 
