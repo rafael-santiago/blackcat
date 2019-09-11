@@ -80,7 +80,7 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
         new_bnt_channel_rule_ctx(cp->next);
         if (cp->next == NULL) {
             fprintf(stderr, "ERROR: Not enough memory.\n");
-            goto add_bnt_channel_rule_epilogue
+            goto add_bnt_channel_rule_epilogue;
         }
         cp->next->last = cp;
         cp = cp->next;
