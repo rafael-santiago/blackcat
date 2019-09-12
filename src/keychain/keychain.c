@@ -263,7 +263,7 @@ static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key
                 handle->hash(&ktask, 0);
             }
             curr_size = (ktask->out_size < kp_size) ? ktask->out_size : kp_size;
-            memcpy(kp, ktask->out, kp_size);
+            memcpy(kp, ktask->out, curr_size);
             if (ktask->in == (*key)) {
                 ktask->in = NULL;
                 ktask->in_size = 0;

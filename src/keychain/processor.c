@@ -339,6 +339,8 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
         }
 
         kryptos_freeseg(temp, temp_size);
+        temp = NULL;
+        temp_size = 0;
 
         ip_end = ip + ip_size;
 
