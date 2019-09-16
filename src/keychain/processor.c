@@ -144,7 +144,7 @@ static kryptos_u8_t *blackcat_otp_meta_processor(const blackcat_protlayer_chain_
     //                  - [Additional step]: encrypt LEPR' with the entire cascade -> C';
     //
     kryptos_u8_t *out = NULL, *temp = NULL;
-    kryptos_u8_t *r = NULL, *xp = NULL, *ip_end, *ip, *data = NULL;
+    kryptos_u8_t *r = NULL, *xp = NULL, *ip_end, *ip = NULL, *data = NULL;
     size_t protlayer_nr = 0, p, xp_size, data_size, temp_size = 0, ip_size;
     kryptos_task_ctx t, *ktask = &t;
     struct blackcat_otp_chain_regs regs;
@@ -392,7 +392,6 @@ blackcat_otp_meta_processor_epilogue:
     }
 
     ip = ip_end = NULL;
-
 
     return out;
 }

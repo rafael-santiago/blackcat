@@ -24,7 +24,7 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(seal, ktask, p_layer,
                                kryptos_run_cipher(seal, *ktask, p_layer->key, p_layer->key_size,
                                                   (kryptos_seal_version_t *)p_layer->arg[0],
                                                   (size_t *)p_layer->arg[1],
-                                                  (size_t *)p_layer->arg[2]))
+                                                  (kryptos_u32_t *)p_layer->arg[2]))
 
 BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
     const char *begin, *end;
@@ -68,8 +68,8 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key
         goto seal_args_reader_epilogue;
     }
 
-    args[2] = (size_t *) kryptos_newseg(sizeof(size_t));
-    *(size_t *)args[2] = atoi(arg);
+    args[2] = (kryptos_u32_t *) kryptos_newseg(sizeof(kryptos_u32_t));
+    *(kryptos_u32_t *)args[2] = atoi(arg);
 
     *argc = 3;
 

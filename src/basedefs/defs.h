@@ -43,7 +43,7 @@ typedef kryptos_u8_t *(*blackcat_kdf_func)(kryptos_u8_t *ikm, size_t ikm_size, s
             printf("BLACKCAT PROCESSOR PANIC [at blackcat_%s()]: %s\n", #name, (*ktask)->result_verbose);\
             exit(1);\
         }*/\
-        if ((*ktask)->iv != NULL && (*ktask)->mode != kKryptosCipherModeNr) {\
+        if ((*ktask)->iv != NULL && p_layer->mode != kKryptosCipherModeNr) {\
             kryptos_freeseg((*ktask)->iv, (*ktask)->iv_size);\
             (*ktask)->iv = NULL;\
             (*ktask)->iv_size = 0;\

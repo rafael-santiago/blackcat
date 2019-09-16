@@ -88,6 +88,10 @@ char *blackcat_keychain_arg_next(const char **begin, const char *end, char *err_
 
     arg_size = (bp_next - bp);
     arg = (char *) kryptos_newseg(arg_size + 1);
+    if (arg == NULL) {
+        fprintf(stderr, "ERROR: Not enough memory to parse cipher argument.\n");
+        goto blackcat_keychain_arg_next_epilogue;
+    }
     memset(arg, 0, arg_size + 1);
     memcpy(arg, bp, arg_size);
 
