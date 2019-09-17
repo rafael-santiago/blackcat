@@ -38,6 +38,9 @@
 # include <cmd/net.h>
 #endif
 #include <cmd/levenshtein_distance.h>
+#if defined(_WIN32)
+# include <kryptos_memory.h>
+#endif
 #if defined(__unix__)
 # include <sys/mman.h>
 #endif
@@ -97,12 +100,22 @@ int blackcat_exec(int argc, char **argv) {
 
 #if defined(__unix__)
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
-        // WARN(Rafael): If the user suspend the machine this will be useless.
+        // WARN(Rafael): If the user suspend her/his machine this will be useless.
         if ((err = mlockall(MCL_CURRENT | MCL_FUTURE)) != 0) {
             perror("mlockall()");
             fprintf(stderr, "ERROR: While applying RAM locking.\n");
             return err;
         }
+    }
+#elif defined(_WIN32)
+    if (blackcat_get_bool_option("no-swap", 0) == 1) {
+        // WARN(Rafael): If the user suspend his/her machine all RAM will be flushed to disk,
+        //               making this effort of not swapping useless.
+
+        // INFO(Rafael): Since all relevant memory allocation is done by using kryptos_newseg()
+        //               the produced effect will be similar (at least its intention) to Unix
+        //               mlockall().
+        kryptos_avoid_ram_swap();
     }
 #else
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
