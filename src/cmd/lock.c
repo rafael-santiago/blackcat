@@ -68,6 +68,7 @@ blackcat_cmd_lock_epilogue:
 }
 
 int blackcat_cmd_lock_help(void) {
-    fprintf(stdout, "use: blackcat lock [<relative file path | glob pattern>]\n");
+    fprintf(stdout, "use: blackcat lock\n"
+                    "              [<relative file path | glob pattern>]\n");
     return 0;
 }

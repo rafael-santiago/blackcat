@@ -67,6 +67,8 @@ blackcat_cmd_rm_epilogue:
 }
 
 int blackcat_cmd_rm_help(void) {
-    fprintf(stdout, "use: blackcat rm <relative file name | glob pattern> [--force]\n");
+    fprintf(stdout, "use: blackcat rm\n"
+                    "              <relative file name | glob pattern>\n"
+                    "              [--force]\n");
     return 0;
 }

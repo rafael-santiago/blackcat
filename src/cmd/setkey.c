@@ -320,8 +320,13 @@ blackcat_cmd_setkey_epilogue:
 }
 
 int blackcat_cmd_setkey_help(void) {
-    fprintf(stdout, "use: blackcat setkey [--keyed-alike --catalog-hash=<hash> "
-                    "--key-hash=<hash> --protection-layer-hash=<hash> --encoder=<encoder> "
-                    "--protection-layer=<algorithm layers> --otp --no-kdf]\n");
+    fprintf(stdout, "use: blackcat setkey\n"
+                    "              --protection-layer=<algorithm layers>\n"
+                    "              [--keyed-alike\n"
+                    "               --catalog-hash=<hash>\n"
+                    "               --key-hash=<hash>\n"
+                    "               --protection-layer-hash=<hash>\n"
+                    "               --encoder=<encoder>\n"
+                    "               --otp --no-kdf]\n");
     return 0;
 }

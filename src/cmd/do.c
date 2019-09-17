@@ -188,6 +188,7 @@ blackcat_cmd_do_epilogue:
 }
 
 int blackcat_cmd_do_help(void) {
-    fprintf(stdout, "use: blackcat do <pre-configured set of commands>\n");
+    fprintf(stdout, "use: blackcat do\n"
+                    "              <pre-configured set of commands>\n");
     return 0;
 }

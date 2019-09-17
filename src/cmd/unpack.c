@@ -38,6 +38,8 @@ blackcat_cmd_unpack_epilogue:
 }
 
 int blackcat_cmd_unpack_help(void) {
-    fprintf(stdout, "use: blackcat unpack <file path> [<dir path>]\n");
+    fprintf(stdout, "use: blackcat unpack\n"
+                    "              <file path>\n"
+                    "              [<dir path>]\n");
     return 0;
 }

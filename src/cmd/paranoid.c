@@ -82,8 +82,15 @@ int blackcat_cmd_paranoid(void) {
 }
 
 int blackcat_cmd_paranoid_help(void) {
-    fprintf(stdout, "use: blackcat paranoid [--bury | --bury-repo | --dig-up | --dig-up-repo | "
-                    "--find-hooks | --disable-history | --enable-history | --clear-history]\n");
+    fprintf(stdout, "use: blackcat paranoid\n"
+                    "               [--bury            |\n"
+                    "                --bury-repo       |\n"
+                    "                --dig-up          |\n"
+                    "                --dig-up-repo     |\n"
+                    "                --find-hooks      |\n"
+                    "                --disable-history |\n"
+                    "                --enable-history  |\n"
+                    "                --clear-history   ]\n");
     return 0;
 }
 

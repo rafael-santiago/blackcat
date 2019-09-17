@@ -93,7 +93,9 @@ blackcat_cmd_add_epilogue:
 }
 
 int blackcat_cmd_add_help(void) {
-    fprintf(stdout, "use: blackcat add <relative file path | glob pattern> [--plain | --lock]\n");
+    fprintf(stdout, "use: blackcat add\n"
+                    "              <relative file path | glob pattern>\n"
+                    "              [--plain | --lock]\n");
     return 0;
 }
 

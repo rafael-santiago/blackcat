@@ -62,7 +62,8 @@ blackcat_cmd_config_epilogue:
 }
 
 int blackcat_cmd_config_help(void) {
-    fprintf(stdout, "use: blackcat config [--update | --remove | --check-integrity]\n");
+    fprintf(stdout, "use: blackcat config\n"
+                    "              [--update | --remove | --check-integrity]\n");
     return 0;
 }
 

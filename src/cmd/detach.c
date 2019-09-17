@@ -27,6 +27,7 @@ blackcat_cmd_detach_epilogue:
 }
 
 int blackcat_cmd_detach_help(void) {
-    fprintf(stdout, "use: blackcat detach --dest=<metainfo file path>\n");
+    fprintf(stdout, "use: blackcat detach\n"
+                    "              --dest=<metainfo file path>\n");
     return 0;
 }

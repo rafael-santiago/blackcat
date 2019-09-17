@@ -23,7 +23,7 @@ libbbase.preloading() {
 project libbbase : toolset $curr_tool : dependencies $deps : $src, $inc, $cflags, $lib, $ldflags, "libbbase.a";
 
 libbbase.prologue() {
-    if (build("libkryptos") != 0 || build("libcutest") != 0) {
+    if (build("libkryptos") != 0 || build("libcutest") != 0 || build("libaccacia")) {
         hefesto.project.abort(1);
     }
 

@@ -27,6 +27,7 @@ blackcat_cmd_attach_epilogue:
 }
 
 int blackcat_cmd_attach_help(void) {
-    fprintf(stdout, "use: blackcat attach --src=<metainfo file path>\n");
+    fprintf(stdout, "use: blackcat attach\n"
+                    "              --src=<metainfo file path>\n");
     return 0;
 }

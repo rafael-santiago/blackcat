@@ -79,8 +79,13 @@ int blackcat_cmd_net(void) {
 }
 
 int blackcat_cmd_net_help(void) {
-    fprintf(stdout, "use: blackcat net [--add-rule | --run | --drop-rule | "
-                    "--mk-dh-params | --mk-dh-key-pair | --skey-xchg ]\n");
+    fprintf(stdout, "use: blackcat net\n"
+                    "              [--add-rule       |\n"
+                    "               --run            |\n"
+                    "               --drop-rule      |\n"
+                    "               --mk-dh-params   |\n"
+                    "               --mk-dh-key-pair |\n"
+                    "               --skey-xchg      ]\n");
     return 0;
 }
 

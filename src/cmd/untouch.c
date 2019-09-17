@@ -69,6 +69,9 @@ blackcat_cmd_untouch_epilogue:
 }
 
 int blackcat_cmd_untouch_help(void) {
-    fprintf(stdout, "use: blackcat untouch [<glob pattern>, <relative path list> --hard]\n");
+    fprintf(stdout, "use: blackcat untouch\n"
+                    "              [<glob pattern>,\n"
+                    "               <relative path list>\n"
+                    "               --hard]\n");
     return 0;
 }

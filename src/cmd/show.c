@@ -63,6 +63,10 @@ blackcat_cmd_show_epilogue:
 }
 
 int blackcat_cmd_show_help(void) {
-    fprintf(stdout, "use: blackcat show <ciphers | hmacs | hashes | encoders>\n");
+    fprintf(stdout, "use: blackcat show\n"
+                    "              <ciphers |\n"
+                    "               hmacs   |\n"
+                    "               hashes  |\n"
+                    "               encoders>\n");
     return 0;
 }

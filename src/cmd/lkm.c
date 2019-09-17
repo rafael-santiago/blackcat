@@ -40,7 +40,8 @@ int blackcat_cmd_lkm(void) {
 }
 
 int blackcat_cmd_lkm_help(void) {
-    fprintf(stdout, "use: blackcat lkm --load [<path>]\n");
+    fprintf(stdout, "use: blackcat lkm\n"
+                    "              --load [<path>]\n");
     return 0;
 }
 

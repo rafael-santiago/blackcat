@@ -69,6 +69,7 @@ blackcat_cmd_unlock_epilogue:
 }
 
 int blackcat_cmd_unlock_help(void) {
-    fprintf(stdout, "use: blackcat unlock [<relative file path | glob pattern>]\n");
+    fprintf(stdout, "use: blackcat unlock\n"
+                    "              [<relative file path | glob pattern>]\n");
     return 0;
 }
