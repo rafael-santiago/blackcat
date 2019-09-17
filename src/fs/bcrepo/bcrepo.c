@@ -503,6 +503,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
                 touch_nr = 0;
                 goto bcrepo_untouch_epilogue;
             }
+            memset(st, 0, sizeof(st));
         }
     }
 
@@ -519,6 +520,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
     int touch_nr = 0;
     char fullpath[4096];
     bfs_catalog_relpath_ctx *fp;
+    struct stat st;
 
     if (catalog == NULL) {
         goto bcrepo_untouch_epilogue;
@@ -555,6 +557,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
                 touch_nr = 0;
                 goto bcrepo_untouch_epilogue;
             }
+            memset(st, 0, sizeof(st));
         }
     }
 
