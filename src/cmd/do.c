@@ -172,12 +172,11 @@ int blackcat_cmd_do(void) {
                                       argc = 0;
                                   }, 1)
 
-    chdir(cwd);
-    memset(cwd, 0, sizeof(cwd));
-
 blackcat_cmd_do_epilogue:
 
     if (session != NULL) {
+        chdir(cwd);
+        memset(cwd, 0, sizeof(cwd));
         del_blackcat_exec_session_ctx(session);
     }
 
