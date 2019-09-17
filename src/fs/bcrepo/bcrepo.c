@@ -1311,7 +1311,7 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
     char filepath[4096], temp[4096], oldcwd[4096], *rp = NULL;
 
     if ((rp = bcrepo_get_rootpath()) != NULL) {
-        fprintf(stderr, "ERROR: You are inside a previosly initialized repo.\n");
+        fprintf(stderr, "ERROR: You are inside a previously initialized repo.\n");
         no_error = 0;
         goto bcrepo_unpack_epilogue;
     }
