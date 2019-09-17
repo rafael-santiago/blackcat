@@ -462,6 +462,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
     struct utimbuf tmb;
     char fullpath[4096];
     bfs_catalog_relpath_ctx *fp;
+    struct stat st;
 
     if (catalog == NULL) {
         goto bcrepo_untouch_epilogue;
@@ -482,6 +483,31 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
         }
     }
 
+    if (touch_nr > 0) {
+        // INFO(Rafael): It is important untouch '.bcrepo/CATALOG' and '.bcrepo/CONFIG'.
+        //               Otherwise the deniable encryption attempt could be harmed by
+        //               leaking file times of those two files.
+        bcrepo_catalog_file(fullpath, sizeof(fullpath), rootpath);
+        done = (hard) ? (utime(fullpath, &tmb) == 0 && setfilectime(fullpath) == 0) : (utime(fullpath, &tmb) == 0);
+        if (!done) {
+            fprintf(stderr, "ERROR: When untouching catalog file.\n");
+            touch_nr = 0;
+            goto bcrepo_untouch_epilogue;
+        }
+        bcrepo_mkpath(fullpath, sizeof(fullpath) - 1, rootpath, rootpath_size,
+                      BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+        if (bstat(fullpath, &st) == 0) {
+            done = (hard) ? (utime(fullpath, &tmb) == 0 && setfilectime(fullpath) == 0) : (utime(fullpath, &tmb) == 0);
+            if (!done) {
+                fprintf(stderr, "ERROR: When untouching config file.\n");
+                touch_nr = 0;
+                goto bcrepo_untouch_epilogue;
+            }
+        }
+    }
+
+    // TODO(Rafael)(?): Maybe untouch directories/subdirectories and .bcrepo when hard is asked.
+
 bcrepo_untouch_epilogue:
 
     return touch_nr;
@@ -500,7 +526,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
 
     for (fp = catalog->files; fp != NULL; fp = fp->next) {
         if (pattern == NULL || strglob(fp->path, pattern)) {
-            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, fp->path, fp->path_size);            
+            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, fp->path, fp->path_size);
             if (setfiletime(fullpath, hard) == 0) {
                 touch_nr++;
             } else {
@@ -508,6 +534,31 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
             }
         }
     }
+
+    if (touch_nr > 0) {
+        // INFO(Rafael): It is important untouch '.bcrepo/CATALOG' and '.bcrepo/CONFIG'.
+        //               Otherwise the deniable encryption attempt could be harmed by
+        //               leaking file times of those two files.
+        bcrepo_catalog_file(fullpath, sizeof(fullpath), rootpath);
+        done = (setfiletime(fullpath, hard) == 0);
+        if (!done) {
+            fprintf(stderr, "ERROR: When untouching catalog file.\n");
+            touch_nr = 0;
+            goto bcrepo_untouch_epilogue;
+        }
+        bcrepo_mkpath(fullpath, sizeof(fullpath) - 1, rootpath, rootpath_size,
+                      BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
+        if (bstat(fullpath, &st) == 0) {
+            done = (setfiletime(fullpath, hard) == 0);
+            if (!done) {
+                fprintf(stderr, "ERROR: When untouching config file.\n");
+                touch_nr = 0;
+                goto bcrepo_untouch_epilogue;
+            }
+        }
+    }
+
+    // TODO(Rafael)(?): Maybe untouch directories/subdirectories and .bcrepo when hard is asked.
 
 bcrepo_untouch_epilogue:
 
