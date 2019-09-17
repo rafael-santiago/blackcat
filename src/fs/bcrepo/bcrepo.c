@@ -503,7 +503,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
                 touch_nr = 0;
                 goto bcrepo_untouch_epilogue;
             }
-            memset(st, 0, sizeof(st));
+            memset(&st, 0, sizeof(st));
         }
     }
 
@@ -557,7 +557,7 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
                 touch_nr = 0;
                 goto bcrepo_untouch_epilogue;
             }
-            memset(st, 0, sizeof(st));
+            memset(&st, 0, sizeof(st));
         }
     }
 
