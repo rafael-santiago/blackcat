@@ -79,8 +79,9 @@ blackcat_cmd_decoy_epilogue:
 
 int blackcat_cmd_decoy_help(void) {
     fprintf(stdout, "use: blackcat decoy\n"
-    "                              <files>\n"
-    "                              --fsize=<n>\n"
-    "                              [--encoder=<uuencode | base64> --overwrite]\n");
+                    "              <files>\n"
+                    "              --fsize=<n>\n"
+                    "              [--encoder=<uuencode | base64>\n"
+                    "              --overwrite]\n");
     return 0;
 }

@@ -4202,7 +4202,7 @@ static int is_metadata_compatible(const char *version) {
     }
 
     if (!is) {
-        fprintf(stderr, "ERROR: Your repository was created with a incompatible version (%s).\n"
+        fprintf(stderr, "ERROR: Your repository was created with an incompatible version (%s).\n"
                         "       Try to use that old version or rebase your repo with this version (%s).\n",
                         version, BCREPO_METADATA_VERSION);
     }
