@@ -2463,16 +2463,31 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 
     CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
+#else
+# error Some code wanted.
+#endif
 
     CUTE_ASSERT(blackcat("untouch etc/s2.txt --hard", "Exempt", NULL) == 0);
 
     CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
 
+#if defined(__unix__)
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
+    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
+    CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) != 0);
+#else
+# error Some code wanted.
+#endif
 
     CUTE_ASSERT(blackcat("deinit", "Exempt", NULL) == 0);
 

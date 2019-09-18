@@ -601,7 +601,7 @@ static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpat
     DIR *dir = NULL;
     struct dirent *dt;
     char *filename = NULL;
-    char fullpath[4096];
+    char fullpath[4096], *fp;
     struct stat st;
     size_t fullpath_size;
 
@@ -628,6 +628,11 @@ static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpat
 
         fullpath_size = bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, filename, strlen(filename));
 
+        // INFO(Rafael): I prefer replacing '/' by '\\'. It will no hurt.
+        while ((fp = strstr(fullpath, "/")) != NULL) {
+            *fp = '\\';
+        }
+
         if (bstat(fullpath, &st) == 0) {
             if (S_ISDIR(st.st_mode)) {
                 err = bcrepo_untouch_directories(fullpath, fullpath_size);
@@ -641,7 +646,7 @@ static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpat
 
     if (err == 0) {
         // INFO(Rafael): Not hard because the feature behavior must be equal among different platforms.
-        err = setfiletime(fullpath, 0);
+        err = setfiletime(rootpath, 0);
     }
 
 bcrepo_untouch_directories_epilogue:
@@ -1796,12 +1801,14 @@ static int setfiletime(const char *path, const int hard) {
     HANDLE h;
     int err;
 
+    // INFO(Rafael): We will try anyway, even it failing.
+
     if ((h = CreateFile(path,
                         GENERIC_WRITE,
-                        0,
+                        FILE_SHARE_READ,
                         NULL,
                         OPEN_EXISTING,
-                        0, NULL)) == INVALID_HANDLE_VALUE) {
+                        FILE_FLAG_BACKUP_SEMANTICS, NULL)) == INVALID_HANDLE_VALUE) {
         return ENOENT;
     }
 
