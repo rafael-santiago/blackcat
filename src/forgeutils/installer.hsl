@@ -64,22 +64,30 @@ local function do_install() : result type int {
     }
 
     $src.add_item("../doc/MANUAL.txt");
-    $src.add_item("../etc/man/blackcat.1");
-    $src.add_item("../bin/blackcat");
-    $src.add_item("lib/libbcsck.so");
+    if (hefesto.sys.os_name() != "windows") {
+        $src.add_item("../etc/man/blackcat.1");
+        $src.add_item("../bin/blackcat");
+        $src.add_item("lib/libbcsck.so");
+    } else {
+        $src.add_item("../bin/blackcat.exe");
+    }
 
     if ($has_dev) {
         $dest.add_item("/usr/local/share/blackcat/lkm");
     }
 
-    $dest.add_item("/usr/local/share/blackcat/doc");
-    $dest.add_item("/usr/local/man/man1");
-    $dest.add_item("/usr/local/bin");
-
-    if (isdir("/lib")) {
-        $dest.add_item("/lib");
+    if (hefesto.sys.os_name() != "windows") {
+        $dest.add_item("/usr/local/share/blackcat/doc");
+        $dest.add_item("/usr/local/man/man1");
+        $dest.add_item("/usr/local/bin");
+        if (isdir("/lib")) {
+            $dest.add_item("/lib");
+        } else {
+            $dest.add_item("/usr/local/share/blackcat/lib");
+        }
     } else {
-        $dest.add_item("/usr/local/share/blackcat/lib");
+        $dest.add_item("C:\\blackcat\\doc");
+        $dest.add_item("C:\\blackcat\\bin");
     }
 
     var f type int;
@@ -104,34 +112,60 @@ local function do_install() : result type int {
         $f = $f + 1;
     }
 
+    if (hefesto.sys.os_name() == "windows") {
+        var path_data type string;
+        $path_data = get_windows_path_env_var_content();
+        if ($path_data.match("C:\\\\blackcat\\\\bin") == 0) {
+            if ($path_data.at($path_data.len() - 1) != ";") {
+                $path_data = $path_data + ";";
+            }
+            $path_data = $path_data + "C:\\blackcat\\bin";
+            if (hefesto.sys.setenv("WINREG:HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\PATH",
+                                   $path_data) != 0) {
+                hefesto.sys.echo("WARN: Unable to export blackcat executable's path.\n" +
+                                 "      Do it own your own.\n");
+
+            }
+        } else {
+            hefesto.sys.echo("WARN: Blackcat executable's path already exported.\n");
+        }
+    }
+
     result 0;
 }
 
 function do_uninstall() : result type int {
     var src type list;
 
-    if (isfile("/usr/local/share/blackcat/lib/libbcsck.so")) {
-        $src.add_item("/usr/local/share/blackcat/lib/libbcsck.so");
+    if (hefesto.sys.os_name() != "windows") {
+        if (isfile("/usr/local/share/blackcat/lib/libbcsck.so")) {
+            $src.add_item("/usr/local/share/blackcat/lib/libbcsck.so");
+        }
+
+        if (hefesto.sys.os_name() == "netbsd") {
+            $src.add_item("/usr/local/share/blackcat/lkm/blackcat.kmod");
+        } else if (hefesto.sys.os_name() == "freebsd" || hefesto.sys.os_name() == "linux") {
+            $src.add_item("/usr/local/share/blackcat/lkm/blackcat.ko");
+        }
+        $src.add_item("/usr/local/share/blackcat/doc/MANUAL.txt");
+
+        $src.add_item("/usr/local/share/blackcat");
+        $src.add_item("/usr/local/share/blackcat/doc");
+        $src.add_item("/usr/local/share/blackcat/lkm");
+
+        if (isdir("/usr/local/share/blackcat/lib")) {
+            $src.add_item("/usr/local/share/blackcat/lib");
+        }
+
+        $src.add_item("/usr/local/man/man1/blackcat.1");
+        $src.add_item("/usr/local/bin/blackcat");
+        $src.add_item("/lib/libbcsck.so");
+    } else {
+        $src.add_item("C:\\blackcat\\doc\\MANUAL.txt");
+        $src.add_item("C:\\blackcat\\bin\\blackcat.exe");
+        $src.add_item("C:\\blackcat\\doc");
+        $src.add_item("C:\\blackcat\\bin");
     }
-
-    if (hefesto.sys.os_name() == "netbsd") {
-        $src.add_item("/usr/local/share/blackcat/lkm/blackcat.kmod");
-    } else if (hefesto.sys.os_name() == "freebsd" || hefesto.sys.os_name() == "linux") {
-        $src.add_item("/usr/local/share/blackcat/lkm/blackcat.ko");
-    }
-    $src.add_item("/usr/local/share/blackcat/doc/MANUAL.txt");
-
-    $src.add_item("/usr/local/share/blackcat");
-    $src.add_item("/usr/local/share/blackcat/doc");
-    $src.add_item("/usr/local/share/blackcat/lkm");
-
-    if (isdir("/usr/local/share/blackcat/lib")) {
-        $src.add_item("/usr/local/share/blackcat/lib");
-    }
-
-    $src.add_item("/usr/local/man/man1/blackcat.1");
-    $src.add_item("/usr/local/bin/blackcat");
-    $src.add_item("/lib/libbcsck.so");
 
     var s type int;
 
@@ -153,7 +187,23 @@ function do_uninstall() : result type int {
     if (hefesto.sys.os_name() == "netbsd" || hefesto.sys.os_name() == "linux" || hefesto.sys.os_name() == "freebsd") {
         hefesto.sys.echo("INFO: If you have ran the blackcat's LKM you must reboot your system to remove " +
                          "it from your kernel.\n");
+    } else if (hefesto.sys.os_name() == "windows") {
+        var path_data type string;
+        $path_data = get_windows_path_env_var_content();
+        if ($path_data.replace(";C:\\\\blackcat\\\\bin", "") > 0) {
+            if (hefesto.sys.setenv("WINREG:HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\PATH",
+                                   $path_data) != 0) {
+                hefesto.sys.echo("WARN: Unable to unexport blackcat executable's path.\n" +
+                                 "      Do it own your own.\n");
+           }
+        }
     }
 
     result 0;
+}
+
+local function get_windows_path_env_var_content() : result type string {
+    var path type string;
+    $path = hefesto.sys.env("WINREG:HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\PATH");
+    result $path;
 }
