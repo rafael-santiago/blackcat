@@ -123,7 +123,7 @@ local function do_install() : result type int {
             if (hefesto.sys.setenv("WINREG:HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\PATH",
                                    $path_data) != 0) {
                 hefesto.sys.echo("WARN: Unable to export blackcat executable's path.\n" +
-                                 "      Do it own your own.\n");
+                                 "      Do it on your own.\n");
 
             }
         } else {
@@ -194,7 +194,7 @@ function do_uninstall() : result type int {
             if (hefesto.sys.setenv("WINREG:HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\PATH",
                                    $path_data) != 0) {
                 hefesto.sys.echo("WARN: Unable to unexport blackcat executable's path.\n" +
-                                 "      Do it own your own.\n");
+                                 "      Do it on your own.\n");
            }
         }
     }
