@@ -345,14 +345,34 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     size_t protkey_size;
     char oldcwd[4096];
     FILE *fp;
-    struct stat st_old, st_curr;
+    struct stat st_old, st_curr, etc_old, etc_curr, bcrepo_old, bcrepo_curr;
     struct blackcat_keychain_handle_ctx handle;
+    char str_time[100];
 
     // INFO(Rafael): Bootstrapping the test repo.
 
-    remove(".bcrepo/CATALOG");
-    remove(".bcrepo/rescue");
-    rmdir(".bcrepo");
+    remove("untouch-test/.bcrepo/CATALOG");
+    remove("untouch-test/.bcrepo/rescue");
+    remove("untouch-test/etc/sensitive.txt");
+    remove("untouch-test/plain.txt");
+    remove("untouch-test/.get_test_protlayer");
+    rmdir("untouch-test/.bcrepo");
+    rmdir("untouch-test/etc");
+    rmdir("untouch-test");
+
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("untouch-test", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("untouch-test") == 0);
+#endif
+
+    CUTE_ASSERT(chdir("untouch-test") == 0);
+
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#endif
 
     catalog = new_bfs_catalog_ctx();
 
@@ -414,10 +434,10 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
 
     rootpath_size = strlen(rootpath);
 
-    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "sensitive.txt") == 1);
+    CUTE_ASSERT(save_text(sensitive, strlen(sensitive), "etc/sensitive.txt") == 1);
     CUTE_ASSERT(save_text(plain, strlen(plain), "plain.txt") == 1);
 
-    pattern = "sensitive.txt";
+    pattern = "etc/sensitive.txt";
     CUTE_ASSERT(bcrepo_add(&catalog, rootpath, rootpath_size, pattern, strlen(pattern), 0) == 1);
 
     CUTE_ASSERT(catalog->files != NULL);
@@ -431,61 +451,118 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(catalog->files->head == catalog->files);
     CUTE_ASSERT(catalog->files->tail == catalog->files->next);
 
-    CUTE_ASSERT(stat("sensitive.txt", &st_old) == 0);
+    CUTE_ASSERT(stat(".bcrepo", &bcrepo_old) == 0);
 
-    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "sensitive.txt", 13, 0) == 1);
+    CUTE_ASSERT(stat("etc", &etc_old) == 0);
 
-    CUTE_ASSERT(stat("sensitive.txt", &st_curr) == 0);
+    CUTE_ASSERT(stat("etc/sensitive.txt", &st_old) == 0);
 
-#if defined(__unix__)
-# define BLACKCAT_EPOCH 26705100
+    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "etc/sensitive.txt", 13, 0) == 1);
 
+    CUTE_ASSERT(stat("etc/sensitive.txt", &st_curr) == 0);
+
+    CUTE_ASSERT(stat("etc", &etc_curr) == 0);
+
+#if defined(__unix__) || defined(_WIN32)
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
-    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
-    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) == 0);
+    CUTE_ASSERT(memcmp(&etc_curr.st_atim, &etc_old.st_atim, sizeof(etc_old.st_atime)) == 0);
+    CUTE_ASSERT(memcmp(&etc_curr.st_mtim, &etc_old.st_atim, sizeof(etc_old.st_mtime)) == 0);
+    CUTE_ASSERT(memcmp(&etc_curr.st_ctim, &etc_old.st_ctim, sizeof(etc_old.st_ctime)) == 0);
 
-    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "sensitive.txt", 13, 1) == 1);
+    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "etc/sensitive.txt", 13, 1) == 1);
 
-    CUTE_ASSERT(stat("sensitive.txt", &st_curr) == 0);
+    CUTE_ASSERT(stat("etc/sensitive.txt", &st_curr) == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
-    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
-    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
-    CUTE_ASSERT(st_curr.st_ctim.tv_sec == BLACKCAT_EPOCH);
-# undef BLACKCAT_EPOCH
-#elif defined(_WIN32)
-# define BLACKCAT_EPOCH 26705100
 
-    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
-    //CUTE_ASSERT(st_curr.st_atime == BLACKCAT_EPOCH);
-    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
-    //CUTE_ASSERT(st_curr.st_mtime == BLACKCAT_EPOCH);
-    CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) == 0);
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_ctim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(bcrepo_untouch(catalog, rootpath, rootpath_size, "sensitive.txt", 13, 1) == 1);
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
 
-    CUTE_ASSERT(stat("sensitive.txt", &st_curr) == 0);
+    CUTE_ASSERT(stat("etc", &etc_curr) == 0);
 
-    CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
-    //CUTE_ASSERT(st_curr.st_atime == BLACKCAT_EPOCH);
-    CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
-    //CUTE_ASSERT(st_curr.st_mtime == BLACKCAT_EPOCH);
-    CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) != 0);
-    //CUTE_ASSERT(st_curr.st_ctime == BLACKCAT_EPOCH);
-# undef BLACKCAT_EPOCH
+    CUTE_ASSERT(memcmp(&etc_curr.st_atim, &etc_old.st_atim, sizeof(etc_old.st_atime)) != 0);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_atim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
+    CUTE_ASSERT(memcmp(&etc_curr.st_mtim, &etc_old.st_mtim, sizeof(etc_old.st_mtime)) != 0);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_mtim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
+    CUTE_ASSERT(stat(".bcrepo", &bcrepo_curr) == 0);
+
+    CUTE_ASSERT(memcmp(&bcrepo_curr.st_atim, &bcrepo_old.st_atim, sizeof(bcrepo_old.st_atime)) != 0);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_atim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+
+    CUTE_ASSERT(memcmp(&bcrepo_curr.st_mtim, &bcrepo_old.st_mtim, sizeof(bcrepo_old.st_mtime)) != 0);
+
+    g_cute_leak_check = !g_cute_leak_check;
+    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_mtim.tv_sec));
+    g_cute_leak_check = !g_cute_leak_check;
+
+    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
 #else
 # error Some code wanted.
 #endif
 
     CUTE_ASSERT(bcrepo_deinit(rootpath, rootpath_size, key, strlen(key)) == 1);
 
-    remove("sensitive.txt");
+    remove("etc/sensitive.txt");
     remove("plain.txt");
     remove("metainfo.txt");
+    remove(".get_test_protlayer");
+    rmdir("etc");
+
+    CUTE_ASSERT(chdir("..") == 0);
+
+    CUTE_ASSERT(rmdir("untouch-test") == 0);
 
     kryptos_freeseg(rootpath, rootpath_size);
     catalog->protection_layer = catalog->bc_version = NULL;

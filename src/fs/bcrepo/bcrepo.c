@@ -217,6 +217,8 @@ static void bcrepo_info_kdf_params(const char *kdf_params, const size_t kdf_para
 
 static kryptos_u8_t *get_random_catalog_salt(size_t *out_size);
 
+static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpath_size);
+
 const char *bcrepo_metadata_version(void) {
     return BCREPO_METADATA_VERSION;
 }
@@ -455,6 +457,79 @@ bcrepo_config_remove_epilogue:
 }
 
 #if defined(__unix__)
+
+static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpath_size) {
+    char cwd[4096], *cwd_p;
+    int err = EFAULT;
+    DIR *dir = NULL;
+    struct dirent *dt;
+    char *filename = NULL;
+    char fullpath[4096];
+    struct stat st;
+    size_t fullpath_size;
+    struct utimbuf tmb;
+
+    if ((cwd_p = getcwd(cwd, sizeof(cwd) - 1)) == NULL) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    if (chdir(rootpath) == -1) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    if ((dir = opendir(rootpath)) == NULL) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    err = 0;
+
+    tmb.actime = BLACKCAT_EPOCH;
+    tmb.modtime = BLACKCAT_EPOCH;
+
+    while (err == 0 && (dt = readdir(dir)) != NULL) {
+        filename = dt->d_name;
+
+        if (strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0) {
+            continue;
+        }
+
+        fullpath_size = bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, filename, strlen(filename));
+
+        if (bstat(fullpath, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                err = bcrepo_untouch_directories(fullpath, fullpath_size);
+                if (err == 0) {
+                    err = utime(fullpath, &tmb);
+                }
+            }
+        }
+    }
+
+    if (err == 0) {
+        err = utime(rootpath, &tmb);
+    }
+
+bcrepo_untouch_directories_epilogue:
+
+    if (cwd_p != NULL) {
+        chdir(cwd_p);
+    }
+
+    if (dir != NULL) {
+        closedir(dir);
+    }
+
+    filename = NULL;
+
+    memset(fullpath, 0, sizeof(fullpath));
+
+    memset(&st, 0, sizeof(st));
+
+    dt = NULL;
+
+    return err;
+}
+
 int bcrepo_untouch(bfs_catalog_ctx *catalog,
                    const char *rootpath, const size_t rootpath_size,
                    const char *pattern, const size_t pattern_size, const int hard) {
@@ -507,13 +582,89 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
         }
     }
 
-    // TODO(Rafael)(?): Maybe untouch directories/subdirectories and .bcrepo when hard is asked.
+    if (touch_nr > 0 && hard) {
+        if (bcrepo_untouch_directories(rootpath, rootpath_size) != 0) {
+            touch_nr = 0;
+        }
+    }
 
 bcrepo_untouch_epilogue:
 
     return touch_nr;
 }
+
 #elif defined(_WIN32)
+
+static int bcrepo_untouch_directories(const char *rootpath, const size_t rootpath_size) {
+    char cwd[4096], *cwd_p;
+    int err = EFAULT;
+    DIR *dir = NULL;
+    struct dirent *dt;
+    char *filename = NULL;
+    char fullpath[4096];
+    struct stat st;
+    size_t fullpath_size;
+
+    if ((cwd_p = getcwd(cwd, sizeof(cwd) - 1)) == NULL) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    if (chdir(rootpath) == -1) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    if ((dir = opendir(rootpath)) == NULL) {
+        goto bcrepo_untouch_directories_epilogue;
+    }
+
+    err = 0;
+
+    while (err == 0 && (dt = readdir(dir)) != NULL) {
+        filename = dt->d_name;
+
+        if (strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0) {
+            continue;
+        }
+
+        fullpath_size = bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, filename, strlen(filename));
+
+        if (bstat(fullpath, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                err = bcrepo_untouch_directories(fullpath, fullpath_size);
+                if (err == 0) {
+                    // INFO(Rafael): Not hard because the feature behavior must be equal among different platforms.
+                    err = setfiletime(fullpath, 0);
+                }
+            }
+        }
+    }
+
+    if (err == 0) {
+        // INFO(Rafael): Not hard because the feature behavior must be equal among different platforms.
+        err = setfiletime(fullpath, 0);
+    }
+
+bcrepo_untouch_directories_epilogue:
+
+    if (cwd_p != NULL) {
+        chdir(cwd_p);
+    }
+
+    if (dir != NULL) {
+        closedir(dir);
+    }
+
+    filename = NULL;
+
+    memset(fullpath, 0, sizeof(fullpath));
+
+    memset(&st, 0, sizeof(st));
+
+    dt = NULL;
+
+    return err;
+}
+
 int bcrepo_untouch(bfs_catalog_ctx *catalog,
                    const char *rootpath, const size_t rootpath_size,
                    const char *pattern, const size_t pattern_size, const int hard) {
@@ -559,12 +710,17 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
         }
     }
 
-    // TODO(Rafael)(?): Maybe untouch directories/subdirectories and .bcrepo when hard is asked.
+    if (touch_nr > 0 && hard) {
+        if (bcrepo_untouch_directories(rootpath, rootpath_size) != 0) {
+            touch_nr = 0;
+        }
+    }
 
 bcrepo_untouch_epilogue:
 
     return touch_nr;
 }
+
 #endif
 
 int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
@@ -2539,7 +2695,7 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
     p = path;
 #elif defined(_WIN32)
     if ((p = strstr(path, ":\\")) != NULL ||
-        (p = strstr(path, ":/")) != NULL)  {        
+        (p = strstr(path, ":/")) != NULL)  {
         p += 1;
     } else {
         p = path;
@@ -3109,7 +3265,6 @@ kryptos_u8_t *bcrepo_hash_key(const kryptos_u8_t *key,
     if (!kryptos_last_task_succeed(ktask)) {
         goto bcrepo_hash_key_epilogue;
     }
-
 
 bcrepo_hash_key_epilogue:
 

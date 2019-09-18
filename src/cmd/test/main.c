@@ -2407,8 +2407,27 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s3.txt");
     remove("p.txt");
     rmdir("etc");
+    remove("untouch-test/etc/s2.txt");
+    remove("untouch-test/s1.txt");
+    remove("untouch-test/s3.txt");
+    remove("untouch-test/p.txt");
+    rmdir("untouch-test/etc");
+    rmdir("untouch-test");
 
     // INFO(Rafael): Untouch tests.
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // WARN(Rafael): Do not run this test outside untouch-test directory, otherwise it can recusivelly screw up!
+    //               source codes file time info.                                                              !
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("untouch-test", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("untouch-test") == 0);
+#endif
+
+    CUTE_ASSERT(chdir("untouch-test") == 0);
 
 #if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
@@ -2438,10 +2457,6 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("add p.txt --plain", "Exempt", NULL) == 0);
     CUTE_ASSERT(blackcat("add s3.txt --lock", "Exempt", NULL) == 0);
 
-#if defined(__unix__)
-
-#define BLACKCAT_EPOCH 26705100
-
     CUTE_ASSERT(stat("etc/s2.txt", &st_old) == 0);
 
     CUTE_ASSERT(blackcat("untouch etc/s2.txt", "Exempt", NULL) == 0);
@@ -2449,25 +2464,15 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
-    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
-    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
-    CUTE_ASSERT(st_curr.st_ctim.tv_sec != BLACKCAT_EPOCH);
 
     CUTE_ASSERT(blackcat("untouch etc/s2.txt --hard", "Exempt", NULL) == 0);
 
     CUTE_ASSERT(stat("etc/s2.txt", &st_curr) == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
-    CUTE_ASSERT(st_curr.st_atim.tv_sec == BLACKCAT_EPOCH);
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
-    CUTE_ASSERT(st_curr.st_mtim.tv_sec == BLACKCAT_EPOCH);
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
-    CUTE_ASSERT(st_curr.st_ctim.tv_sec == BLACKCAT_EPOCH);
-
-#undef BLACKCAT_EPOCH
-
-#endif
 
     CUTE_ASSERT(blackcat("deinit", "Exempt", NULL) == 0);
 
@@ -2476,6 +2481,8 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s3.txt");
     remove("p.txt");
     rmdir("etc");
+    chdir("..");
+    rmdir("untouch-test");
 
     // INFO(Rafael): Config tests.
 
