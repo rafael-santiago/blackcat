@@ -32,11 +32,12 @@
 # include <cmd/lkm.h>
 # include <cmd/net.h>
 #endif
+#include <cmd/did_you_mean.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 
-DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
+static DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(help_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(init_help),
     BLACKCAT_COMMAND_TABLE_ENTRY(deinit_help),
@@ -66,7 +67,7 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
     BLACKCAT_COMMAND_TABLE_ENTRY(do_help)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
-DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)
+static DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)
 
 int blackcat_cmd_help(void) {
     size_t h;
@@ -102,6 +103,7 @@ int blackcat_cmd_help(void) {
 
         if (exit_code != 0) {
             fprintf(stderr, "No help entry for '%s'.\n", topic);
+            did_you_mean(topic, 2);
             goto blackcat_cmd_help_epilogue;
         }
 
