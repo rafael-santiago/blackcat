@@ -1,10 +1,34 @@
-Blackcat user's guide
-=====================
+                             @2
+                            MMM
+                        aMMMMMM
+                      ZMMMMMMMMM0
+                     @MMMMMMMMMMMM
+                    rMMMMMMMMMMMMM
+                   MMMMMMMMMMMMMMMM
+               XMMMMMMMMMMMMMMMMMM
+           @MMMMMMMMMMMMMMMMMM
+         MMMMMMMMMMMMMMMMMMMMM
+       ZMMMMMMMMMMMMMMMMMMMMMM
+      :MMMMMMMMMMMMMMMMMMMMM0           B  l  a  c  k  c  a  t   u  s  e  r'  s   g  u  i  d  e
+     0MMMMMMMMMMMMMMMMMMMMM            = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    MMMMMMMMMMMMMMMMMMMMMM
+   MMMMMMMMMMMMMMMMMMMMM
+  MMMMMMMMMMMMMMMMMMM;
+  MMMMMMMMMMMMMMMMMMM
+  MMMMMMMMMMMMMMMMMMM
+  MMMMMMMMMMMMMMMMMMM
+  MMMMMMMMMMMMMMMMMMM
+  MMMMMMMMMMMMMMMMMM8
+  MMMMMMMMMMMMMMMMMM                i,
+  MMMMMMMMMMMMMMM MM               MMMM
+ MMMMMMMMMMMMMMB  MM i             MMM0
+rMMMMMMMMMMMMMMMMrMMMMM           MMMM
+ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMX
 
 (obvious) Abstract: In this document you will find basic information about how to use the blackcat
                     command line tool and its subsystems.
 
-Wtf is this?
+Wtf is that?
 ============
 
 Talking about cryptography, I am paranoid. I have been spending some years studying a little this
@@ -1367,6 +1391,6 @@ In this case, use the cloud but encrypt what is relevant to you. Also put a bunc
 for screwing up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone
 should do the same, just for making the web more "friendly" again.
 
-Using crypto is a way of saying: if you want to apply your tracking policy over me you will need to do
-it more directed buddy and if you want to track naïve people, nice but not me, because I am using
-crypto. Your fishing net must be thinner for catching me up.
+Moreover using crypto is a way of saying: if you want to apply your tracking policy over me you will need
+to do it more directed and if you want to track naïve people, nice but not me, because I am using some
+crypto... Your fishing net must be thinner for catching me up.
