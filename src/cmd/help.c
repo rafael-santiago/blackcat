@@ -33,6 +33,8 @@
 # include <cmd/net.h>
 #endif
 #include <cmd/did_you_mean.h>
+#include <kryptos_random.h>
+#include <accacia.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -68,6 +70,188 @@ static DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 static DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper)
+
+static char g_bcat_banner_v0[] = {
+    "                          ;\n"
+    "                        MW\n"
+    "                     MM0MMMMMZ\n"
+    "                     aMMMMMMMMMMM\n"
+    "                     .MMMMMMMMMMMM\n"
+    "                      MMMMMMMMMMB\n"
+    "                      .MMMMMMMM\n"
+    "                       MMMMMMMM\n"
+    "                       MMMMMMMMM\n"
+    "                      MMMMMMMMMMM\n"
+    "                     8MMMMMMMMMMM:\n"
+    "                   XMMMMMMMMMMMMMM\n"
+    "                 MMMMMMMMMMMMMMMMM\n"
+    "               MMMMMMMMMMMMMMMMMMM\n"
+    "              MMMMMMMMMMMMMMMMMMMS\n"
+    "             MMMMMMMMMMMMMMMMMMMM\n"
+    "             MMMMMMMMMMMMMMMMMMMM\n"
+    "            2MMMMMMMMMMMMMMMMMMMM\n"
+    "            MMMMMMMMMMMMMMMMMMMMM\n"
+    "            MMMMMMMMMMMMMMMMMMMMM7\n"
+    "           MMMMMMMMMMMMMMMMMM MMMM\n"
+    "           MMMMMMMMMMMMMMMMMM  MMM\n"
+    "           MMMMMMMMMMMMMMMMMMM  MMM\n"
+    "           MMMMMMMMMMMMMMMMMMM  ;MMM\n"
+    "          8MMMMMMMMMMMMMMMMMMM2  MMM0\n"
+    "         iMMMMMMMMMMMMMMMMMMMMM   MMMMM"
+};
+
+static char g_bcat_banner_v1[] = {
+    "                                  @2\n"
+    "                                 MMM\n"
+    "                             aMMMMMM\n"
+    "                           ZMMMMMMMMM0\n"
+    "                          @MMMMMMMMMMMM\n"
+    "                         rMMMMMMMMMMMMM\n"
+    "                        MMMMMMMMMMMMMMMM\n"
+    "                    XMMMMMMMMMMMMMMMMMM\n"
+    "                @MMMMMMMMMMMMMMMMMM\n"
+    "              MMMMMMMMMMMMMMMMMMMMM\n"
+    "            ZMMMMMMMMMMMMMMMMMMMMMM\n"
+    "           :MMMMMMMMMMMMMMMMMMMMM0\n"
+    "          0MMMMMMMMMMMMMMMMMMMMM\n"
+    "         MMMMMMMMMMMMMMMMMMMMMM\n"
+    "        MMMMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMMM;\n"
+    "       MMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMM8\n"
+    "       MMMMMMMMMMMMMMMMMM                i,\n"
+    "       MMMMMMMMMMMMMMM MM               MMMM\n"
+    "      MMMMMMMMMMMMMMB  MM i             MMM0\n"
+    "     rMMMMMMMMMMMMMMMMrMMMMM           MMMM\n"
+    "      MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMX"
+};
+
+static char g_bcat_banner_v2[] = {
+    "                  78MMMMM0i\n"
+    "    ,SSS      aMMMMMMMMMMMMMMM\n"
+    "  MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    " MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    " MMMMZ  ,MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    " MMMM     MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMS\n"
+    "  MMMM    MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "   MMMMM  MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "    0MMMMr MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "      BMMM,XMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM2\n"
+    "        MM  MMMMMMMMM MMMMMMMMMMMMMM      i\n"
+    "           7MMMMMMMM:  ;MMMMMMMMMMM\n"
+    "           MMMMMMMMZ    MMMMMMMMMM0\n"
+    "           MMMMMMMM     .MMMMMMMMM\n"
+    "           MMMMMMMM      MMMM MMMM@\n"
+    "           MMM MMMM     ,MMMM ZMMMM\n"
+    "          8MMMi MMMM     MMMW   MMMM:\n"
+    "           0MMMMaMMMMM:  MMMM    MMMMMr;\n"
+    "                 :MMMMM  :MMMMMr  MMMMMMM"
+};
+
+static char g_bcat_banner_v3[] = {
+    "          ;WBZ;\n"
+    "         MM7SMMMM\n"
+    "        MM\n"
+    "        MZ\n"
+    "       MM\n"
+    "       MM\n"
+    "      MMM\n"
+    "      MMM\n"
+    "     aMMMMM:\n"
+    "     MMMMMMMMM;\n"
+    "    MMMMMMMMMMMMa\n"
+    "    MMMMMMMMMMMMMMr\n"
+    "    MMMMMMMMMMMMMMMM.         ,Z\n"
+    "     MMMMMMMMMMMMMMMMM0     SMMM\n"
+    "      MMMMMMMMMMMMMMMMMMMMMMMMMMMMX\n"
+    "       MMMMMMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "       MMMMMMMMMMMMMMMMMMMMMMMMMMMM,\n"
+    "       MMMMMMMMMMMMMMMMMMMMMMMMMMW.\n"
+    "        MM   MMMWMMMMMMMMMMMMMMMMMMMMMM;\n"
+    "         MMM2         ;7Xri2WMMMMMMMMMMMMMM\n"
+    "           iM                           SMMM"
+};
+
+static char g_bcat_banner_v4[] = {
+    "  M\n"
+    ",MMMM\n"
+    " MMMM\n"
+    "  MMMM\n"
+    "   MMMr\n"
+    "   aMMM:\n"
+    "   ;MMMM          ;Z\n"
+    "    MMMMM      iZ:MM MM\n"
+    "    MMMMMM  MMMMMMMMMM.\n"
+    "    0MMMMMM MMMMMMMMMM\n"
+    "     MMMMMMMMMMMMMMMMMr\n"
+    "      MMMMMMMMMMMMMMMM\n"
+    "      7MMMMMMMMMMMMMMS\n"
+    "       0MMMMMMMMMMMMM\n"
+    "        ;MMMMMMMMMMMM\n"
+    "         MMMMMMMMMMMZ\n"
+    "        MMMMMMMMMMMMM\n"
+    "        MMMMMMMMMMMMMMM\n"
+    "        iMMMMMMMMMMMMMMMB\n"
+    "         MMMMMMMMMMMMMMMMM.\n"
+    "          MMMMMMMMMMMMMMMMMM\n"
+    "          MMMMMMMMMMMMMMMMMMM\n"
+    "         XMMMMMMMMMMMMMMMMMMMM\n"
+    "         WMMMMMMMMMMMMMMMMMMMMM\n"
+    "         MMMMMMMMMMMMMMMMMMMMMMM\n"
+    "         MMMMMMMMMMMMMMMMMMMMMMM:\n"
+    "         MMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "         MMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "         MMM MMMMMMMMMMMMMMMMMMMM\n"
+    "         MMM   :MMMMMMMMMMMMMMMM\n"
+    "       XMMMM MMMMMMMMMMMMMMMMMMi\n"
+    "       ZMMM      XMWZZZZZZZZX,"
+};
+
+static char g_bcat_banner_v5[] = {
+    "                                 W\n"
+    "                               @MMMZ\n"
+    "                               MMMMi\n"
+    "                              SMMM\n"
+    "                              MMM\n"
+    "                             MMMM\n"
+    "                 M          MMMM0\n"
+    "             0M rM Z7      MMMMM,\n"
+    "              MMMMMMMMMM  MMMMMM\n"
+    "              MMMMMMMMMM MMMMMMM\n"
+    "              MMMMMMMMMMMMMMMMM\n"
+    "              MMMMMMMMMMMMMMMM;\n"
+    "               MMMMMMMMMMMMMMW\n"
+    "               MMMMMMMMMMMMMM\n"
+    "               MMMMMMMMMMMMZ\n"
+    "               ,MMMMMMMMMMMr\n"
+    "               MMMMMMMMMMMMM\n"
+    "             MMMMMMMMMMMMMMM\n"
+    "           2MMMMMMMMMMMMMMMZ\n"
+    "          MMMMMMMMMMMMMMMMM\n"
+    "        2MMMMMMMMMMMMMMMMM:\n"
+    "       MMMMMMMMMMMMMMMMMMMS\n"
+    "      MMMMMMMMMMMMMMMMMMMMM\n"
+    "     MMMMMMMMMMMMMMMMMMMMMM\n"
+    "    MMMMMMMMMMMMMMMMMMMMMMM\n"
+    "    MMMMMMMMMMMMMMMMMMMMMMM\n"
+    "   MMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "   MMMMMMMMMMMMMMMMMMMMMMMM\n"
+    "   MMMMMMMMMMMMMMMMMMMM,MMM\n"
+    "    MMMMMMMMMMMMMMMMX   2MM\n"
+    "     MMMMMMMMMMMMMMMMMM MMMMZ\n"
+    "      .XaZZZZZZZBMS      @MMM"
+};
+
+static char *g_bcat_banner[] = {
+    g_bcat_banner_v0, g_bcat_banner_v1,
+    g_bcat_banner_v2, g_bcat_banner_v3,
+    g_bcat_banner_v4, g_bcat_banner_v5
+};
+
+static size_t g_bcat_banner_nr = sizeof(g_bcat_banner) / sizeof(g_bcat_banner[0]);
 
 int blackcat_cmd_help(void) {
     size_t h;
@@ -116,17 +300,22 @@ blackcat_cmd_help_epilogue:
 }
 
 int blackcat_cmd_help_help(void) {
-    fprintf(stdout, "usage: blackcat <command> [options]\n\n"
+    accacia_textstyle(AC_TSTYLE_BOLD);
+    accacia_textcolor(AC_TCOLOR_BLACK);
+    fprintf(stdout, "%s b l a c k c a t  ", g_bcat_banner[kryptos_get_random_byte() % g_bcat_banner_nr]);
+    accacia_screennormalize();
+    fprintf(stdout,  "is Copyright (C) 2004-2019 by Rafael Santiago.\n\n"
+           "Bug reports, feedback, etc: <voidbrainvoid@tutanota.com> or "
+           "<https://github.com/rafael-santiago/blackcat/issues>\n"
+           "_____\nusage: blackcat <command> [options]\n\n"
            "*** If you want to know more about some command you should try: \"blackcat help <command>\".\n"
 #if defined(__unix__)
            "    Do not you know any command name? Welcome newbie! It is time to read some documentation: "
-           "\"man blackcat\"."
+           "\"man blackcat\".\n"
 #elif defined(_WIN32)
            "    Do not you know any command name? Welcome newbie! It is time to read some documentation. "
            "Give it a try by reading 'MANUAL.txt' (probably installed together with your executable).\n"
 #endif
-           "________\nblackcat is Copyright (C) 2004-2019 by Rafael Santiago.\n\n"
-           "Bug reports, feedback, etc: <voidbrainvoid@tutanota.com> or "
-           "<https://github.com/rafael-santiago/blackcat/issues>\n");
+            );
     return 0;
 }
