@@ -1380,7 +1380,8 @@ In order to do that just create the config section "status-viewer" in '.bcrepo/C
 section must hold the end pipe command. Something like:
 
     'status-viewer:
-        less -R
+        less
+
     '
 
 Once it defined into your '.bcrepo/CONFIG' all status output will be directed to your defined viewer.
