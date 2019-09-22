@@ -9,12 +9,15 @@
 #include <cmd/session.h>
 #include <cmd/options.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <fs/bcrepo/config.h>
 #include <fs/strglob.h>
 #include <accacia.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+
+static FILE *get_stddest(void);
 
 int blackcat_cmd_status(void) {
     int exit_code = EINVAL;
@@ -24,6 +27,7 @@ int blackcat_cmd_status(void) {
     time_t t;
     char date[50];
     int a;
+    FILE *stddest = NULL;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_status_epilogue;
@@ -33,24 +37,26 @@ int blackcat_cmd_status(void) {
         status_param = remove_go_ups_from_path(status_param, strlen(status_param) + 1);
     }
 
+    stddest = get_stddest();
+
 #define print_file_info(f, d) {\
     switch (f->status) {\
         case kBfsFileStatusPlain:\
             accacia_textcolor(AC_TCOLOR_GREEN);\
-            fprintf(stdout, "\tplain file: ");\
+            fprintf(stddest, "\tplain file: ");\
             break;\
         case kBfsFileStatusLocked:\
             accacia_textcolor(AC_TCOLOR_RED);\
-            fprintf(stdout, "\tlocked file: ");\
+            fprintf(stddest, "\tlocked file: ");\
             break;\
         case kBfsFileStatusUnlocked:\
             accacia_textcolor(AC_TCOLOR_YELLOW);\
-            fprintf(stdout, "\tunlocked file: ");\
+            fprintf(stddest, "\tunlocked file: ");\
             break;\
         default:\
             break;\
     }\
-    fprintf(stdout, "%s (%s)\n", f->path, d);\
+    fprintf(stddest, "%s (%s)\n", f->path, d);\
     accacia_screennormalize();\
 }
 
@@ -68,7 +74,7 @@ int blackcat_cmd_status(void) {
                                         exit_code = 0;
                                        }, 1)
     } else {
-        fprintf(stdout, "The catalog is empty.\n");
+        fprintf(stddest, "The catalog is empty.\n");
         exit_code = ENOENT;
     }
 
@@ -87,4 +93,46 @@ int blackcat_cmd_status_help(void) {
     fprintf(stdout, "use: blackcat status\n"
                     "              [relative file path | <glob pattern>]\n");
     return 0;
+}
+
+static FILE *get_stddest(void) {
+    FILE *stddest = stdout;
+    struct bcrepo_config_ctx *bcrepo_cfg = NULL;
+    char vcmd[4096];
+    size_t vcmd_size;
+
+    if ((bcrepo_cfg = bcrepo_ld_config()) == NULL) {
+        goto get_stddest_epilogue;
+    }
+
+    if (bcrepo_config_get_section(bcrepo_cfg, "status-viewer") == 0) {
+        goto get_stddest_epilogue;
+    }
+
+    if (bcrepo_config_get_next_word(bcrepo_cfg) == 0) {
+        goto get_stddest_epilogue;
+    }
+
+    vcmd_size = bcrepo_cfg->word_end - bcrepo_cfg->word;
+
+    if (vcmd_size > sizeof(vcmd) - 1) {
+        fprintf(stderr, "ERROR: The status-viewer command is too long.\n");
+        goto get_stddest_epilogue;
+    }
+
+    memset(vcmd, 0, sizeof(vcmd));
+    memcpy(vcmd, bcrepo_cfg->word, vcmd_size);
+
+    if ((stddest = popen(vcmd, "w")) == NULL) {
+        fprintf(stderr, "ERROR: When trying to open status-viewer process. Assuming standard output.\n");
+        stddest = stdout;
+    }
+
+get_stddest_epilogue:
+
+    if (bcrepo_cfg != NULL) {
+        bcrepo_release_config(bcrepo_cfg);
+    }
+
+    return stddest;
 }

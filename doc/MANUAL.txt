@@ -1369,6 +1369,22 @@ Now let's suppose that Alice does not want a KDF anymore:
 Even when you want to just remove the KDF usage, the protection-layer passing is necessary. When
 no KDF is specified the internal stantard derivation method is used instead.
 
+Getting piped status output
+===========================
+
+When your repo's catalog starts growing maybe the status output become hard to handle in a single
+output page screen, thus, what about getting the whole status output directed to less or more
+applications?
+
+In order to do that just create the config section "status-viewer" in '.bcrepo/CONFIG'. This
+section must hold the end pipe command. Something like:
+
+    'status-viewer:
+        less -R
+    '
+
+Once it defined into your '.bcrepo/CONFIG' all status output will be directed to your defined viewer.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
