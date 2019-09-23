@@ -89,7 +89,7 @@ int blackcat_cmd_status(void) {
                                         exit_code = 0;
                                        }, 1)
     } else {
-        fprintf(stddest, "The catalog is empty.\n");
+        fprintf(stdout, "The catalog is empty.\n");
         exit_code = ENOENT;
     }
 

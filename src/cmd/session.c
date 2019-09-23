@@ -70,6 +70,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     accacia_savecursorposition();
 
     fprintf(stdout, "Password: ");
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
     es->key[0] = blackcat_getuserkey(&es->key_size[0]);
 
     if (es->key[0] == NULL) {
@@ -95,6 +98,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
             accacia_savecursorposition();
 
             fprintf(stdout, "Second password: ");
+#if defined(_WIN32)
+            fflush(stdout);
+#endif
             es->key[1] = blackcat_getuserkey(&es->key_size[1]);
 
             if (es->key[1] == NULL) {

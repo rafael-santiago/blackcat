@@ -124,6 +124,9 @@ int blackcat_cmd_setkey(void) {
     accacia_savecursorposition();
 
     fprintf(stdout, "Type the %s: ", prompt);
+#if defined(_WIN32)
+    fflush(stdout);
+#endif
     if ((new_key[0] = blackcat_getuserkey(&new_key_size[0])) == NULL) {
         exit_code = EFAULT;
         fprintf(stderr, "ERROR: Unable to get the user's key.\n");
@@ -134,6 +137,9 @@ int blackcat_cmd_setkey(void) {
     accacia_delline();
 
     fprintf(stdout, "Confirm the %s: ", prompt);
+#if defined(_WIN32)
+    fflush(stdout);
+#endif
     if ((new_key[2] = blackcat_getuserkey(&new_key_size[2])) == NULL) {
         exit_code = EFAULT;
         fprintf(stderr, "ERROR: Unable to get the user's key.\n");
@@ -169,6 +175,9 @@ int blackcat_cmd_setkey(void) {
         prompt = "new second layer key";
 
         fprintf(stdout, "Type the %s: ", prompt);
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
         if ((new_key[1] = blackcat_getuserkey(&new_key_size[1])) == NULL) {
             exit_code = EFAULT;
             fprintf(stderr, "ERROR: Unable to get the user's key.\n");
@@ -179,6 +188,9 @@ int blackcat_cmd_setkey(void) {
         accacia_delline();
 
         fprintf(stdout, "Confirm the %s: ", prompt);
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
         if ((new_key[2] = blackcat_getuserkey(&new_key_size[2])) == NULL) {
             exit_code = EFAULT;
             fprintf(stderr, "ERROR: Unable to get the user's key.\n");
@@ -327,6 +339,8 @@ int blackcat_cmd_setkey_help(void) {
                     "               --key-hash=<hash>\n"
                     "               --protection-layer-hash=<hash>\n"
                     "               --encoder=<encoder>\n"
+                    "               --kdf=<kdf algorithm>\n"
+                    "               <specific kdf algorithm options>\n"
                     "               --otp --no-kdf]\n");
     return 0;
 }

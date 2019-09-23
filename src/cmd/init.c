@@ -118,6 +118,9 @@ int blackcat_cmd_init(void) {
     accacia_savecursorposition();
 
     fprintf(stdout, "Type the %s: ", info);
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
     if ((catalog_key = blackcat_getuserkey(&catalog_key_size)) == NULL) {
         fprintf(stderr, "ERROR: Unable to get the user's key.\n");
         goto blackcat_cmd_init_epilogue;
@@ -127,6 +130,9 @@ int blackcat_cmd_init(void) {
     accacia_delline();
 
     fprintf(stdout, "Confirm the %s: ", info);
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
     if ((temp_key = blackcat_getuserkey(&temp_key_size)) == NULL) {
         fprintf(stderr, "ERROR: Unable to get the user's key.\n");
         goto blackcat_cmd_init_epilogue;
@@ -152,6 +158,9 @@ int blackcat_cmd_init(void) {
         // INFO(Rafael): This will not be protected with a single master key, we need to get the second layer key.
 
         fprintf(stdout, "Type the second layer key: ");
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
         if ((protlayer_key = blackcat_getuserkey(&protlayer_key_size)) == NULL) {
             fprintf(stderr, "ERROR: Unable to get the user's key.\n");
             goto blackcat_cmd_init_epilogue;
@@ -161,6 +170,9 @@ int blackcat_cmd_init(void) {
         accacia_delline();
 
         fprintf(stdout, "Confirm the second layer key: ");
+#if defined(_WIN32)
+        fflush(stdout);
+#endif
         if ((temp_key = blackcat_getuserkey(&temp_key_size)) == NULL) {
             fflush(stdout);
             fprintf(stderr, "ERROR: Unable to get the user's key.\n");
@@ -296,6 +308,10 @@ int blackcat_cmd_init_help(void) {
                     "              --key-hash=<hash>\n"
                     "              --protection-layer-hash=<hash>\n"
                     "              --protection-layer=<algorithm layers>\n"
-                    "              [--keyed-alike --encoder=<encoder> --otp]\n");
+                    "              [--keyed-alike\n"
+                    "               --encoder=<encoder>\n"
+                    "               --kdf=<kdf algorithm>\n"
+                    "               <specific kdf algorithm options>\n"
+                    "               --otp]\n");
     return 0;
 }
