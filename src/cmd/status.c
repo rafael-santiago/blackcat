@@ -17,9 +17,11 @@
 #include <time.h>
 #include <errno.h>
 
-static void set_stdout(void);
+static FILE *get_stddest(void);
 
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__)
 FILE *g_blackcat_cmd_status_stdout = NULL;
+#endif
 
 int blackcat_cmd_status(void) {
     int exit_code = EINVAL;
@@ -29,6 +31,7 @@ int blackcat_cmd_status(void) {
     time_t t;
     char date[50];
     int a;
+    FILE *stddest = NULL;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_status_epilogue;
@@ -38,26 +41,37 @@ int blackcat_cmd_status(void) {
         status_param = remove_go_ups_from_path(status_param, strlen(status_param) + 1);
     }
 
-    set_stdout();
+    stddest = get_stddest();
+
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__)
+    if (stddest != NULL && g_blackcat_cmd_status_stdout != NULL) {
+        // INFO(Rafael): This trick will ensure a colored output when using less as viewer.
+        stdout = stddest;
+    }
+#endif
+
+    if (stddest == NULL) {
+        stddest = stdout;
+    }
 
 #define print_file_info(f, d) {\
     switch (f->status) {\
         case kBfsFileStatusPlain:\
             accacia_textcolor(AC_TCOLOR_GREEN);\
-            fprintf(stdout, "\tplain file: ");\
+            fprintf(stddest, "\tplain file: ");\
             break;\
         case kBfsFileStatusLocked:\
             accacia_textcolor(AC_TCOLOR_RED);\
-            fprintf(stdout, "\tlocked file: ");\
+            fprintf(stddest, "\tlocked file: ");\
             break;\
         case kBfsFileStatusUnlocked:\
             accacia_textcolor(AC_TCOLOR_YELLOW);\
-            fprintf(stdout, "\tunlocked file: ");\
+            fprintf(stddest, "\tunlocked file: ");\
             break;\
         default:\
             break;\
     }\
-    fprintf(stdout, "%s (%s)\n", f->path, d);\
+    fprintf(stddest, "%s (%s)\n", f->path, d);\
     accacia_screennormalize();\
 }
 
@@ -75,7 +89,7 @@ int blackcat_cmd_status(void) {
                                         exit_code = 0;
                                        }, 1)
     } else {
-        fprintf(stdout, "The catalog is empty.\n");
+        fprintf(stddest, "The catalog is empty.\n");
         exit_code = ENOENT;
     }
 
@@ -83,9 +97,14 @@ int blackcat_cmd_status(void) {
 
 blackcat_cmd_status_epilogue:
 
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__)
     if (stdout != g_blackcat_cmd_status_stdout) {
-        pclose(stdout);
         stdout = g_blackcat_cmd_status_stdout;
+    }
+#endif
+
+    if (stddest != NULL) {
+        pclose(stddest);
     }
 
     if (session != NULL) {
@@ -101,14 +120,17 @@ int blackcat_cmd_status_help(void) {
     return 0;
 }
 
-static void set_stdout(void) {
+static FILE *get_stddest(void) {
     struct bcrepo_config_ctx *bcrepo_cfg = NULL;
     char vcmd[4096];
     size_t vcmd_size;
+    FILE *stddest = NULL;
 
+#if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__)
     if (g_blackcat_cmd_status_stdout == NULL) {
         g_blackcat_cmd_status_stdout = stdout;
     }
+#endif
 
     if ((bcrepo_cfg = bcrepo_ld_config()) == NULL) {
         goto get_stddest_epilogue;
@@ -132,9 +154,8 @@ static void set_stdout(void) {
     memset(vcmd, 0, sizeof(vcmd));
     memcpy(vcmd, bcrepo_cfg->word, vcmd_size);
 
-    if ((stdout = popen(vcmd, "w")) == NULL) {
+    if ((stddest = popen(vcmd, "w")) == NULL) {
         fprintf(stderr, "ERROR: When trying to open status-viewer process. Assuming standard output.\n");
-        stdout = g_blackcat_cmd_status_stdout;
     }
 
 get_stddest_epilogue:
@@ -142,4 +163,6 @@ get_stddest_epilogue:
     if (bcrepo_cfg != NULL) {
         bcrepo_release_config(bcrepo_cfg);
     }
+
+    return stddest;
 }

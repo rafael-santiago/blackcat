@@ -190,7 +190,7 @@ blackcat_getuserkey_epilogue:
 
     memset(line, 0, sizeof(line));
 
-    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode | ENABLE_ECHO_INPUT);
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
 
     return key;
 }
