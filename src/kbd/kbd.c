@@ -24,11 +24,24 @@ static DWORD con_mode;
 
 static void getuserkey_sigint_watchdog(int signo);
 
+#if defined(_WIN32)
+
+#define stty_echo_off system("stty -echo");
+
+#define stty_echo_on system("stty echo");
+
+static int is_toynix(void);
+#endif
+
 static void getuserkey_sigint_watchdog(int signo) {
 #if !defined(_WIN32)
     tcsetattr(STDOUT_FILENO, TCSAFLUSH, &old);
 #else
-    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+    if (!is_toynix()) {
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+    } else {
+        stty_echo_on
+    }
 #endif
     exit(1);
 }
@@ -117,12 +130,23 @@ blackcat_getuserkey_epilogue:
 
 #else
 
+static int is_toynix(void) {
+    static int is = -1;
+    char data[256];
+    if (is == -1) {
+        is = (getenv("MSYSTEM") != NULL);
+    }
+    return is;
+}
+
 kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
     kryptos_u8_t *key = NULL, *kp;
     char line[65535], *lp, *lp_end;
     size_t size;
 
-    GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &con_mode);
+    if (!is_toynix()) {
+        GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &con_mode);
+    }
 
     if (key_size == NULL) {
         return NULL;
@@ -130,7 +154,11 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
 
     *key_size = 0;
 
-    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode & (~ENABLE_ECHO_INPUT));
+    if (!is_toynix()) {
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode & (~ENABLE_ECHO_INPUT));
+    } else {
+        stty_echo_off
+    }
 
     signal(SIGINT, getuserkey_sigint_watchdog);
     signal(SIGTERM, getuserkey_sigint_watchdog);
@@ -190,9 +218,17 @@ blackcat_getuserkey_epilogue:
 
     memset(line, 0, sizeof(line));
 
-    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+    if (!is_toynix()) {
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+    } else {
+        stty_echo_on
+    }
 
     return key;
 }
+
+#undef stty_echo_on
+
+#undef stty_echo_off
 
 #endif
