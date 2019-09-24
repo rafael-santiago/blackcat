@@ -228,7 +228,7 @@ CUTE_TEST_CASE(bcrepo_config_module_tests)
 # error Some code wanted.
 #endif
 
-    fp = fopen(".bcrepo/CONFIG", "w");
+    fp = fopen(".bcrepo/CONFIG", "wb");
     CUTE_ASSERT(fp != NULL);
     fprintf(fp, "%s", config);
     fclose(fp);

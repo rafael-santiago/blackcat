@@ -247,7 +247,7 @@ int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath
     bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
                   BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
 
-    if ((fp = fopen(temp, "r")) == NULL) {
+    if ((fp = fopen(temp, "rb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to open the config file for this repo.\n");
         goto bcrepo_check_config_integrity_epilogue;
     }
@@ -335,7 +335,7 @@ int bcrepo_config_update(bfs_catalog_ctx **catalog, const char *rootpath, const 
     bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
               BCREPO_HIDDEN_DIR "/" BCREPO_CONFIG_FILE, BCREPO_HIDDEN_DIR_SIZE + BCREPO_CONFIG_FILE_SIZE + 1);
 
-    if ((fp = fopen(temp, "r")) == NULL) {
+    if ((fp = fopen(temp, "rb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to open the config file.\n");
         goto bcrepo_config_update_epilogue;
     }
@@ -770,7 +770,7 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
 # error Some code wanted.
 #endif
 
-    if ((fp = fopen(temp, "r")) == NULL) {
+    if ((fp = fopen(temp, "rb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", temp);
         goto bcrepo_detach_metainfo_epilogue;
     }
@@ -801,7 +801,7 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
 
     fclose(fp);
 
-    if ((fp = fopen(dest, "w")) == NULL) {
+    if ((fp = fopen(dest, "wb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", dest);
         goto bcrepo_detach_metainfo_epilogue;
     }
@@ -939,7 +939,7 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
         goto bcrepo_attach_metainfo_epilogue;
     }
 
-    if ((fp = fopen(src, "r")) == NULL) {
+    if ((fp = fopen(src, "rb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to read from file '%s'.\n", src);
         goto bcrepo_attach_metainfo_epilogue;
     }
@@ -970,7 +970,7 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
 
     fclose(fp);
 
-    if ((fp = fopen(temp, "w")) == NULL) {
+    if ((fp = fopen(temp, "wb")) == NULL) {
         fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", temp);
         goto bcrepo_attach_metainfo_epilogue;
     }
