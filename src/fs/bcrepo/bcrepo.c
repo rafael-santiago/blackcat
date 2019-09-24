@@ -3442,7 +3442,10 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
         goto bcrepo_write_epilogue;
     }
 
-    fp = fopen(filepath, "w");
+    // INFO(Rafael): Making the binary mode explicit because we must avoid '\r\n' from Windows, otherwise it will mess up
+    //               with catalog reading in other platforms. The 'b' is useless in Unix but meaningful in Windows.
+    //               Let it be...
+    fp = fopen(filepath, "wb");
 
     if (fp == NULL) {
         fprintf(stderr, "ERROR: Unable to write to file '%s'.\n", filepath);
@@ -3503,7 +3506,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     *out_size = 0;
 
-    fp = fopen(filepath, "r");
+    fp = fopen(filepath, "rb");
 
     if (fp == NULL) {
         fprintf(stderr, "ERROR: Unable to read the catalog file '%s'.\n", filepath);
