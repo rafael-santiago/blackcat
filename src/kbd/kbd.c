@@ -37,9 +37,8 @@ static void getuserkey_sigint_watchdog(int signo) {
 #if !defined(_WIN32)
     tcsetattr(STDOUT_FILENO, TCSAFLUSH, &old);
 #else
-    if (!is_toynix()) {
-        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
-    } else {
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+    if (is_toynix()) {
         stty_echo_on
     }
 #endif
@@ -144,9 +143,7 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
     char line[65535], *lp, *lp_end;
     size_t size;
 
-    if (!is_toynix()) {
-        GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &con_mode);
-    }
+    GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &con_mode);
 
     if (key_size == NULL) {
         return NULL;
@@ -154,9 +151,14 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
 
     *key_size = 0;
 
-    if (!is_toynix()) {
-        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode & (~ENABLE_ECHO_INPUT));
-    } else {
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // INFO(Rafael): It is important disble ECHO_INPUT through SetConsoleMode inconditionaly, not based on !
+    //               MSYSTEM environment variable definition. Otherwise will be possible echo the password !
+    //               at screen in command prompt just by defining a dummy MSYSTEM variable.                !
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode & (~ENABLE_ECHO_INPUT));
+
+    if (is_toynix()) {
         stty_echo_off
     }
 
@@ -218,9 +220,9 @@ blackcat_getuserkey_epilogue:
 
     memset(line, 0, sizeof(line));
 
-    if (!is_toynix()) {
-        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
-    } else {
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode);
+
+    if (is_toynix()) {
         stty_echo_on
     }
 
