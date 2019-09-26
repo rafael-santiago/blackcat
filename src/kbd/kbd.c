@@ -151,11 +151,11 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
 
     *key_size = 0;
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // INFO(Rafael): It is important disble ECHO_INPUT through SetConsoleMode inconditionaly, not based on !
-    //               MSYSTEM environment variable definition. Otherwise will be possible echo the password !
-    //               at screen in command prompt just by defining a dummy MSYSTEM variable.                !
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // INFO(Rafael): It is important disable ECHO_INPUT through SetConsoleMode inconditionaly, not based on !
+    //               MSYSTEM environment variable definition. Otherwise will be possible echo the password  !
+    //               at screen in command prompt just by defining a dummy MSYSTEM variable.                 !
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), con_mode & (~ENABLE_ECHO_INPUT));
 
     if (is_toynix()) {
