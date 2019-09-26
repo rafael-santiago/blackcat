@@ -115,7 +115,15 @@ local function run_test() : result type int {
         $cmdline = "./";
     }
 
-    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " --cutest-leak-check=yes " + hefesto.project.cmdline();
+    $cmdline = hefesto.sys.make_path($cmdline, $appname) + " ";
+
+    if (hefesto.sys.os_name() != "netbsd") {
+        # INFO(Rafael): NetBSD libc allocates some stuff in remove() for performance issues and it is detected as memory
+        #               leak by libcutest. Let's avoid leak-check in NetBSD.
+        $cmdline = $cmdline + "--cutest-leak-check=yes ";
+    }
+
+    $cmdline = $cmdline + hefesto.project.cmdline();
 
     result hefesto.sys.run($cmdline);
 }

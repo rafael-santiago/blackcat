@@ -911,17 +911,10 @@ CUTE_TEST_CASE(bcrepo_decoy_tests)
     char *data;
     size_t data_size;
     int otp;
-#if defined(__NetBSD__)
-    // WARN(Rafael): In NetBSD libc seems to allocate some buf for performance issues, I think.
-    g_cute_leak_check = !g_cute_leak_check;
-#endif
 
     remove("decoy.sqn");
     remove("decoy.txt");
 
-#if defined(__NetBSD__)
-    g_cute_leak_check = !g_cute_leak_check;
-#endif
     for (otp = 0; otp < 2; otp++) {
         CUTE_ASSERT(bcrepo_decoy(NULL, 108, NULL, otp, 0) == 0);
         CUTE_ASSERT(bcrepo_decoy("decoy.sqn", 0, NULL, otp, 0) == 0);
@@ -979,16 +972,8 @@ CUTE_TEST_CASE(bcrepo_decoy_tests)
 
         kryptos_freeseg(data, data_size);
 
-#if defined(__NetBSD__)
-    g_cute_leak_check = !g_cute_leak_check;
-#endif
-
         remove("decoy.sqn");
         remove("decoy.txt");
-
-#if defined(__NetBSD__)
-    g_cute_leak_check = !g_cute_leak_check;
-#endif
     }
 CUTE_TEST_CASE_END
 
