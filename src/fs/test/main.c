@@ -467,18 +467,18 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_atim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_mtim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) == 0);
     CUTE_ASSERT(memcmp(&etc_curr.st_atim, &etc_old.st_atim, sizeof(etc_old.st_atime)) == 0);
@@ -492,78 +492,78 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(memcmp(&st_curr.st_atim, &st_old.st_atim, sizeof(st_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_atim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_mtim, &st_old.st_mtim, sizeof(st_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_mtim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_ctim, &st_old.st_ctim, sizeof(st_old.st_ctime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_ctim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_ctim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(stat("etc", &etc_curr) == 0);
 
     CUTE_ASSERT(memcmp(&etc_curr.st_atim, &etc_old.st_atim, sizeof(etc_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_atim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_atim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&etc_curr.st_mtim, &etc_old.st_mtim, sizeof(etc_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_mtim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_mtim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(stat(".bcrepo", &bcrepo_curr) == 0);
 
     CUTE_ASSERT(memcmp(&bcrepo_curr.st_atim, &bcrepo_old.st_atim, sizeof(bcrepo_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_atim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_atim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&bcrepo_curr.st_mtim, &bcrepo_old.st_mtim, sizeof(bcrepo_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_mtim.tv_sec));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_mtim.tv_sec));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 #elif defined(_WIN32)
     CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_atime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_mtime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) == 0);
     CUTE_ASSERT(memcmp(&etc_curr.st_atime, &etc_old.st_atime, sizeof(etc_old.st_atime)) == 0);
@@ -577,62 +577,62 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(memcmp(&st_curr.st_atime, &st_old.st_atime, sizeof(st_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_atime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_atime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_mtime, &st_old.st_mtime, sizeof(st_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_mtime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_mtime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&st_curr.st_ctime, &st_old.st_ctime, sizeof(st_old.st_ctime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&st_curr.st_ctime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&st_curr.st_ctime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(stat("etc", &etc_curr) == 0);
 
     CUTE_ASSERT(memcmp(&etc_curr.st_atime, &etc_old.st_atime, sizeof(etc_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_atime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_atime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&etc_curr.st_mtime, &etc_old.st_mtime, sizeof(etc_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&etc_curr.st_mtime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_mtime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(stat(".bcrepo", &bcrepo_curr) == 0);
 
     CUTE_ASSERT(memcmp(&bcrepo_curr.st_atime, &bcrepo_old.st_atime, sizeof(bcrepo_old.st_atime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_atime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_atime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
     CUTE_ASSERT(memcmp(&bcrepo_curr.st_mtime, &bcrepo_old.st_mtime, sizeof(bcrepo_old.st_mtime)) != 0);
 
     g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%d/%m/%Y", localtime(&bcrepo_curr.st_mtime));
+    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_mtime));
     g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "05/11/1970") == 0);
+    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 #else
 # error Some code wanted.
 #endif
