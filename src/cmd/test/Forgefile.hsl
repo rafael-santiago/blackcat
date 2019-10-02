@@ -78,7 +78,7 @@ blackcat-cmd-tests.prologue() {
         }
 
         if (isdir("/usr/local/lib")) {
-            $includes.add_item("/usr/local/lib");
+            $libraries.add_item("/usr/local/lib");
         }
     }
 

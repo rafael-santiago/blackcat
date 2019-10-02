@@ -61,7 +61,7 @@ net-tests.prologue() {
         }
 
         if (isdir("/usr/local/lib")) {
-            $inc.add_item("/usr/local/lib");
+            $lib.add_item("/usr/local/lib");
         }
     }
 }

@@ -51,7 +51,6 @@ base-tests.prologue() {
         $ldflags.add_item("-lexecinfo");
         $ldflags.add_item("-lpthread");
     } else if (hefesto.sys.os_name() == "openbsd") {
-        $ldflags.add_item("-lexecinfo");
         $ldflags.add_item("-lpthread");
     }
 
@@ -62,7 +61,7 @@ base-tests.prologue() {
         }
 
         if (isdir("/usr/local/lib")) {
-            $inc.add_item("/usr/local/lib");
+            $lib.add_item("/usr/local/lib");
         }
     }
 }
