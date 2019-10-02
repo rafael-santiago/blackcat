@@ -47,6 +47,8 @@ ntool.prologue() {
         $ldflags.add_item("-lpthread");
     } else if (hefesto.sys.os_name() == "netbsd") {
         $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "openbsd") {
+        $ldflags.add_item("-lpthread");
     }
 
     if (hefesto.sys.os_name() != "windows") {
