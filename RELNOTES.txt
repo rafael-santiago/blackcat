@@ -64,4 +64,4 @@ v1.0.0 [git-tag: 'v1.0.0-fix']
 
     Bugfixes:
 
-            - otp dumper was not being included during the writing verification [commit-id: #b16334].
+        - otp dumper was not being included during the writing verification [commit-id: #b16334].
