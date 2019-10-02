@@ -439,9 +439,9 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 # error Some code wanted.
 #endif
 
-#if defined(__unix__)
+#if defined(__unix__) && !defined(__OpenBSD__)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
-#elif defined(_WIN32)
+#elif defined(_WIN32) || defined(__OpenBSD__)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) != 0);
 #else
 # error Some code wanted.
@@ -462,10 +462,12 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy info net", "", NULL) != 0);
 
-#if defined(__unix__)
+#if defined(__unix__) && !defined(__OpenBSD__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net", "", NULL) == 0);
 #elif defined(_WIN32)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info", "", NULL) == 0);
+#elif defined(__OpenBSD__)
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack setkey undo decoy info net", "", NULL) == 0);
 #else
 # error Some code wanted.
 #endif
@@ -2365,7 +2367,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 #elif defined(_WIN32)
     CUTE_ASSERT(mkdir("etc") == 0);
 #else
-# error Some code wantred.
+# error Some code wanted.
 #endif
 
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);

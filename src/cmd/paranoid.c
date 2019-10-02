@@ -82,6 +82,7 @@ int blackcat_cmd_paranoid(void) {
 }
 
 int blackcat_cmd_paranoid_help(void) {
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
     fprintf(stdout, "use: blackcat paranoid\n"
                     "               [--bury            |\n"
                     "                --bury-repo       |\n"
@@ -91,6 +92,14 @@ int blackcat_cmd_paranoid_help(void) {
                     "                --disable-history |\n"
                     "                --enable-history  |\n"
                     "                --clear-history   ]\n");
+#elif defined(__OpenBSD__)
+    fprintf(stdout, "use: blackcat paranoid\n"
+                    "               [--disable-history |\n"
+                    "                --enable-history  |\n"
+                    "                --clear-history   ]\n");
+#else
+# Some code wanted.
+#endif
     return 0;
 }
 
