@@ -1,0 +1,67 @@
+1. Latest releases are in the top.
+2. Usually, I try to do my best in order to bring you 'RELNOTES' instead of notes from hell ;)
+
+    Rafael
+--
+v1.2.0 [git-tag: 'v1.2.0']
+
+    Features:
+
+        - Now GCM mode is also available. The current supported ciphers (according to user's build options) are:
+          AES, CAMELLIA, RC6, MARS, NOEKEON, NOEKEON-D and SERPENT.
+        - HMAC + GCM was implemented (yes, overkill but possible).
+        - Two new hash functions are avaiable: Blake2s-256 and Blake2b-512.
+        - New HMACs schemes based on Blake2s-256 and Blake2b-512 usage.
+        - Now is possible to use an external KDF instead of the native. The available KDFs are: HKDF, PBKDF2 and ARGON2I.
+        - Internal key crunching improved on.
+        - Implementing repo options through .bcrepo/CONFIG file.
+        - Implemented do command (command line tool).
+        - Minor improvements on info command output (command line tool).
+        - First-layer key was enhanced against dictionary attacks. Old repos will be automatically enhanced.
+        - Windows port (no net, paranoid nor lkm commands are available).
+        - Build fine tunings to easily build in OpenBSD.
+        - Build improved on. Now protection layers picked during the tests are based on the ciphers selected by the user during
+          the build.
+        - Another build improvement. Were introduced two build compatibility files: BCDEV_PLATFORMS and SKIP_NET_TESTS.
+        - Now untouch command can also change time date metainfo from directories.
+        - Status output viewer by using .bcrepo/CONFIG/status-viewer.
+
+    Bugfixes:
+
+        - Data corruption when changing keys. Now the protection layer is always re-constructed in order to avoid this kind of
+          trouble [commit-id#7fb45df].
+        - Bugfix in paranoid command. The options were not being properly read [commit-id#b571fee].
+        - Bugfixes related to stream ciphers Rabbit and SEAL2/3 [commit-id#29bb5e8].
+        - Bugfix in a memcpy with wrong size. Sometimes it was causing heap corruption [commit-id#444b32c].
+        - Bugfix related to wrong memory area returned when calculating modular inverse by right shifts [commit-id#655bf9f].
+        - Bugfix related to heap corruption during RC2 key schedule [commit-id#5fde53b].
+
+v1.0.0 [git-tag: 'v1.0.0-fix']
+
+    Features:
+
+        - Code re-written from its original 2006 code.
+        - Now files are encrypted and gathered by using a scm concept (repository).
+        - Cryptographic library also re-written.
+        - More encryption schemes are available, including HMACs.
+        - Available mode of operations: CBC, CTR, OFB.
+        - Possibility of protecting the repository with one or two keys (keyed alike or twice).
+        - Usage of key derivation functions when assembling the protection layer from the user key(s).
+        - Adoption of more modern and secure hash functions.
+        - The first layer key can also be authenticated with bcrypt.
+        - Now cascading can be applied by using two ways (single and otp).
+        - Vpn tunnel less dependent of environment conveniences (by using socket functions hooking).
+        - For network encryption, E2EE also available with double ratchet like mechanism.
+        - Vpn tunnel can use modified DH scheme for a session key agreement.
+        - Plausibly deniable encryption.
+        - Data wiping using some points observed in DoD 5220.22-M.
+        - A command to set the file access time (access, creation, edition) for a default one.
+        - Device driver for NetBSD, FreeBSD and Linux that enforces some paranoid cares: by detecting syscall hooking, hiding
+          the files in a repository, hiding the entire repository in order to avoid data leaking (some intruder downloading
+          your stuff). Enforcing the main idea: when you got a leak, it was the minimum leakage possible.
+        - Now UUEncode is also a option for data encoding besides Radix-64.
+        - RAM swapping mitigation by using Posix capabilities.
+
+    Bugfixes:
+
+            - otp dumper was not being included during the writing verification [commit-id: #b16334].
