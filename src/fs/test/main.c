@@ -2764,6 +2764,8 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     bfs_catalog_relpath_ctx files;
     kryptos_u8_t *key = "Goliath";
 
+    memset(&catalog, 0, sizeof(catalog));
+
     catalog.bc_version = BCREPO_METADATA_VERSION;
     catalog.otp = 0;
     catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");

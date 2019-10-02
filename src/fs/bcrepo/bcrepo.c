@@ -2212,7 +2212,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
     int rm_nr = 0;
     bfs_catalog_relpath_ctx *files = NULL, *fp, *fpp;
     bfs_catalog_ctx *cp;
-    int rl = 0;
+    int rl = 0, again;
 
     if (catalog == NULL) {
         goto bcrepo_rm_epilogue;
@@ -2222,29 +2222,40 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
 
     get_file_list(&files, NULL, rootpath, rootpath_size, pattern, pattern_size, &rl, BCREPO_RECUR_LEVEL_LIMIT);
 
-    for (fp = files; fp != NULL; fp = fp->next) {
-        if ((fpp = get_entry_from_relpath_ctx(cp->files, fp->path)) == NULL) {
-            continue;
+    again = 1;
+
+    while (again) {
+        again = 0;
+        for (fp = files; fp != NULL && !again; fp = fp->next) {
+            if ((fpp = get_entry_from_relpath_ctx(cp->files, fp->path)) == NULL) {
+                continue;
+            }
+
+            if (fpp->status == kBfsFileStatusLocked &&
+                bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size, NULL, NULL) != 1) {
+                fprintf(stderr, "WARN: Unable to unlock the file '%s'.\n", fpp->path);
+            }
+
+            cp->files = del_file_from_relpath_ctx(cp->files, fpp->path);
+
+            rm_nr++;
+            again = 1;
         }
-
-        if (fpp->status == kBfsFileStatusLocked &&
-            bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size, NULL, NULL) != 1) {
-            fprintf(stderr, "WARN: Unable to unlock the file '%s'.\n", fpp->path);
-        }
-
-        cp->files = del_file_from_relpath_ctx(cp->files, fpp->path);
-
-        rm_nr++;
     }
 
     if (force) {
-        fp = cp->files;
-        while (fp != NULL) {
-            if (strglob(fp->path, pattern) == 1) {
-                cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
-                rm_nr++;
-            } else {
-                fp = fp->next;
+        again = 1;
+        while (again) {
+            fp = cp->files;
+            again = 0;
+            while (fp != NULL && !again) {
+                if (strglob(fp->path, pattern) == 1) {
+                    cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
+                    rm_nr++;
+                    again = 1;
+                } else {
+                    fp = fp->next;
+                }
             }
         }
     }
@@ -2254,6 +2265,8 @@ bcrepo_rm_epilogue:
     if (files != NULL) {
         del_bfs_catalog_relpath_ctx(files);
     }
+
+    again = 0;
 
     return rm_nr;
 }
