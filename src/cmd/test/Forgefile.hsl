@@ -66,7 +66,10 @@ blackcat-cmd-tests.prologue() {
     var option type list;
     $option = hefesto.sys.get_option("skip-net-tests");
 
-    if ($option.count() > 0 || hefesto.sys.os_name() == "windows") {
+    var skip_net_tests type list;
+    $skip_net_tests = hefesto.sys.lines_from_file("../../SKIP_NET_TESTS", ".*");
+
+    if ($option.count() > 0 || $skip_net_tests.index_of(hefesto.sys.os_name()) > -1) {
         $cflags.add_item("-DSKIP_NET_TESTS=1");
     } else {
         build("ntool");

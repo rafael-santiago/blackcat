@@ -59,12 +59,9 @@ blackcat.prologue() {
 
         $option = hefesto.sys.get_option("no-dev");
 
-        if ($option.count() == 0 || hefesto.sys.os_name() == "windows") {
+        if ($option.count() == 0) {
             var blackcat_dev_supp type list;
-            $blackcat_dev_supp.add_item("linux");
-            $blackcat_dev_supp.add_item("netbsd");
-            $blackcat_dev_supp.add_item("freebsd");
-
+            $blackcat_dev_supp = hefesto.sys.lines_from_file("BCDEV_PLATFORMS", ".*");
             if ($blackcat_dev_supp.index_of(hefesto.sys.os_name()) > -1) {
                 $subforges.add_item("dev");
             }
