@@ -3,7 +3,7 @@
 (A) Introduce the usage of soft tokens. The sequence of those tokens will be dictated in '--soft-token' option. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
 (C) Tidy up cmd/tests/main.c:blackcat_poking_tests by turning it into smaller system tests. +Tests
-(B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests
+(B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (B) Tuning up the build for MINIX (I find it will be pretty easy since MINIX's environment is almost like NetBSD). +Build
@@ -12,3 +12,4 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (D) Make net tests less magical timeouts dependent. Let's make it more stable. +Improvement,+Tests
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
+(B) The cmd tool's show command should also list the available KDFs. +NewFeature
