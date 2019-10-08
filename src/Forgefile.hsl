@@ -70,6 +70,11 @@ blackcat.prologue() {
         $subforges.add_item("cmd");
     }
 
+    $option = hefesto.sys.get_option("clean-modules");
+    if ($option.count() > 0) {
+        mkclean_modules($subforges);
+    }
+
     $exit_code = forge_projects($subforges);
 }
 

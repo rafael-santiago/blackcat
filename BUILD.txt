@@ -128,4 +128,7 @@ In FreeBSD, NetBSD and OpenBSD the tests are being skipped because it
 must be adjusted to some platform details before being included as a default
 build option.
 
+If you want to force the recompilation of all modules, use the build option
+'--clean-modules'.
+
 You done here, now you should read the file 'doc/MANUAL.txt'.

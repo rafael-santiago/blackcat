@@ -1,4 +1,3 @@
-(B) Create '--clean-build' build option. When present it must delete all module's .o files. +Build
 (B) Implement the cmd tool's man command. It will print at stdout (by using less or more) 'doc/MANUAL.txt'. +NewFeature
 (A) Introduce the usage of soft tokens. The sequence of those tokens will be dictated in '--soft-token' option. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
@@ -13,3 +12,5 @@
 (D) Make net tests less magical timeouts dependent. Let's make it more stable. +Improvement,+Tests
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
 (B) The cmd tool's show command should also list the available KDFs. +NewFeature
+(B) Extend the fs module capabilities. +NewFeature
+x (B) Create '--clean-modules' build option. When present it must delete all module's .o files. +Build
