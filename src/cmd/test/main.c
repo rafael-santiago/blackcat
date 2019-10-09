@@ -127,6 +127,41 @@ static char *argv[] = {
 
 static int argc = sizeof(argv) / sizeof(argv[0]);
 
+static unsigned char *sensitive1 =
+                       "[1] The wrath sing, goddess, of Peleus' son, Achilles, that destructive wrath which brought "
+                       "countless woes upon the Achaeans, and sent forth to Hades many valiant souls of heroes, and "
+                       "made them themselves spoil for dogs and every bird; thus the plan of Zeus came to fulfillment, "
+                       "[5] from the time when first they parted in strife Atreus' son, king of men, and brilliant Achilles. "
+                       "Who then of the gods was it that brought these two together to contend? The son of Leto and Zeus; for "
+                       "he in anger against the king roused throughout the host an evil pestilence, and the people began to "
+                       "perish, [10] because upon the priest Chryses the son of Atreus had wrought dishonour. For he had come "
+                       "to the swift ships of the Achaeans to free his daughter, bearing ransom past counting; and in his "
+                       "hands he held the wreaths of Apollo who strikes from afar,2 on a staff of gold; and he implored all "
+                       "the Achaeans, [15] but most of all the two sons of Atreus, the marshallers of the people: 'Sons of "
+                       "Atreus, and other well-greaved Achaeans, to you may the gods who have homes upon Olympus grant that "
+                       "you sack the city of Priam, and return safe to your homes; but my dear child release to me, and "
+                       "accept the ransom [20] out of reverence for the son of Zeus, Apollo who strikes from afar.' "
+                       "Then all the rest of the Achaeans shouted assent, to reverence the priest and accept the glorious "
+                       "ransom, yet the thing did not please the heart of Agamemnon, son of Atreus, but he sent him away "
+                       "harshly, and laid upon him a stern command: [25] 'Let me not find you, old man, by the hollow ships, "
+                       "either tarrying now or coming back later, lest your staff and the wreath of the god not protect you. "
+                       "Her I will not set free. Sooner shall old age come upon her in our house, in Argos, far from her "
+                       "native land, [30] as she walks to and fro before the loom and serves my bed. But go, do not anger me, "
+                       "that you may return the safer.'";
+static unsigned char *sensitive2 =
+                       "'Is that vodka?' Margarita asked weakly.\n"
+                       "The cat jumped up in his seat with indignation.\n"
+                       "'I beg pardon, my queen,' he rasped, 'Would I "
+                       "ever allow myself to offer vodka to a lady? This is pure alcohol!'\n\n"
+                       "The tongue may hide the truth but the eyes - never!\n\n"
+                       "Cowardice is the most terrible of vices.\n\n"
+                       "'You're not Dostoevsky,' said the citizeness, who was getting muddled by Koroviev. "
+                       "Well, who knows, who knows,' he replied. 'Dostoevsky's dead,' said the citizeness, "
+                       "but somehow not very confidently. 'I protest!' Behemoth exclaimed hotly. 'Dostoevsky is immortal!\n\n"
+                       "manuscripts don't burn\n\n";
+static unsigned char *sensitive3 = "Tears from the sky, in pools of pain... Tonight, I gonna go and dancing in the rain.\n";
+static unsigned char *plain = "README\n";
+
 CUTE_DECLARE_TEST_CASE(blackcat_cmd_tests_entry);
 
 CUTE_DECLARE_TEST_CASE(blackcat_set_argc_argv_tests);
@@ -136,12 +171,36 @@ CUTE_DECLARE_TEST_CASE(blackcat_get_bool_option_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_argv_tests);
 CUTE_DECLARE_TEST_CASE(get_blackcat_version_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_clear_options_tests);
-CUTE_DECLARE_TEST_CASE(blackcat_poking_tests);
 CUTE_DECLARE_TEST_CASE(levenshtein_distance_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_dev_tests);
 CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_wrong_arguments_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_show_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_help_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_init_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_add_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_status_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_lock_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_unlock_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_lock_unlock_at_once_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_rm_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_pack_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_unpack_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_setkey_cmd_tests);
+CUTE_DECLARE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_undo_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_tests_decoy_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_untouch_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_config_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_do_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
+
+CUTE_DECLARE_TEST_CASE_SUITE(blackcat_poking_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
 
@@ -267,8 +326,8 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(mkargv_freeargv_tests);
     CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
     CUTE_RUN_TEST(blackcat_get_kdf_usr_params_from_cmdline_tests);
-    // INFO(Rafael): If all is okay, time to poke this shit.
-    CUTE_RUN_TEST(blackcat_poking_tests);
+    // INFO(Rafael): If all is okay, time to poke this shit (a.k.a. 'system tests').
+    CUTE_RUN_TEST_SUITE(blackcat_poking_tests);
     CUTE_RUN_TEST(blackcat_dev_tests);
 CUTE_TEST_CASE_END
 
@@ -343,83 +402,58 @@ CUTE_TEST_CASE(blackcat_clear_options_tests)
     }
 CUTE_TEST_CASE_END
 
-CUTE_TEST_CASE(blackcat_poking_tests)
-    unsigned char *sensitive1 = "[1] The wrath sing, goddess, of Peleus' son, Achilles, that destructive wrath which brought "
-                       "countless woes upon the Achaeans, and sent forth to Hades many valiant souls of heroes, and "
-                       "made them themselves spoil for dogs and every bird; thus the plan of Zeus came to fulfillment, "
-                       "[5] from the time when first they parted in strife Atreus' son, king of men, and brilliant Achilles. "
-                       "Who then of the gods was it that brought these two together to contend? The son of Leto and Zeus; for "
-                       "he in anger against the king roused throughout the host an evil pestilence, and the people began to "
-                       "perish, [10] because upon the priest Chryses the son of Atreus had wrought dishonour. For he had come "
-                       "to the swift ships of the Achaeans to free his daughter, bearing ransom past counting; and in his "
-                       "hands he held the wreaths of Apollo who strikes from afar,2 on a staff of gold; and he implored all "
-                       "the Achaeans, [15] but most of all the two sons of Atreus, the marshallers of the people: 'Sons of "
-                       "Atreus, and other well-greaved Achaeans, to you may the gods who have homes upon Olympus grant that "
-                       "you sack the city of Priam, and return safe to your homes; but my dear child release to me, and "
-                       "accept the ransom [20] out of reverence for the son of Zeus, Apollo who strikes from afar.' "
-                       "Then all the rest of the Achaeans shouted assent, to reverence the priest and accept the glorious "
-                       "ransom, yet the thing did not please the heart of Agamemnon, son of Atreus, but he sent him away "
-                       "harshly, and laid upon him a stern command: [25] 'Let me not find you, old man, by the hollow ships, "
-                       "either tarrying now or coming back later, lest your staff and the wreath of the god not protect you. "
-                       "Her I will not set free. Sooner shall old age come upon her in our house, in Argos, far from her "
-                       "native land, [30] as she walks to and fro before the loom and serves my bed. But go, do not anger me, "
-                       "that you may return the safer.'";
-    unsigned char *sensitive2 = "'Is that vodka?' Margarita asked weakly.\n"
-                       "The cat jumped up in his seat with indignation.\n"
-                       "'I beg pardon, my queen,' he rasped, 'Would I "
-                       "ever allow myself to offer vodka to a lady? This is pure alcohol!'\n\n"
-                       "The tongue may hide the truth but the eyes - never!\n\n"
-                       "Cowardice is the most terrible of vices.\n\n"
-                       "'You're not Dostoevsky,' said the citizeness, who was getting muddled by Koroviev. "
-                       "Well, who knows, who knows,' he replied. 'Dostoevsky's dead,' said the citizeness, "
-                       "but somehow not very confidently. 'I protest!' Behemoth exclaimed hotly. 'Dostoevsky is immortal!\n\n"
-                       "manuscripts don't burn\n\n";
-    unsigned char *sensitive3 = "Tears from the sky, in pools of pain... Tonight, I gonna go and dancing in the rain.\n";
-    unsigned char *plain = "README\n";
-    unsigned char *data;
-    size_t data_size;
-    unsigned char *k1, *k2;
-    FILE *fp;
-    char cwd[4096];
-    char *ntool_out[] = {
-        "write/read client",
-        "send/recv client",
-        "sendmsg/recvmsg client",
-        "sendto/recvfrom client",
-        "write/read server",
-        "send/recv server",
-        "sendmsg/recvmsg server",
-        "sendto/recvfrom server"
-    };
-    size_t ntool_out_nr = sizeof(ntool_out) / sizeof(ntool_out[0]), n;
-    char cmdline[4096];
-    struct stat st_old, st_curr;
-    char bcmd[65535], *protlayer;
-
+CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     // INFO(Rafael): Just housekeeping.
 
     test_env_housekeeping();
 
-    // INFO(Rafael): Wrong commands.
+    CUTE_RUN_TEST(blackcat_poke_wrong_arguments_tests);
+    CUTE_RUN_TEST(blackcat_poke_show_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_help_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_init_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_add_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_status_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_lock_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_unlock_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_lock_unlock_at_once_tests);
+    CUTE_RUN_TEST(blackcat_poke_rm_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_pack_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_unpack_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_setkey_cmd_tests);
+    CUTE_RUN_TEST(the_poking_machine_took_a_shit_and_die_tests);
+    CUTE_RUN_TEST(blackcat_poke_undo_cmd_tests);
+    CUTE_RUN_TEST(blackcat_tests_decoy_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_init_cmd_by_using_bcrypt_tests);
+    CUTE_RUN_TEST(blackcat_poke_attach_detach_cmds_tests);
+    CUTE_RUN_TEST(blackcat_untouch_cmd_tests);
+    CUTE_RUN_TEST(blackcat_config_cmd_tests);
+    CUTE_RUN_TEST(blackcat_do_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_repo_by_using_kdf_tests);
+    CUTE_RUN_TEST(blackcat_poke_net_cmd_tests);
+CUTE_TEST_CASE_SUITE_END
 
+CUTE_TEST_CASE(blackcat_poke_wrong_arguments_tests)
+    // INFO(Rafael): Wrong commands.
     CUTE_ASSERT(blackcat("shew", "---", NULL) != 0);
     CUTE_ASSERT(blackcat("self", "---", NULL) != 0);
     CUTE_ASSERT(blackcat("adds", "---", NULL) != 0);
     CUTE_ASSERT(blackcat("rms", "---", NULL) != 0);
     CUTE_ASSERT(blackcat("state", "----", NULL) != 0);
     CUTE_ASSERT(blackcat("rinite", "---", NULL) != 0);
+CUTE_TEST_CASE_END
 
+CUTE_TEST_CASE(blackcat_poke_show_cmd_tests)
     // INFO(Rafael): Showing the available ciphers, HMACs and hashes.
-
     CUTE_ASSERT(blackcat("show your-hands", "---", NULL) != 0);
     CUTE_ASSERT(blackcat("show ciphers", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hmacs", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hashes", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show encoders", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hashes hmacs ciphers encoders", "---", NULL) == 0);
+CUTE_TEST_CASE_END
 
+CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     // INFO(Rafael): Quick help.
-
     CUTE_ASSERT(blackcat("help init", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help deinit", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help add", "", NULL) == 0);
@@ -471,6 +505,10 @@ CUTE_TEST_CASE(blackcat_poking_tests)
 #else
 # error Some code wanted.
 #endif
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_init_cmd_tests)
+    char bcmd[65535], *protlayer;
 
     // INFO(Rafael): Init command general tests.
     CUTE_ASSERT(blackcat("init", "none", "none") != 0);
@@ -561,7 +599,9 @@ CUTE_TEST_CASE(blackcat_poking_tests)
                   "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
+CUTE_TEST_CASE_END
 
+CUTE_TEST_CASE(blackcat_poke_add_cmd_tests)
     CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
 #if defined(__unix__)
     CUTE_ASSERT(mkdir("etc", 0666) == 0);
@@ -585,15 +625,21 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) != 0);
     CUTE_ASSERT(blackcat("add p.txt --plain", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("add s3.txt --lock", "GiveTheMuleWhatHeWants", NULL) == 0);
+CUTE_TEST_CASE_END
 
+CUTE_TEST_CASE(blackcat_poke_status_cmd_tests)
     // INFO(Rafael): Getting the current repo's status.
-
     CUTE_ASSERT(blackcat("status", "Ahhhhh", NULL) != 0);
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("status s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("status etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("status etc/*.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("status p.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_lock_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Lock tests.
 
@@ -649,6 +695,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
 
     CUTE_ASSERT(blackcat("lock p.txt", "GiveTheMuleWhatHeWants", NULL) != 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_unlock_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Unlock tests.
 
@@ -679,6 +730,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_lock_unlock_at_once_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Lock and Unlock all at once.
 
@@ -743,6 +799,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_rm_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Rm test.
 
@@ -794,6 +855,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(data_size == strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
     kryptos_freeseg(data, data_size);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_pack_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Pack stuff.
 
@@ -808,6 +874,11 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("pack test.bpack", "GIVETheMuleWhatHeWants", NULL) != 0);
 
     CUTE_ASSERT(blackcat("pack test.bpack", "GiveTheMuleWhatHeWants", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_unpack_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
 
     // INFO(Rafael): Unpack stuff (only failures).
 
@@ -851,6 +922,16 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("unpack-test");
     remove("test.bpack");
     remove("s3.txt");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 1);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Setkey stuff.
 
@@ -882,6 +963,157 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("status", "All Along The Watchtower", NULL) == 0);
 
     CUTE_ASSERT(blackcat("deinit", "All Along The Watchtower", NULL) == 0);
+
+    // INFO(Rafael): Setting other parameters besides the keys.
+
+    sprintf(bcmd, "init "
+                  "--catalog-hash=sha3-384 "
+                  "--key-hash=whirlpool "
+                  "--protection-layer-hash=sha-512 "
+                  "--protection-layer=%s "
+                  "--keyed-alike", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("etc/s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("add etc/s2.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("lock", "GiveTheMuleWhatHeWants", NULL) == 0);
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
+
+    protlayer = get_test_protlayer(0, 4);
+
+    CUTE_ASSERT(protlayer != NULL);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=sha12 "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=uuencoder "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=cha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=uuencoder "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tig3r "
+                  "--encoder=uuencoder "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=yyencode "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    protlayer[0] = toupper(protlayer[0]);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=uuencode "
+                  "--protection-layer=%s", protlayer);
+
+    protlayer[0] = tolower(protlayer[0]);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=bcrypt "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=uuencode "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=bcrypt "
+                  "--encoder=uuencode "
+                  "--protection-layer=%s", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
+
+    sprintf(bcmd, "setkey --keyed-alike "
+                  "--catalog-hash=whirlpool "
+                  "--key-hash=sha-512 "
+                  "--protection-layer-hash=tiger "
+                  "--encoder=uuencode "
+                  "--protection-layer=%s --otp", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
+
+    CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) != 0);
+    CUTE_ASSERT(blackcat("status", "All Along The Watchtower", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock", "All Along The Watchtower", NULL) == 0);
+
+    // INFO(Rafael): Since we have changed the cascading type (from now on it is one-time pad) let's actually check
+    //               the data from files after unlocking the whole repo.
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("etc/s2.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("p.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(plain));
+    CUTE_ASSERT(memcmp(data, plain, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit", "All Along The Watchtower", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
+    // ===============================================================================================
+    // WARN(Rafael): This test is a crazy horse. Anyway, it does interesting things that could cause =
+    //               bad states. Let's keep with this horse.                                         =
+    // ===============================================================================================
+
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 1);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Setting other parameters besides the keys.
 
@@ -1984,6 +2216,14 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     remove("s1.txt");
     remove("p.txt");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_undo_cmd_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+    FILE *fp;
+    char cwd[4096];
 
     // INFO(Rafael): undo test.
 
@@ -2046,6 +2286,15 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("pd.txt");
     remove("pod.txt");
 
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_tests_decoy_cmd_tests)
+    char bcmd[65535], *protlayer;
+
+    protlayer = get_test_protlayer(0, 4);
+
+    CUTE_ASSERT(protlayer != NULL);
+
     sprintf(bcmd, "init "
                   "--catalog-hash=sha3-384 "
                   "--key-hash=whirlpool "
@@ -2098,6 +2347,16 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("p.txt");
     remove("pd.txt");
     remove("pod.txt");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 1);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): For people who like bcrypt with love (keyed alike init first, ok?).
 
@@ -2357,6 +2616,16 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s3.txt");
     remove("p.txt");
     rmdir("etc");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 4);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Repo detaching & attaching tests.
 
@@ -2409,14 +2678,24 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s3.txt");
     remove("p.txt");
     rmdir("etc");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_untouch_cmd_tests)
+    struct stat st_old, st_curr;
+    char bcmd[65535], *protlayer;
+
+    protlayer = get_test_protlayer(0, 6);
+
+    CUTE_ASSERT(protlayer != NULL);
+
+    // INFO(Rafael): Untouch tests.
+
     remove("untouch-test/etc/s2.txt");
     remove("untouch-test/s1.txt");
     remove("untouch-test/s3.txt");
     remove("untouch-test/p.txt");
     rmdir("untouch-test/etc");
     rmdir("untouch-test");
-
-    // INFO(Rafael): Untouch tests.
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // WARN(Rafael): Do not run this test outside untouch-test directory, otherwise it can recusivelly screw up!
@@ -2500,6 +2779,14 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     rmdir("etc");
     chdir("..");
     rmdir("untouch-test");
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_config_cmd_tests)
+    char bcmd[65535], *protlayer;
+
+    protlayer = get_test_protlayer(0, 2);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Config tests.
 
@@ -2537,6 +2824,16 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     CUTE_ASSERT(blackcat("config --remove", "Zzz", NULL) == 0);
 
     CUTE_ASSERT(blackcat("deinit", "Zzz", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_do_cmd_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 3);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Do tests.
 
@@ -2651,6 +2948,17 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s1.txt");
     remove("s3.txt");
     remove("dummy");
+
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 4);
+
+    CUTE_ASSERT(protlayer != NULL);
 
     // INFO(Rafael): Blackcat repository with KDF usage.
 
@@ -3098,8 +3406,25 @@ CUTE_TEST_CASE(blackcat_poking_tests)
     remove("s2.txt");
     remove("p.txt");
     remove("s3.txt");
+CUTE_TEST_CASE_END
 
-#if !defined(SKIP_NET_TESTS) && !defined(_WIN32)
+CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+    char *ntool_out[] = {
+        "write/read client",
+        "send/recv client",
+        "sendmsg/recvmsg client",
+        "sendto/recvfrom client",
+        "write/read server",
+        "send/recv server",
+        "sendmsg/recvmsg server",
+        "sendto/recvfrom server"
+    };
+    size_t ntool_out_nr = sizeof(ntool_out) / sizeof(ntool_out[0]), n;
+
+#if !defined(SKIP_NET_TESTS)
 
     protlayer = get_test_protlayer(0, 2);
 
@@ -3360,6 +3685,7 @@ CUTE_TEST_CASE(blackcat_poking_tests)
            "WARN: The net module tests were skipped.\n"
            "=====\n");
 #endif
+
 CUTE_TEST_CASE_END
 
 static int has_tcpdump(void) {
