@@ -28,6 +28,9 @@ static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_pbkdf2(void);
 
 static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_argon2i(void);
 
+static int wrap_user_key_with_tokens_stmt(kryptos_u8_t **key, size_t *key_size,
+                                          char **token_options, size_t token_options_nr);
+
 char *blackcat_get_option(const char *option, char *default_option) {
     char temp[4096];
     int a;
@@ -299,11 +302,25 @@ char *blackcat_get_kdf_usr_params_from_cmdline(size_t *out_size) {
 }
 
 int wrap_user_key_with_tokens(kryptos_u8_t **key, size_t *key_size) {
-    FILE *fp = NULL;
     static char *token_options[] = {
         "soft-token"
     };
     static size_t token_options_nr = sizeof(token_options) / sizeof(token_options[0]);
+    return wrap_user_key_with_tokens_stmt(key, key_size, token_options, token_options_nr);
+}
+
+int wrap_user_key_with_new_tokens(kryptos_u8_t **key, size_t *key_size) {
+    // INFO(Rafael): This function is used during a setkey operation.
+    static char *token_options[] = {
+        "new-soft-token"
+    };
+    static size_t token_options_nr = sizeof(token_options) / sizeof(token_options[0]);
+    return wrap_user_key_with_tokens_stmt(key, key_size, token_options, token_options_nr);
+}
+
+static int wrap_user_key_with_tokens_stmt(kryptos_u8_t **key, size_t *key_size,
+                                          char **token_options, size_t token_options_nr) {
+    FILE *fp = NULL;
     size_t t;
     char token_path[4096];
     char *option, *op_head, *op, *op_end;

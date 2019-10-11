@@ -105,14 +105,30 @@ static int argon2i_argc = sizeof(argon2i_argv) / sizeof(argon2i_argv[0]);
 static char token_path[] = "";
 static char token_cmd[] = "meow";
 static char token_arg2[] = "--soft-token=tk.1,tk.2,etc/token.iii";
+static char token_arg3[] = "--new-soft-token=ntk.1,ntk.2,etc/ntoken.iii";
 
 static char *token_argv[] = {
     token_path,
     token_cmd,
-    token_arg2
+    token_arg2,
+    token_arg3
 };
 
 static int token_argc = sizeof(token_argv) / sizeof(token_argv[0]);
+
+static char newtoken_path[] = "";
+static char newtoken_cmd[] = "meow";
+static char newtoken_arg2[] = "--soft-token=tk.1,tk.2,etc/token.iii";
+static char newtoken_arg3[] = "--new-soft-token=ntk.1,ntk.2,etc/ntoken.iii";
+
+static char *newtoken_argv[] = {
+    newtoken_path,
+    newtoken_cmd,
+    newtoken_arg2,
+    newtoken_arg3
+};
+
+static int newtoken_argc = sizeof(newtoken_argv) / sizeof(newtoken_argv[0]);
 
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
@@ -189,6 +205,7 @@ CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests);
 CUTE_DECLARE_TEST_CASE(wrap_user_key_with_tokens_tests);
+CUTE_DECLARE_TEST_CASE(wrap_user_key_with_new_tokens_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_wrong_arguments_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_show_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_help_cmd_tests);
@@ -230,9 +247,78 @@ CUTE_TEST_CASE(blackcat_cmd_tests_entry)
     CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
     CUTE_RUN_TEST(blackcat_get_kdf_usr_params_from_cmdline_tests);
     CUTE_RUN_TEST(wrap_user_key_with_tokens_tests);
+    CUTE_RUN_TEST(wrap_user_key_with_new_tokens_tests);
     // INFO(Rafael): If all is okay, time to poke this shit (a.k.a. 'system tests').
     CUTE_RUN_TEST_SUITE(blackcat_poking_tests);
     CUTE_RUN_TEST(blackcat_dev_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(wrap_user_key_with_new_tokens_tests)
+    kryptos_u8_t *key = "TheWayYouUsedToDo";
+    size_t key_size = 17;
+    kryptos_u8_t *tk1 = "abcd";
+    size_t tk1_size = 4;
+    kryptos_u8_t *tk2 = "efdgijklmnop";
+    size_t tk2_size = 12;
+    kryptos_u8_t *tokeniii = "chewdatta";
+    size_t tokeniii_size = 9;
+    kryptos_u8_t *ntk1 = "NewThingFromTokenI";
+    size_t ntk1_size = 18;
+    kryptos_u8_t *ntk2 = "NewThingFromToken2";
+    size_t ntk2_size = 18;
+    kryptos_u8_t *ntokeniii = "NewThingFromTokenIII";
+    size_t ntokeniii_size = 20;
+
+    key_size = 17;
+    key = (kryptos_u8_t *) kryptos_newseg(key_size);
+    CUTE_ASSERT(key != NULL);
+
+    memcpy(key, "TheWayYouUsedToDo", key_size);
+
+    // INFO(Rafael): Without tokens the key must remain the same.
+
+    CUTE_ASSERT(wrap_user_key_with_new_tokens(&key, &key_size) == 1);
+
+    CUTE_ASSERT(key_size == 17);
+    CUTE_ASSERT(key != NULL);
+    CUTE_ASSERT(memcmp(key, "TheWayYouUsedToDo", key_size) == 0);
+
+    // INFO(Rafael): Now with tokens it must change.
+
+    blackcat_set_argc_argv(newtoken_argc, newtoken_argv);
+
+    CUTE_ASSERT(create_file("tk.1", tk1, tk1_size) == 1);
+    CUTE_ASSERT(create_file("tk.2", tk2, tk2_size) == 1);
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
+    CUTE_ASSERT(create_file("etc/token.iii", tokeniii, tokeniii_size) == 1);
+
+    CUTE_ASSERT(create_file("ntk.1", ntk1, ntk1_size) == 1);
+    CUTE_ASSERT(create_file("ntk.2", ntk2, ntk2_size) == 1);
+    CUTE_ASSERT(create_file("etc/ntoken.iii", ntokeniii, ntokeniii_size) == 1);
+
+    CUTE_ASSERT(wrap_user_key_with_new_tokens(&key, &key_size) == 1);
+
+    CUTE_ASSERT(key_size == 73);
+    CUTE_ASSERT(key != NULL);
+    CUTE_ASSERT(memcmp(key, "NewThingFrNewThingFNewThingFTheWayYouUsedToDoromTokenIromToken2omTokenIII", key_size) == 0);
+
+    kryptos_freeseg(key, key_size);
+
+    remove("tk.1");
+    remove("ntk.1");
+    remove("tk.2");
+    remove("ntk.2");
+    remove("etc/token.iii");
+    remove("etc/ntoken.iii");
+    rmdir("etc");
+
+    blackcat_clear_options();
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(wrap_user_key_with_tokens_tests)

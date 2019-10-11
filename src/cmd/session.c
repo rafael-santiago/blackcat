@@ -87,6 +87,11 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
     accacia_delline();
     fflush(stdout);
 
+    if (wrap_user_key_with_tokens(&es->key[0], &es->key_size[0]) == 0) {
+        fprintf(stderr, "ERROR: While trying to mix user token data with first layer key.\n");
+        goto new_blackcat_exec_session_ctx_epilogue;
+    }
+
     if (bcrepo_stat(&es->catalog, es->key[0], es->key_size[0], &catalog_data, &catalog_data_size) == 0) {
         fprintf(stderr, "ERROR: While trying to access the catalog data.\n");
         exit_code = EACCES;
@@ -118,6 +123,11 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
             if (bcrepo_validate_key(es->catalog, es->key[1], es->key_size[1]) == 0) {
                 fprintf(stderr, "ERROR: Wrong key.\n");
                 exit_code = EACCES;
+                goto new_blackcat_exec_session_ctx_epilogue;
+            }
+
+            if (wrap_user_key_with_tokens(&es->key[1], &es->key_size[1]) == 0) {
+                fprintf(stderr, "ERROR: While trying to mix user token data with second layer key.\n");
                 goto new_blackcat_exec_session_ctx_epilogue;
             }
         } else {

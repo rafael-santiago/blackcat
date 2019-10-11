@@ -151,6 +151,11 @@ int blackcat_cmd_init(void) {
     temp_key_size = 0;
     temp_key = NULL;
 
+    if (wrap_user_key_with_tokens(&catalog_key, &catalog_key_size) == 0) {
+        fprintf(stderr, "ERROR: While trying to mix user token data with first layer key.\n");
+        goto blackcat_cmd_init_epilogue;
+    }
+
     if (keyed_alike) {
         protlayer_key = catalog_key;
         protlayer_key_size = catalog_key_size;
@@ -185,6 +190,11 @@ int blackcat_cmd_init(void) {
         if (temp_key_size != protlayer_key_size || memcmp(protlayer_key, temp_key, protlayer_key_size) != 0) {
             fflush(stdout);
             fprintf(stderr, "ERROR: The keys do not match.\n");
+            goto blackcat_cmd_init_epilogue;
+        }
+
+        if (wrap_user_key_with_tokens(&protlayer_key, &protlayer_key_size) == 0) {
+            fprintf(stderr, "ERROR: While trying to mix user token data with second layer key.\n");
             goto blackcat_cmd_init_epilogue;
         }
     }
