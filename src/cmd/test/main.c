@@ -102,6 +102,18 @@ static char *argon2i_argv[] = {
 
 static int argon2i_argc = sizeof(argon2i_argv) / sizeof(argon2i_argv[0]);
 
+static char token_path[] = "";
+static char token_cmd[] = "meow";
+static char token_arg2[] = "--soft-token=tk.1,tk.2,etc/token.iii";
+
+static char *token_argv[] = {
+    token_path,
+    token_cmd,
+    token_arg2
+};
+
+static int token_argc = sizeof(token_argv) / sizeof(token_argv[0]);
+
 // INFO(Rafael): The test case 'blackcat_clear_option_tests' needs the following options
 //               out from the .rodata otherwise it would cause an abnormal program termination.
 
@@ -176,6 +188,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_dev_tests);
 CUTE_DECLARE_TEST_CASE(mkargv_freeargv_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_set_argv_argc_with_default_args_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests);
+CUTE_DECLARE_TEST_CASE(wrap_user_key_with_tokens_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_wrong_arguments_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_show_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_help_cmd_tests);
@@ -203,6 +216,79 @@ CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
 CUTE_DECLARE_TEST_CASE_SUITE(blackcat_poking_tests);
 
 CUTE_MAIN(blackcat_cmd_tests_entry);
+
+CUTE_TEST_CASE(blackcat_cmd_tests_entry)
+    CUTE_RUN_TEST(blackcat_set_argc_argv_tests);
+    CUTE_RUN_TEST(blackcat_get_command_tests);
+    CUTE_RUN_TEST(blackcat_get_option_tests);
+    CUTE_RUN_TEST(blackcat_get_bool_option_tests);
+    CUTE_RUN_TEST(blackcat_get_argv_tests);
+    CUTE_RUN_TEST(blackcat_clear_options_tests);
+    CUTE_RUN_TEST(get_blackcat_version_tests);
+    CUTE_RUN_TEST(levenshtein_distance_tests);
+    CUTE_RUN_TEST(mkargv_freeargv_tests);
+    CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
+    CUTE_RUN_TEST(blackcat_get_kdf_usr_params_from_cmdline_tests);
+    CUTE_RUN_TEST(wrap_user_key_with_tokens_tests);
+    // INFO(Rafael): If all is okay, time to poke this shit (a.k.a. 'system tests').
+    CUTE_RUN_TEST_SUITE(blackcat_poking_tests);
+    CUTE_RUN_TEST(blackcat_dev_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(wrap_user_key_with_tokens_tests)
+    kryptos_u8_t *key = "TheWayYouUsedToDo";
+    size_t key_size = 17;
+    kryptos_u8_t *tk1 = "abcd";
+    size_t tk1_size = 4;
+    kryptos_u8_t *tk2 = "efdgijklmnop";
+    size_t tk2_size = 12;
+    kryptos_u8_t *tokeniii = "chewdatta";
+    size_t tokeniii_size = 9;
+
+    key_size = 17;
+    key = (kryptos_u8_t *) kryptos_newseg(key_size);
+    CUTE_ASSERT(key != NULL);
+
+    memcpy(key, "TheWayYouUsedToDo", key_size);
+
+    // INFO(Rafael): Without tokens the key must remain the same.
+
+    CUTE_ASSERT(wrap_user_key_with_tokens(&key, &key_size) == 1);
+
+    CUTE_ASSERT(key_size == 17);
+    CUTE_ASSERT(key != NULL);
+    CUTE_ASSERT(memcmp(key, "TheWayYouUsedToDo", key_size) == 0);
+
+    // INFO(Rafael): Now with tokens it must change.
+
+    blackcat_set_argc_argv(token_argc, token_argv);
+
+    CUTE_ASSERT(create_file("tk.1", tk1, tk1_size) == 1);
+    CUTE_ASSERT(create_file("tk.2", tk2, tk2_size) == 1);
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("etc", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("etc") == 0);
+#else
+# error Some code wanted.
+#endif
+    CUTE_ASSERT(create_file("etc/token.iii", tokeniii, tokeniii_size) == 1);
+
+    CUTE_ASSERT(wrap_user_key_with_tokens(&key, &key_size) == 1);
+
+    CUTE_ASSERT(key_size == 42);
+    CUTE_ASSERT(key != NULL);
+    CUTE_ASSERT(memcmp(key, "chewefdgijabTheWayYouUsedToDocdklmnopdatta", key_size) == 0);
+
+    kryptos_freeseg(key, key_size);
+
+    remove("tk.1");
+    remove("tk.2");
+    remove("etc/token.iii");
+    rmdir("etc");
+
+    blackcat_clear_options();
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_get_kdf_usr_params_from_cmdline_tests)
     char *out;
@@ -312,23 +398,6 @@ CUTE_TEST_CASE(mkargv_freeargv_tests)
     freeargv(argv, 0);
     // INFO(Rafael): If due to some reason freeargv() has failed. The memory leak checking system will warn us.
     freeargv(argv, argc);
-CUTE_TEST_CASE_END
-
-CUTE_TEST_CASE(blackcat_cmd_tests_entry)
-    CUTE_RUN_TEST(blackcat_set_argc_argv_tests);
-    CUTE_RUN_TEST(blackcat_get_command_tests);
-    CUTE_RUN_TEST(blackcat_get_option_tests);
-    CUTE_RUN_TEST(blackcat_get_bool_option_tests);
-    CUTE_RUN_TEST(blackcat_get_argv_tests);
-    CUTE_RUN_TEST(blackcat_clear_options_tests);
-    CUTE_RUN_TEST(get_blackcat_version_tests);
-    CUTE_RUN_TEST(levenshtein_distance_tests);
-    CUTE_RUN_TEST(mkargv_freeargv_tests);
-    CUTE_RUN_TEST(blackcat_set_argv_argc_with_default_args_tests);
-    CUTE_RUN_TEST(blackcat_get_kdf_usr_params_from_cmdline_tests);
-    // INFO(Rafael): If all is okay, time to poke this shit (a.k.a. 'system tests').
-    CUTE_RUN_TEST_SUITE(blackcat_poking_tests);
-    CUTE_RUN_TEST(blackcat_dev_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(levenshtein_distance_tests)

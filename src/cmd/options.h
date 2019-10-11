@@ -50,4 +50,6 @@ void freeargv(char **argv, const int argc);
 
 char *blackcat_get_kdf_usr_params_from_cmdline(size_t *out_size);
 
+int wrap_user_key_with_tokens(kryptos_u8_t **key, size_t *key_size);
+
 #endif

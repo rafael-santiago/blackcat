@@ -14,6 +14,7 @@
 #include <keychain/kdf/kdf_utils.h>
 #include <kbd/kbd.h>
 #include <util/random.h>
+#include <util/token.h>
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
@@ -50,6 +51,7 @@ CUTE_DECLARE_TEST_CASE(get_kdf_clockwork_tests);
 CUTE_DECLARE_TEST_CASE(get_kdf_usr_params_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_fmt_str_tests);
+CUTE_DECLARE_TEST_CASE(token_wrap_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -90,6 +92,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_kdf_clockwork_tests);
     CUTE_RUN_TEST(get_kdf_usr_params_tests);
     CUTE_RUN_TEST(blackcat_kdf_tests);
+    CUTE_RUN_TEST(token_wrap_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
@@ -3174,4 +3177,41 @@ CUTE_TEST_CASE(blackcat_fmt_str_tests)
         CUTE_ASSERT(memcmp(out, test_vector[t].exp, out_size) == 0);
         kryptos_freeseg(out, out_size);
     }
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(token_wrap_tests)
+    kryptos_u8_t *key;
+    size_t key_size;
+    struct token_ctx {
+        kryptos_u8_t *data;
+        size_t data_size;
+    } tokens[] = { { "\xDE\xAD\xBE\xEF", 4 }, { "NothingIsEasy", 13 } };
+    size_t tokens_nr = sizeof(tokens) / sizeof(tokens[0]), t;
+    kryptos_u8_t *expected = "Nothin\xDE\xADsecret\xBE\xEFgIsEasy";
+    size_t expected_size = 23;
+
+    // INFO(Rafael): Those crazy parameters cannot explode at our faces.
+
+    CUTE_ASSERT(token_wrap(NULL, NULL, NULL, 0) == 0);
+    CUTE_ASSERT(token_wrap(NULL, &key_size, tokens[0].data, tokens[0].data_size) == 0);
+    CUTE_ASSERT(token_wrap(&key, &key_size, NULL, tokens[0].data_size) == 0);
+    CUTE_ASSERT(token_wrap(&key, &key_size, tokens[0].data, 0) == 0);
+
+    key_size = 6;
+    key = (kryptos_u8_t *) kryptos_newseg(key_size);
+
+    CUTE_ASSERT(key != NULL);
+
+    memcpy(key, "secret", 6);
+
+    for (t = 0; t < tokens_nr; t++) {
+        CUTE_ASSERT(token_wrap(&key, &key_size, tokens[t].data, tokens[t].data_size) == 1);
+        CUTE_ASSERT(key != NULL);
+        CUTE_ASSERT(key_size != 0 && key_size != 6);
+    }
+
+    CUTE_ASSERT(key_size == expected_size);
+    CUTE_ASSERT(memcmp(key, expected, expected_size) == 0);
+
+    kryptos_freeseg(key, key_size);
 CUTE_TEST_CASE_END

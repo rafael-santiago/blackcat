@@ -10,6 +10,7 @@
 #include <keychain/keychain.h>
 #include <keychain/kdf/kdf_utils.h>
 #include <keychain/ciphering_schemes.h>
+#include <util/token.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -295,6 +296,108 @@ char *blackcat_get_kdf_usr_params_from_cmdline(size_t *out_size) {
     }
 
     return out;
+}
+
+int wrap_user_key_with_tokens(kryptos_u8_t **key, size_t *key_size) {
+    FILE *fp = NULL;
+    static char *token_options[] = {
+        "soft-token"
+    };
+    static size_t token_options_nr = sizeof(token_options) / sizeof(token_options[0]);
+    size_t t;
+    char token_path[4096];
+    char *option, *op_head, *op, *op_end;
+    size_t path_size;
+    int no_error = 1;
+    kryptos_u8_t *token_data = NULL;
+    size_t token_data_size = 0;
+
+    for (t = 0; t < token_options_nr; t++) {
+        if ((option = blackcat_get_option(token_options[t], NULL)) == NULL) {
+            continue;
+        }
+
+        op = option;
+        op_end = op + strlen(option);
+
+        while (op < op_end && no_error) {
+            op_head = op;
+            while (op != op_end && *op != ',') {
+                op++;
+            }
+
+            path_size = op - op_head;
+
+            if (path_size >= sizeof(token_path)) {
+                fprintf(stderr, "ERROR: The token path is too large.\n");
+                no_error = 0;
+                goto wrap_user_key_with_tokens_epilogue;
+            }
+
+            memset(token_path, 0, sizeof(token_path));
+            memcpy(token_path, op_head, path_size);
+
+            if ((fp = fopen(token_path, "rb")) == NULL) {
+                fprintf(stderr, "ERROR: Unable to read token data from '%s'.\n", token_path);
+                no_error = 0;
+                goto wrap_user_key_with_tokens_epilogue;
+            }
+
+            if (fseek(fp, 0L, SEEK_END) == -1) {
+                fprintf(stderr, "ERROR: Unable to seek along token data from '%s' until its end.\n", token_path);
+                no_error = 0;
+                goto wrap_user_key_with_tokens_epilogue;
+            }
+
+            token_data_size = ftell(fp);
+
+            if (fseek(fp, 0L, SEEK_SET) == -1) {
+                fprintf(stderr, "ERROR: Unable to seek along token data from '%s' until its beginning.\n", token_path);
+                no_error = 0;
+                goto wrap_user_key_with_tokens_epilogue;
+            }
+
+            token_data = (kryptos_u8_t *) kryptos_newseg(token_data_size);
+
+            if (token_data == NULL) {
+                fprintf(stderr, "ERROR: Not enough memory to read data from token at '%s'.\n", token_path);
+                no_error = 0;
+                goto wrap_user_key_with_tokens_epilogue;
+            }
+
+            fread(token_data, 1, token_data_size, fp);
+
+            fclose(fp);
+            fp = NULL;
+
+            no_error = token_wrap(key, key_size, token_data, token_data_size);
+
+            kryptos_freeseg(token_data, token_data_size);
+            token_data = NULL;
+            token_data_size = 0;
+
+            op++;
+        }
+    }
+
+wrap_user_key_with_tokens_epilogue:
+
+    memset(token_path, 0, sizeof(token_path));
+
+    option = op_head = op = op_end = NULL;
+
+    if (token_data != NULL) {
+        kryptos_freeseg(token_data, token_data_size);
+        token_data = NULL;
+        token_data_size = 0;
+    }
+
+    if (fp != NULL) {
+        fclose(fp);
+        fp = NULL;
+    }
+
+    return no_error;
 }
 
 static struct blackcat_kdf_clockwork_ctx *blackcat_kdf_usr_params_hkdf(void) {

@@ -6,6 +6,7 @@
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
 (B) The cmd tool's show command should also list the available KDFs. +NewFeature
 (B) Extend the fs module capabilities. +NewFeature
+(B) Avoid directly usage of memset and memcpy functions. Avoid libc hooking. +ParanoidImprovement
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
 (D) Make net tests less magical timeouts dependent. Let's make it more stable. +Improvement,+Tests
