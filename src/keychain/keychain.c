@@ -167,7 +167,7 @@ static kryptos_u8_t *blackcat_key_crunching(const size_t algo, kryptos_u8_t **ke
 
     *derived_size = g_blackcat_ciphering_schemes[algo].key_size;
 
-    return keychain_hash_user_weak_key(key, key_size, derived_size, handle);
+    return keychain_hash_user_weak_key(key, key_size, (ssize_t *)derived_size, handle);
 }
 
 static kryptos_u8_t *keychain_hash_user_weak_key(kryptos_u8_t **key, size_t *key_size,

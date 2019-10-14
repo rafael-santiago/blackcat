@@ -4393,6 +4393,7 @@ static int test_env_housekeeping(void) {
     rmdir("unpack-test/bpack");
     rmdir("unpack-test");
     remove("test.bpack");
+    return 0;
 }
 
 static int syshook(void) {

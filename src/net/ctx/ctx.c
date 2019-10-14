@@ -494,7 +494,7 @@ int step_bnt_keyset(bnt_keyset_ctx **keyset, const kryptos_u64_t intended_seqno,
         return 0;
     }
 
-    if (abs(intended_seqno - curr_seqno) > ksp->priv->max_seqno_delta) {
+    if ((intended_seqno - curr_seqno) > ksp->priv->max_seqno_delta) {
         return 0;
     }
 

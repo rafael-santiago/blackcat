@@ -249,7 +249,7 @@ static int br_dgur_handle(unsigned long cmd) {
         rp_end--;
     }
 
-    sprintf(temp, "*%s*", rp_end + (*rp_end == '/'));
+    sprintf((char *)temp, "*%s*", rp_end + (*rp_end == '/'));
 
     exit_code = do_ioctl(cmd, temp);
 
@@ -279,7 +279,7 @@ static int do_ioctl(unsigned long cmd, ...) {
         va_start(vl, cmd);
         if (data != NULL) {
             devio.data = va_arg(vl, unsigned char *);
-            devio.data_size = strlen(devio.data);
+            devio.data_size = strlen((char *)devio.data);
             devio_p = &devio;
         }
     }

@@ -241,7 +241,7 @@ int bcrepo_check_config_integrity(bfs_catalog_ctx *catalog, const char *rootpath
     }
 
     bcrepo_hex_to_seed(&salt, &salt_size,
-                       catalog->config_hash + (catalog->config_hash_size >> 1),
+                       (char *)(catalog->config_hash + (catalog->config_hash_size >> 1)),
                        catalog->config_hash_size - (catalog->config_hash_size >> 1));
 
     bcrepo_mkpath(temp, sizeof(temp) - 1, rootpath, rootpath_size,
@@ -547,8 +547,8 @@ int bcrepo_untouch(bfs_catalog_ctx *catalog,
     tmb.modtime = BLACKCAT_EPOCH;
 
     for (fp = catalog->files; fp != NULL; fp = fp->next) {
-        if (pattern == NULL || strglob(fp->path, pattern)) {
-            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, fp->path, fp->path_size);
+        if (pattern == NULL || strglob((char *)fp->path, pattern)) {
+            bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, (char *)fp->path, fp->path_size);
             done = (hard) ? (utime(fullpath, &tmb) == 0 && setfilectime(fullpath) == 0) : (utime(fullpath, &tmb) == 0);
             if (done) {
                 touch_nr++;
@@ -1151,7 +1151,7 @@ int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const s
     bcrepo_rescue_file(rescue_filepath, sizeof(rescue_filepath), rootpath);
 
     if ((fp = fopen(rescue_filepath, "rb")) == NULL) {
-        fprintf(stderr, "ERROR: The repo seems clean, there is nothing to restore here.\n", rescue_filepath);
+        fprintf(stderr, "ERROR: The repo seems clean, there is nothing to restore here.\n");
         goto bcrepo_restore_epilogue;
     }
 
@@ -1186,7 +1186,7 @@ int bcrepo_restore(const bfs_catalog_ctx *catalog, const char *rootpath, const s
 
     rp = &filepath[0] + rootpath_size;
 
-    if ((file = get_entry_from_relpath_ctx(catalog->files, rp)) == NULL) {
+    if ((file = get_entry_from_relpath_ctx(catalog->files, (kryptos_u8_t *)rp)) == NULL) {
         fprintf(stderr, "ERROR: There is nothing to restore.\n");
         fclose(fp);
         fp = NULL;
@@ -1480,7 +1480,7 @@ int bcrepo_pack(bfs_catalog_ctx **catalog, const char *rootpath, const size_t ro
     }
 
     for (fp = cp->files; fp != NULL; fp = fp->next) {
-        bcrepo_mkpath(filepath, sizeof(filepath) - 1, rootpath, rootpath_size, fp->path, fp->path_size);
+        bcrepo_mkpath(filepath, sizeof(filepath) - 1, rootpath, rootpath_size, (char *)fp->path, fp->path_size);
         roll_data(filepath, fp->path, wp, wpp, data, data_size, no_error)
     }
 
@@ -1597,7 +1597,7 @@ int bcrepo_unpack(const char *wpath, const char *rootpath) {
     }\
     memcpy(data, wp, data_size);\
     wp += data_size;\
-    off = &filepath[strlen(filepath) - 1];\
+    off = (kryptos_u8_t *)&filepath[strlen((char *)filepath) - 1];\
     while (off != (kryptos_u8_t *)&filepath[0] && *off != '/') {\
         off--;\
     }\
@@ -1847,7 +1847,7 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
         return 0;
     }
 
-    fprintf(rp, "%s,%ld\n", fullpath, data_size);
+    fprintf(rp, "%s,%zu\n", fullpath, data_size);
     fwrite(data, 1, data_size, rp);
     fclose(rp);
 
@@ -1880,7 +1880,7 @@ static int bdup_handle(unsigned long cmd,
     }
 
     for (fp = cp->files; fp != NULL; fp = fp->next) {
-        if (pattern == NULL || strglob(fp->path, pattern) == 1) {
+        if (pattern == NULL || strglob((char *)fp->path, pattern) == 1) {
             if (do_ioctl(cmd, fp->path, fp->path_size) == 0) {
                 count += 1;
             } else {
@@ -1911,7 +1911,7 @@ static int do_ioctl(unsigned long cmd, const unsigned char *path, const size_t p
     }
 
     devio.data = (unsigned char *)rp_end + (*rp_end == '/');
-    devio.data_size = strlen(devio.data);
+    devio.data_size = strlen((char *)devio.data);
 
     err = ioctl(dev, cmd, &devio);
 
@@ -2232,7 +2232,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
             }
 
             if (fpp->status == kBfsFileStatusLocked &&
-                bcrepo_unlock(catalog, rootpath, rootpath_size, fpp->path, fpp->path_size, NULL, NULL) != 1) {
+                bcrepo_unlock(catalog, rootpath, rootpath_size, (char *)fpp->path, fpp->path_size, NULL, NULL) != 1) {
                 fprintf(stderr, "WARN: Unable to unlock the file '%s'.\n", fpp->path);
             }
 
@@ -2249,7 +2249,7 @@ int bcrepo_rm(bfs_catalog_ctx **catalog,
             fp = cp->files;
             again = 0;
             while (fp != NULL && !again) {
-                if (strglob(fp->path, pattern) == 1) {
+                if (strglob((char *)fp->path, pattern) == 1) {
                     cp->files = del_file_from_relpath_ctx(cp->files, fp->path);
                     rm_nr++;
                     again = 1;
@@ -2662,7 +2662,7 @@ static int unl_handle(bfs_catalog_ctx **catalog,
             fpp = get_entry_from_relpath_ctx(cp->files, fp->path);
             unl_fproc(fpp, proc, cp->protlayer, proc_nr += proc(rootpath,
                                                                 rootpath_size,
-                                                                fpp->path,
+                                                                (char *)fpp->path,
                                                                 fpp->path_size,
                                                                 cp->protlayer,
                                                                 dproc,
@@ -2674,7 +2674,7 @@ static int unl_handle(bfs_catalog_ctx **catalog,
         for (fp = files; fp != NULL; fp = fp->next) {
             unl_fproc(fp, proc, cp->protlayer, proc_nr += proc(rootpath,
                                                                rootpath_size,
-                                                               fp->path,
+                                                               (char *)fp->path,
                                                                fp->path_size,
                                                                cp->protlayer,
                                                                dproc,
@@ -2894,9 +2894,9 @@ static void get_file_list(bfs_catalog_relpath_ctx **files, bfs_catalog_relpath_c
         // INFO(Rafael): We are only interested in regular files and directories.
         if (st.st_mode & S_IFREG) {
             // INFO(Rafael): However, only regular files are really relevant for us.
-            if (get_entry_from_relpath_ctx(dest_files, filepath + rootpath_size) == NULL) {
+            if (get_entry_from_relpath_ctx(dest_files, (kryptos_u8_t *)(filepath + rootpath_size)) == NULL) {
                 files_p = add_file_to_relpath_ctx(files_p,
-                                                  filepath + rootpath_size,
+                                                  (kryptos_u8_t *)(filepath + rootpath_size),
                                                   filepath_size - rootpath_size, kBfsFileStatusUnlocked, NULL);
             }
         } else if (st.st_mode & S_IFDIR) {
@@ -3174,7 +3174,7 @@ int bcrepo_validate_key(const bfs_catalog_ctx *catalog, const kryptos_u8_t *key,
 
         salt_size = hash_size();
 
-        bcrepo_hex_to_seed(&salt, &salt_size, catalog->key_hash, catalog->key_hash_size >> 1);
+        bcrepo_hex_to_seed(&salt, &salt_size, (char *)catalog->key_hash, catalog->key_hash_size >> 1);
 
         ktask->in_size = salt_size + key_size;
 
@@ -3255,7 +3255,7 @@ kryptos_u8_t *bcrepo_hash_key(const kryptos_u8_t *key,
         // WARN(Rafael): It does not hash with binary output, it must be hexadecimal.
         h(&ktask, 1);
 
-        bcrepo_seed_to_hex(xsalt, sizeof(xsalt) - 1, salt, salt_size);
+        bcrepo_seed_to_hex((char *)xsalt, sizeof(xsalt) - 1, salt, salt_size);
 
         *hsize = (salt_size << 1) + ktask->out_size;
 
@@ -3399,7 +3399,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
 
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_KEY_HASH_ALGO_HDR,
-                             key_hash_algo,
+                             (kryptos_u8_t *)key_hash_algo,
                              strlen(key_hash_algo)) != kKryptosSuccess) {
         fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
         no_error = 0;
@@ -3420,7 +3420,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
 
     if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                              BCREPO_PEM_HMAC_HDR,
-                             catalog->hmac_scheme->name,
+                             (kryptos_u8_t *)catalog->hmac_scheme->name,
                              strlen(catalog->hmac_scheme->name)) != kKryptosSuccess) {
         fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
         no_error = 0;
@@ -3437,7 +3437,7 @@ int bcrepo_write(const char *filepath, bfs_catalog_ctx *catalog, const kryptos_u
 
         if (kryptos_pem_put_data(&pem_buf, &pem_buf_size,
                                  BCREPO_PEM_ENCODER_HDR,
-                                 encoder, strlen(encoder)) != kKryptosSuccess) {
+                                 (kryptos_u8_t *)encoder, strlen(encoder)) != kKryptosSuccess) {
             fprintf(stderr, "ERROR: While writing catalog PEM data.\n");
             no_error = 0;
             encoder = NULL;
@@ -3553,7 +3553,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
         goto bcrepo_read_epilogue;
     }
 
-    catalog_key_hash_algo = get_hash_processor(key_hash_algo);
+    catalog_key_hash_algo = get_hash_processor((char *)key_hash_algo);
 
     if (catalog_key_hash_algo == NULL) {
         // INFO(Rafael): Some idiot trying to screw up the program's flow.
@@ -3565,7 +3565,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     }
 
     catalog->catalog_key_hash_algo = catalog_key_hash_algo;
-    catalog->catalog_key_hash_algo_size = get_hash_size(key_hash_algo);
+    catalog->catalog_key_hash_algo_size = get_hash_size((char *)key_hash_algo);
 
     hmac_algo = kryptos_pem_get_data(BCREPO_PEM_HMAC_HDR, o, *out_size, &hmac_algo_size);
 
@@ -3579,7 +3579,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     catalog->salt = kryptos_pem_get_data(BCREPO_PEM_SALT_DATA_HDR, o, *out_size, &catalog->salt_size);
 
-    hmac_scheme = get_hmac_catalog_scheme(hmac_algo);
+    hmac_scheme = get_hmac_catalog_scheme((char *)hmac_algo);
 
     if (hmac_scheme == NULL) {
         // INFO(Rafael): Some idiot trying to screw up the program's flow.
@@ -3595,7 +3595,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
     encoder = kryptos_pem_get_data(BCREPO_PEM_ENCODER_HDR, o, *out_size, &encoder_size);
 
     if (encoder != NULL) {
-        if ((catalog->encoder = get_encoder(encoder)) == NULL) {
+        if ((catalog->encoder = get_encoder((char *)encoder)) == NULL) {
             fprintf(stderr, "ERROR: Unable to get the repo's encoder.\n");
             kryptos_freeseg(o, *out_size);
             o = NULL;
@@ -3668,9 +3668,7 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
 #endif
     size_t cwd_size;
 
-    getcwd(cwd, sizeof(cwd) - 1);
-
-    if (cwd == NULL) {
+    if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
         return path;
     }
 
@@ -4315,7 +4313,7 @@ static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in
     const kryptos_u8_t *fp, *fp_end, *end;
     kryptos_u8_t *data = NULL;
 
-    fp = strstr(in, field);
+    fp = (kryptos_u8_t *)strstr((const char *)in, field);
     end = in + in_size;
 
     if (fp == NULL) {
@@ -4325,7 +4323,7 @@ static kryptos_u8_t *get_catalog_field(const char *field, const kryptos_u8_t *in
     if (*(fp - 1) == '-') {
         while (fp != NULL && *(fp - 1) == '-' && fp < end) {
             fp += 1;
-            fp = strstr(fp, field);
+            fp = (kryptos_u8_t *)strstr((char *)fp, field);
         }
     }
 
@@ -4390,14 +4388,14 @@ static int is_metadata_compatible(const char *version) {
 
 static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
-    cp->bc_version = get_catalog_field(BCREPO_CATALOG_BC_VERSION, in, in_size);
+    cp->bc_version = (char *)get_catalog_field(BCREPO_CATALOG_BC_VERSION, in, in_size);
     // INFO(Rafael): In case of incompatibility we will abort the reading here.
     return is_metadata_compatible(cp->bc_version);
 }
 
 static int otp_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
-    char *otp_data = get_catalog_field(BCREPO_CATALOG_OTP, in, in_size);
+    char *otp_data = (char *)get_catalog_field(BCREPO_CATALOG_OTP, in, in_size);
     cp->otp = (otp_data != NULL && *otp_data == '1');
     if (otp_data != NULL) {
         kryptos_freeseg(otp_data, 1);
@@ -4417,7 +4415,7 @@ static int key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, co
     int done = 0;
     bfs_catalog_ctx *cp = *catalog;
 
-    hash_algo = get_catalog_field(BCREPO_CATALOG_KEY_HASH_ALGO, in, in_size);
+    hash_algo = (char *)get_catalog_field(BCREPO_CATALOG_KEY_HASH_ALGO, in, in_size);
 
     if (hash_algo == NULL) {
         goto key_hash_algo_r_epilogue;
@@ -4442,7 +4440,7 @@ static int protlayer_key_hash_algo_r(bfs_catalog_ctx **catalog, const kryptos_u8
     int done = 0;
     bfs_catalog_ctx *cp = *catalog;
 
-    hash_algo = get_catalog_field(BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO, in, in_size);
+    hash_algo = (char *)get_catalog_field(BCREPO_CATALOG_PROTLAYER_KEY_HASH_ALGO, in, in_size);
 
     if (hash_algo == NULL) {
         goto protlayer_key_hash_algo_r_epilogue;
@@ -4470,14 +4468,14 @@ static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const s
     }
 
     cp->key_hash = get_catalog_field(BCREPO_CATALOG_KEY_HASH, in, in_size);
-    cp->key_hash_size = strlen(cp->key_hash);
+    cp->key_hash_size = strlen((char *)cp->key_hash);
 
     return (cp->key_hash != NULL && cp->key_hash_size > 0);
 }
 
 static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
-    cp->protection_layer = get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
+    cp->protection_layer = (char *)get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
     return (cp->protection_layer != NULL);
 }
 
@@ -4485,7 +4483,7 @@ static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, cons
     bfs_catalog_ctx *cp = *catalog;
 
     cp->config_hash = get_catalog_field(BCREPO_CATALOG_CONFIG_HASH, in, in_size);
-    cp->config_hash_size =  (cp->config_hash != NULL) ? strlen(cp->config_hash) : 0;
+    cp->config_hash_size =  (cp->config_hash != NULL) ? strlen((char *)cp->config_hash) : 0;
 
     return 1; // INFO(Rafael): This catalog field is optional so always its reading will return true.
 }
@@ -4493,8 +4491,8 @@ static int config_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, cons
 static int kdf_params_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
 
-    cp->kdf_params = get_catalog_field(BCREPO_CATALOG_KDF_PARAMS, in, in_size);
-    cp->kdf_params_size = (cp->kdf_params != NULL) ? strlen(cp->kdf_params) : 0;
+    cp->kdf_params = (char *)get_catalog_field(BCREPO_CATALOG_KDF_PARAMS, in, in_size);
+    cp->kdf_params_size = (cp->kdf_params != NULL) ? strlen((char *)cp->kdf_params) : 0;
 
     return 1; // INFO(Rafael): This catalog field is also optional.
 }
@@ -4512,7 +4510,7 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
     ip = in;
     ip_end = ip + in_size;
 
-    if ((kryptos_u8_t *)(ip = strstr(ip, BCREPO_CATALOG_FILES)) == NULL) {
+    if ((kryptos_u8_t *)(ip = (kryptos_u8_t *)strstr((const char *)ip, BCREPO_CATALOG_FILES)) == NULL) {
         return 0;
     }
 
@@ -4628,11 +4626,12 @@ static int files_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size
                 goto files_r_epilogue;
             }
 
-            bcrepo_hex_to_seed(&cat_p->files->tail->seed, &cat_p->files->tail->seed_size, cp, cp_end - cp);
+            bcrepo_hex_to_seed(&cat_p->files->tail->seed, &cat_p->files->tail->seed_size, (char *)cp, cp_end - cp);
 
             kryptos_freeseg(path, path_size + 1);
             kryptos_freeseg(timestamp, timestamp_size + 1);
-            path = timestamp = NULL;
+            path = NULL;
+            timestamp = NULL;
 
             ip = cp_end - 1;
         } else if (*(ip + 1) == '\n') {

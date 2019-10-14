@@ -100,7 +100,7 @@ struct blackcat_kdf_clockwork_ctx *get_pbkdf2_clockwork(const char *usr_params, 
 
     if (arg_size > 0) {
         kryptos_task_set_decode_action(ktask);
-        kryptos_run_encoder(base64, ktask, arg, arg_size);
+        kryptos_run_encoder(base64, ktask, (kryptos_u8_t *)arg, arg_size);
 
         if (!kryptos_last_task_succeed(ktask)) {
             if (err_msg != NULL) {

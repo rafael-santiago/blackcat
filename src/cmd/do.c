@@ -63,7 +63,7 @@ static char **get_cmds(const char *cmd_name, const blackcat_exec_session_ctx *se
     bcrepo_config_get_section(cfg, cmd_name);
 
     while (bcrepo_config_get_next_line(cfg) != 0) {
-        while (*cfg->line == '\t' || *cfg->line == ' ' && cfg->line != cfg->line_end) {
+        while ((*cfg->line == '\t' || *cfg->line == ' ') && cfg->line != cfg->line_end) {
             cfg->line++;
         }
 

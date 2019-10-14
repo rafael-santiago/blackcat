@@ -80,8 +80,8 @@ int blackcat_cmd_status(void) {
                                       status_param,
                                       {
                                         for (fp = session->catalog->files; fp != NULL; fp = fp->next) {
-                                            if (status_param == NULL || strglob(fp->path, status_param)) {
-                                                t = (time_t)strtoul(fp->timestamp, NULL, 10);
+                                            if (status_param == NULL || strglob((char *)fp->path, status_param)) {
+                                                t = (time_t)strtoul((char *)fp->timestamp, NULL, 10);
                                                 strftime(date, sizeof(date) - 1, "%b %d %Y %H:%M:%S", localtime(&t));
                                                 print_file_info(fp, date);
                                             }

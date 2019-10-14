@@ -35,6 +35,10 @@ fs-tests.prologue() {
 
     setup_ciphering_schemes($cflags);
 
+    if ($curr_tool.match("^clang") == 1) {
+        $cflags.add_item("-Wno-pointer-sign");
+    }
+
     if (hefesto.sys.os_name() == "linux") {
         $ldflags.add_item("-ldl");
         $ldflags.add_item("-lpthread");
@@ -48,6 +52,8 @@ fs-tests.prologue() {
     } else if (hefesto.sys.os_name() == "openbsd") {
         $ldflags.add_item("-lexecinfo");
         $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "minix") {
+        $ldflags.add_item("-lexecinfo");
     }
 
     if (hefesto.sys.os_name() != "windows") {

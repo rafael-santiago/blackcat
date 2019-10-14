@@ -99,7 +99,7 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     blackcat_protlayer_chain_ctx *protlayer = NULL;
     kryptos_u8_t *pass;
     size_t pass_size = 4;
-    kryptos_u8_t *in = "(null)\x00";
+    kryptos_u8_t *in = (kryptos_u8_t *)"(null)\x00";
     size_t in_size = 7;
     size_t out_size, plain_size;
     kryptos_u8_t *out = NULL, *plain = NULL;
@@ -113,10 +113,10 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     kryptos_u8_t *cascade[4];
     size_t cascade_nr = 4, c;
 
-    cascade[0] = get_test_protlayer(1, 1);
-    cascade[1] = get_test_protlayer(1, 2);
-    cascade[2] = get_test_protlayer(1, 3);
-    cascade[3] = get_test_protlayer(1, 4);
+    cascade[0] = (kryptos_u8_t *)get_test_protlayer(1, 1);
+    cascade[1] = (kryptos_u8_t *)get_test_protlayer(1, 2);
+    cascade[2] = (kryptos_u8_t *)get_test_protlayer(1, 3);
+    cascade[3] = (kryptos_u8_t *)get_test_protlayer(1, 4);
 
     CUTE_ASSERT(cascade[0] != NULL && cascade[1] != NULL && cascade[2] != NULL && cascade[3] != NULL);
 
@@ -128,7 +128,7 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     //               If someone screwed it up this test will let we know.
 
     for (c = 0; c < cascade_nr; c++) {
-        protlayer = add_composite_protlayer_to_chain(protlayer, cascade[c],
+        protlayer = add_composite_protlayer_to_chain(protlayer, (char *)cascade[c],
                                                      &pass, &pass_size, &handle, NULL);
         CUTE_ASSERT(protlayer != NULL);
         out = blackcat_otp_encrypt_data(protlayer, in, in_size, &out_size);
@@ -161,7 +161,8 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(blackcat_getuserkey_tests)
     size_t password_size;
     kryptos_u8_t *password;
-    kryptos_u8_t *expected = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\xDE\xAD\xBE\xEF\x00\x00\x01";
+    kryptos_u8_t *expected = (kryptos_u8_t *)"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                             "\xDE\xAD\xBE\xEF\x00\x00\x01";
     // INFO(Rafael): This statement is pretty important to avoid a 4kb 'leak' done by stdio.
     setbuf(stdin, NULL);
     password = blackcat_getuserkey(&password_size);
@@ -202,7 +203,7 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(blackcat_bcrypt_tests)
     kryptos_task_ctx t, *ktask = &t;
     int cost;
-    kryptos_u8_t *password = "wabba labba dub dub!";
+    kryptos_u8_t *password = (kryptos_u8_t *)"wabba labba dub dub!";
     size_t password_size = 20, wrong_password_size;
 
     kryptos_task_init_as_null(ktask);
@@ -2408,7 +2409,7 @@ CUTE_TEST_CASE_END
 CUTE_TEST_CASE(blackcat_meta_processor_tests)
     blackcat_protlayer_chain_ctx *pchain = NULL;
     size_t h;
-    kryptos_u8_t *in = "test", *out, *dec;
+    kryptos_u8_t *in = (kryptos_u8_t *)"test", *out, *dec;
     size_t in_size = 4, out_size, dec_size;
     kryptos_u8_t *key;
     size_t key_size;
@@ -3144,7 +3145,7 @@ CUTE_TEST_CASE(blackcat_kdf_tests)
     for (t = 0; t < test_vector_nr; t++) {
         kdf_clockwork = test_vector[t].get_clockwork(test_vector[t].usr_params, strlen(test_vector[t].usr_params), NULL);
         CUTE_ASSERT(kdf_clockwork != NULL);
-        okm = kdf_clockwork->kdf("meow", 4, test_vector[t].okm_size, kdf_clockwork->arg_data);
+        okm = kdf_clockwork->kdf((kryptos_u8_t *)"meow", 4, test_vector[t].okm_size, kdf_clockwork->arg_data);
         CUTE_ASSERT(okm != NULL);
         kryptos_freeseg(okm, test_vector[t].okm_size);
         del_blackcat_kdf_clockwork_ctx(kdf_clockwork);
@@ -3157,10 +3158,10 @@ CUTE_TEST_CASE(blackcat_fmt_str_tests)
         kryptos_u8_t *exp;
         size_t exp_size;
     } test_vector[] = {
-        { "foobar",                         "foobar",                  6 },
-        { "f\\x00\\obar",                   "f\x00obar",               6 },
-        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF",  "\n\t\r\xDE\xAD\xBE\xEF",  7 },
-        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF.", "\n\t\r\xDE\xAD\xBE\xEF.", 8 }
+        { "foobar",                         (kryptos_u8_t *)"foobar",                  6 },
+        { "f\\x00\\obar",                   (kryptos_u8_t *)"f\x00obar",               6 },
+        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF",  (kryptos_u8_t *)"\n\t\r\xDE\xAD\xBE\xEF",  7 },
+        { "\\n\\t\\r\\xDE\\xaD\\xbe\\xEF.", (kryptos_u8_t *)"\n\t\r\xDE\xAD\xBE\xEF.", 8 }
     };
     size_t t, tv_nr = sizeof(test_vector) / sizeof(test_vector[0]);
     kryptos_u8_t *out;
@@ -3185,9 +3186,9 @@ CUTE_TEST_CASE(token_wrap_tests)
     struct token_ctx {
         kryptos_u8_t *data;
         size_t data_size;
-    } tokens[] = { { "\xDE\xAD\xBE\xEF", 4 }, { "NothingIsEasy", 13 } };
+    } tokens[] = { { (kryptos_u8_t *)"\xDE\xAD\xBE\xEF", 4 }, { (kryptos_u8_t *)"NothingIsEasy", 13 } };
     size_t tokens_nr = sizeof(tokens) / sizeof(tokens[0]), t;
-    kryptos_u8_t *expected = "Nothin\xDE\xADsecret\xBE\xEFgIsEasy";
+    kryptos_u8_t *expected = (kryptos_u8_t *)"Nothin\xDE\xADsecret\xBE\xEFgIsEasy";
     size_t expected_size = 23;
 
     // INFO(Rafael): Those crazy parameters cannot explode at our faces.

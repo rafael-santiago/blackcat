@@ -122,7 +122,7 @@ bfs_catalog_relpath_ctx *add_file_to_relpath_ctx(bfs_catalog_relpath_ctx *files,
     if (timestamp != NULL) {
         sprintf(c->timestamp, "%s", timestamp);
     } else {
-        sprintf(c->timestamp, "%d", time(NULL));
+        sprintf(c->timestamp, "%ld", time(NULL));
     }
 
     c->status = status;
@@ -186,7 +186,7 @@ bfs_catalog_relpath_ctx *get_entry_from_relpath_ctx(bfs_catalog_relpath_ctx *fil
     }
 
     for (rp = files; rp != NULL; rp = rp->next) {
-        if (strcmp(rp->path, p) == 0) {
+        if (strcmp((char *)rp->path, (char *)p) == 0) {
             return rp;
         }
     }

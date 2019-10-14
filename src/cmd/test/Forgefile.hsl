@@ -39,6 +39,10 @@ blackcat-cmd-tests.prologue() {
 
     setup_ciphering_schemes($cflags);
 
+    if ($curr_toolset.match("^clang") == 1) {
+        $cflags.add_item("-Wno-pointer-sign");
+    }
+
     $ldflags = get_cmd_objects($ldflags);
 
     if (build("libcutest") != 0) {
@@ -61,6 +65,8 @@ blackcat-cmd-tests.prologue() {
     } else if (hefesto.sys.os_name() == "openbsd") {
         $ldflags.add_item("-lexecinfo");
         $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "minix") {
+        $ldflags.add_item("-lexecinfo");
     }
 
     var option type list;

@@ -9,7 +9,7 @@
 include ~/toolsets/gcc/gcc-lib.hsl
 include ~/toolsets/gcc/gcc-app.hsl
 include ~/toolsets/clang/clang-lib.hsl
-include ~/toolsets/gcc/gcc-app.hsl
+include ~/toolsets/clang/clang-app.hsl
 include ~/toolsets/common/utils/lang/c/dependency_scanner.hsl
 
 include on linux ~/toolsets/linux/linux-module.hsl
