@@ -651,7 +651,7 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy info net", "", NULL) != 0);
 
-#if defined(__unix__) && !defined(__OpenBSD__)
+#if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net", "", NULL) == 0);
 #elif defined(_WIN32)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info", "", NULL) == 0);
