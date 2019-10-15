@@ -1112,7 +1112,7 @@ bcrepo_decoy_epilogue:
         fclose(fp);
     }
 
-    if (no_error == 0 && del_file) {
+    if (no_error == 0 && del_file && filepath != NULL) {
 #if defined(__unix__)
         remove(filepath);
 #elif defined(_WIN32)
