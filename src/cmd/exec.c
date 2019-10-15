@@ -95,7 +95,7 @@ int blackcat_exec(int argc, char **argv) {
 
     blackcat_set_argc_argv(argc, argv);
 
-#if defined(__unix__)
+#if defined(__unix__) && !defined(__minix__)
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
         // WARN(Rafael): If the user suspend her/his machine this will be useless.
         if ((err = mlockall(MCL_CURRENT | MCL_FUTURE)) != 0) {
