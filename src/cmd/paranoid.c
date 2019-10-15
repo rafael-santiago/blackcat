@@ -92,13 +92,13 @@ int blackcat_cmd_paranoid_help(void) {
                     "                --disable-history |\n"
                     "                --enable-history  |\n"
                     "                --clear-history   ]\n");
-#elif defined(__OpenBSD__)
+#elif defined(__OpenBSD__) || defined(__minix__)
     fprintf(stdout, "use: blackcat paranoid\n"
                     "               [--disable-history |\n"
                     "                --enable-history  |\n"
                     "                --clear-history   ]\n");
 #else
-# Some code wanted.
+# error Some code wanted.
 #endif
     return 0;
 }
