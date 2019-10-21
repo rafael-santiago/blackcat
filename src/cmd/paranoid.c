@@ -145,7 +145,7 @@ static int dig_up(void) {
                                     dig_up_nr += bcrepo_dig_up(&session->catalog, session->rootpath, session->rootpath_size,
                                                                (dig_up_param != NULL) ? dig_up_param : "*",
                                                                (dig_up_param != NULL) ? strlen(dig_up_param) : 1);
-                                  }, arg + 1);
+                                  }, arg + 1, 1);
 
     if (dig_up_nr > 0) {
         fprintf(stdout, "%d file(s) shown.\n", dig_up_nr);
@@ -184,7 +184,7 @@ static int bury(void) {
                                     bury_nr += bcrepo_bury(&session->catalog, session->rootpath, session->rootpath_size,
                                                            (bury_param != NULL) ? bury_param : "*",
                                                            (bury_param != NULL) ? strlen(bury_param) : 1);
-                                  }, arg + 1);
+                                  }, arg + 1, 0);
 
     if (bury_nr > 0) {
         fprintf(stdout, "%d file(s) hidden.\n", bury_nr);

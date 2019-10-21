@@ -42,7 +42,7 @@ int blackcat_cmd_rm(void) {
                                     rm_nr += bcrepo_rm(&session->catalog,
                                                        session->rootpath, session->rootpath_size, rm_param, strlen(rm_param),
                                                        force);
-                                  }, 1)
+                                  }, 1, 0)
     if (rm_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
                          session->catalog, session->key[0], session->key_size[0])) {

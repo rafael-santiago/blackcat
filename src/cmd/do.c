@@ -170,7 +170,7 @@ int blackcat_cmd_do(void) {
                                       freeargv(argv, argc);
                                       argv = NULL;
                                       argc = 0;
-                                  }, 1)
+                                  }, 1, 1)
 
 blackcat_cmd_do_epilogue:
 

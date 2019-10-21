@@ -64,7 +64,7 @@ int blackcat_cmd_decoy(void) {
                                             exit_code = EFAULT;
                                             goto blackcat_cmd_decoy_epilogue;
                                         }
-                                   }, 1)
+                                   }, 1, 0)
 
     exit_code = 0;
 

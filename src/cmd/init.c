@@ -322,6 +322,7 @@ int blackcat_cmd_init_help(void) {
                     "               --encoder=<encoder>\n"
                     "               --kdf=<kdf algorithm>\n"
                     "               <specific kdf algorithm options>\n"
+                    "               --soft-token=<file path 0>,...,<file path n>\n"
                     "               --otp]\n");
     return 0;
 }

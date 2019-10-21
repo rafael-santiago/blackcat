@@ -435,27 +435,27 @@ function mkclean_modules(modules type list) : result type none {
         $m = $m + 1;
     }
 
-    var libpath type string;
+#    var libpath type string;
 
-    $libpath = hefesto.sys.make_path($rootpath, "lib");
+#    $libpath = hefesto.sys.make_path($rootpath, "lib");
 
-    hefesto.sys.cd($libpath);
+#    hefesto.sys.cd($libpath);
 
-    var libs type list;
-    $libs.ls(".*\\.a$");
+#    var libs type list;
+#    $libs.ls(".*\\.a$");
 
-    $o = 0;
-    while ($o < $libs.count()) {
-        hefesto.sys.echo("*** removing '" + $libs.item($o) + "'... ");
+#    $o = 0;
+#    while ($o < $libs.count()) {
+#        hefesto.sys.echo("*** removing '" + $libs.item($o) + "'... ");
 
-        if (hefesto.sys.rm($libs.item($o)) == 0) {
-            hefesto.sys.echo("done.\n");
-        } else {
-            hefesto.sys.echo("failed.\n");
-        }
+#        if (hefesto.sys.rm($libs.item($o)) == 0) {
+#            hefesto.sys.echo("done.\n");
+#        } else {
+#            hefesto.sys.echo("failed.\n");
+#        }
 
-        $o = $o + 1;
-    }
+#        $o = $o + 1;
+#    }
 
     hefesto.sys.cd($rootpath);
 }

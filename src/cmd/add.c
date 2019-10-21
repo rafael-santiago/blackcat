@@ -45,7 +45,7 @@ int blackcat_cmd_add(void) {
                                                          session->rootpath, session->rootpath_size,
                                                          add_param, strlen(add_param),
                                                          blackcat_get_bool_option("plain", 0));
-                                  }, 1)
+                                  }, 1, 0)
 
     if (add_nr > 0) {
         if (bcrepo_write(bcrepo_catalog_file(temp, sizeof(temp), session->rootpath),
@@ -66,7 +66,7 @@ int blackcat_cmd_add(void) {
                                                                       (add_param != NULL) ? add_param : "*",
                                                                       (add_param != NULL) ? strlen(add_param) : 1,
                                                                       blackcat_checkpoint, session);
-                                              }, 1)
+                                              }, 1, 0)
 
                 if (add_nr > 0) {
                     fprintf(stdout, "%d file(s) encrypted.\n", add_nr);

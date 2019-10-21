@@ -29,10 +29,13 @@ char *blackcat_get_argv(const int v);
     }\
 }
 
-#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt, continue_from) {\
+#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt, continue_from, consume_dashed_options) {\
     ac = continue_from;\
     do {\
-        consume_stmt;\
+        if (option_var == NULL || (!consume_dashed_options && option_var != NULL && strlen(option_var) > 1 &&\
+                                   option_var[0] != '-' && option_var[1] != '-') || consume_dashed_options) {\
+            consume_stmt;\
+        }\
         do {\
             option_var = blackcat_get_argv(ac++);\
             if (option_var != NULL) {\

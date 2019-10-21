@@ -6,6 +6,7 @@
  *
  */
 #include <cmd/deinit.h>
+#include <cmd/session.h>
 #include <cmd/options.h>
 #include <kryptos.h>
 #include <fs/bcrepo/bcrepo.h>
@@ -16,50 +17,26 @@
 
 int blackcat_cmd_deinit(void) {
     int exit_code = EINVAL;
-    char *rootpath = NULL;
-    kryptos_u8_t *key;
-    size_t key_size;
-
-    rootpath = bcrepo_get_rootpath();
-
-    if (rootpath == NULL) {
-        fprintf(stderr, "ERROR: You are not in a blackcat repo.\n");
-        goto blackcat_cmd_deinit_epilogue;
-    }
+    blackcat_exec_session_ctx *session = NULL;
 
     // INFO(Rafael): During a deinit we only need the first key or master key.
     //               No encrypted files will be decrypted.
 
-    accacia_savecursorposition();
-
-    fprintf(stdout, "Password: ");
-    key = blackcat_getuserkey(&key_size);
-
-    if (key == NULL) {
-        fprintf(stderr, "ERROR: Null key.\n");
+    if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_deinit_epilogue;
     }
 
-    accacia_restorecursorposition();
-    accacia_delline();
-
-    if (bcrepo_deinit(rootpath, strlen(rootpath), key, key_size)) {
+    if (bcrepo_deinit(session->rootpath, session->rootpath_size, session->key[0], session->key_size[0])) {
         exit_code = 0;
     } else {
-        fflush(stdout);
         fprintf(stderr, "ERROR: While accessing the catalog.\n");
         exit_code = EACCES;
     }
 
 blackcat_cmd_deinit_epilogue:
 
-    if (rootpath != NULL) {
-        kryptos_freeseg(rootpath, strlen(rootpath));
-    }
-
-    if (key != NULL) {
-        kryptos_freeseg(key, key_size);
-        key_size = 0;
+    if (session != NULL) {
+        del_blackcat_exec_session_ctx(session);
     }
 
     return exit_code;

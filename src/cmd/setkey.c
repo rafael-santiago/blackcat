@@ -160,6 +160,11 @@ int blackcat_cmd_setkey(void) {
     new_key[2] = NULL;
     new_key_size[2] = 0;
 
+    if (wrap_user_key_with_new_tokens(&new_key[0], &new_key_size[0]) == 0) {
+        fprintf(stderr, "ERROR: While trying to mix new user token data with new first layer key.\n");
+        goto blackcat_cmd_setkey_epilogue;
+    }
+
     if (keyed_alike) {
         new_key[1] = (kryptos_u8_t *)kryptos_newseg(new_key_size[0]);
 
@@ -204,6 +209,11 @@ int blackcat_cmd_setkey(void) {
         if (new_key_size[1] != new_key_size[2] || memcmp(new_key[1], new_key[2], new_key_size[1]) != 0) {
             exit_code = EFAULT;
             fprintf(stderr, "ERROR: The supplied keys do not match.\n");
+            goto blackcat_cmd_setkey_epilogue;
+        }
+
+        if (wrap_user_key_with_new_tokens(&new_key[1], &new_key_size[1]) == 0) {
+            fprintf(stderr, "ERROR: While trying to mix user token data with second layer key.\n");
             goto blackcat_cmd_setkey_epilogue;
         }
 
@@ -341,6 +351,7 @@ int blackcat_cmd_setkey_help(void) {
                     "               --encoder=<encoder>\n"
                     "               --kdf=<kdf algorithm>\n"
                     "               <specific kdf algorithm options>\n"
+                    "               --new-soft-token=<file path 0>,...,<file path n>\n"
                     "               --otp --no-kdf]\n");
     return 0;
 }

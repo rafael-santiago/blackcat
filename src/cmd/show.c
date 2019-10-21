@@ -53,7 +53,7 @@ int blackcat_cmd_show(void) {
                                      }
                                      fwrite(data, 1, data_size, stdout);
                                      kryptos_freeseg(data, data_size);
-                                 }, 1)
+                                 }, 1, 0)
 
     exit_code = 0;
 

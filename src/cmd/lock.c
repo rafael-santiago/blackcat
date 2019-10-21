@@ -43,7 +43,7 @@ int blackcat_cmd_lock(void) {
                                                            (lock_param != NULL) ? lock_param : "*",
                                                            (lock_param != NULL) ? strlen(lock_param) : 1,
                                                            blackcat_checkpoint, session);
-                                  }, 1)
+                                  }, 1, 0)
 
     if (lock_param == NULL) {
         chdir(cwd);

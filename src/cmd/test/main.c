@@ -229,6 +229,8 @@ CUTE_DECLARE_TEST_CASE(blackcat_config_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_do_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_token_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_soft_token_usage_tests);
 
 CUTE_DECLARE_TEST_CASE_SUITE(blackcat_poking_tests);
 
@@ -585,6 +587,8 @@ CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     CUTE_RUN_TEST(blackcat_do_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_repo_by_using_kdf_tests);
     CUTE_RUN_TEST(blackcat_poke_net_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_token_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_soft_token_usage_tests);
 CUTE_TEST_CASE_SUITE_END
 
 CUTE_TEST_CASE(blackcat_poke_wrong_arguments_tests)
@@ -620,6 +624,7 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     CUTE_ASSERT(blackcat("help help", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help pack", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help unpack", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help token", "", NULL) == 0);
 #if defined(__unix__)
     CUTE_ASSERT(blackcat("help paranoid", "", NULL) == 0);
 #elif defined(_WIN32)
@@ -652,11 +657,11 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy info net", "", NULL) != 0);
 
 #if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__)
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net token", "", NULL) == 0);
 #elif defined(_WIN32)
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info token", "", NULL) == 0);
 #elif defined(__OpenBSD__) || defined(__minix__)
-    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack setkey undo decoy info net", "", NULL) == 0);
+    CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack setkey undo decoy info net token", "", NULL) == 0);
 #else
 # error Some code wanted.
 #endif
@@ -3841,6 +3846,261 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
            "=====\n");
 #endif
 
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
+    char bcmd[65535];
+    char *repotypes[] = {
+        "init "
+        " --catalog-hash=blake2b-512"
+        " --key-hash=tiger"
+        " --protection-layer-hash=whirlpool"
+        " --protection-layer=%s"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+        "init "
+        " --catalog-hash=blake2b-512"
+        " --key-hash=tiger"
+        " --protection-layer-hash=whirlpool"
+        " --protection-layer=%s"
+        " --otp"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+        "init "
+        " --catalog-hash=sha3-512"
+        " --key-hash=blake2s-256"
+        " --protection-layer-hash=sha-224"
+        " --protection-layer=%s"
+        " --encoder=uuencode"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+        "init "
+        " --catalog-hash=sha3-512"
+        " --key-hash=bcrypt"
+        " --bcrypt-cost=8"
+        " --protection-layer-hash=sha-224"
+        " --protection-layer=%s"
+        " --encoder=base64"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+        "init "
+        " --catalog-hash=sha3-512"
+        " --key-hash=blake2s-256"
+        " --protection-layer-hash=sha-224"
+        " --protection-layer=%s"
+        " --encoder=uuencode"
+        " --keyed-alike"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+        "init "
+        " --catalog-hash=sha3-512"
+        " --key-hash=blake2s-256"
+        " --protection-layer-hash=sha-224"
+        " --protection-layer=%s"
+        " --encoder=uuencode"
+        " --kdf=pbkdf2"
+        " --pbkdf2-count=32"
+        " --pbkdf2-salt=\\xAA\\xBB\\xCCAABBCC\\x00"
+        " --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat"
+    };
+    size_t repotypes_nr = sizeof(repotypes) / sizeof(repotypes[0]);
+    char **rp, **rp_end;
+    unsigned char *data;
+    size_t data_size;
+
+    remove("tokens/a.dat");
+    remove("tokens/b.dat");
+    remove("tokens/c.dat");
+    remove("tokens/d.dat");
+    remove("tokens/e.dat");
+    remove("tokens/f.dat");
+    rmdir("tokens");
+
+    sprintf(bcmd, repotypes[0], get_test_protlayer(0, 3));
+    // INFO(Rafael): It should fail due to the tokens do not exist.
+    CUTE_ASSERT(blackcat(bcmd, "SkatingAway\nSkatingAway", "OnTheThinIceOfTheNewDay\nOnTheThinIceOfTheNewDay") != 0);
+
+#if defined(__unix__)
+    CUTE_ASSERT(mkdir("tokens", 0666) == 0);
+#elif defined(_WIN32)
+    CUTE_ASSERT(mkdir("tokens") == 0);
+#else
+# error Some code wanted.
+#endif
+
+    CUTE_ASSERT(blackcat("token tokens/a.dat tokens/b.dat tokens/c.dat --bytes=16", "", NULL) == 0);
+
+    rp = &repotypes[0];
+    rp_end = rp + repotypes_nr;
+
+    while (rp != rp_end) {
+        remove("s1.txt");
+        CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+
+        // INFO(Rafael): An init must be always sucessfully done.
+        sprintf(bcmd, *rp, get_test_protlayer(0, 3));
+        CUTE_ASSERT(blackcat(bcmd, "Monster\nMonster", "InTheParasol\nInTheParasol") == 0);
+
+        // INFO(Rafael): From now on all authenticated operation in this repo must require the
+        //               tokens passing, besides their correct sequence during init. Thus...
+
+        // INFO(Rafael): ...a status without passing the tokens must fail.
+        CUTE_ASSERT(blackcat("status", "Monster", "InTheParasol") != 0);
+
+        // INFO(Rafael): ...a status with a wrong token passing must fail.
+        CUTE_ASSERT(blackcat("status * --soft-token=tokens/b.dat,tokens/a.dat,tokens/c.dat",
+                             "Monster", "InTheParasol") != 0);
+
+        // INFO(Rafael): ...wrong passwords even with right tokens will fail.
+        CUTE_ASSERT(blackcat("status * --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                             "Monster", "InTheParasoL") != 0);
+
+        CUTE_ASSERT(blackcat("add --soft-token=tokens/a.dat,tokens/c.dat,tokens/b.dat s1.txt --lock",
+                             "Monster", "InTheParasun") != 0);
+
+        CUTE_ASSERT(blackcat("add --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat s1.txt --lock",
+                             "Monster", "InTheParasol") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+        kryptos_freeseg(data, data_size);
+
+        // INFO(Rafael): ...a status with a correct token passing must be successfully done.
+        CUTE_ASSERT(blackcat("status * --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                             "Monster", "InTheParasol") == 0);
+
+        CUTE_ASSERT(blackcat("unlock s1.txt", "Monster", "InTheParasol") != 0);
+
+        if (strstr(*rp, "--keyed-alike") == NULL) {
+            CUTE_ASSERT(blackcat("unlock s1.txt --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                                 "Monster", "InParasol") != 0);
+        }
+
+        CUTE_ASSERT(blackcat("unlock s1.txt --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                             "Monster", "InTheParasol") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(sensitive1));
+        CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+        kryptos_freeseg(data, data_size);
+
+        CUTE_ASSERT(blackcat("lock s1.txt --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                             "Monster", "InTheParasol") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+        kryptos_freeseg(data, data_size);
+
+        // INFO(Rafael): Now let's execute a setkey with new tokens.
+
+        sprintf(bcmd, "setkey "
+                      "--protection-layer=%s "
+                      "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+
+        // INFO(Rafael): Without the current tokens it will fail.
+        CUTE_ASSERT(blackcat(bcmd, "Monster", "InTheParasol") != 0);
+
+        CUTE_ASSERT(blackcat("token tokens/d.dat tokens/e.dat tokens/f.dat --bytes=20 --overwrite", "", NULL) == 0);
+
+        if (strstr(*rp, "--key-hash=bcrypt") == NULL) {
+            sprintf(bcmd, "setkey "
+                          "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
+                          "--protection-layer=%s "
+                          "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+        } else {
+            sprintf(bcmd, "setkey "
+                          "--bcrypt-cost=10 "
+                          "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
+                          "--protection-layer=%s "
+                          "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+        }
+
+        // INFO(Rafael): With wrong password must fail.
+        CUTE_ASSERT(blackcat(bcmd, "M0nster", "InTheParasol") != 0);
+
+        if (strstr(*rp, "--keyed-alike") == NULL) {
+            CUTE_ASSERT(blackcat(bcmd, "Monster\nInTheParasol",
+                                       "MellowshipSlinky\nMellowshipSlinky\nInBMajor\nInBMajor") == 0);
+        } else {
+            CUTE_ASSERT(blackcat(bcmd, "Monster",
+                                       "MellowshipSlinky\nMellowshipSlinky\nInBMajor\nInBMajor") == 0);
+        }
+
+        // INFO(Rafael): Now with old tokens must fail.
+        CUTE_ASSERT(blackcat("unlock s1.txt --soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat",
+                             "MellowshipSlinky", "InBMajor") != 0);
+
+        CUTE_ASSERT(blackcat("unlock s1.txt --soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat",
+                             "MellowshipSlinky", "InBMajor") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(sensitive1));
+        CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+        kryptos_freeseg(data, data_size);
+
+        // INFO(Rafael): ...deinit also must require tokens.
+        CUTE_ASSERT(blackcat("deinit --soft-token=tokens/b.dat,tokens/c.dat,tokens/a.dat",
+                             "MellowshipSlinky", "InBMajor") != 0);
+
+        CUTE_ASSERT(blackcat("deinit --soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat",
+                             "MellowshipSlinky", "InBMajor") == 0);
+        rp++;
+    }
+
+    CUTE_ASSERT(remove("s1.txt") == 0);
+    CUTE_ASSERT(remove("tokens/a.dat") == 0);
+    CUTE_ASSERT(remove("tokens/b.dat") == 0);
+    CUTE_ASSERT(remove("tokens/c.dat") == 0);
+    CUTE_ASSERT(remove("tokens/d.dat") == 0);
+    CUTE_ASSERT(remove("tokens/e.dat") == 0);
+    CUTE_ASSERT(remove("tokens/f.dat") == 0);
+    CUTE_ASSERT(rmdir("tokens") == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_token_cmd_tests)
+    unsigned char *data;
+    size_t data_size;
+    CUTE_ASSERT(blackcat("token a.token b.token c.token --bytes=10", "", NULL) == 0);
+
+    data = get_file_data("a.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 10);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("b.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 10);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("c.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 10);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("token a.token b.token c.token --bytes=100", "", NULL) != 0);
+    CUTE_ASSERT(blackcat("token a.token b.token c.token --bytes=101 --overwrite", "", NULL) == 0);
+
+    data = get_file_data("a.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 101);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("b.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 101);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("c.token", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == 101);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(remove("a.token") == 0);
+    CUTE_ASSERT(remove("b.token") == 0);
+    CUTE_ASSERT(remove("c.token") == 0);
 CUTE_TEST_CASE_END
 
 static int has_tcpdump(void) {
