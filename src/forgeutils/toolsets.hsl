@@ -389,33 +389,47 @@ function mkclean_modules(modules type list) : result type none {
 
     $m = 0;
     while ($m < $modules.count()) {
-        var mod_regex type string;
-        $mod_regex = hefesto.sys.make_path(hefesto.sys.make_path($rootpath, $modules.item($m)),
-                                          "^.Forgefile-.*-chsum-base$");
-        hefesto.sys.rm($mod_regex);
+        var moddir type string;
+        $moddir = hefesto.sys.make_path($rootpath, $modules.item($m));
 
-        var obj_dirpath type string;
-        $obj_dirpath = hefesto.sys.make_path(hefesto.sys.make_path($rootpath, $modules.item($m)), "o");
+        if (hefesto.sys.cd($moddir)) {
+            var depchain_rec type list;
+            var d type int;
 
-        if (hefesto.sys.cd($obj_dirpath)) {
-            var objs type list;
-            $objs.ls(".*\\.o$");
+            $depchain_rec.ls(".*\\.Forgefile-.*-hefesto-src-chsum-base$");
 
-            var o type int;
-            $o = 0;
-            while ($o < $objs.count()) {
-                hefesto.sys.echo("*** removing '" + $objs.item($o) + "'... ");
+            $d = 0;
 
-                if (hefesto.sys.rm($objs.item($o)) == 0) {
-                    hefesto.sys.echo("done.\n");
-                } else {
-                    hefesto.sys.echo("failed.\n");
-                }
-
-                $o = $o + 1;
+            while ($d < $depchain_rec.count()) {
+                hefesto.sys.rm($depchain_rec.item($d));
+                $d = $d + 1;
             }
 
-            $objs.clear();
+            $depchain_rec.clear();
+
+            var obj_dirpath type string;
+            $obj_dirpath = hefesto.sys.make_path($moddir, "o");
+
+            if (hefesto.sys.cd($obj_dirpath)) {
+                var objs type list;
+                $objs.ls(".*\\.o$");
+
+                var o type int;
+                $o = 0;
+                while ($o < $objs.count()) {
+                    hefesto.sys.echo("*** removing '" + $objs.item($o) + "'... ");
+
+                    if (hefesto.sys.rm($objs.item($o)) == 0) {
+                        hefesto.sys.echo("done.\n");
+                    } else {
+                        hefesto.sys.echo("failed.\n");
+                    }
+
+                    $o = $o + 1;
+                }
+
+                $objs.clear();
+            }
         }
 
         $m = $m + 1;
