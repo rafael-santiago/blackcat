@@ -4041,12 +4041,47 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
         CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
         kryptos_freeseg(data, data_size);
 
+        CUTE_ASSERT(blackcat("lock s1.txt --soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat",
+                             "MellowshipSlinky", "InBMajor") == 0);
+
+        // INFO(Rafael): Now let's stop using soft-tokens.
+
+        if (strstr(*rp, "--key-hash=bcrypt") == NULL) {
+            sprintf(bcmd, "setkey "
+                          "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
+                          "--protection-layer=%s ", get_test_protlayer(0, 2));
+        } else {
+            sprintf(bcmd, "setkey "
+                          "--bcrypt-cost=10 "
+                          "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
+                          "--protection-layer=%s ", get_test_protlayer(0, 2));
+        }
+
+        CUTE_ASSERT(blackcat(bcmd, "MellowshipSlinky\nInBMajor",
+                                   "MellowshipSlinky\nMellowshipSlinky\nInBMajor\nInBMajor") == 0);
+
+
+        // INFO(Rafael): Since we are not using tokens anymore it must fail.
+
+        CUTE_ASSERT(blackcat("unlock s1.txt --soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat",
+                             "MellowshipSlinky", "InBMajor") != 0);
+
+        // INFO(Rafael): It must be done.
+
+        CUTE_ASSERT(blackcat("unlock s1.txt", "MellowshipSlinky", "InBMajor") == 0);
+
+        data = get_file_data("s1.txt", &data_size);
+
+        CUTE_ASSERT(data != NULL);
+        CUTE_ASSERT(data_size == strlen(sensitive1));
+        CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+        kryptos_freeseg(data, data_size);
+
         // INFO(Rafael): ...deinit also must require tokens.
         CUTE_ASSERT(blackcat("deinit --soft-token=tokens/b.dat,tokens/c.dat,tokens/a.dat",
                              "MellowshipSlinky", "InBMajor") != 0);
 
-        CUTE_ASSERT(blackcat("deinit --soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat",
-                             "MellowshipSlinky", "InBMajor") == 0);
+        CUTE_ASSERT(blackcat("deinit", "MellowshipSlinky", "InBMajor") == 0);
         rp++;
     }
 
