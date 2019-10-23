@@ -1386,6 +1386,76 @@ section must hold the end pipe command. Something like:
 
 Once it defined into your '.bcrepo/CONFIG' all status output will be directed to your defined viewer.
 
+Using soft-tokens
+=================
+
+Blackcat allows you to use soft-tokens that are combined with the keys. In this way, even knowing the
+key(s) but without the soft-token(s) in the right order is virtually impossible to decrypt the repository
+data.
+
+Soft-tokens are related to regular files carring some byte sequence. It can be a plain text, part of a
+book, a poem, a picture, a song, random bytes, whatever.
+
+If you want to generate a file with random bytes you can use the command 'token':
+
+    Bob@OobyDooby:~/sample# blackcat token \
+    > /mnt/my-ooby-dooby-tokens/ooby.dat /mnt/my-ooby-dooby-tokens/dooby.dat --bytes=512
+
+The command sample above will generate two files ('ooby.dat', 'dooby.dat' within /mnt/my-ooby-dooby-tokens
+directory) containing 512 bytes of random data.
+
+The 'token' command can overwrite file(s) if the option '--overwrite' is passed. Being careful when overwrite
+a token file, make sure that it is not being used to access any relevant blackcat repo.
+
+In order to use soft-tokens with your key(s) you need to specify this intention at the time of the repository
+initialization:
+
+    Bob@OobyDooby:~/sample# blackcat init --catalog-hash=blake2s-256 \
+    > --key-hash=tiger \
+    > --protection-layer-hash=sha3-512 \
+    > --protection-layer=blowfish-cbc,arc4,aes-128-gcm \
+    > --encoder=uuencode \
+    > --soft-token=/mnt/my-ooby-dooby-tokens/ooby.dat,/mnt/my-ooby-dooby-tokens/dooby.dat
+
+The option '--soft-token' specifies the token files and their usage sequence.
+
+After initializing a repo with soft-tokens any operation that requires the user key(s) will also
+require the tokens in the sequence specified at the time of the init operation. Thus, store those tokens
+in a safe place and remember their sequence in '--soft-token' option.
+
+Supposing Bob wants to add and lock a file to sample's catalog:
+
+    Bob@OobyDooby:~/sample# blackcat add LonesomeStoney.txt --lock \
+    > --soft-token=/mnt/my-ooby-dooby-tokens/dooby.dat,/mnt/my-ooby-dooby-tokens/ooby.dat
+
+The command above will not run accordingly due to authentication issues. Notice the wrong tokens sequence.
+Now the following one will be successfuly executed:
+
+    Bob@OobyDooby:~/sample# blackcat add LonesomeStoney.txt --lock \
+    > --soft-token=/mnt/my-ooby-dooby-tokens/ooby.dat,/mnt/my-ooby-dooby-tokens/dooby.dat
+
+When you want to set new tokens you must use the option 'new-soft-token' in command 'setkey':
+
+    Bob@OobyDooby:~/sample# blackcat setkey \
+    > --new-soft-token=/mnt/my-ooby-dooby-tokens/tell.dat,/mnt/my-ooby-dooby-tokens/me.dat
+    > --soft-token=/mnt/my-ooby-dooby-tokens/ooby.dat,/mnt/my-ooby-dooby-tokens/dooby.dat
+
+Notice that even during a setkey, the current configured tokens must be passed.
+
+If you want to remove the soft-token(s) usage from a repository, you must to run a 'setkey' command
+without '--new-soft-token' option.
+
+You can make the usage of soft-tokens more easy by using the config option '.bcrepo/CONFIG/default-args'.
+Something like this:
+
+    'default-args:
+        --soft-token=/mnt/my-ooby-dooby-tokens/ooby.dat,/mnt-my-ooby-dooby-tokens/dooby.dat
+
+    '
+
+After running an update command over the current CONFIG file data, you will be able to handle the repository
+without mind passing the '--soft-token' option with every single command.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
