@@ -73,14 +73,14 @@ int blackcat_cmd_man_help(void) {
 }
 
 static FILE *get_stdout(void) {
+    FILE *out = stdout;
 #if defined(__unix__)
-    FILE *out;
     char *pager = "less";
+
     if (system("less --version 2>/dev/null") != 0) {
         if (system("more -V 2>/dev/null") == 0) {
             pager = "more";
         } else {
-            out = stdout;
             goto get_stdout_epilogue;
         }
     }
