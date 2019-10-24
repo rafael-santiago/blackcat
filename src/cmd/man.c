@@ -73,11 +73,30 @@ int blackcat_cmd_man_help(void) {
 }
 
 static FILE *get_stdout(void) {
+#if defined(__unix__)
     FILE *out;
-    if ((out = popen("less", "w")) == NULL) {
-        if ((out = popen("more", "w")) == NULL) {
+    char *pager = "less";
+    if (system("less --version 2>/dev/null") != 0) {
+        if (system("more -V 2>/dev/null") == 0) {
+            pager = "more";
+        } else {
             out = stdout;
+            goto get_stdout_epilogue;
         }
     }
+
+    if ((out = popen(pager, "w")) == NULL) {
+        out = stdout;
+    }
+
+get_stdout_epilogue:
+
+#elif defined(_WIN32)
+    if ((out = popen("more", "w")) == NULL) {
+        out = stdout;
+    }
+#else
+# error Some code wanted.
+#endif
     return out;
 }
