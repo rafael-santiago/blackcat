@@ -29,6 +29,7 @@
 #include <cmd/config.h>
 #include <cmd/do.h>
 #include <cmd/token.h>
+#include <cmd/man.h>
 #include <fs/bcrepo/bcrepo.h>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # include <cmd/lkm.h>
@@ -85,7 +86,8 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
     BLACKCAT_COMMAND_TABLE_ENTRY(untouch),
     BLACKCAT_COMMAND_TABLE_ENTRY(config),
     BLACKCAT_COMMAND_TABLE_ENTRY(do),
-    BLACKCAT_COMMAND_TABLE_ENTRY(token)
+    BLACKCAT_COMMAND_TABLE_ENTRY(token),
+    BLACKCAT_COMMAND_TABLE_ENTRY(man)
 DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)

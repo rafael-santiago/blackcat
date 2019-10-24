@@ -1456,6 +1456,16 @@ Something like this:
 After running an update command over the current CONFIG file data, you will be able to handle the repository
 without mind passing the '--soft-token' option with every single command.
 
+How can I access this manual from blackcat?
+===========================================
+
+Pretty simple:
+
+    Alice@PerpetualOyster:/home# blackcat man
+
+According to your environment capabilities, blackcat will read and send out the manual data to less, more or
+stdout.
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
