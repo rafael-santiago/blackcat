@@ -24,7 +24,9 @@
                                      processor == blackcat_hmac ## _blake2s256_ ## cipher ||\
                                      processor == blackcat_hmac ## _blake2b512_ ## cipher )
 
-#define is_des_family_hmac(processor) is_hmac(processor, des) || is_hmac(processor, triple_des)
+#define is_des_family_hmac(processor) ( is_hmac(processor, des)             ||\
+                                        is_hmac(processor, triple_des)      ||\
+                                        is_hmac(processor, triple_des_ede) )
 
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer) {
     fprintf(stderr,
@@ -116,38 +118,80 @@ blackcat_hash_size_func get_hash_input_size(const char *name) {
 
 
 int is_hmac_processor(blackcat_cipher_processor processor) {
-    return is_hmac(processor, aes128)         ||
+    return
+#if defined(BLACKCAT_WITH_AES)
+           is_hmac(processor, aes128)         ||
            is_hmac(processor, aes192)         ||
            is_hmac(processor, aes256)         ||
+#endif
+#if defined(BLACKCAT_WITH_DES)
            is_hmac(processor, des)            ||
            is_hmac(processor, triple_des)     ||
            is_hmac(processor, triple_des_ede) ||
+#endif
+#if defined(BLACKCAT_WITH_IDEA)
            is_hmac(processor, idea)           ||
+#endif
+#if defined(BLACKCAT_WITH_RC2)
            is_hmac(processor, rc2)            ||
+#endif
+#if defined(BLACKCAT_WITH_RC5)
            is_hmac(processor, rc5)            ||
+#endif
+#if defined(BLACKCAT_WITH_RC6)
            is_hmac(processor, rc6_128)        ||
            is_hmac(processor, rc6_192)        ||
            is_hmac(processor, rc6_256)        ||
+#endif
+#if defined(BLACKCAT_WITH_FEAL)
            is_hmac(processor, feal)           ||
+#endif
+#if defined(BLACKCAT_WITH_CAST5)
            is_hmac(processor, cast5)          ||
+#endif
+#if defined(BLACKCAT_WITH_CAMELLIA)
            is_hmac(processor, camellia128)    ||
            is_hmac(processor, camellia192)    ||
            is_hmac(processor, camellia256)    ||
+#endif
+#if defined(BLACKCAT_WITH_SAFERK64)
            is_hmac(processor, saferk64)       ||
+#endif
+#if defined(BLACKCAT_WITH_BLOWFISH)
            is_hmac(processor, blowfish)       ||
+#endif
+#if defined(BLACKCAT_WITH_SERPENT)
            is_hmac(processor, serpent)        ||
+#endif
+#if defined(BLACKCAT_WITH_TEA)
            is_hmac(processor, tea)            ||
+#endif
+#if defined(BLACKCAT_WITH_XTEA)
            is_hmac(processor, xtea)           ||
+#endif
+#if defined(BLACKCAT_WITH_MISTY1)
            is_hmac(processor, misty1)         ||
+#endif
+#if defined(BLACKCAT_WITH_MARS)
            is_hmac(processor, mars128)        ||
            is_hmac(processor, mars192)        ||
            is_hmac(processor, mars256)        ||
+#endif
+#if defined(BLACKCAT_WITH_PRESENT)
            is_hmac(processor, present80)      ||
            is_hmac(processor, present128)     ||
+#endif
+#if defined(BLACKCAT_WITH_SHACAL1)
            is_hmac(processor, shacal1)        ||
+#endif
+#if defined(BLACKCAT_WITH_SHACAL2)
            is_hmac(processor, shacal2)        ||
+#endif
+#if defined(BLACKCAT_WITH_NOEKEON)
            is_hmac(processor, noekeon)        ||
-           is_hmac(processor, noekeon_d);
+           is_hmac(processor, noekeon_d)
+#endif
+    ;
 }
 
 int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor h2) {
