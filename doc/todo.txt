@@ -1,3 +1,4 @@
+(A) Make is_hmac_processor() custom by the selected cipher suite during the build. +Improvement
 (B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
 (B) Replace sprintf by snprintf and strcat by strncat where/when possible. +CodeSanitization
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
