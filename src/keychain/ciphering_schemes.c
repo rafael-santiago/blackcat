@@ -24,6 +24,8 @@
                                      processor == blackcat_hmac ## _blake2s256_ ## cipher ||\
                                      processor == blackcat_hmac ## _blake2b512_ ## cipher )
 
+#define is_des_family_hmac(processor) is_hmac(processor, des) || is_hmac(processor, triple_des)
+
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer) {
     fprintf(stderr,
             "PANIC: Hi there! You have hit a NULL cipher processor there is nothing beyond here.\n"
@@ -194,8 +196,6 @@ int is_weak_hash_funcs_usage(blackcat_hash_processor h1, blackcat_hash_processor
     return is_weak;
 }
 
-#undef is_hmac
-
 const char *get_hash_processor_name(blackcat_hash_processor processor) {
     size_t h;
 
@@ -229,7 +229,23 @@ const struct blackcat_hmac_catalog_algorithms_ctx *get_random_hmac_catalog_schem
                ((size_t) kryptos_get_random_byte() << 16) |
                ((size_t) kryptos_get_random_byte() <<  8) |
                ((size_t) kryptos_get_random_byte());
-    return &g_blackcat_hmac_catalog_schemes[s % g_blackcat_hmac_catalog_schemes_nr];
+
+    s = s % g_blackcat_hmac_catalog_schemes_nr;
+
+#if defined(BLACKCAT_WITH_DES)
+    // WARN(Rafael): We will not use DES family algorithms anymore, however for backward compability,
+    //               we will decrypt catalogs previously encrypted by using them.
+    while (is_des_family_hmac(g_blackcat_hmac_catalog_schemes[s].processor)) {
+        s = ((size_t) kryptos_get_random_byte() << 24) |
+            ((size_t) kryptos_get_random_byte() << 16) |
+            ((size_t) kryptos_get_random_byte() <<  8) |
+            ((size_t) kryptos_get_random_byte());
+
+        s = s % g_blackcat_hmac_catalog_schemes_nr;
+    }
+#endif
+
+    return &g_blackcat_hmac_catalog_schemes[s];
 }
 
 size_t get_hmac_key_size(blackcat_cipher_processor hmac) {
@@ -406,3 +422,7 @@ IMPL_BLACKCAT_GET_AVAIL(hashes, g_blackcat_hashing_algos)
 IMPL_BLACKCAT_GET_AVAIL(encoders, g_blackcat_encoding_algos)
 
 #undef IMPL_BLACKCAT_GET_AVAIL
+
+#undef is_hmac
+
+#undef is_des_family_hmac
