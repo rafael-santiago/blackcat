@@ -1189,7 +1189,11 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    protlayer[0] = toupper(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = toupper(protlayer[0]);
+    } else {
+        protlayer[1] = toupper(protlayer[1]);
+    }
 
     sprintf(bcmd, "setkey --keyed-alike "
                   "--catalog-hash=whirlpool "
@@ -1198,7 +1202,11 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
                   "--encoder=uuencode "
                   "--protection-layer=%s", protlayer);
 
-    protlayer[0] = tolower(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = tolower(protlayer[0]);
+    } else {
+        protlayer[1] = tolower(protlayer[1]);
+    }
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
@@ -1340,7 +1348,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    protlayer[0] = toupper(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = toupper(protlayer[0]);
+    } else {
+        protlayer[1] = toupper(protlayer[1]);
+    }
 
     sprintf(bcmd, "setkey --keyed-alike "
                   "--catalog-hash=whirlpool "
@@ -1349,7 +1361,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
                   "--encoder=uuencode "
                   "--protection-layer=%s", protlayer);
 
-    protlayer[0] = tolower(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = tolower(protlayer[0]);
+    } else {
+        protlayer[1] = tolower(protlayer[1]);
+    }
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
@@ -2301,7 +2317,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    protlayer[0] = toupper(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = toupper(protlayer[0]);
+    } else {
+        protlayer[1] = toupper(protlayer[1]);
+    }
 
     sprintf(bcmd, "setkey "
                   "--catalog-hash=whirlpool "
@@ -2310,7 +2330,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
                   "--encoder=uuencode "
                   "--protection-layer=%s", protlayer);
 
-    protlayer[0] = tolower(protlayer[0]);
+    if (isalpha(protlayer[0])) {
+        protlayer[0] = tolower(protlayer[0]);
+    } else {
+        protlayer[1] = tolower(protlayer[1]);
+    }
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
