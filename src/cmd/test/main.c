@@ -823,7 +823,7 @@ CUTE_TEST_CASE(blackcat_poke_lock_cmd_tests)
     CUTE_ASSERT(blackcat("lock s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
@@ -839,12 +839,12 @@ CUTE_TEST_CASE(blackcat_poke_lock_cmd_tests)
     CUTE_ASSERT(blackcat("lock", "GiveTheMuleWhatHeWants", NULL) == 0);
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -917,12 +917,12 @@ CUTE_TEST_CASE(blackcat_poke_lock_unlock_at_once_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
@@ -931,12 +931,12 @@ CUTE_TEST_CASE(blackcat_poke_lock_unlock_at_once_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("unlock", "GiveTheMuleWhatHeWants", NULL) == 0);
@@ -972,19 +972,19 @@ CUTE_TEST_CASE(blackcat_poke_rm_cmd_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "GiveTheMuleWhat?", NULL) != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "GiveTheMuleWhatHeWants", NULL) == 0);
@@ -999,7 +999,7 @@ CUTE_TEST_CASE(blackcat_poke_rm_cmd_tests)
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     // INFO(Rafael): Removing from catalog a unexistent/unaccessible file.
@@ -1499,7 +1499,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock s1.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
@@ -1515,7 +1515,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     // INFO(Rafael): Plain files must be skipped anyway.
@@ -1590,12 +1590,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "IThinkILostMyHeadache", "UntilMyHeadcheGoes") == 0);
@@ -1604,12 +1604,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("unlock", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
@@ -1634,19 +1634,19 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "IThinkILostMyHeadache", "GiveTheMuleWhat?") != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
@@ -1661,7 +1661,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm etc/s2.txt", "IThinkILostMyHeadache", "UntilMyHeadacheGoes") == 0);
@@ -1686,12 +1686,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -1805,7 +1805,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock s1.txt", "PaperScratcher", NULL) == 0);
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
@@ -1821,7 +1821,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock", "PaperScratcher", NULL) == 0);
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -1884,12 +1884,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "PaperScratcher", NULL) == 0);
@@ -1898,12 +1898,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("unlock", "PaperScratcher", NULL) == 0);
@@ -1928,19 +1928,19 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "PaperWhat?", NULL) != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "PaperScratcher", NULL) == 0);
@@ -1955,7 +1955,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm etc/s2.txt", "PaperScratcher", NULL) == 0);
@@ -2052,7 +2052,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock s1.txt", "StoneFree", NULL) == 0);
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
@@ -2068,7 +2068,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat("lock", "StoneFree", NULL) == 0);
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -2131,12 +2131,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("status", "StoneFree", NULL) == 0);
@@ -2145,12 +2145,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("unlock", "StoneFree", NULL) == 0);
@@ -2175,19 +2175,19 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "StoneTree", NULL) != 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm s1.txt", "StoneFree", NULL) == 0);
@@ -2202,7 +2202,7 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("rm etc/s2.txt", "StoneFree", NULL) == 0);
@@ -2622,24 +2622,24 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("lock", "HazeJaneII", NULL) == 0);
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -2740,7 +2740,7 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
     CUTE_ASSERT(blackcat("lock", "HazeJaneII", "NoUoniQuinousJeguere") != 0);
@@ -2749,17 +2749,17 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("etc/s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
+    CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("p.txt", &data_size);
@@ -3075,7 +3075,6 @@ CUTE_TEST_CASE(blackcat_do_cmd_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3104,7 +3103,6 @@ CUTE_TEST_CASE(blackcat_do_cmd_tests)
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3188,13 +3186,11 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3212,7 +3208,6 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3252,19 +3247,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3319,19 +3311,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3371,19 +3360,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3411,19 +3397,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3463,19 +3446,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3510,19 +3490,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
@@ -3562,19 +3539,16 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     data = get_file_data("s1.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive1));
     CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s2.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive2));
     CUTE_ASSERT(memcmp(data, sensitive2, strlen(sensitive2)) != 0);
     kryptos_freeseg(data, data_size);
 
     data = get_file_data("s3.txt", &data_size);
     CUTE_ASSERT(data != NULL);
-    CUTE_ASSERT(data_size != strlen(sensitive3));
     CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
     kryptos_freeseg(data, data_size);
 
