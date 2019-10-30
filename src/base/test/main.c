@@ -52,6 +52,7 @@ CUTE_DECLARE_TEST_CASE(get_kdf_usr_params_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_fmt_str_tests);
 CUTE_DECLARE_TEST_CASE(token_wrap_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_get_avail_stuff_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
@@ -93,6 +94,7 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(get_kdf_usr_params_tests);
     CUTE_RUN_TEST(blackcat_kdf_tests);
     CUTE_RUN_TEST(token_wrap_tests);
+    CUTE_RUN_TEST(blackcat_get_avail_stuff_tests);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
@@ -3215,4 +3217,31 @@ CUTE_TEST_CASE(token_wrap_tests)
     CUTE_ASSERT(memcmp(key, expected, expected_size) == 0);
 
     kryptos_freeseg(key, key_size);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_get_avail_stuff_tests)
+    // INFO(Rafael): This test case should not run several assertions, since the blackcat_get_avail_(stuff) is implemented
+    //               by a blackcat's internal dsl implementation statement. The behavior of any function is pretty previsible.
+    //               Here we are not mind about the returned content, too. Since the data_vector is passed at design-time.
+    kryptos_u8_t *data;
+    size_t data_size;
+#define ADD_TEST_CASE(stuff) { blackcat_get_avail_ ## stuff }
+    struct test_func {
+        kryptos_u8_t *(*get)(size_t *);
+    } *test_case, *test_case_end, test_funcs[] = {
+        ADD_TEST_CASE(ciphers), ADD_TEST_CASE(hmacs), ADD_TEST_CASE(hashes), ADD_TEST_CASE(encoders), ADD_TEST_CASE(kdfs)
+    };
+#undef ADD_TEST_CASE
+    size_t test_funcs_nr = sizeof(test_funcs) / sizeof(test_funcs[0]);
+
+    test_case = &test_funcs[0];
+    test_case_end = test_case + test_funcs_nr;
+
+    while (test_case != test_case_end) {
+        CUTE_ASSERT(test_case->get(NULL) == NULL);
+        data = test_case->get(&data_size);
+        CUTE_ASSERT(data != NULL && data_size > 0);
+        kryptos_freeseg(data, data_size);
+        test_case++;
+    }
 CUTE_TEST_CASE_END

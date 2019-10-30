@@ -465,6 +465,8 @@ IMPL_BLACKCAT_GET_AVAIL(hashes, g_blackcat_hashing_algos)
 
 IMPL_BLACKCAT_GET_AVAIL(encoders, g_blackcat_encoding_algos)
 
+IMPL_BLACKCAT_GET_AVAIL(kdfs, g_blackcat_kdf_algos)
+
 #undef IMPL_BLACKCAT_GET_AVAIL
 
 #undef is_hmac

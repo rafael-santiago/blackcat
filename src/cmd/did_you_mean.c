@@ -43,3 +43,35 @@ int did_you_mean(const char *user_command, const int max_distance) {
 
     return has_some_suggestion;
 }
+
+int custom_did_you_mean(const char *data, const int max_distance, const char **known_terms, const size_t known_terms_nr) {
+    int distances[0xFF];
+    size_t d;
+    int has_some_suggestion = 0, s_nr;
+
+    for (d = 0; d < sizeof(distances) / sizeof(distances[0]); d++) {
+        distances[d] = -1;
+    }
+
+    for (d = 0; d < known_terms_nr; d++) {
+        distances[d] = levenshtein_distance(data, known_terms[d]);
+        has_some_suggestion |= (distances[d] >= 1 && distances[d] <= max_distance);
+    }
+
+    if (has_some_suggestion) {
+        s_nr = 0;
+        fprintf(stderr, "Did you mean ");
+        for (d = 0; d < known_terms_nr; d++) {
+            if (distances[d] >= 1 && distances[d] <= max_distance) {
+                if (s_nr > 0) {
+                    fprintf(stderr, "%s ", ((d + 1) == known_terms_nr) ? " or" : ",");
+                }
+                fprintf(stderr, "'%s'", known_terms[d]);
+                s_nr++;
+            }
+        }
+        fprintf(stderr, "?\n");
+    }
+
+    return has_some_suggestion;
+}

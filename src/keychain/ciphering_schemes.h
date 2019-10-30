@@ -156,6 +156,8 @@ kryptos_u8_t *blackcat_get_avail_hashes(size_t *size);
 
 kryptos_u8_t *blackcat_get_avail_encoders(size_t *size);
 
+kryptos_u8_t *blackcat_get_avail_kdfs(size_t *size);
+
 void blackcat_bcrypt(kryptos_task_ctx **ktask, const int dummy);
 
 size_t blackcat_bcrypt_size(void);

@@ -1,7 +1,6 @@
 (B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
 (B) Replace sprintf by snprintf and strcat by strncat where/when possible. +CodeSanitization
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
-(B) The cmd tool's show command should also list the available KDFs. +NewFeature
 (B) Extend the fs module capabilities. +NewFeature
 (B) Avoid directly usage of memset and memcpy functions. Avoid libc hooking. +ParanoidImprovement
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
@@ -10,6 +9,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (B) The cmd tool's show command should also list the available KDFs. +NewFeature
 x (A) Investigate/Fix the weird instability of 'blackcat_poke_setkey_cmd_tests' (using 3-des). +CodeSanitization,+Improvement
 x (A) Make is_hmac_processor() custom by the selected cipher suite during the build. +Improvement
 x (A) Do not use DES family algorithms for catalog encryption anymore. +CodeSanitization,+Improvement

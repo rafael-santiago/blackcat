@@ -608,7 +608,8 @@ CUTE_TEST_CASE(blackcat_poke_show_cmd_tests)
     CUTE_ASSERT(blackcat("show hmacs", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show hashes", "---", NULL) == 0);
     CUTE_ASSERT(blackcat("show encoders", "---", NULL) == 0);
-    CUTE_ASSERT(blackcat("show hashes hmacs ciphers encoders", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show kdfs", "---", NULL) == 0);
+    CUTE_ASSERT(blackcat("show hashes hmacs ciphers encoders kdfs", "---", NULL) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)

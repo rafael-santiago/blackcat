@@ -7,6 +7,7 @@
  */
 #include <cmd/show.h>
 #include <cmd/options.h>
+#include <cmd/did_you_mean.h>
 #include <fs/bcrepo/bcrepo.h>
 #include <keychain/ciphering_schemes.h>
 #include <stdio.h>
@@ -18,6 +19,14 @@ int blackcat_cmd_show(void) {
     size_t data_size;
     int exit_code = EINVAL;
     int a = 0;
+    static const char *known_terms[] = {
+        "ciphers",
+        "hmacs",
+        "hashes",
+        "encoders",
+        "kdfs"
+    };
+    static size_t known_terms_nr = sizeof(known_terms) / sizeof(known_terms[0]);
 
     show_param = blackcat_get_argv(0);
 
@@ -31,21 +40,20 @@ int blackcat_cmd_show(void) {
                                   {
                                      if (strcmp(show_param, "ciphers") == 0) {
                                         data = blackcat_get_avail_ciphers(&data_size);
-                                        goto print_data;
                                      } else if (strcmp(show_param, "hmacs") == 0) {
                                         data = blackcat_get_avail_hmacs(&data_size);
-                                        goto print_data;
                                      } else if (strcmp(show_param, "hashes") == 0) {
                                         data = blackcat_get_avail_hashes(&data_size);
-                                        goto print_data;
                                      } else if (strcmp(show_param, "encoders") == 0) {
                                         data = blackcat_get_avail_encoders(&data_size);
-                                        goto print_data;
+                                     } else if (strcmp(show_param, "kdfs") == 0) {
+                                        data = blackcat_get_avail_kdfs(&data_size);
                                      } else {
-                                        fprintf(stderr, "ERROR: '%s' is a unknown show parameter.\n", show_param);
+                                        if (custom_did_you_mean(show_param, 2, known_terms, known_terms_nr) == 0) {
+                                            fprintf(stderr, "ERROR: '%s' is a unknown show parameter.\n", show_param);
+                                        }
                                         goto blackcat_cmd_show_epilogue;
                                      }
-                                     print_data:
                                      if (data == NULL) {
                                         fprintf(stderr, "ERROR: Unable to get data buffer.\n");
                                         exit_code = ENOMEM;
@@ -64,9 +72,10 @@ blackcat_cmd_show_epilogue:
 
 int blackcat_cmd_show_help(void) {
     fprintf(stdout, "use: blackcat show\n"
-                    "              <ciphers |\n"
-                    "               hmacs   |\n"
-                    "               hashes  |\n"
-                    "               encoders>\n");
+                    "              <ciphers  |\n"
+                    "               hmacs    |\n"
+                    "               hashes   |\n"
+                    "               encoders |\n"
+                    "               kdfs>\n");
     return 0;
 }
