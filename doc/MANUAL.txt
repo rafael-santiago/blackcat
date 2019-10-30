@@ -221,6 +221,14 @@ Let's show all implemented encoders:
     base64
     root@RedBarn:~/sphinx# _
 
+Now let's show all available key derivation functions:
+
+    root@RedBarn:~/sphinx# blackcat show kdfs
+    hkdf
+    pbkdf2
+    argon2i
+    root@RedBarn:~/sphinx# _
+
 Further on I will show you how to use encoding algorithms in blackcat. By now you should only know
 that they exist.
 
