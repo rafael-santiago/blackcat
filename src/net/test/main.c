@@ -105,7 +105,11 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "OnBattleshipHill",
                                        strlen("OnBattleshipHill")) == EINVAL);
 
-        protlayer[0] = toupper(protlayer[0]);
+        if (isalpha(protlayer[0])) {
+            protlayer[0] = toupper(protlayer[0]);
+        } else {
+            protlayer[1] = toupper(protlayer[1]);
+        }
 
         CUTE_ASSERT(blackcat_netdb_add("sock-rule",
                                        "socket",
@@ -117,7 +121,11 @@ CUTE_TEST_CASE(net_db_io_tests)
                                        "OnBattleshipHill",
                                        strlen("OnBattleshipHill")) == EINVAL);
 
-        protlayer[0] = tolower(protlayer[0]);
+        if (isalpha(protlayer[0])) {
+            protlayer[0] = tolower(protlayer[0]);
+        } else {
+            protlayer[1] = tolower(protlayer[1]);
+        }
 
         CUTE_ASSERT(blackcat_netdb_add("sock-rule",
                                        "socket",
