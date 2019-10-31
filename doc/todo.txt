@@ -1,4 +1,4 @@
-(A) Inspect why 'bcrepo_reset_repo_settings_tests' is sometimes breaking. Fixing it if necessary. +Tests,+Improvement
+(A) Use bcrepo_hash_key() instead of calculating it by hand is fs/tests/main.c. +Tests,+Improvement
 (B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
 (B) Replace sprintf by snprintf and strcat by strncat where/when possible. +CodeSanitization
 (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
@@ -10,6 +10,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (A) Inspect why 'bcrepo_reset_repo_settings_tests' is breaking sometimes. Fixing it if necessary. +Tests,+Improvement
 x (B) The cmd tool's show command should also list the available KDFs. +NewFeature
 x (A) Investigate/Fix the weird instability of 'blackcat_poke_setkey_cmd_tests' (using 3-des). +CodeSanitization,+Improvement
 x (A) Make is_hmac_processor() custom by the selected cipher suite during the build. +Improvement

@@ -676,7 +676,8 @@ static size_t huge_protchain_sz = sizeof(huge_protchain) / sizeof(huge_protchain
 
 char *get_test_protlayer(const int allocate, const size_t protlayer_size) {
     // INFO(Rafael): Always use this function to get a test protlayer.
-    char buf[65535], *bp, *bp_end;
+    static char buf[65535];
+    char *bp, *bp_end;
     size_t p, a_size, a;
     FILE *fp;
 

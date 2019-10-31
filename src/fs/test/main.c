@@ -1268,7 +1268,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         catalog->bc_version = (char *) kryptos_newseg(strlen("0.0.0") + 1);
         CUTE_ASSERT(catalog->bc_version != NULL);
         memset(catalog->bc_version, 0, strlen("0.0.0") + 1);
-        memcpy(catalog->bc_version, "0.0.0", 5);
+        memcpy(catalog->bc_version, "1.2.0", 5);
         catalog->otp = otp;
         catalog->hmac_scheme = get_hmac_catalog_scheme(get_test_hmac(0));
         catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -1294,14 +1294,17 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
         CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-        ktask->in = key;
-        ktask->in_size = strlen(key);
-        catalog->key_hash_algo(&ktask, 1);
+        //ktask->in = key;
+        //ktask->in_size = strlen(key);
+        //catalog->key_hash_algo(&ktask, 1);
 
-        CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+        //CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
 
-        catalog->key_hash = ktask->out;
-        catalog->key_hash_size = ktask->out_size;
+        //catalog->key_hash = ktask->out;
+        //catalog->key_hash_size = ktask->out_size;
+        catalog->key_hash = bcrepo_hash_key(key, strlen(key),
+                                            catalog->key_hash_algo, NULL, &catalog->key_hash_size);
+
         catalog->protection_layer = get_test_protlayer(0, 6);
 
         protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -1429,7 +1432,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     catalog->bc_version = (char *) kryptos_newseg(strlen("0.0.0") + 1);
     CUTE_ASSERT(catalog->bc_version != NULL);
     memset(catalog->bc_version, 0, strlen("0.0.0") + 1);
-    memcpy(catalog->bc_version, "0.0.0", 5);
+    memcpy(catalog->bc_version, "1.2.0", 5);
     catalog->otp = 0;
     catalog->hmac_scheme = get_hmac_catalog_scheme(get_test_hmac(0));
     catalog->key_hash_algo = get_hash_processor("sha-512");
@@ -1442,7 +1445,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
 
     catalog->kdf_params = (char *) kryptos_newseg(100);
     CUTE_ASSERT(catalog->kdf_params != NULL);
-    sprintf(catalog->kdf_params, "pbkdf2:blake2b-512:Zm9vYmFy:10");
+    strncpy(catalog->kdf_params, "pbkdf2:blake2b-512:Zm9vYmFy:10", 99);
     catalog->kdf_params_size = strlen(catalog->kdf_params);
 
     catalog->encrypt_data = blackcat_encrypt_data;
@@ -1455,14 +1458,17 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    //ktask->in = key;
+    //ktask->in_size = strlen(key);
+    //catalog->key_hash_algo(&ktask, 1);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
+    //CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
 
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
+
+    //catalog->key_hash = ktask->out;
+    //catalog->key_hash_size = ktask->out_size;
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key),
+                                        catalog->key_hash_algo, NULL, &catalog->key_hash_size);
     catalog->protection_layer = get_test_protlayer(0, 6);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
