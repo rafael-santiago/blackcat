@@ -119,7 +119,7 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     kryptos_u8_t *key = "live2win";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
+    //kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *protkey;
     size_t protkey_size;
     char *config_data = "default-args:\n"
@@ -154,14 +154,8 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 1);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(15);
@@ -275,7 +269,6 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I like pleasure spiked with pain\n"
@@ -400,14 +393,8 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 5);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -659,7 +646,6 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I like pleasure spiked with pain\n"
@@ -764,14 +750,8 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 5);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -982,7 +962,6 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I like pleasure spiked with pain\n"
@@ -1084,14 +1063,8 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 6);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -1176,7 +1149,6 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I like pleasure spiked with pain\n"
@@ -1294,14 +1266,6 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
         CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-        //ktask->in = key;
-        //ktask->in_size = strlen(key);
-        //catalog->key_hash_algo(&ktask, 1);
-
-        //CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-        //catalog->key_hash = ktask->out;
-        //catalog->key_hash_size = ktask->out_size;
         catalog->key_hash = bcrepo_hash_key(key, strlen(key),
                                             catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
@@ -1458,17 +1422,9 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    //ktask->in = key;
-    //ktask->in_size = strlen(key);
-    //catalog->key_hash_algo(&ktask, 1);
-
-    //CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-
-    //catalog->key_hash = ktask->out;
-    //catalog->key_hash_size = ktask->out_size;
     catalog->key_hash = bcrepo_hash_key(key, strlen(key),
                                         catalog->key_hash_algo, NULL, &catalog->key_hash_size);
+
     catalog->protection_layer = get_test_protlayer(0, 6);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -1594,7 +1550,6 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I like pleasure spiked with pain\n"
@@ -1703,14 +1658,8 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 5);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
@@ -1873,7 +1822,6 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     kryptos_u8_t *key = "nao, sei... so sei que foi assim";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     const char *sensitive = "I was paralyzed\n"
@@ -1971,14 +1919,8 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 5);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(11);
@@ -2069,7 +2011,6 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
                         "you're not the only ship adrift on this ocean.";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
     int o_files_nr = 0;
     char *sensitive = "You know you can't be hurt\n"
@@ -2129,14 +2070,8 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 1);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(15);
@@ -2227,7 +2162,6 @@ CUTE_TEST_CASE(bcrepo_add_tests)
     kryptos_u8_t *key = "better living through chemistry";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *pattern = NULL;
 
     // INFO(Rafael): Repo bootstrapping.
@@ -2257,14 +2191,8 @@ CUTE_TEST_CASE(bcrepo_add_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 1);
 
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
@@ -2366,7 +2294,6 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     kryptos_u8_t *key = "d34d m4n t311 n0 t4135";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    kryptos_task_ctx t, *ktask = &t;
     int otp = 0;
 
     do {
@@ -2404,14 +2331,8 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
         CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
         CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-        ktask->in = key;
-        ktask->in_size = strlen(key);
-        catalog->key_hash_algo(&ktask, 1);
+        catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-        CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-        catalog->key_hash = ktask->out;
-        catalog->key_hash_size = ktask->out_size;
         catalog->protection_layer = get_test_protlayer(0, 4);
 
         // INFO(Rafael): An init attempt inside previously initialized repos must fail.
@@ -2497,14 +2418,8 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     CUTE_ASSERT(catalog->protlayer_key_hash_algo != NULL);
     CUTE_ASSERT(catalog->protlayer_key_hash_algo_size != NULL);
 
-    ktask->in = key;
-    ktask->in_size = strlen(key);
-    catalog->key_hash_algo(&ktask, 1);
+    catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
-    CUTE_ASSERT(kryptos_last_task_succeed(ktask) == 1);
-
-    catalog->key_hash = ktask->out;
-    catalog->key_hash_size = ktask->out_size;
     catalog->protection_layer = get_test_protlayer(0, 4);
 
     // INFO(Rafael): An init attempt inside previously initialized repos must fail.
