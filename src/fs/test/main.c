@@ -119,7 +119,6 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     kryptos_u8_t *key = "live2win";
     kryptos_u8_t *rootpath = NULL;
     size_t rootpath_size;
-    //kryptos_task_ctx t, *ktask = &t;
     kryptos_u8_t *protkey;
     size_t protkey_size;
     char *config_data = "default-args:\n"
