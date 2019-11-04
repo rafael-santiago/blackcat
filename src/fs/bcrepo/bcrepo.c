@@ -750,9 +750,9 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
     rootpath_size = strlen(rootpath);
 
 #if defined(__unix__)
-    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_RESCUE_FILE, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_RESCUE_FILE, rootpath);
 #elif defined(_WIN32)
-    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_RESCUE_FILE, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_RESCUE_FILE, rootpath);
 #else
 # error Some code wanted.
 #endif
@@ -763,9 +763,9 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
     }
 
 #if defined(__unix__)
-    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, rootpath);
 #elif defined(_WIN32)
-    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, rootpath);
 #else
 # error Some code wanted.
 #endif
@@ -857,9 +857,9 @@ int bcrepo_detach_metainfo(const char *dest, const size_t dest_size) {
 #endif
 
 #if defined(__unix__)
-    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s/" BCREPO_HIDDEN_DIR, rootpath);
 #elif defined(_WIN32)
-    sprintf(temp, "%s\\", BCREPO_HIDDEN_DIR, rootpath);
+    snprintf(temp, sizeof(temp) - 1, "%s\\", BCREPO_HIDDEN_DIR, rootpath);
 #else
 # error Some code wanted.
 #endif
@@ -927,9 +927,9 @@ int bcrepo_attach_metainfo(const char *src, const size_t src_size) {
     }
 
 #if defined(__unix__)
-    sprintf(temp, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, cwd);
+    snprintf(temp, sizeof(temp) - 1, "%s/" BCREPO_HIDDEN_DIR "/" BCREPO_CATALOG_FILE, cwd);
 #elif defined(_WIN32)
-    sprintf(temp, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, cwd);
+    snprintf(temp, sizeof(temp) - 1, "%s\\" BCREPO_HIDDEN_DIR "\\" BCREPO_CATALOG_FILE, cwd);
 #else
 # error Some code wanted.
 #endif
@@ -1986,9 +1986,9 @@ char *bcrepo_catalog_file(char *buf, const size_t buf_size, const char *rootpath
         return buf;
     }
 #if defined(__unix__)
-    sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    snprintf(buf, buf_size - 1, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
 #elif defined(_WIN32)
-    sprintf(buf, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
+    snprintf(buf, buf_size - 1, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_CATALOG_FILE);
 #else
 # error Some code wanted.
 #endif
@@ -2004,9 +2004,9 @@ char *bcrepo_rescue_file(char *buf, const size_t buf_size, const char *rootpath)
         return buf;
     }
 #if defined(__unix__)
-    sprintf(buf, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
+    snprintf(buf, buf_size - 1, "%s/%s/%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
 #elif defined(_WIN32)
-    sprintf(buf, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
+    snprintf(buf, buf_size - 1, "%s\\%s\\%s", rootpath, BCREPO_HIDDEN_DIR, BCREPO_RESCUE_FILE);
 #else
 # error Some code wanted.
 #endif
@@ -3315,7 +3315,7 @@ int bcrepo_remove_rescue_file(const char *rootpath, const size_t rootpath_size) 
         fseek(fp, 0L, SEEK_END);
         rescue_file_size = ftell(fp);
         fclose(fp);
-        sprintf(temp, "%s/%s", rootpath, BCREPO_HIDDEN_DIR);
+        snprintf(temp, sizeof(temp) - 1, "%s/%s", rootpath, BCREPO_HIDDEN_DIR);
         temp_size = strlen(temp);
         bfs_data_wiping(temp, temp_size, BCREPO_RESCUE_FILE, BCREPO_RESCUE_FILE_SIZE, rescue_file_size);
         rescue_file_size = 0;

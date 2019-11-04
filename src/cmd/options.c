@@ -39,7 +39,7 @@ char *blackcat_get_option(const char *option, char *default_option) {
         return NULL;
     }
 
-    sprintf(temp, "--%s=", option);
+    snprintf(temp, sizeof(temp) - 1, "--%s=", option);
 
     for (a = 0; a < g_blackcat_argc; a++) {
         if (strstr(g_blackcat_argv[a], temp) == &g_blackcat_argv[a][0]) {
@@ -58,7 +58,7 @@ int blackcat_get_bool_option(const char *option, const int default_state) {
         return 0;
     }
 
-    sprintf(temp, "--%s", option);
+    snprintf(temp, sizeof(temp) - 1, "--%s", option);
 
     for (a = 0; a < g_blackcat_argc; a++) {
         if (strcmp(g_blackcat_argv[a], temp) == 0) {

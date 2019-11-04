@@ -860,7 +860,7 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         files.status = 'U';
         files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
         files.seed_size = 8;
-        sprintf(files.timestamp, "%s", "123456789");
+        snprintf(files.timestamp, sizeof(files.timestamp) - 1, "%s", "123456789");
         files.last = NULL;
         files.next = NULL;
 
@@ -1790,12 +1790,12 @@ CUTE_TEST_CASE(remove_go_ups_from_path_tests)
     CUTE_ASSERT(chdir(cwd) == 0);
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);
-    sprintf(exp_path, "//encore break//");
-    sprintf(path, "//encore break//");
+    snprintf(exp_path, sizeof(exp_path) - 1, "//encore break//");
+    snprintf(path, sizeof(path) - 1, "//encore break//");
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);
-    sprintf(exp_path, "the-fun-machine-took-a-shit-and-died-exactly-here");
-    sprintf(path, "./the-fun-machine-took-a-shit-and-died-exactly-here");
+    snprintf(exp_path, sizeof(exp_path) - 1, "the-fun-machine-took-a-shit-and-died-exactly-here");
+    snprintf(path, sizeof(path) - 1, "./the-fun-machine-took-a-shit-and-died-exactly-here");
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);
 CUTE_TEST_CASE_END
@@ -2714,7 +2714,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     files.status = 'U';
     files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
     files.seed_size = 8;
-    sprintf(files.timestamp, "%s", "123456789");
+    snprintf(files.timestamp, sizeof(files.timestamp) - 1, "%s", "123456789");
     files.last = NULL;
     files.next = NULL;
 
@@ -2750,7 +2750,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     files.status = 'U';
     files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
     files.seed_size = 8;
-    sprintf(files.timestamp, "%s", "123456789");
+    snprintf(files.timestamp, sizeof(files.timestamp) - 1, "%s", "123456789");
     files.last = NULL;
     files.next = NULL;
 

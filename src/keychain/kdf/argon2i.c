@@ -281,7 +281,7 @@ char *get_argon2i_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockw
     *tp = ':';
     tp += 1;
 
-    sprintf(buf, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[2]));
+    snprintf(buf, sizeof(buf) - 1, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[2]));
     data_size = strlen(buf);
 
     if ((tp + data_size + 1) >= tp_end) {
@@ -294,7 +294,7 @@ char *get_argon2i_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockw
     *tp = ':';
     tp += 1;
 
-    sprintf(buf, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[3]));
+    snprintf(buf, sizeof(buf) - 1, "%d", *((kryptos_u32_t *)kdf_clockwork->arg_data[3]));
     data_size = strlen(buf);
 
     if ((tp + data_size + 1) >= tp_end) {

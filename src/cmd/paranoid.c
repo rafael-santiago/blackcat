@@ -249,7 +249,7 @@ static int br_dgur_handle(unsigned long cmd) {
         rp_end--;
     }
 
-    sprintf((char *)temp, "*%s*", rp_end + (*rp_end == '/'));
+    snprintf((char *)temp, sizeof(temp) - 1, "*%s*", rp_end + (*rp_end == '/'));
 
     exit_code = do_ioctl(cmd, temp);
 

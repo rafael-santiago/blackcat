@@ -224,7 +224,7 @@ char *get_pbkdf2_usr_params(const struct blackcat_kdf_clockwork_ctx *kdf_clockwo
     *tp = ':';
     tp += 1;
 
-    sprintf(count, "%d", *((size_t *)kdf_clockwork->arg_data[5]));
+    snprintf(count, sizeof(count) - 1, "%d", *((size_t *)kdf_clockwork->arg_data[5]));
 
     data_size = strlen(count);
 

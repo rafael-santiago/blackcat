@@ -149,9 +149,10 @@ int blackcat_netdb_add(const char *rule_id,
     memset(buf, 0, buf_size);
 
     if (target == NULL) {
-        sprintf(buf, "%s: %s %s %s %s\n", rule_id, rule_type, hash, pchain, (encoder != NULL) ? encoder : "");
+        snprintf(buf, buf_size - 1, "%s: %s %s %s %s\n", rule_id, rule_type, hash, pchain, (encoder != NULL) ? encoder : "");
     } else {
-        sprintf(buf, "%s: %s %s %s %s %s\n", rule_id, rule_type, hash, target, pchain, (encoder != NULL) ? encoder : "");
+        snprintf(buf, buf_size - 1, "%s: %s %s %s %s %s\n", rule_id, rule_type, hash, target, pchain, (encoder != NULL) ?
+                                                                                                                encoder : "");
     }
 
     buf_size = strlen(buf);
@@ -326,7 +327,7 @@ int blackcat_netdb_drop(const char *rule_id, const kryptos_u8_t *key, const size
             goto blackcat_netdb_drop_epilogue;
         }
 
-        sprintf(needle, "%s: ", rule_id);
+        snprintf(needle, sizeof(needle) - 1, "%s: ", rule_id);
 
         temp = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &temp_size);
 
@@ -524,7 +525,7 @@ bnt_channel_rule_ctx *blackcat_netdb_select(const char *rule_id, const kryptos_u
             goto blackcat_netdb_select_epilogue;
         }
 
-        sprintf(needle, "%s: ", rule_id);
+        snprintf(needle, sizeof(needle) - 1, "%s: ", rule_id);
 
         if ((temp = kryptos_pem_get_data(BCNETDB_DATA, g_netdb.buf, g_netdb.buf_size, &temp_size)) != NULL) {
             if ((temp_head = strstr(temp, needle)) != NULL) {

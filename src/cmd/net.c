@@ -309,10 +309,11 @@ static int run(void) {
     memset(cmdline, 0, cmdline_size);
     if (blackcat_get_bool_option("e2ee", 0) == 0) {
         if (kpriv == NULL && kpub == NULL) {
-            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
+            snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
                             bcsck_lib_path, db_path, rule);
         } else {
-            sprintf(cmdline, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_%s=%s BCSCK_PORT=%s BCSCK_ADDR=%s",
+            snprintf(cmdline, sizeof(cmdline) - 1,
+                            "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_%s=%s BCSCK_PORT=%s BCSCK_ADDR=%s",
                             bcsck_lib_path, db_path, rule, (kpriv != NULL) ? "KPRIV" : "KPUB",
                                                            (kpriv != NULL) ? kpriv : kpub, xchg_port, xchg_addr);
         }
@@ -330,19 +331,19 @@ static int run(void) {
 
         if (xchg_addr != NULL) {
             if (kpriv == NULL) {
-                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
+                snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, xchg_addr, db_path, rule);
             } else {
-                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
+                snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s BCSCK_ADDR=%s "
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPRIV=%s ", bcsck_lib_path, xchg_port, xchg_addr,
                                                                                   db_path, rule, kpriv);
             }
         } else {
             if (kpub == NULL) {
-                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
+                snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s ", bcsck_lib_path, xchg_port, db_path, rule);
             } else {
-                sprintf(cmdline, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
+                snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_E2EE=1 BCSCK_PORT=%s "
                                  "BCSCK_DBPATH=%s BCSCK_RULE=%s BCSCK_KPUB=%s BCSCK_S_BITS=%s ", bcsck_lib_path, xchg_port,
                                                                                                  db_path, rule, kpub, s_bits);
             }

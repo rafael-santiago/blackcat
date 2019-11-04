@@ -681,19 +681,19 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_tests)
 
     // INFO(Rafael): Incomplete init.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
@@ -703,62 +703,62 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_tests)
                          "--protection-layer-hash=sha-512 "
                          "--keyed-alike", "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhat?") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike "
-                  "--encoder=OI''55", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike "
+                                     "--encoder=OI''55", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=bcrypt "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=bcrypt "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=bcrypt "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=bcrypt "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 
     // INFO(Rafael): Valid keyed alike init.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
 
     // INFO(Rafael): Init again must fail.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") != 0);
 CUTE_TEST_CASE_END
@@ -1097,12 +1097,12 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
 
     // INFO(Rafael): Setkey stuff.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
 
@@ -1115,9 +1115,9 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
     CUTE_ASSERT(blackcat("lock", "GiveTheMuleWhatHeWants", NULL) == 0);
     CUTE_ASSERT(blackcat("status", "GiveTheMuleWhatHeWants", NULL) == 0);
 
-    sprintf(bcmd, "setkey "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
 
@@ -1128,12 +1128,12 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
 
     // INFO(Rafael): Setting other parameters besides the keys.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
 
@@ -1150,42 +1150,42 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=sha12 "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=sha12 "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=cha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=cha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tig3r "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tig3r "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=yyencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=yyencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
@@ -1196,12 +1196,12 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
         protlayer[1] = toupper(protlayer[1]);
     }
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     if (isalpha(protlayer[0])) {
         protlayer[0] = tolower(protlayer[0]);
@@ -1212,32 +1212,32 @@ CUTE_TEST_CASE(blackcat_poke_setkey_cmd_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=bcrypt "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=bcrypt "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=bcrypt "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=bcrypt "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s --otp", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s --otp", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
@@ -1287,12 +1287,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     // INFO(Rafael): Setting other parameters besides the keys.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "GiveTheMuleWhatHeWants", "GiveTheMuleWhatHeWants") == 0);
 
@@ -1309,42 +1309,42 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=sha12 "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=sha12 "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=cha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=cha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tig3r "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tig3r "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=yyencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=yyencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
@@ -1355,12 +1355,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
         protlayer[1] = toupper(protlayer[1]);
     }
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     if (isalpha(protlayer[0])) {
         protlayer[0] = tolower(protlayer[0]);
@@ -1371,32 +1371,32 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=bcrypt "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=bcrypt "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=bcrypt "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=bcrypt "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") != 0);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s --otp", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s --otp", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "GiveTheMuleWhatHeWants\nAll Along The Watchtower\nAll Along The Watchtower", "") == 0);
@@ -1435,31 +1435,31 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     // INFO(Rafael): Invalid keyed twice init with invalid key confirmations.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "IThinkILostMyHeadache\nIThinkILOstMyHeadache", "UntilMyHeadacheGoes\nUntilMyHeadacheGoes") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "IThinkILostMyHeadache\nIThinkILostMyHeadache", "UntilMyHeadacheGoe5\nUntilMyHeadacheGoes") != 0);
 
     // INFO(Rafael): Valid keyed twice init.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "IThinkILostMyHeadache\nIThinkILostMyHeadache", "UntilMyHeadacheGoes\nUntilMyHeadacheGoes") == 0);
@@ -1732,25 +1732,25 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     // INFO(Rafael): Valid keyed alike init with base64 encoding.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike "
-                  "--encoder=base64", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike "
+                                     "--encoder=base64", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "PaperScratcher", "PaperScratcher") == 0);
 
     // INFO(Rafael): Init again must fail.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike "
-                  "--encoder=base64", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike "
+                                     "--encoder=base64", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "PaperScratcher", "PaperScratcher") != 0);
 
@@ -1980,25 +1980,25 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     // INFO(Rafael): Valid keyed alike init with uuencode encoding.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike "
-                  "--encoder=uuencode", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike "
+                                     "--encoder=uuencode", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "StoneFree", "StoneFree") == 0);
 
     // INFO(Rafael): Init again must fail.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike "
-                  "--encoder=uuencode", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike "
+                                     "--encoder=uuencode", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "StoneFree", "StoneFree") != 0);
 
@@ -2226,11 +2226,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nStang's Swang", "Rock-N-Roll'e\nRock-N-Roll'e") == 0);
@@ -2256,11 +2256,11 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     // INFO(Rafael): Setting other parameters besides the keys.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nStang's Swang", "Rock-N-Roll'e\nRock-N-Roll'e") == 0);
@@ -2278,42 +2278,42 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=sha12 "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=sha12 "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=cha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=cha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tig3r "
-                  "--encoder=uuencoder "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tig3r "
+                                     "--encoder=uuencoder "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=yyencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=yyencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
@@ -2324,12 +2324,12 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
         protlayer[1] = toupper(protlayer[1]);
     }
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     if (isalpha(protlayer[0])) {
         protlayer[0] = tolower(protlayer[0]);
@@ -2340,52 +2340,52 @@ CUTE_TEST_CASE(the_poking_machine_took_a_shit_and_die_tests)
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Suang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-iN-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nArdenia\nKylie\nKylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKrylie") != 0);
 
-    sprintf(bcmd, "setkey "
-                  "--catalog-hash=whirlpool "
-                  "--key-hash=sha-512 "
-                  "--protection-layer-hash=tiger "
-                  "--encoder=uuencode "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                     "--catalog-hash=whirlpool "
+                                     "--key-hash=sha-512 "
+                                     "--protection-layer-hash=tiger "
+                                     "--encoder=uuencode "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Stang's Swang\nRock-N-Roll'e", "Gardenia\nGardenia\nKylie\nKylie") == 0);
@@ -2417,11 +2417,11 @@ CUTE_TEST_CASE(blackcat_poke_undo_cmd_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Talking head\nTalking head", "Who knows\nWho knows") == 0);
@@ -2481,11 +2481,11 @@ CUTE_TEST_CASE(blackcat_tests_decoy_cmd_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=whirlpool "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Talking head\nTalking head", "Who knows\nWho knows") == 0);
@@ -2512,8 +2512,8 @@ CUTE_TEST_CASE(blackcat_tests_decoy_cmd_tests)
 
     // INFO(Rafael): Let's test the otp decoy.
 
-    sprintf(bcmd, "setkey --keyed-alike --otp "
-                  "--protection-layer=%s", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike --otp "
+                                     "--protection-layer=%s", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Talking head\nWho knows", "Talking head\nTalking head") == 0);
@@ -2546,32 +2546,32 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
 
     // INFO(Rafael): For people who like bcrypt with love (keyed alike init first, ok?).
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "HazeJaneII", "HazeJaneII") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=101 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=101 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "HazeJaneII", "HazeJaneII") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=6 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=6 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "HazeJaneII"
                                           "HazeJaneII"
@@ -2587,13 +2587,13 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
                                                            "HazeJaneII"
                                                            "HazeJaneII!!!") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=6 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=6 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
 
     CUTE_ASSERT(blackcat(bcmd, "HazeJaneII", "HazeJaneII") == 0);
@@ -2679,31 +2679,31 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
 
     // INFO(Rafael): Now two-layer keys.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "HazeJaneII\nHazeJaneII", "IPutASpellOnYou\nIPutASpellOnYou") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=82 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=82 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "HazeJaneII\nHazeJaneII", "OhWee!\nOhWee!") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=6 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=6 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "HazeJaneII\nHazeJaneII", "YouNeverCallMyNameOnTheTelephone"
@@ -2713,12 +2713,12 @@ CUTE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests)
                                                    "YouNeverCallMyNameOnTheTelephone"
                                                    "YouNeverCallMyNameOnTheTelephone") != 0);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=8 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=8 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "HazeJaneII\nHazeJaneII", "NoOneKnows\nNoOneKnows") == 0);
@@ -2830,12 +2830,12 @@ CUTE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests)
     CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
     CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=tiger "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s "
-                  "--keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=tiger "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "ThingsIUsedToDo", "ThingsIUsedToDo") == 0);
@@ -2904,12 +2904,12 @@ CUTE_TEST_CASE(blackcat_untouch_cmd_tests)
 # error Some code wanted.
 #endif
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=8 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s --keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=8 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s --keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Exempt\nExempt", NULL) == 0);
@@ -2976,12 +2976,12 @@ CUTE_TEST_CASE(blackcat_config_cmd_tests)
 
     // INFO(Rafael): Config tests.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=8 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s --keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=8 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s --keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Zzz\nZzz", NULL) == 0);
@@ -3023,12 +3023,12 @@ CUTE_TEST_CASE(blackcat_do_cmd_tests)
 
     // INFO(Rafael): Do tests.
 
-    sprintf(bcmd, "init "
-                  "--catalog-hash=sha3-384 "
-                  "--key-hash=bcrypt "
-                  "--bcrypt-cost=8 "
-                  "--protection-layer-hash=sha-512 "
-                  "--protection-layer=%s --keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=8 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s --keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Zzzoldar\nZzzoldar", NULL) == 0);
@@ -3148,26 +3148,26 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     // INFO(Rafael): Invalid KDF will fail.
 
-    sprintf(bcmd, "init "
-                  "--key-hash=sha3-512 "
-                  "--catalog-hash=blake2s-256 "
-                  "--protection-layer-hash=sha-512 "
-                  "--kdf=BufferLowChip "
-                  "--protection-layer=%s --keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--key-hash=sha3-512 "
+                                     "--catalog-hash=blake2s-256 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--kdf=BufferLowChip "
+                                     "--protection-layer=%s --keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete", NULL) != 0);
 
     // INFO(Rafael): Now HKDF will be configured to derive protection layer keys.
 
-    sprintf(bcmd, "init "
-                  "--key-hash=sha3-512 "
-                  "--catalog-hash=blake2s-256 "
-                  "--protection-layer-hash=sha-512 "
-                  "--kdf=hkdf "
-                  "--hkdf-salt=GhostBeach "
-                  "--hkdf-info=Catamaran "
-                  "--protection-layer=%s --keyed-alike", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--key-hash=sha3-512 "
+                                     "--catalog-hash=blake2s-256 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--kdf=hkdf "
+                                     "--hkdf-salt=GhostBeach "
+                                     "--hkdf-info=Catamaran "
+                                     "--protection-layer=%s --keyed-alike", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete", NULL) == 0);
@@ -3294,12 +3294,12 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--protection-layer=%s "
-                  "--kdf=pbkdf2 "
-                  "--pbkdf2-hash=blake2b-512 "
-                  "--pbkdf2-salt=Perpetual0yster "
-                  "--pbkdf2-count=19 ", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--protection-layer=%s "
+                                     "--kdf=pbkdf2 "
+                                     "--pbkdf2-hash=blake2b-512 "
+                                     "--pbkdf2-salt=Perpetual0yster "
+                                     "--pbkdf2-count=19 ", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete\nManolete", "") == 0);
@@ -3476,9 +3476,9 @@ CUTE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests)
 
     // INFO(Rafael): Try to remove a KDF without having a KDF must not explode.
 
-    sprintf(bcmd, "setkey --keyed-alike "
-                  "--protection-layer=%s "
-                  "--no-kdf", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "setkey --keyed-alike "
+                                     "--protection-layer=%s "
+                                     "--no-kdf", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd,
                          "Manolete\nManolete\nManolete", "") == 0);
@@ -3590,15 +3590,15 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
     CUTE_ASSERT(protlayer != NULL);
 
-    sprintf(bcmd, "net --add-rule --rule=ntool-rule --type=socket --hash=bcrypt "
-                  "--protection-layer=%s --db-path=ntool-test.db", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "net --add-rule --rule=ntool-rule --type=socket --hash=bcrypt "
+                                     "--protection-layer=%s --db-path=ntool-test.db", protlayer);
 
     remove("ntool-test.db");
     remove("ntool.log");
     CUTE_ASSERT(blackcat(bcmd, "test", "test") != 0);
 
-    sprintf(bcmd, "net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
-                  "--protection-layer=%s --db-path=ntool-test.db", protlayer);
+    snprintf(bcmd, sizeof(bcmd) - 1, "net --add-rule --rule=ntool-rule --type=socket --hash=whirlpool "
+                                     "--protection-layer=%s --db-path=ntool-test.db", protlayer);
 
     CUTE_ASSERT(blackcat(bcmd, "test", "test") == 0);
 
@@ -3911,7 +3911,7 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
     remove("tokens/f.dat");
     rmdir("tokens");
 
-    sprintf(bcmd, repotypes[0], get_test_protlayer(0, 3));
+    snprintf(bcmd, sizeof(bcmd) - 1, repotypes[0], get_test_protlayer(0, 3));
     // INFO(Rafael): It should fail due to the tokens do not exist.
     CUTE_ASSERT(blackcat(bcmd, "SkatingAway\nSkatingAway", "OnTheThinIceOfTheNewDay\nOnTheThinIceOfTheNewDay") != 0);
 
@@ -3933,7 +3933,7 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
         CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
 
         // INFO(Rafael): An init must be always sucessfully done.
-        sprintf(bcmd, *rp, get_test_protlayer(0, 3));
+        snprintf(bcmd, sizeof(bcmd) - 1, *rp, get_test_protlayer(0, 3));
         CUTE_ASSERT(blackcat(bcmd, "Monster\nMonster", "InTheParasol\nInTheParasol") == 0);
 
         // INFO(Rafael): From now on all authenticated operation in this repo must require the
@@ -3994,9 +3994,9 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
 
         // INFO(Rafael): Now let's execute a setkey with new tokens.
 
-        sprintf(bcmd, "setkey "
-                      "--protection-layer=%s "
-                      "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+        snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                         "--protection-layer=%s "
+                                         "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
 
         // INFO(Rafael): Without the current tokens it will fail.
         CUTE_ASSERT(blackcat(bcmd, "Monster", "InTheParasol") != 0);
@@ -4004,16 +4004,18 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
         CUTE_ASSERT(blackcat("token tokens/d.dat tokens/e.dat tokens/f.dat --bytes=20 --overwrite", "", NULL) == 0);
 
         if (strstr(*rp, "--key-hash=bcrypt") == NULL) {
-            sprintf(bcmd, "setkey "
-                          "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
-                          "--protection-layer=%s "
-                          "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+            snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                             "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
+                                             "--protection-layer=%s "
+                                             "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0,
+                                                                                                                            2));
         } else {
-            sprintf(bcmd, "setkey "
-                          "--bcrypt-cost=10 "
-                          "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
-                          "--protection-layer=%s "
-                          "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0, 2));
+            snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                             "--bcrypt-cost=10 "
+                                             "--soft-token=tokens/a.dat,tokens/b.dat,tokens/c.dat "
+                                             "--protection-layer=%s "
+                                             "--new-soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat ", get_test_protlayer(0,
+                                                                                                                            2));
         }
 
         // INFO(Rafael): With wrong password must fail.
@@ -4047,14 +4049,14 @@ CUTE_TEST_CASE(blackcat_poke_soft_token_usage_tests)
         // INFO(Rafael): Now let's stop using soft-tokens.
 
         if (strstr(*rp, "--key-hash=bcrypt") == NULL) {
-            sprintf(bcmd, "setkey "
-                          "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
-                          "--protection-layer=%s ", get_test_protlayer(0, 2));
+            snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                             "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
+                                             "--protection-layer=%s ", get_test_protlayer(0, 2));
         } else {
-            sprintf(bcmd, "setkey "
-                          "--bcrypt-cost=10 "
-                          "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
-                          "--protection-layer=%s ", get_test_protlayer(0, 2));
+            snprintf(bcmd, sizeof(bcmd) - 1, "setkey "
+                                             "--bcrypt-cost=10 "
+                                             "--soft-token=tokens/d.dat,tokens/e.dat,tokens/f.dat "
+                                             "--protection-layer=%s ", get_test_protlayer(0, 2));
         }
 
         CUTE_ASSERT(blackcat(bcmd, "MellowshipSlinky\nInBMajor",
@@ -4219,11 +4221,11 @@ CUTE_TEST_CASE(blackcat_dev_tests)
 
         CUTE_ASSERT(protlayer != NULL);
 
-        sprintf(bcmd, "init "
-                      "--catalog-hash=sha3-384 "
-                      "--key-hash=tiger "
-                      "--protection-layer-hash=sha-512 "
-                      "--protection-layer=%s", protlayer);
+        snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                         "--catalog-hash=sha3-384 "
+                                         "--key-hash=tiger "
+                                         "--protection-layer-hash=sha-512 "
+                                         "--protection-layer=%s", protlayer);
 
         CUTE_ASSERT(blackcat(bcmd,
                              "Or19Well84\nOr19Well84", "LeGuin\nLeGuin") == 0);
@@ -4467,10 +4469,10 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
 
 #if defined(__unix__)
     strncpy(cmdline, "../", sizeof(cmdline) - 1);
-    sprintf(bin, "%sbin/blackcat", cmdline);
+    snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
 #elif defined(_WIN32)
     strncpy(cmdline, "..\\", sizeof(cmdline) - 1);
-    sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+    snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
 #else
 # error Some code wanted.
 #endif
@@ -4478,18 +4480,18 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
 #if defined(__unix__)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "../");
-        sprintf(bin, "%sbin/blackcat", cmdline);
+        snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
     }
 #elif defined(_WIN32)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "..\\");
-        sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+        snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
     }
 #else
 # error Some code wanted.
 #endif
 
-    sprintf(cmdline, "%s\n", p1);
+    snprintf(cmdline, sizeof(cmdline) - 1, "%s\n", p1);
 
     if (p2 != NULL) {
         strcat(cmdline, p2);
@@ -4500,7 +4502,7 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
         return 0;
     }
 
-    sprintf(cmdline, "%s %s < .bcpass", bin, command);
+    snprintf(cmdline, sizeof(cmdline) - 1, "%s %s < .bcpass", bin, command);
 
     exit_code = system(cmdline);
 
@@ -4521,10 +4523,10 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
 
 #if defined(__unix__)
     strncpy(cmdline, "../", sizeof(cmdline) - 1);
-    sprintf(bin, "%sbin/blackcat", cmdline);
+    snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
 #elif defined(_WIN32)
     strncpy(cmdline, "..\\", sizeof(cmdline) - 1);
-    sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+    snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
 #else
 # error Some code wanted.
 #endif
@@ -4532,18 +4534,18 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
 #if defined(__unix__)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "../");
-        sprintf(bin, "%sbin/blackcat", cmdline);
+        snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
     }
 #elif defined(_WIN32)
     while (stat(bin, &st) != 0) {
         strcat(cmdline, "..\\");
-        sprintf(bin, "%sbin\\blackcat.exe", cmdline);
+        snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
     }
 #else
 # error Some code wanted.
 #endif
 
-    sprintf(cmdline, "%s\n", p1);
+    snprintf(cmdline, sizeof(cmdline) - 1, "%s\n", p1);
 
     if (p2 != NULL) {
         strcat(cmdline, p2);
@@ -4554,7 +4556,7 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
         return 0;
     }
 
-    sprintf(cmdline, "%s %s < .bcpass &", bin, command);
+    snprintf(cmdline, sizeof(cmdline) - 1, "%s %s < .bcpass &", bin, command);
 
     exit_code = system(cmdline);
 
@@ -4649,7 +4651,7 @@ static int file_is_hidden(const char *filepath) {
         return 0;
     }
 
-    sprintf(cmdline, "ls %s", filepath);
+    snprintf(cmdline, sizeof(cmdline) - 1, "ls %s", filepath);
 
     if ((fp = popen(cmdline, "r")) == NULL) {
         printf("PANIC: Unable to access pipe.\n");

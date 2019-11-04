@@ -281,7 +281,7 @@ int blackcat_cmd_help(void) {
             goto blackcat_cmd_help_epilogue;
         }
 
-        sprintf(temp, "%s_help", topic);
+        snprintf(temp, sizeof(temp) - 1, "%s_help", topic);
 
         for (h = 0; h < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_helper) && exit_code == EINVAL; h++) {
             if (strcmp(GET_BLACKCAT_COMMAND_NAME(g_blackcat_helper, h), temp) == 0) {
