@@ -3605,8 +3605,10 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     if (has_tcpdump()) {
 #if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 20 > ntool-traffic.log &") == 0);
+#elif defined(__NetBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 20 > ntool-traffic.log &") == 0);
 #else
-        CUTE_ASSERT(system("tcpdump -A -c 20 > ntool-traffic.log &") == 0);
+# error Some code wanted.
 #endif
         sleep(1);
     } else {
@@ -3642,8 +3644,10 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     if (has_tcpdump()) {
 #if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+#elif defined(__NetBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #else
-        CUTE_ASSERT(system("tcpdump -A -c 80 > ntool-traffic.log &") == 0);
+# error Some code wanted.
 #endif
         sleep(1);
     }
@@ -3748,8 +3752,10 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     if (has_tcpdump()) {
 #if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+#elif defined(__NetBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #else
-        CUTE_ASSERT(system("tcpdump -A -c 80 > ntool-traffic.log &") == 0);
+# error Some code wanted.
 #endif
         sleep(1);
     }
@@ -4153,7 +4159,7 @@ CUTE_TEST_CASE(blackcat_poke_token_cmd_tests)
 CUTE_TEST_CASE_END
 
 static int has_tcpdump(void) {
-    return (system("tcpdump --version 2>/dev/null") == 0);
+    return (system("[Ctcpdump --version 2>/dev/null") == 0);
 }
 
 CUTE_TEST_CASE(blackcat_dev_tests)
