@@ -4159,7 +4159,7 @@ CUTE_TEST_CASE(blackcat_poke_token_cmd_tests)
 CUTE_TEST_CASE_END
 
 static int has_tcpdump(void) {
-    return (system("[Ctcpdump --version 2>/dev/null") == 0);
+    return (system("tcpdump --version 2>/dev/null") == 0);
 }
 
 CUTE_TEST_CASE(blackcat_dev_tests)
