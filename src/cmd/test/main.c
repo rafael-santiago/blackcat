@@ -4479,12 +4479,12 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
 
 #if defined(__unix__)
     while (stat(bin, &st) != 0) {
-        strcat(cmdline, "../");
+        strncat(cmdline, "../", sizeof(cmdline) - 1);
         snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
     }
 #elif defined(_WIN32)
     while (stat(bin, &st) != 0) {
-        strcat(cmdline, "..\\");
+        strncat(cmdline, "..\\", sizeof(cmdline) - 1);
         snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
     }
 #else
@@ -4494,8 +4494,8 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
     snprintf(cmdline, sizeof(cmdline) - 1, "%s\n", p1);
 
     if (p2 != NULL) {
-        strcat(cmdline, p2);
-        strcat(cmdline, "\n");
+        strncat(cmdline, p2, sizeof(cmdline) - 1);
+        strncat(cmdline, "\n", sizeof(cmdline) - 1);
     }
 
     if (create_file(".bcpass", cmdline, strlen(cmdline)) == 0) {
@@ -4533,12 +4533,12 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
 
 #if defined(__unix__)
     while (stat(bin, &st) != 0) {
-        strcat(cmdline, "../");
+        strncat(cmdline, "../", sizeof(cmdline) - 1);
         snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
     }
 #elif defined(_WIN32)
     while (stat(bin, &st) != 0) {
-        strcat(cmdline, "..\\");
+        strncat(cmdline, "..\\", sizeof(cmdline) - 1);
         snprintf(bin, sizeof(bin) - 1, "%sbin\\blackcat.exe", cmdline);
     }
 #else
@@ -4548,8 +4548,8 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
     snprintf(cmdline, sizeof(cmdline) - 1, "%s\n", p1);
 
     if (p2 != NULL) {
-        strcat(cmdline, p2);
-        strcat(cmdline, "\n");
+        strncat(cmdline, p2, sizeof(cmdline) - 1);
+        strncat(cmdline, "\n", sizeof(cmdline) - 1);
     }
 
     if (create_file(".bcpass", cmdline, strlen(cmdline)) == 0) {

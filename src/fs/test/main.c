@@ -1781,9 +1781,9 @@ CUTE_TEST_CASE(remove_go_ups_from_path_tests)
     CUTE_ASSERT(getcwd(path, sizeof(path) - 1) != NULL);
     strncpy(exp_path, path, sizeof(exp_path) - 1);
 #if defined(__unix__)
-    strcat(path, "../../");
+    strncat(path, "../../", sizeof(path) - 1);
 #elif defined(_WIN32)
-    strcat(path, "/../../");
+    strncat(path, "/../../", sizeof(path) - 1);
 #else
 # error Some code wanted.
 #endif
