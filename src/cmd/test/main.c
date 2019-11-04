@@ -3603,7 +3603,11 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     CUTE_ASSERT(blackcat(bcmd, "test", "test") == 0);
 
     if (has_tcpdump()) {
+#if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 20 > ntool-traffic.log &") == 0);
+#else
+        CUTE_ASSERT(system("tcpdump -A -c 20 > ntool-traffic.log &") == 0);
+#endif
         sleep(1);
     } else {
         printf("WARN: Unable to intercept packets during 'net/--run' tests. For a more complete test install tcpdump.\n");
@@ -3636,7 +3640,11 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     //INFO(Rafael): Testing the strengthened E2EE mode (with a double ratchet mechanism).
 
     if (has_tcpdump()) {
+#if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+#else
+        CUTE_ASSERT(system("tcpdump -A -c 80 > ntool-traffic.log &") == 0);
+#endif
         sleep(1);
     }
 
@@ -3738,7 +3746,11 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     CUTE_ASSERT(blackcat_nowait("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "1234", NULL) == 0);
 
     if (has_tcpdump()) {
+#if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+#else
+        CUTE_ASSERT(system("tcpdump -A -c 80 > ntool-traffic.log &") == 0);
+#endif
         sleep(1);
     }
 
