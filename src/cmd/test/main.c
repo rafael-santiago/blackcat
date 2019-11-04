@@ -3607,6 +3607,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
         CUTE_ASSERT(system("tcpdump -i any -A -c 20 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 20 > ntool-traffic.log &") == 0);
+#elif defined(__FreeBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 20 > ntool-traffic.log &") == 0);
 #else
 # error Some code wanted.
 #endif
@@ -3645,6 +3647,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 #if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
+#elif defined(__FreeBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #else
 # error Some code wanted.
@@ -3753,6 +3757,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 #if defined(__linux__)
         CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
+        CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
+#elif defined(__FreeBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #else
 # error Some code wanted.
