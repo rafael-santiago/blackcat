@@ -38,12 +38,12 @@ you@Hellfire:~/src/blackcat/src# hefesto
 
 Go walk your dog, because it can take a while at first time. Once
 well-succeeded you can use the binary under 'blackcat/bin'. However, I would
-recommend you to install it and make 'blackcat' accessible in the entire system.
+recommend you to install it and make 'blackcat' accessible in your entire system.
 
 If you have some restriction (personal or legal) related to usage of some
 available cipher you should pull out this cipher from the build option
-'--with-ciphers'. By default all ciphers are included for compilation anyway
-you should watch your restrictions.
+'--with-ciphers'. By default, all ciphers are included, anyway, you should watch
+your restrictions.
 
 In order to know what ciphers are currently available use the build option
 '--avail-ciphers':
@@ -53,7 +53,7 @@ you@Hellfire:~/src/blackcat/src# hefesto --avail-ciphers
 --------------------------------------------------------
 
 To overwrite the default '--with-ciphers' option you should pass this option
-when calling the build by passing your desired ciphers:
+when calling the build by passing (of course) your desired (available) ciphers:
 
 ------------------------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --with-ciphers=aes,des,blowfish
@@ -123,12 +123,14 @@ device driver features. Thus, the device driver will be built when
 is defined.
 
 The SKIP_NET_TESTS lists all platforms where the net command system tests
-should be skipped. Currently, Windows do not have support to net command.
+should be skipped. Currently, Windows do not has support for net command.
 In FreeBSD, NetBSD and OpenBSD the tests are being skipped because it
-must be adjusted to some platform details before being included as a default
-build option.
+must be adjusted taking into consideration some platform details before
+being included as a default build option for them.
 
-If you want to force the recompilation of all modules, use the build option
+If you want to force the re-build of all modules, use the build option
 '--clean-modules'.
+
+The re-build of everything: '--forge-anyway'.
 
 You done here, now you should read the file 'doc/MANUAL.txt'.
