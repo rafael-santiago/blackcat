@@ -39,8 +39,8 @@ I hate letting all files exposed when using encryption tools based on storage de
 paranoid like me, maybe you will like the way of how blackcat works.
 
 The general approach of this tool is to provide you a way of protecting an entire directory and
-its sub-directories. Due to it, I have designed the application to work similarly as a scm tool,
-excluding all version control stuff, of course.
+its sub-directories. Due to it, I have designed the application for working similarly as a scm
+tool, excluding all version control stuff, of course.
 
 OK, you do not know what a scm tool is. Forget about the concepts. I will try to introduce you the
 basic usage workflow even so.
@@ -121,7 +121,7 @@ gcm (for ciphers suitable with this mode).
 The application counts with more than one thousand encryption schemes to be used in your
 protection layer.
 
-If you do not need a barrier of two passwords you can force blackcat to use only one key. What can
+If you do not need a barrier of two passwords you can force blackcat use only one key. What can
 be done by specifying the option flag '--keyed-alike'. By default a blackcat repo is "keyed-twice".
 
 If you prefer using bcrypt for password hashing, the option '--key-hash' supports it. In this case is
@@ -404,7 +404,7 @@ Blackcat also counts with a device driver that helps us with our paranoid worrie
 device driver is available for FreeBSD, Linux and NetBSD.
 
 This device driver offers the possibility of detecting hooks that could be used in order to log
-your passwords and also some nice 'incantations' to hide your file and/or repositories.
+your passwords and also some nice 'incantations' that hide your file and/or repositories.
 
 The blackcat device driver should be loaded through the kernel module called 'blackcat.ko'
 (FreeBSD and Linux), 'blackcat.kmod' (NetBSD). The way of loading it is as follows:
@@ -681,7 +681,7 @@ the repository becomes an ordinary folder again.
 Opposingly the 'attach' command takes a metainfo previously extracted through detach. Turning into
 an ordinary folder a blackcat repo again.
 
-This locking swap allows you to put information that is valid by using a key but invalid by using
+This locking swap allows you put information that is valid by using a key but invalid by using
 (an)other one(s). Also you can put files that are invalid when decrypted by any key (decoy files).
 The possibility of put a decoy file adds more deniability to your stuff.
 
@@ -749,7 +749,7 @@ After it she needs to add them to the catalog as "protected garbage":
     alice@RedBarn:~/wonderland# blackcat add 021.txt 022.txt 023.txt 024.txt \
     > 025.txt 026.txt --lock
 
-Now Alice runs a status command to see if everything is really protected:
+Now Alice runs a status command in order to see if everything is really protected:
 
     alice@RedBarn:~/wonderland# blackcat status
     alice@RedBarn:~/wonderland# _
@@ -787,8 +787,8 @@ in this case, just as plain files (they will be alleged decoy files):
     alice@RedBarn:~/wonderland# _
 
 She knows that the information in 001.txt, 002.txt and 003.txt will not change anymore,
-so in the dummy catalog it can be just plain stuff. In other scenarios it would be better to
-process them as protected chaff (the encoding algorithm should be dropped).
+so in the dummy catalog it can be just plain stuff. In other scenarios it would be better
+to process them as protected chaff (the encoding algorithm should be dropped).
 
 Alice also add all other decoy from the original repo's catalog as plain files:
 
@@ -907,7 +907,7 @@ She detaches this catalog too:
 
 Now let's suppose that when asked to allow Alice to send out data, Bob asks her for the key.
 Alice presents the wonderland.k1 content as the main repository "key" and additionally she
-presents wonderland.k2 as the dummy "key". She saves a copy to Bob of thoses metainfos in
+presents wonderland.k2 as the dummy "key". She saves a copy to Bob of those metainfos in
 'wonderland.main.metainfo', 'wonderland.dummy.metainfo' files and send them to Bob.
 So Bob will test it. First he will inspect the dummy data:
 
@@ -934,7 +934,7 @@ Now he unlocks all data and inspects:
     bob@BigBo:~/data-inspection/alice# _
 
 After reading what Alice has wrote about him, with tears in his eyes, Bob allows Alice to
-send out every single information. The data was approved.
+send out every information. The data was approved.
 
 This scenario is pretty unreal for most of people, in many cases, the key will be asked after
 the data was sent, in this case Alice will not face the risk of Bob censor her decoy files.
@@ -979,14 +979,14 @@ When you protect network traffic with blackcat you must indicate which protectio
 that communication channel. Due to it you need to create a rule and store this rule inside a file that is
 commonly called 'netdb'. A kind of database with rules that can protect net data.
 
-The command to create a rule is 'net/--add-rule':
+The command for creating a rule is 'net/--add-rule':
 
     root@RedBarn:~/# blackcat net --add-rule --rule=nc --type=socket --hash=whirlpool \
     > --protection-layer=blowfish,aes-128-ctr,hmac-sha3-512-aes-256-cbc --db-path=netdb.db
 
 It will create a file called 'netdb.db' with a rule called 'nc' of type 'socket'. Until now only type
-'socket' is supported. The '--protection-layer' option specifies what algorithm(s) will be used to
-protect data. The '--hash' option indicates the hash algorithm used by the key derivation function.
+'socket' is supported. The '--protection-layer' option specifies what algorithm(s) will be used for
+protecting data. The '--hash' option indicates the hash algorithm used by the key derivation function.
 
 When you specify an existing file in the '--db-path' option your new rule will be appended to the
 existing ones.
@@ -997,10 +997,11 @@ If for some reason you want to delete a rule:
 
 Pretty easy, huh?
 
-Now let's see how to use a rule to protect a connection. As said before blackcat will apply
-some hooking stuff to make the connection encrypted. Let's suppose that Alice wants to communicate
-with Bob just by using netcat but she also wants some level of secrecy during this chat. Alice
-should use the command 'net/--run' to create a protected instance of netcat in her system:
+Now let's see how to use a rule for protecting a connection. As said before blackcat will apply
+some hooking stuff in order to make the connection encrypted. Let's suppose that Alice wants to
+communicate with Bob just by using netcat but she also wants some level of secrecy during this
+chat. Alice should use the command 'net/--run' in order to create a protected instance of netcat
+in her system:
 
     alice@RedBarn:~/# blackcat net --run --rule=nc --bcsck-lib-path=/usr/lib/libbcsck.so \
     > --db-path=/usr/local/share/blackcat/db/netdb.db nc -l -p 1024
@@ -1027,7 +1028,7 @@ Similarly, the option '--db-path' can be omitted when you define an environment 
 
 BEWARE: The 'net/--run' sample given above does not protect you against replay attacks. If you
 want to protect the communication against this kind of attack you should flag your intention by
-using the option flag '--e2ee'. This will force the blackcat to use an ephemeral key for each
+using the option flag '--e2ee'. This will force the blackcat use an ephemeral key for each
 exchanged data. The command becomes a little bit different:
 
     alice@RedBarn:~/# blackcat net --run --e2ee --xchg-port=50 --rule=nc \
@@ -1052,7 +1053,7 @@ Once well estabilished the connection, each message exchanged between each other
 with a double ratchet mechanism. When some key is re-used a warning is displayed. Alerting the user
 about a possible replay attack, in this case is better to close the connection immediately.
 
-The first usage mode also must be considered an end to end encryption (E2EE), however, the second
+The first usage mode also must be considered an end-to-end encryption (E2EE), however, the second
 usage ensures a little bit better that nothing can be done with the channel, in regards to data or
 connection manipulation.
 
@@ -1066,7 +1067,7 @@ encryption. 'Wooow!!'... joking...
 Those software just scan the executable text trying to find some algorithm constant which behaves like
 a signature. Pretty boring. It is useless and do not offer any risk for well implemented crypto, since
 modern encryption takes into consideration the Kasiski's principles. Thus even knowing the used
-algorithm, if the attacker does not know the key, the attack must be infeasible to her/him.
+algorithm, if the attacker does not know the key, the attack must be infeasible by her/him.
 
 Of course that blackcat has all constants of all implemented algorithms in its text. What an attacker
 should do is to perform a brute force against the first key and if there is a second key they must
@@ -1136,8 +1137,8 @@ Diffie-Hellman-Merkle. Until now you can use group bits of 1536, 2048, 3072, 409
     > --out=dh-params.txt
     alice@WolandsLand:~/# _
 
-Now to create a key pair by using those parameters instead of a standanized MODP group, you
-should:
+Now in order to create a key pair by using those parameters instead of a standanized MODP
+group, you should:
 
     alice@WolandsLand:~/# blackcat net --mk-dh-key-pair --public-key-out=alice.pub \
     > --private-key-out=alice.priv --dh-params-in=dh-params.txt
@@ -1190,8 +1191,8 @@ The .bcrepo/CONFIG file
 =======================
 
 This file is intended to hold specific configurations of a repository. Due to security issues this file
-is not automatically loaded. When you create a CONFIG file you must to indicate that the current content
-can be read and loaded. There is a command to do that:
+is not automatically loaded. When you create a CONFIG file you must indicate that the current content
+can be read and loaded. There is a command for doing it:
 
     Bob@ConfigSampe:~/config# blackcat config --update
     Bob@ConfigSampe:~/config# _
@@ -1273,7 +1274,7 @@ Now Alice has to run and update:
 
     Alice@WonderLandLabs:~/crazy-stuff# blackcat config --update
 
-There is a suggestive blackcat command to execute pre-defined user commands: 'do'.
+There is a suggestive blackcat command that executes pre-defined user commands: 'do'.
 
 According to this sample Alice can decrypt all files under src by doing:
 
@@ -1287,8 +1288,8 @@ It is also possible to execute any shell command. Do not worry because when some
 file this change will be detected and the CONFIG data will not be loaded. Since the update process
 requires the repo password only you will be able to actually change the CONFIG file.
 
-Using a KDF to derive your protection layer keys
-================================================
+Using a KDF in order to derive your protection layer keys
+=========================================================
 
 On version 1.2.0 blackcat started implementing the possibility of using some standard KDF instead of
 its regular method of deriving keys from user's master/second layer key.
@@ -1366,7 +1367,7 @@ Now let's suppose that Alice wants to change the KDF from HKDF to ARGON2I:
 In the last command sample we got a rule of thumb for KDF changing:
 
         * When changing anything related to KDFs you need to specify the protection layer. Otherwise
-            you will got an error.
+          you will got an error.
 
 Now let's suppose that Alice does not want a KDF anymore:
 
@@ -1392,13 +1393,13 @@ section must hold the end pipe command. Something like:
 
     '
 
-Once it defined into your '.bcrepo/CONFIG' all status output will be directed to your defined viewer.
+Once it defined into your '.bcrepo/CONFIG' all status output will be redirected to your defined viewer.
 
 Using soft-tokens
 =================
 
 Blackcat allows you to use soft-tokens that are combined with the keys. In this way, even knowing the
-key(s) but without the soft-token(s) in the right order is virtually impossible to decrypt the repository
+key(s) but without the soft-token(s) in the right order is virtually impossible decrypt the repository
 data.
 
 Soft-tokens are related to regular files carring some byte sequence. It can be a plain text, part of a
@@ -1431,7 +1432,7 @@ After initializing a repo with soft-tokens any operation that requires the user 
 require the tokens in the sequence specified at the time of the init operation. Thus, store those tokens
 in a safe place and remember their sequence in '--soft-token' option.
 
-Supposing Bob wants to add and lock a file to sample's catalog:
+Supposing Bob wants to add (and lock) a file to sample's catalog:
 
     Bob@OobyDooby:~/sample# blackcat add LonesomeStoney.txt --lock \
     > --soft-token=/mnt/my-ooby-dooby-tokens/dooby.dat,/mnt/my-ooby-dooby-tokens/ooby.dat
@@ -1450,7 +1451,7 @@ When you want to set new tokens you must use the option 'new-soft-token' in comm
 
 Notice that even during a setkey, the current configured tokens must be passed.
 
-If you want to remove the soft-token(s) usage from a repository, you must to run a 'setkey' command
+If you want to remove the soft-token(s) usage from a repository, you must run a 'setkey' command
 without '--new-soft-token' option.
 
 You can make the usage of soft-tokens more easy by using the config option '.bcrepo/CONFIG/default-args'.
@@ -1477,7 +1478,7 @@ stdout.
 Few tips for not being a tracked average sheep out there
 ========================================================
 
-The nice stuff about blackcat is to add to your workflow the possibility of using strong data protection
+The nice stuff about blackcat is adding to your workflow the possibility of using strong data protection
 with few easy command primitives. It does not require any special container for your data, mounting it,
 etc; an ordinary directory becomes protected and you can easily encrypt and decrypt independent files
 or file groups. Init it, add and just go.
@@ -1488,11 +1489,11 @@ For example, it is straightforward to integrate blackcat with some scm tool. The
 can host a private repository without paying for your privacy. I find privacy is basic, it is a
 right and you should not pay for it. In my opinion it is shameful.
 
-Nowadays everyone likes to send data to the cloud. However, if you have sensitive stuff or very personal
+Nowadays everyone like sending data to the cloud. However, if you have sensitive stuff or very personal
 data you should encrypt it. Do not be fool, believing that all your data is securely stored and that
 no one would be able to access it. Systems are full of bugs and people in majority tends to be crooked.
-Moreover, some systems/companies just like to eavesdrop us because we are profitable while users.
-In this case, use the cloud but encrypt what is relevant to you. Also put a bunch of false clues just
+Moreover, some systems/companies just like eavesdropping us because we are profitable while users.
+In this case, use the cloud but encrypt what is relevant for you. Also put a bunch of false clues just
 for screwing up some nosy AI hahaha I love doing it when hosting data that could be probed. Everyone
 should do the same, just for making the web more "friendly" again.
 
