@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 struct skey_xchg_ctx {
-    char *addr;
+    char addr[255];
     unsigned short port;
     size_t key_size, s_bits;
     kryptos_u8_t *k_priv, *k_pub;

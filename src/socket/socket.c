@@ -51,7 +51,7 @@ struct bcsck_handle_ctx {
                     mtx_socket_func, mtx_set_protlayer_by_seqno_func;
 #endif
     int libc_loaded, e2ee_conn, sockfd;
-    char *xchg_addr;
+    char xchg_addr[255];
     unsigned short xchg_port;
     bnt_keyset_ctx *keyset;
 };
@@ -877,10 +877,24 @@ __bcsck_epilogue
 }
 
 static int bcsck_read_rule(void) {
-    kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, *rule_id = NULL, *kpriv = NULL, *kpub = NULL;
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // WARN(Rafael): For the sake of simplicity some getenv() calls are done in two times -> 1. temp,  2. snprintf(..temp); !
+    //               The getenv function can be implemented differently from a system to another. Some systems will return  !
+    //               the pointer to data while others just a copy. Here is important ensure a copy, otherwise the           !
+    //               'setenv(" ") + unset()' will break the workflow implemented here. Because we will end up working with  !
+    //               null values... As a result, random malfunctions will be in the way. And I know... You love it! ;)      !
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    // TIP(Rafael): 'At first sight' useless 'temp_size = strlen(temp)' is only a paranoid care for ensuring temp's cleaning up,
+    //              when routine abruptly exits due to some fault (considering that code can be edited, extended, etc. It is
+    //              there because someone extremely tired of so many programming bugs spread out there, trying to make
+    //              'a-paranoid-proof-trinket' put it there, most important: from the future!).
+    //              Please, do not drop those strlens away. Thanks!
+
+    kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, rule_id[255], *kpriv = NULL, *kpub = NULL;
     kryptos_u8_t *kpriv_key = NULL;
     size_t kpriv_key_size, *key_size = NULL;
-    char *db_path = NULL, *port = NULL;
+    char db_path[4096], *port = NULL;
     int err = 0;
     size_t session_key_size = 0, temp_size = 0, db_size = 0, db_path_size = 0, db_key_size = 0;
     int (*do_xchg)(void) = NULL;
@@ -893,20 +907,30 @@ static int bcsck_read_rule(void) {
     sx.libc_recv = g_bcsck_handle->libc_recv;
     sx.k_priv = sx.k_pub = NULL;
 
-    if ((db_path = getenv(BCSCK_DBPATH)) == NULL) {
+    if ((temp = getenv(BCSCK_DBPATH)) == NULL) {
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
+
+    temp_size = strlen(temp);
+
+    snprintf(db_path, sizeof(db_path) - 1, "%s", temp);
+    temp = NULL;
 
     setenv(BCSCK_DBPATH, " ", 1);
     unsetenv(BCSCK_DBPATH);
 
     db_path_size = strlen(db_path);
 
-    if ((rule_id = getenv(BCSCK_RULE)) == NULL) {
+    if ((temp = getenv(BCSCK_RULE)) == NULL) {
         err = EFAULT;
         goto bcsck_read_rule_epilogue;
     }
+
+    temp_size = strlen(temp);
+
+    snprintf(rule_id, sizeof(rule_id) - 1, "%s", temp);
+    temp = NULL;
 
     setenv(BCSCK_RULE, " ", 1);
     unsetenv(BCSCK_RULE);
@@ -1068,7 +1092,13 @@ static int bcsck_read_rule(void) {
 
     if ((sx.keep_sk_open = (sx_trap != NULL))) {
         // INFO(Rafael): Estabilishing a session key.
-        sx.addr = getenv(BCSCK_XCHG_ADDR);
+        if ((temp = getenv(BCSCK_XCHG_ADDR)) == NULL) {
+            memset(sx.addr, 0, sizeof(sx.addr));
+        } else {
+            temp_size = strlen(temp);
+            snprintf(sx.addr, sizeof(sx.addr) - 1, "%s", temp);
+            temp = NULL;
+        }
 
         if ((port = getenv(BCSCK_XCHG_PORT)) == NULL) {
             fprintf(stderr, "ERROR: The port for the connection parameters exchanging is lacking.\n");
@@ -1119,21 +1149,23 @@ static int bcsck_read_rule(void) {
         goto bcsck_read_rule_epilogue;
     }
 
+    g_bcsck_handle->xchg_port = atoi(port);
+
     setenv(BCSCK_XCHG_PORT, " ", 1);
     unsetenv(BCSCK_E2EE);
 
-    g_bcsck_handle->xchg_port = atoi(port);
-
-    g_bcsck_handle->xchg_addr = getenv(BCSCK_XCHG_ADDR);
+    if ((temp = getenv(BCSCK_XCHG_ADDR)) == NULL) {
+        memset(g_bcsck_handle->xchg_addr, 0, sizeof(g_bcsck_handle->xchg_addr));
+        do_xchg = do_xchg_server;
+    } else {
+        temp_size = strlen(temp);
+        do_xchg = do_xchg_client;
+        snprintf(g_bcsck_handle->xchg_addr, sizeof(g_bcsck_handle->xchg_addr) - 1, "%s", temp);
+        temp = NULL;
+    }
 
     setenv(BCSCK_XCHG_ADDR, " ", 1);
     unsetenv(BCSCK_XCHG_ADDR);
-
-    if (g_bcsck_handle->xchg_addr == NULL) {
-        do_xchg = do_xchg_server;
-    } else {
-        do_xchg = do_xchg_client;
-    }
 
     if ((err = do_xchg()) != 0) {
         fprintf(stderr, "ERROR: During connection parameters exchanging. Aborted.\n");
@@ -1186,8 +1218,10 @@ bcsck_read_rule_epilogue:
         fclose(fp);
     }
 
-    db_key = temp = session_key = rule_id = NULL;
-    db_path = NULL;
+    memset(db_path, 0, sizeof(db_path));
+    memset(rule_id, 0, sizeof(rule_id));
+
+    db_key = temp = session_key = NULL;
 
     setenv(BCSCK_DBPATH, " ", 1);
     setenv(BCSCK_RULE, " ", 1);

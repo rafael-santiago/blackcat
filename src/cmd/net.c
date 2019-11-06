@@ -704,7 +704,7 @@ static int skey_xchg(void) {
         }
 
         sx.key_size = 0;
-        sx.addr = NULL;
+        memset(sx.addr, 0, sizeof(sx.addr));
         sx.port = atoi(temp);
         sx.k_pub = k_buf;
         sx.k_pub_size = k_buf_size;
@@ -739,7 +739,14 @@ static int skey_xchg(void) {
             goto skey_xchg_epilogue;
         }
         sx.port = atoi(temp);
-        BLACKCAT_GET_OPTION_OR_DIE(sx.addr, "addr", skey_xchg_epilogue);
+
+        BLACKCAT_GET_OPTION_OR_DIE(temp, "addr", skey_xchg_epilogue);
+        if (temp == NULL) {
+            memset(sx.addr, 0, sizeof(sx.addr));
+        } else {
+            snprintf(sx.addr, sizeof(sx.addr) - 1, "%s", temp);
+        }
+
         sx_trap = skey_xchg_client;
     }
 
