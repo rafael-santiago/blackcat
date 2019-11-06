@@ -19,7 +19,7 @@ v1.2.0 [git-tag: 'v1.2.0']
         - Minor improvements on info command output (command line tool).
         - First-layer key was enhanced against dictionary attacks. Old repos will be automatically enhanced.
         - Windows port (no net, paranoid nor lkm commands are available).
-        - Build fine tunings to easily build in OpenBSD.
+        - Build fine tunings in order to easily build in OpenBSD.
         - Build improved on. Now protection layers picked during the tests are based on the ciphers selected by the user during
           the build.
         - Another build improvement. Were introduced two build compatibility files: BCDEV_PLATFORMS and SKIP_NET_TESTS.
@@ -55,7 +55,7 @@ v1.0.0 [git-tag: 'v1.0.0-fix']
         - Vpn tunnel can use modified DH scheme for a session key agreement.
         - Plausibly deniable encryption.
         - Data wiping using some points observed in DoD 5220.22-M.
-        - A command to set the file access time (access, creation, edition) for a default one.
+        - A command for setting the file access time (access, creation, edition) for a default one.
         - Device driver for NetBSD, FreeBSD and Linux that enforces some paranoid cares: by detecting syscall hooking, hiding
           the files in a repository, hiding the entire repository in order to avoid data leaking (some intruder downloading
           your stuff). Enforcing the main idea: when you got a leak, it was the minimum leakage possible.
