@@ -57,7 +57,7 @@ Including:
     - If you are pretty paranoid, some cares for avoiding RAM swap issues that would leak some
       pretty sensitive information (depending on your requirements).
 
-    - Vpn-tunnel (socket level) with E2EE (by using a double ratchet like mechanism or not);
+    - Vpn-tunnel (socket level) with E2EE (by using a double ratchet-like mechanism or not);
 
     - Session key exchanging by using a modified Diffie-Hellman-Merkle scheme;
 
@@ -76,8 +76,8 @@ I have been using it in Linux, FreeBSD and NetBSD. Anyway, you should be able to
 
 If you prefer, you can also use the basic features in Windows.
 
-This is not for comercial use. This is personal, if you want to use it check the restrictions to your
-state of things, including your local country crypto regulation, the ciphers licenses too.
+This is not for comercial use. This is personal, if you want to use it watch the restrictions to your
+state of things, including your local country crypto regulation, the ciphers licenses too, etc.
 
 Use this software at your own risk. I am not responsible for any misuse of it, including some kind of damage,
 data loss, etc. Who knows your babysitter.
