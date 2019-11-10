@@ -7,6 +7,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (A) Make 'hungry' locks and unlocks faster (e.g.: 'blackcat lock', 'blackcat unlock'). +Improvement
 x (A) Inspect why 'libbcsck.so' is aborting during its initialization in FreeBSD. Fix it if a bug. +Debug,+BugFix
 x (B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
 x (B) Replace sprintf by snprintf and strcat by strncat where/when possible. +CodeSanitization
