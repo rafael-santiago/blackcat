@@ -37,7 +37,7 @@ libbcsck.prologue() {
     var option type list;
     $option = hefesto.sys.get_option("no-thread-safe");
 
-    if ($option.count() == 0) {
+    if ($option.count() > 0) {
         $cflags.del_item("-DBCSCK_THREAD_SAFE=1");
     }
 
