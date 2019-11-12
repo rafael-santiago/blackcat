@@ -846,6 +846,8 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         catalog.kdf_params_size = 0;
         catalog.salt = NULL;
         catalog.salt_size = 0;
+        catalog.config_hash = NULL;
+        catalog.config_hash_size = 0;
 
         catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
         CUTE_ASSERT(catalog.key_hash != NULL);
