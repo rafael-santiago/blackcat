@@ -3604,7 +3604,7 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
     if (has_tcpdump()) {
 #if defined(__linux__)
-        CUTE_ASSERT(system("tcpdump -i any -A -c 20 > ntool-traffic.log &") == 0);
+        CUTE_ASSERT(system("tcpdump -i lo -A -c 20 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 20 > ntool-traffic.log &") == 0);
 #elif defined(__FreeBSD__)
@@ -3647,7 +3647,7 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
     if (has_tcpdump()) {
 #if defined(__linux__)
-        CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+        CUTE_ASSERT(system("tcpdump -i lo -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__FreeBSD__)
@@ -3667,49 +3667,49 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=104 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -c write/read 2>> ntool.client.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=105 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -s send/recv 2>> ntool.server.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=105 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -c send/recv 2>> ntool.client.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=106 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -s sendto/recvfrom 2>> ntool.server.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=106 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -c sendto/recvfrom 2>> ntool.client.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=107 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -s sendmsg/recvmsg 2>> ntool.server.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=107 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "ntool/bin/ntool -c sendmsg/recvmsg 2>> ntool.client.log", "test", "abc\nabc") == 0);
 
-    usleep(1);
+    usleep(100);
 
     if (has_tcpdump()) {
         data = get_file_data("ntool-traffic.log", &data_size);
@@ -3759,7 +3759,7 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
     if (has_tcpdump()) {
 #if defined(__linux__)
-        CUTE_ASSERT(system("tcpdump -i any -A -c 80 > ntool-traffic.log &") == 0);
+        CUTE_ASSERT(system("tcpdump -i lo -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__NetBSD__)
         CUTE_ASSERT(system("tcpdump -i lo0 -A -c 80 > ntool-traffic.log &") == 0);
 #elif defined(__FreeBSD__)
@@ -3780,49 +3780,49 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
                                 "--kpub=k.pub --bits=32 "
                                 "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", NULL) == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=144 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpriv=k.priv "
                                 "ntool/bin/ntool -c write/read 2>> ntool.client.log", "test", "1234") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=145 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpub=k.pub --bits=32 "
                                 "ntool/bin/ntool -s send/recv 2>> ntool.server.log", "test", NULL) == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=145 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpriv=k.priv "
                                 "ntool/bin/ntool -c send/recv 2>> ntool.client.log", "test", "1234") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=146 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpub=k.pub --bits=32 "
                                 "ntool/bin/ntool -s sendto/recvfrom 2>> ntool.server.log", "test", NULL) == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=146 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpriv=k.priv "
                                 "ntool/bin/ntool -c sendto/recvfrom 2>> ntool.client.log", "test", "1234") == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=147 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
                                 "--kpub=k.pub --bits=32 "
                                 "ntool/bin/ntool -s sendmsg/recvmsg 2>> ntool.server.log", "test", NULL) == 0);
 
-    usleep(1);
+    usleep(100);
 
     CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-addr=127.0.0.1 --xchg-port=147 "
                                 "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "

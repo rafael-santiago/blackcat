@@ -60,11 +60,19 @@ struct bcsck_handle_ctx *g_bcsck_handle = NULL;
 
 bnt_keyset_ctx ks[2];
 
+#if !defined(__NetBSD__)
+# define SOCKET_FUNC_ENDPOINT "socket"
+#else
+// WARN(Rafael): If you call socket() in NetBSD you will get a stack overflow, because
+//               socket is just a stub for __socket30().
+# define SOCKET_FUNC_ENDPOINT "__socket30"
+#endif
+
 #if defined(BCSCK_THREAD_SAFE)
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle->libc_loaded) {\
-        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, "socket");\
+        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, SOCKET_FUNC_ENDPOINT);\
         g_bcsck_handle->libc_recv = dlsym(RTLD_NEXT, "recv");\
         g_bcsck_handle->libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
         g_bcsck_handle->libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
@@ -138,7 +146,7 @@ bnt_keyset_ctx ks[2];
 
 #define __bcsck_prologue(return_stmt) {\
     if (!g_bcsck_handle->libc_loaded) {\
-        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, "socket");\
+        g_bcsck_handle->libc_socket = dlsym(RTLD_NEXT, SOCKET_FUNC_ENDPOINT);\
         g_bcsck_handle->libc_recv = dlsym(RTLD_NEXT, "recv");\
         g_bcsck_handle->libc_recvfrom = dlsym(RTLD_NEXT, "recvfrom");\
         g_bcsck_handle->libc_recvmsg = dlsym(RTLD_NEXT, "recvmsg");\
@@ -352,6 +360,8 @@ static int set_protlayer_by_recvd_buf(const kryptos_u8_t *buf, const ssize_t buf
     return 1;
 }
 
+#if !defined(__NetBSD__)
+
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     kryptos_u8_t *obuf = NULL, *rbuf = NULL;
     size_t obuf_size = 0, rbuf_size = 0;
@@ -403,6 +413,24 @@ __bcsck_leave(recv)
 
     return bytes_nr;
 }
+
+#else
+
+// WARN(Rafael): Emulating the stub behavior of the original recv in NetBSD.
+
+ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
+    ssize_t bytes_nr;
+
+__bcsck_enter(recv)
+
+    bytes_nr = recvfrom(sockfd, buf, len, flags, NULL, 0);
+
+__bcsck_leave(recv)
+
+    return bytes_nr;
+}
+
+#endif
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen) {
@@ -612,6 +640,8 @@ read_epilogue:
     return bytes_nr;
 }
 
+#if !defined(__NetBSD__)
+
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     kryptos_u8_t *obuf = NULL;
     size_t obuf_size;
@@ -660,6 +690,24 @@ __bcsck_leave(send)
 
     return bytes_nr;
 }
+
+#else
+
+// WARN(Rafael): Emulating the stub behavior of the original send in NetBSD.
+
+ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
+    ssize_t bytes_nr;
+
+__bcsck_enter(send)
+
+    bytes_nr = sendto(sockfd, buf, len, flags, NULL, 0);
+
+__bcsck_leave(send)
+
+    return bytes_nr;
+}
+
+#endif
 
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen) {
@@ -1323,11 +1371,20 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_server_epilogue;
                   })
 
+#if !defined(__NetBSD__)
     if (g_bcsck_handle->libc_send(csockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         err = errno;
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         goto do_xchg_server_epilogue;
     }
+#else
+    // WARN(Rafael): Avoiding another clumsy stub.
+    if (g_bcsck_handle->libc_sendto(csockfd, out_buf, out_buf_size, 0, NULL, 0) != out_buf_size) {
+        err = errno;
+        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
+        goto do_xchg_server_epilogue;
+    }
+#endif
 
     fprintf(stderr, "[blackcat] INFO: Done.\n");
 
@@ -1337,11 +1394,20 @@ __bcsck_enter(sendmsg)
 
     fprintf(stderr, "[blackcat] INFO: Receiving and decrypting the random seed... please wait...\n");
 
+#if !defined(__NetBSD__)
     if ((buf_size = g_bcsck_handle->libc_recv(csockfd, buf, sizeof(buf), 0)) == -1) {
         err = errno;
         fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
         goto do_xchg_server_epilogue;
     }
+#else
+    // WARN(Rafael): Avoiding another clumsy stub.
+    if ((buf_size = g_bcsck_handle->libc_recvfrom(csockfd, buf, sizeof(buf), 0, NULL, 0)) == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: Unable to receive the sending seed.\n");
+        goto do_xchg_server_epilogue;
+    }
+#endif
 
     bcsck_decrypt(buf, buf_size, out_buf, out_buf_size,
                   {
@@ -1473,11 +1539,20 @@ __bcsck_enter(sendmsg)
 
     fprintf(stderr, "[blackcat] INFO: Receiving and decrypting the random seed...\n");
 
+#if !defined(__NetBSD__)
     if ((buf_size = g_bcsck_handle->libc_recv(sockfd, buf, sizeof(buf), 0)) == -1) {
         err = errno;
         fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
         goto do_xchg_client_epilogue;
     }
+#else
+    // WARN(Rafael): Avoiding another clumsy stub.
+    if ((buf_size = g_bcsck_handle->libc_recvfrom(sockfd, buf, sizeof(buf), 0, NULL, 0)) == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: Unable to get the receiving seed.\n");
+        goto do_xchg_client_epilogue;
+    }
+#endif
 
     bcsck_decrypt(buf, buf_size, out_buf, out_buf_size,
                   {
@@ -1512,11 +1587,20 @@ __bcsck_enter(sendmsg)
                     goto do_xchg_client_epilogue;
                   })
 
+#if !defined(__NetBSD__)
     if (g_bcsck_handle->libc_send(sockfd, out_buf, out_buf_size, 0) != out_buf_size) {
         fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
         err = EFAULT;
         goto do_xchg_client_epilogue;
     }
+#else
+    // WARN(Rafael): Avoiding another clumsy stub.
+    if (g_bcsck_handle->libc_sendto(sockfd, out_buf, out_buf_size, 0, NULL, 0) != out_buf_size) {
+        fprintf(stderr, "ERROR: Unable to send the sending seed.\n");
+        err = EFAULT;
+        goto do_xchg_client_epilogue;
+    }
+#endif
 
     err = 0;
 
@@ -1576,3 +1660,5 @@ __bcsck_leave(read)
 #undef BCSCK_S_BITS
 
 #undef BCSCK_SEQNO_WINDOW_SIZE
+
+#undef SOCKET_FUNC_ENDPOINT
