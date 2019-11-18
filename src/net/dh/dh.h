@@ -11,6 +11,10 @@
 #include <kryptos.h>
 #include <stdlib.h>
 
+#if defined(__NetBSD__)
+# include <sys/socket.h>
+#endif
+
 struct skey_xchg_ctx {
     char addr[255];
     unsigned short port;
