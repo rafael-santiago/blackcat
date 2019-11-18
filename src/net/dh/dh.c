@@ -54,7 +54,11 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     }
 
     if (sx->libc_send == NULL) {
+#if !defined(__NetBSD__)
         sx->libc_send = send;
+#else
+        sx->libc_send = sendto;
+#endif
     }
 
     kryptos_dh_init_xchg_ctx(dh);
@@ -279,7 +283,11 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
     }
 
     if (sx->libc_recv == NULL) {
+#if !defined(__NetBSD__)
         sx->libc_recv = recv;
+#else
+        sx->libc_recv = recvfrom;
+#endif
     }
 
     kryptos_dh_init_xchg_ctx(dh);
