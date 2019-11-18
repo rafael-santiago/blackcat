@@ -21,8 +21,15 @@ struct skey_xchg_ctx {
     size_t session_key_size;
     int ret, verbose, keep_sk_open, sockfd;
     int (*libc_socket)(int domain, int type, int protocol);
+#if !defined(__NetBSD__)
     ssize_t (*libc_recv)(int sockfd, void *buf, size_t len, int flags);
     ssize_t (*libc_send)(int sockfd, const void *buf, size_t len, int flags);
+#else
+    ssize_t (*libc_recv)(int sockfd, void *buf, size_t len, int flags,
+                         struct sockaddr *src_addr, socklen_t *addrlen);
+    ssize_t (*libc_send)(int sockfd, const void *buf, size_t len, int flags,
+                         const struct sockaddr *dest_addr, socklen_t addrlen);
+#endif
 };
 
 typedef int (*skey_xchg_trap)(struct skey_xchg_ctx *arg);

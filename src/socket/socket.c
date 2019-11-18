@@ -936,7 +936,7 @@ static int bcsck_read_rule(void) {
     // TIP(Rafael): 'At first sight' useless 'temp_size = strlen(temp)' is only a paranoid care for ensuring temp's cleaning up,
     //              when routine abruptly exits due to some fault (considering that code can be edited, extended, etc. It is
     //              there because someone extremely tired of so many programming bugs spread out there, trying to make
-    //              'a-paranoid-proof-trinket' put it there, most important: from the future!).
+    //              'a-paranoid-proof-trinket' by putting it there, most important: from the future!).
     //              Please, do not drop those strlens away. Thanks!
 
     kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, rule_id[255], *kpriv = NULL, *kpub = NULL;
@@ -951,8 +951,13 @@ static int bcsck_read_rule(void) {
     FILE *fp = NULL;
 
     sx.libc_socket = g_bcsck_handle->libc_socket;
+#if !defined(__NetBSD__)
     sx.libc_send = g_bcsck_handle->libc_send;
     sx.libc_recv = g_bcsck_handle->libc_recv;
+#else
+    sx.libc_send = g_bcsck_handle->libc_sendto;
+    sx.libc_recv = g_bcsck_handle->libc_recvfrom;
+#endif
     sx.k_priv = sx.k_pub = NULL;
 
     if ((temp = getenv(BCSCK_DBPATH)) == NULL) {

@@ -195,11 +195,19 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
 
     // INFO(Rafael): Sending (as PEM data) the DH parameters besides the encrypted session key.
 
+#if !defined(__NetBSD__)
     if (sx->libc_send(csockfd, dh->out, dh->out_size, 0) == -1) {
         err = errno;
         fprintf(stderr, "ERROR: While exchanging the session key.\n");
         goto skey_xchg_server_epilogue;
     }
+#else
+    if (sx->libc_send(csockfd, dh->out, dh->out_size, 0, NULL, 0) == -1) {
+        err = errno;
+        fprintf(stderr, "ERROR: While exchanging the session key.\n");
+        goto skey_xchg_server_epilogue;
+    }
+#endif
 
     err = 0;
 
@@ -307,6 +315,7 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
         goto skey_xchg_client_epilogue;
     }
 
+#if !defined(__NetBSD__)
     if ((buf_size = sx->libc_recv(sockfd, buf, sizeof(buf) - 1, 0)) == -1) {
         err = errno;
         if (sx->verbose) {
@@ -314,6 +323,15 @@ int skey_xchg_client(struct skey_xchg_ctx *sx) {
         }
         goto skey_xchg_client_epilogue;
     }
+#else
+    if ((buf_size = sx->libc_recv(sockfd, buf, sizeof(buf) - 1, 0, NULL, 0)) == -1) {
+        err = errno;
+        if (sx->verbose) {
+            fprintf(stderr, "ERROR: Unable to receive data.\n");
+        }
+        goto skey_xchg_client_epilogue;
+    }
+#endif
 
     dh->in_size = buf_size + sx->k_priv_size;
     if ((dh->in = (kryptos_u8_t *)kryptos_newseg(dh->in_size + 1)) == NULL) {
