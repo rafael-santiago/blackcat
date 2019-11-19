@@ -3746,9 +3746,9 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
 #else
 
-    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=104 "
-                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
-                                "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", "abc\nabc") != 0);
+    CUTE_ASSERT(blackcat("net --run --e2ee --rule=ntool-rule --xchg-port=104 "
+                         "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                         "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", "abc\nabc") != 0);
 
 #endif
 
