@@ -318,6 +318,11 @@ static int run(void) {
                                                            (kpriv != NULL) ? kpriv : kpub, xchg_port, xchg_addr);
         }
     } else {
+#if defined(__NetBSD__)
+        fprintf(stderr, "ERROR: No support for e2ee in NetBSD.\n");
+        err = ENOSYS;
+        goto run_epilogue;
+#endif
         if (xchg_addr == NULL) {
             xchg_addr = blackcat_get_option("xchg-addr", NULL);
         }

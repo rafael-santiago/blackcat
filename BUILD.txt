@@ -94,6 +94,9 @@ or simply
 you@Hellfire:~/src/blackcat/src# hefesto --no-thread-safe
 ---------------------------------------------------------
 
+In NetBSD the socket module is no-thread-safe by default and there is
+no option for a thread-safe library.
+
 If you want to skip the net module tests:
 
 ---------------------------------------------------------
