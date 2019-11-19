@@ -1053,6 +1053,8 @@ Once well estabilished the connection, each message exchanged between each other
 with a double ratchet mechanism. When some key is re-used a warning is displayed. Alerting the user
 about a possible replay attack, in this case is better to close the connection immediately.
 
+Until now '--e2ee' is not available in NetBSD.
+
 The first usage mode also must be considered an end-to-end encryption (E2EE), however, the second
 usage ensures a little bit better that nothing can be done with the channel, in regards to data or
 connection manipulation.

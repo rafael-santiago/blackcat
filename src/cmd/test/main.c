@@ -3643,6 +3643,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     kryptos_freeseg(data, data_size);
     remove("ntool.log");
 
+#if !defined(__NetBSD__)
+
     //INFO(Rafael): Testing the strengthened E2EE mode (with a double ratchet mechanism).
 
     if (has_tcpdump()) {
@@ -3742,6 +3744,14 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     remove("ntool.server.log");
     remove("ntool.client.log");
 
+#else
+
+    CUTE_ASSERT(blackcat_nowait("net --run --e2ee --rule=ntool-rule --xchg-port=104 "
+                                "--bcsck-lib-path=../../lib/libbcsck.so --db-path=ntool-test.db "
+                                "ntool/bin/ntool -s write/read 2>> ntool.server.log", "test", "abc\nabc") != 0);
+
+#endif
+
     CUTE_ASSERT(blackcat("net --mk-dh-params --out=dh-params.txt --p-bits=160 --q-bits=32", "", NULL) == 0);
 
     CUTE_ASSERT(blackcat("net --mk-dh-key-pair --public-key-out=k.pub --private-key-out=k.priv --dh-params-in=dh-params.txt",
@@ -3756,6 +3766,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
     CUTE_ASSERT(blackcat("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "123", NULL) != 0);
 
     CUTE_ASSERT(blackcat_nowait("net --skey-xchg --kpriv=k.priv --port=5002 --addr=127.0.0.1", "1234", NULL) == 0);
+
+#if !defined(__NetBSD__)
 
     if (has_tcpdump()) {
 #if defined(__linux__)
@@ -3859,6 +3871,8 @@ CUTE_TEST_CASE(blackcat_poke_net_cmd_tests)
 
     remove("ntool.server.log");
     remove("ntool.client.log");
+
+#endif
 
     CUTE_ASSERT(remove("k.pub") == 0);
     CUTE_ASSERT(remove("k.priv") == 0);
