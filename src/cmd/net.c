@@ -308,6 +308,11 @@ static int run(void) {
 
     memset(cmdline, 0, cmdline_size);
     if (blackcat_get_bool_option("e2ee", 0) == 0) {
+#if defined(__NetBSD__)
+        fprintf(stderr, "ERROR: No support for e2ee in NetBSD.\n");
+        err = ENOSYS;
+        goto run_epilogue;
+#endif
         if (kpriv == NULL && kpub == NULL) {
             snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=%s BCSCK_DBPATH=%s BCSCK_RULE=%s ",
                             bcsck_lib_path, db_path, rule);
