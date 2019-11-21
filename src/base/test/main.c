@@ -58,9 +58,9 @@ CUTE_MAIN(blackcat_base_tests_entry)
 
 CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(ctx_tests);
+    CUTE_RUN_TEST(blackcat_fmt_str_tests);
     CUTE_RUN_TEST(keychain_arg_parsing_tests);
     CUTE_RUN_TEST(blackcat_is_dec_tests);
-    CUTE_RUN_TEST(blackcat_fmt_str_tests);
     CUTE_RUN_TEST(get_hash_processor_tests);
     CUTE_RUN_TEST(get_hash_size_tests);
     CUTE_RUN_TEST(get_hash_input_size_tests);
@@ -2570,14 +2570,14 @@ CUTE_TEST_CASE(keychain_arg_parsing_tests)
     const char *algo_params = "anyscheme-anyhash-anychiper/"
                       "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-p-q-r-s-t-u-v-w-x-y-z-0-1-2-3-4-5-6-7-8-9-"
                       "dannyboooooooy-aa-bb-cc-dd-ee-ff-gg-hh-ii-jj-kk-ll-mm-nn-oo-pp-qq-rr-ss-tt-uu-vv-ww-xx-yy-zz-"
-                      "00-11-22-33-44-55-66-77-88-99-done";
+                      "00-11-22-33-44-55-66-77-88-99-done-\\xde\\xAd\\xBE\\xef-D\\x45\\x41\\x44\\x42\\x45\\EF";
     const char *expected_args[] = {
         "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", 
         "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
         "dannyboooooooy",
         "aa", "bb", "cc", "dd", "ee", "ff", "gg", "hh", "ii", "jj", "kk", "ll", "mm", "nn", "oo", "pp", "qq", "rr", "ss",
         "tt", "uu", "vv", "ww", "xx", "yy", "zz", "00", "11", "22", "33", "44", "55", "66", "77", "88", "99",
-        "done"
+        "done", "\xDE\xAd\xBe\xEF", "DEADBEEF"
     };
     size_t expected_args_nr = sizeof(expected_args) / sizeof(expected_args[0]), e;
     const char *begin, *end;

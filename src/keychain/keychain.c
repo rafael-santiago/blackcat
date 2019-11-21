@@ -73,8 +73,8 @@ void blackcat_keychain_arg_init(const char *algo_params, const size_t algo_param
 char *blackcat_keychain_arg_next(const char **begin, const char *end, char *err_mesg,
                                  blackcat_keychain_arg_verifier verifier) {
     const char *bp, *bp_next;
-    char *arg = NULL;
-    size_t arg_size;
+    char *arg = NULL, *str = NULL;
+    size_t arg_size, str_size;
 
     bp = bp_next = *begin;
 
@@ -86,14 +86,19 @@ char *blackcat_keychain_arg_next(const char **begin, const char *end, char *err_
         bp_next++;
     }
 
-    arg_size = (bp_next - bp);
-    arg = (char *) kryptos_newseg(arg_size + 1);
-    if (arg == NULL) {
+    str_size = (bp_next - bp);
+    str = (char *) kryptos_newseg(str_size + 1);
+    if (str == NULL) {
         fprintf(stderr, "ERROR: Not enough memory to parse cipher argument.\n");
         goto blackcat_keychain_arg_next_epilogue;
     }
-    memset(arg, 0, arg_size + 1);
-    memcpy(arg, bp, arg_size);
+    memset(str, 0, str_size + 1);
+    memcpy(str, bp, str_size);
+
+    if ((arg = blackcat_fmt_str(str, &arg_size)) == NULL) {
+        fprintf(stderr, "ERROR: Unable to format the cipher argument.\n");
+        goto blackcat_keychain_arg_next_epilogue;
+    }
 
     if (verifier != NULL) {
         if (verifier(arg, arg_size, err_mesg) == 0) {
@@ -110,6 +115,11 @@ char *blackcat_keychain_arg_next(const char **begin, const char *end, char *err_
     *begin = bp_next;
 
 blackcat_keychain_arg_next_epilogue:
+
+    if (str != NULL) {
+        kryptos_freeseg(str, str_size);
+        str_size = 0;
+    }
 
     return arg;
 }

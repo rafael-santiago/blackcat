@@ -350,6 +350,21 @@ For example:
 
 In the case of RC6 you are specifying the rounds total.
 
+An additional parameter gives support to escaped chars. In this way, when is necessary to pass a
+byte sequence as a initialization vector for instance, you are not limited to printable ascii
+range.
+
+Take a look:
+
+        rabbit/01234567
+
+Rabbit cipher expects an IV of 64-bit size. The parameter sample above has low entropy, the best
+would be use escaped chars to strengthen it:
+
+        rabbit/r\\x04\\x0b\\b\\x01t$%
+
+This is not a requirement, but an option.
+
 How does the cascade actually work?
 ===================================
 

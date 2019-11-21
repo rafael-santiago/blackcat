@@ -1,4 +1,5 @@
-(B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
+(A) Encode all protection layer with radix-64 in order to avoid raw escaped chars passed during a repo initialization.
+    A raw escaped char (eg.: '\xad' instead of '\\xad') could be an entry door to buffer overflows. +SecurityWorries
 (B) Extend the fs module capabilities. +NewFeature
 (B) Avoid directly usage of memset and memcpy functions. Avoid libc hooking. +ParanoidImprovement
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
@@ -7,6 +8,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (B) Make any option passed to a cipher (when a byte buffer) also able to read esc\x61ped chars. +Improvement
 x (A) Make 'hungry' locks and unlocks faster (e.g.: 'blackcat lock', 'blackcat unlock'). +Improvement
 x (A) Inspect why 'libbcsck.so' is aborting during its initialization in FreeBSD. Fix it if a bug. +Debug,+BugFix
 x (B) Make net command's system tests also available in NetBSD, FreeBSD and OpenBSD. +Tests,+Improvement
