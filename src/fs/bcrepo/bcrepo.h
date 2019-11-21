@@ -14,7 +14,7 @@
 // INFO(Rafael): This version not always will match the cmd tool version. It does not mean that the
 //               tool will generate unsupported data for the fs module.
 
-#define BCREPO_METADATA_VERSION                 "1.2.0"
+#define BCREPO_METADATA_VERSION                 "1.3.0"
 
 #define BCREPO_HIDDEN_DIR ".bcrepo"
 #define BCREPO_HIDDEN_DIR_SIZE 7

@@ -16,7 +16,6 @@ DECL_BLACKCAT_CIPHER_PROCESSOR(camellia192, ktask, p_layer)
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(camellia256, ktask, p_layer)
 
-
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_camellia128, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_camellia192, ktask, p_layer)
 DECL_BLACKCAT_CIPHER_PROCESSOR(hmac_sha224_camellia256, ktask, p_layer)

@@ -230,7 +230,9 @@ int blackcat_cmd_init(void) {
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          protection_layer, &temp_key, &temp_key_size,
+                                                          protection_layer,
+                                                          strlen(protection_layer),
+                                                          &temp_key, &temp_key_size,
                                                           &handle, catalog->encoder);
 
     handle.hash = NULL;
@@ -263,6 +265,7 @@ int blackcat_cmd_init(void) {
     catalog->protlayer_key_hash_algo = protlayer_hash_proc;
     catalog->protlayer_key_hash_algo_size = get_hash_size(protection_layer_hash);
     catalog->protection_layer = protection_layer;
+    catalog->protection_layer_size = strlen(protection_layer);
 
     catalog->encoder = encoder_proc;
 

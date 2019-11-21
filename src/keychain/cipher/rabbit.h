@@ -12,6 +12,6 @@
 
 DECL_BLACKCAT_CIPHER_PROCESSOR(rabbit, ktask, p_layer)
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rabbit, algo_params, args, args_nr, key, key_size, argc, err_mesg);
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rabbit, algo_params, algo_params_size, args, args_nr, key, key_size, argc, err_mesg);
 
 #endif

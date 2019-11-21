@@ -130,7 +130,7 @@ CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)
     //               If someone screwed it up this test will let we know.
 
     for (c = 0; c < cascade_nr; c++) {
-        protlayer = add_composite_protlayer_to_chain(protlayer, (char *)cascade[c],
+        protlayer = add_composite_protlayer_to_chain(protlayer, (char *)cascade[c], strlen(cascade[c]),
                                                      &pass, &pass_size, &handle, NULL);
         CUTE_ASSERT(protlayer != NULL);
         out = blackcat_otp_encrypt_data(protlayer, in, in_size, &out_size);
@@ -287,14 +287,15 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     struct blackcat_keychain_handle_ctx handle;
     kryptos_u8_t *key = NULL;
     size_t key_size = 0;
+    char *protlayer;
 
     handle.hash = get_hash_processor("tiger");
     handle.kdf_clockwork = NULL;
 
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, &key, &key_size, &handle, NULL) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", NULL, &key_size, &handle, NULL) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, NULL, &handle, NULL) == NULL);
-    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", &key, &key_size, NULL, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, NULL, 0, &key, &key_size, &handle, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", 0, NULL, &key_size, &handle, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", 0, &key, NULL, &handle, NULL) == NULL);
+    CUTE_ASSERT(add_composite_protlayer_to_chain(chain, "", 0, &key, &key_size, NULL, NULL) == NULL);
 
     key = (kryptos_u8_t *) malloc(4);
     CUTE_ASSERT(key != NULL);
@@ -302,6 +303,7 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     key_size = 4;
 
     chain = add_composite_protlayer_to_chain(chain, "hmac-cha3-512-bug-a-loo-cipher-cbc",
+                                             strlen("hmac-cha3-512-bug-a-loo-cipher-cbc"),
                                              &key, &key_size, &handle, get_encoder("uuencode"));
 
     CUTE_ASSERT(chain == NULL);
@@ -315,6 +317,8 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
 
     chain = add_composite_protlayer_to_chain(chain, "hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr|feal-cbc/167,"
                                                     "hmac-cha3-512-bug-a-loo-cipher-cbc",
+                                             strlen("hmac-sha3-512-des-cbc,aes-128-ofb,shacal2-ctr|feal-cbc/167,"
+                                                    "hmac-cha3-512-bug-a-loo-cipher-cbc"),
                                              &key, &key_size, &handle, get_encoder("base64"));
 
     CUTE_ASSERT(chain == NULL);
@@ -326,7 +330,8 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     memcpy(key, "test", 4);
     key_size = 4;
 
-    chain = add_composite_protlayer_to_chain(chain, get_test_protlayer(0, 1), &key, &key_size, &handle, NULL);
+    protlayer = get_test_protlayer(0, 1);
+    chain = add_composite_protlayer_to_chain(chain, protlayer, strlen(protlayer), &key, &key_size, &handle, NULL);
 
     CUTE_ASSERT(chain != NULL);
     CUTE_ASSERT(chain->next == NULL);
@@ -342,8 +347,9 @@ CUTE_TEST_CASE(add_composite_ciphers_to_chain_tests)
     key_size = 4;
 
     chain = NULL;
+    protlayer = get_test_protlayer(0, 4);
     chain = add_composite_protlayer_to_chain(chain,
-                                             get_test_protlayer(0, 4),
+                                             protlayer, strlen(protlayer),
                                              &key, &key_size, &handle, NULL);
 
     CUTE_ASSERT(chain != NULL);
@@ -2429,7 +2435,7 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
 
     for (h = 0; h < huge_protchain_sz; h++) {
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, &handle);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], strlen(huge_protchain[h]), &key, &key_size, &handle);
 
         out = blackcat_encrypt_data(pchain, in, in_size, &out_size);
 
@@ -2459,7 +2465,7 @@ CUTE_TEST_CASE(blackcat_meta_processor_tests)
         key_size = 6;
 
         for (h = 0; h < huge_protchain_sz; h++) {
-            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, &handle);
+            pchain = add_protlayer_to_chain(pchain, huge_protchain[h], strlen(huge_protchain[h]), &key, &key_size, &handle);
         }
 
         free(key);
@@ -2506,7 +2512,7 @@ CUTE_TEST_CASE(blackcat_available_cipher_schemes_tests)
         CUTE_ASSERT(a > -1 && a < g_blackcat_ciphering_schemes_nr);
 
         pchain = NULL;
-        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], &key, &key_size, &handle);
+        pchain = add_protlayer_to_chain(pchain, huge_protchain[h], strlen(huge_protchain[h]), &key, &key_size, &handle);
 
         CUTE_ASSERT(pchain != NULL);
 
@@ -2602,6 +2608,7 @@ CUTE_TEST_CASE(ctx_tests)
     kryptos_u8_t *key;
     size_t key_size;
     struct blackcat_keychain_handle_ctx handle;
+    char *protlayer;
 
     handle.hash = NULL;
     handle.kdf_clockwork = NULL;
@@ -2611,15 +2618,18 @@ CUTE_TEST_CASE(ctx_tests)
     memcpy(key, "clean", 5);
     key_size = 5;
 
-    pchain = add_protlayer_to_chain(pchain, "hmac-aes-256-cbc", &key, &key_size, &handle);
+    protlayer = "hmac-aes-256-cbc";
+    pchain = add_protlayer_to_chain(pchain, protlayer, strlen(protlayer), &key, &key_size, &handle);
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, NULL);
+    protlayer = get_test_protlayer(0, 1);
+    pchain = add_protlayer_to_chain(pchain, protlayer, strlen(protlayer), &key, &key_size, NULL);
 
     CUTE_ASSERT(pchain == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, &handle);
+    protlayer = get_test_protlayer(0, 1);
+    pchain = add_protlayer_to_chain(pchain, protlayer, strlen(protlayer), &key, &key_size, &handle);
 
     CUTE_ASSERT(pchain != NULL);
 
@@ -2631,7 +2641,8 @@ CUTE_TEST_CASE(ctx_tests)
     CUTE_ASSERT(pchain->last == NULL);
     CUTE_ASSERT(pchain->next == NULL);
 
-    pchain = add_protlayer_to_chain(pchain, get_test_protlayer(0, 1), &key, &key_size, &handle);
+    protlayer = get_test_protlayer(0, 1);
+    pchain = add_protlayer_to_chain(pchain, protlayer, strlen(protlayer), &key, &key_size, &handle);
 
     CUTE_ASSERT(pchain != NULL);
 

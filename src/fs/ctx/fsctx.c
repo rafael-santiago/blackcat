@@ -281,7 +281,8 @@ void del_bfs_catalog_ctx(bfs_catalog_ctx *catalog) {
     catalog->encoder = NULL;
 
     if (catalog->protection_layer != NULL) {
-        kryptos_freeseg(catalog->protection_layer, strlen(catalog->protection_layer));
+        kryptos_freeseg(catalog->protection_layer, catalog->protection_layer_size);
+        catalog->protection_layer_size = 0;
     }
 
     if (catalog->protlayer != NULL) {
@@ -317,6 +318,7 @@ bfs_catalog_ctx *new_bfs_catalog_ctx(void) {
         catalog->protlayer_key_hash_algo = NULL;
         catalog->protlayer_key_hash_algo_size = NULL;
         catalog->protection_layer = NULL;
+        catalog->protection_layer_size = 0;
         catalog->protlayer = NULL;
         catalog->key_hash = NULL;
         catalog->key_hash_size = 0;

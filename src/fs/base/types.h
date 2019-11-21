@@ -44,6 +44,7 @@ typedef struct bfs_catalog {
     size_t config_hash_size;
     blackcat_data_processor encrypt_data, decrypt_data;
     char *protection_layer;
+    size_t protection_layer_size;
     char *kdf_params;
     size_t kdf_params_size;
     blackcat_protlayer_chain_ctx *protlayer;

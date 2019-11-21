@@ -17,6 +17,7 @@ typedef struct blackcat_protlayer_chain blackcat_protlayer_chain_ctx;
 typedef void (*blackcat_cipher_processor)(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
 typedef int (*blackcat_cipher_args_reader)(const char *algo_params,
+                                           const size_t algo_params_size,
                                            void **args, const size_t args_nr,
                                            kryptos_u8_t *key, const size_t key_size,
                                            size_t *argc, char *err_msg);
@@ -50,8 +51,10 @@ typedef kryptos_u8_t *(*blackcat_kdf_func)(kryptos_u8_t *ikm, size_t ikm_size, s
         }\
     }
 
-#define BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(name, algo_params, args, args_nr, key, key_size, argc, err_mesg)\
+#define BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(name, algo_params, algo_params_size,\
+                                              args, args_nr, key, key_size, argc, err_mesg)\
     int blackcat_ ## name ## _args(const char *algo_params,\
+                                   const size_t algo_params_size,\
                                    void **args, const size_t args_nr,\
                                    kryptos_u8_t *key, const size_t key_size,\
                                    size_t *argc, char *err_mesg)

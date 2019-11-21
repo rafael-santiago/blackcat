@@ -119,7 +119,7 @@ int blackcat_netdb_add(const char *rule_id,
     handle.kdf_clockwork = NULL;
 
     p_layer = add_composite_protlayer_to_chain(p_layer,
-                                               pchain, &temp_key, &temp_key_size,
+                                               pchain, strlen(pchain), &temp_key, &temp_key_size,
                                                &handle, get_encoder(encoder));
 
     handle.hash = NULL;

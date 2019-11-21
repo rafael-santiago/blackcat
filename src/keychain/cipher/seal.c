@@ -26,7 +26,7 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(seal, ktask, p_layer,
                                                   (size_t *)p_layer->arg[1],
                                                   (kryptos_u32_t *)p_layer->arg[2]))
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, algo_params_size, args, args_nr, key, key_size, argc, err_mesg) {
     const char *begin, *end;
     char *arg = NULL;
     int no_error = 1;
@@ -38,7 +38,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(seal, algo_params, args, args_nr, key, key
         goto seal_args_reader_epilogue;
     }
 
-    blackcat_keychain_arg_init(algo_params, strlen(algo_params), &begin, &end);
+    blackcat_keychain_arg_init(algo_params, algo_params_size, &begin, &end);
     arg = blackcat_keychain_arg_next(&begin, end, err_mesg, seal_version_verifier);
 
     if (arg == NULL) {

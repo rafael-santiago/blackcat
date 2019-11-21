@@ -361,7 +361,7 @@ Take a look:
 Rabbit cipher expects an IV of 64-bit size. The parameter sample above has low entropy, the best
 would be use escaped chars to strengthen it:
 
-        rabbit/r\\x04\\x0b\\b\\x01t$%
+        rabbit/r\x04\x0b\b\x01t$%
 
 This is not a requirement, but an option.
 

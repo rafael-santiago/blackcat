@@ -105,7 +105,7 @@ bnt_channel_rule_ctx *add_bnt_channel_rule(bnt_channel_rule_ctx *rules,
     handle.kdf_clockwork = NULL;
 
     cp->pchain = add_composite_protlayer_to_chain(cp->pchain,
-                                                  protection_layer, key, key_size, &handle, encoder);
+                                                  protection_layer, strlen(protection_layer), key, key_size, &handle, encoder);
 
     handle.hash = NULL;
 

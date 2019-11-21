@@ -156,6 +156,7 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 1);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(15);
     CUTE_ASSERT(protkey != NULL);
@@ -166,7 +167,7 @@ CUTE_TEST_CASE(bcrepo_config_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -395,6 +396,7 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 5);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
     CUTE_ASSERT(protkey != NULL);
@@ -405,7 +407,7 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -752,6 +754,7 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 5);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
     CUTE_ASSERT(protkey != NULL);
@@ -762,7 +765,7 @@ CUTE_TEST_CASE(bcrepo_detach_attach_metainfo_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -1067,6 +1070,7 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 6);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
     CUTE_ASSERT(protkey != NULL);
@@ -1077,7 +1081,7 @@ CUTE_TEST_CASE(bcrepo_restore_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -1271,6 +1275,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                             catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
         catalog->protection_layer = get_test_protlayer(0, 6);
+        catalog->protection_layer_size = strlen(catalog->protection_layer);
 
         protkey = (kryptos_u8_t *) kryptos_newseg(9);
         CUTE_ASSERT(protkey != NULL);
@@ -1282,7 +1287,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
         handle.kdf_clockwork = NULL;
 
         catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                              catalog->protection_layer,
+                                                              catalog->protection_layer, catalog->protection_layer_size,
                                                               &protkey, &protkey_size, &handle,
                                                               catalog->encoder);
 
@@ -1427,6 +1432,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
                                         catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 6);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
     CUTE_ASSERT(protkey != NULL);
@@ -1439,7 +1445,7 @@ CUTE_TEST_CASE(bcrepo_reset_repo_settings_tests)
     CUTE_ASSERT(handle.kdf_clockwork != NULL);
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -1662,6 +1668,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 5);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(9);
     CUTE_ASSERT(protkey != NULL);
@@ -1672,7 +1679,7 @@ CUTE_TEST_CASE(bcrepo_pack_unpack_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -1923,6 +1930,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 5);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(11);
     CUTE_ASSERT(protkey != NULL);
@@ -1933,7 +1941,7 @@ CUTE_TEST_CASE(bcrepo_lock_unlock_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -2074,6 +2082,7 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 1);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     protkey = (kryptos_u8_t *) kryptos_newseg(15);
     CUTE_ASSERT(protkey != NULL);
@@ -2084,7 +2093,7 @@ CUTE_TEST_CASE(bcrepo_rm_tests)
     handle.kdf_clockwork = NULL;
 
     catalog->protlayer = add_composite_protlayer_to_chain(catalog->protlayer,
-                                                          catalog->protection_layer,
+                                                          catalog->protection_layer, catalog->protection_layer_size,
                                                           &protkey, &protkey_size, &handle,
                                                           catalog->encoder);
 
@@ -2195,6 +2204,7 @@ CUTE_TEST_CASE(bcrepo_add_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 1);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     CUTE_ASSERT(bcrepo_init(catalog, key, strlen(key)) == 1);
 
@@ -2335,6 +2345,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
         catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
         catalog->protection_layer = get_test_protlayer(0, 4);
+        catalog->protection_layer_size = strlen(catalog->protection_layer);
 
         // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
@@ -2422,6 +2433,7 @@ CUTE_TEST_CASE(bcrepo_init_deinit_tests)
     catalog->key_hash = bcrepo_hash_key(key, strlen(key), catalog->key_hash_algo, NULL, &catalog->key_hash_size);
 
     catalog->protection_layer = get_test_protlayer(0, 4);
+    catalog->protection_layer_size = strlen(catalog->protection_layer);
 
     // INFO(Rafael): An init attempt inside previously initialized repos must fail.
 
@@ -2707,6 +2719,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     CUTE_ASSERT(catalog.key_hash != NULL);
 
     catalog.protection_layer = g_fs_test_protlayer;
+    catalog.protection_layer_size = strlen(catalog.protection_layer);
     catalog.files = &files;
 
     files.head = &files;
@@ -2743,6 +2756,7 @@ CUTE_TEST_CASE(bcrepo_write_tests)
     CUTE_ASSERT(catalog.key_hash != NULL);
 
     catalog.protection_layer = g_fs_test_protlayer;
+    catalog.protection_layer_size = strlen(catalog.protection_layer);
     catalog.files = &files;
 
     files.head = &files;

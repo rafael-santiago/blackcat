@@ -18,7 +18,8 @@ static kryptos_u8_t *blackcat_key_crunching(const size_t algo, kryptos_u8_t **ke
                                             struct blackcat_keychain_handle_ctx *handle);
 
 int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
-                          const char *algo_params, kryptos_u8_t **key, size_t *key_size,
+                          const char *algo_params, const size_t algo_params_size,
+                          kryptos_u8_t **key, size_t *key_size,
                           const size_t args_nr,
                           struct blackcat_keychain_handle_ctx *handle,
                           char *err_mesg) {
@@ -41,7 +42,7 @@ int blackcat_set_keychain(blackcat_protlayer_chain_ctx **protlayer,
     args_reader = g_blackcat_ciphering_schemes[algo].args;
 
     if (!is_null_arg_handler(args_reader)) {
-        no_error = args_reader(algo_params, p->arg, args_nr, (*key), *key_size, &p->argc, err_mesg);
+        no_error = args_reader(algo_params, algo_params_size, p->arg, args_nr, (*key), *key_size, &p->argc, err_mesg);
     }
 
     return no_error;

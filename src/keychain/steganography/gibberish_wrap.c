@@ -81,7 +81,8 @@ gibberish_wrap_epilogue:
     }
 }
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(gibberish_wrap, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(gibberish_wrap, algo_params, algo_params_size,
+                                      args, args_nr, key, key_size, argc, err_mesg) {
     const char *begin, *end;
     char *pfx_size, *sfx_size;
     size_t pfx_value, sfx_value;
@@ -89,7 +90,7 @@ BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(gibberish_wrap, algo_params, args, args_nr
 
     blackcat_keychain_verify_argv_bounds(args_nr, 2, err_mesg);
 
-    blackcat_keychain_arg_init(algo_params, strlen(algo_params), &begin, &end);
+    blackcat_keychain_arg_init(algo_params, algo_params_size, &begin, &end);
 
     pfx_size = blackcat_keychain_arg_next(&begin, end, err_mesg, gibberish_wrap_size_verifier);
 

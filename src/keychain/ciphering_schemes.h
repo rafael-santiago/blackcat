@@ -115,7 +115,7 @@ struct blackcat_kdf_algorithms_ctx {
 
 void blackcat_NULL(kryptos_task_ctx **ktask, const blackcat_protlayer_chain_ctx *p_layer);
 
-int blackcat_NULL_args(const char *algo_params,
+int blackcat_NULL_args(const char *algo_params, const size_t algo_params_size,
                        void **args, const size_t args_nr,
                        kryptos_u8_t *key, const size_t key_size,
                        size_t *argc, char *err_msg);

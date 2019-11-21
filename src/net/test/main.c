@@ -397,8 +397,9 @@ CUTE_TEST_CASE(ctx_tests)
     handle.hash = get_hash_processor("whirlpool");
     handle.kdf_clockwork = NULL;
 
+    protlayer = get_test_protlayer(0, 4);
     pchain = add_composite_protlayer_to_chain(pchain,
-                                              get_test_protlayer(0, 4), &key, &key_size,
+                                              protlayer, strlen(protlayer), &key, &key_size,
                                               &handle, NULL);
 
     CUTE_ASSERT(init_bnt_keyset(&keyset, pchain, 50,

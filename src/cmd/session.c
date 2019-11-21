@@ -161,7 +161,9 @@ int new_blackcat_exec_session_ctx(blackcat_exec_session_ctx **session, const int
         }
 
         es->catalog->protlayer = add_composite_protlayer_to_chain(es->catalog->protlayer,
-                                                                  es->catalog->protection_layer, &es->key[1], &es->key_size[1],
+                                                                  es->catalog->protection_layer,
+                                                                  es->catalog->protection_layer_size,
+                                                                  &es->key[1], &es->key_size[1],
                                                                   &handle, es->catalog->encoder);
 
         handle.hash = NULL;

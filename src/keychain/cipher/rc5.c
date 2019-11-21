@@ -79,11 +79,11 @@ IMPL_BLACKCAT_CIPHER_PROCESSOR(hmac_blake2b512_rc5, ktask, p_layer,
                                                        *ktask, p_layer->key, p_layer->key_size, p_layer->mode,
                                                        (int *)p_layer->arg[0]))
 
-BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc5, algo_params, args, args_nr, key, key_size, argc, err_mesg) {
+BLACKCAT_CIPHER_ARGS_READER_PROTOTYPE(rc5, algo_params, algo_params_size, args, args_nr, key, key_size, argc, err_mesg) {
     const char *begin, *end;
     char *arg;
 
-    blackcat_keychain_arg_init(algo_params, strlen(algo_params), &begin, &end);
+    blackcat_keychain_arg_init(algo_params, algo_params_size, &begin, &end);
     arg = blackcat_keychain_arg_next(&begin, end, err_mesg, rc5_rounds_verifier);
 
     if (arg == NULL) {

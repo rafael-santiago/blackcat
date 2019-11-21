@@ -242,7 +242,8 @@ int blackcat_cmd_setkey(void) {
         handle.kdf_clockwork = NULL;
 
         p_layer = add_composite_protlayer_to_chain(p_layer,
-                                                   protection_layer, &new_key[2], &new_key_size[2],
+                                                   protection_layer, strlen(protection_layer),
+                                                   &new_key[2], &new_key_size[2],
                                                    &handle, encoder_proc);
 
         handle.hash = NULL;

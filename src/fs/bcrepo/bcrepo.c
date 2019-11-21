@@ -1028,7 +1028,9 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     }
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
-    fprintf(stdout, " |_ protection-layer: %s\n", catalog->protection_layer);
+    fprintf(stdout, " |_ protection-layer: %s");
+    bcrepo_info_print_ext_ascii_data(catalog->protection_layer, catalog->protection_layer_size);
+    fprintf(stdout, "\n");
     fprintf(stdout, " |_ cascade type: %s\n", (catalog->otp) ? "one-time pad" : "single flow");
     fprintf(stdout, " |_ encoder: %s\n", get_encoder_name(catalog->encoder));
 
@@ -1333,8 +1335,8 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
     cp->encoder = encoder;
 
     if (protection_layer != NULL) {
-        temp_size = strlen(protection_layer);
-        cp->protection_layer = (char *)kryptos_newseg(temp_size + 1);
+        cp->protection_layer_size = strlen(protection_layer);
+        cp->protection_layer = (char *)kryptos_newseg(cp->protection_layer_size + 1);
 
         if (cp->protection_layer == NULL) {
             no_error = 0;
@@ -1342,9 +1344,8 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             goto bcrepo_reset_repo_settings_epilogue;
         }
 
-        memset(cp->protection_layer, 0, temp_size + 1);
-        memcpy(cp->protection_layer, protection_layer, temp_size);
-        temp_size = 0;
+        memset(cp->protection_layer, 0, cp->protection_layer_size + 1);
+        memcpy(cp->protection_layer, protection_layer, cp->protection_layer_size);
 
         if (cp->protlayer != NULL) {
             del_protlayer_chain_ctx(cp->protlayer);
@@ -1367,7 +1368,7 @@ int bcrepo_reset_repo_settings(bfs_catalog_ctx **catalog,
             goto bcrepo_reset_repo_settings_epilogue;
         }
 
-        cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer,
+        cp->protlayer = add_composite_protlayer_to_chain(cp->protlayer, cp->protection_layer, cp->protection_layer_size,
                                                          protlayer_key, protlayer_key_size,
                                                          &handle, cp->encoder);
 
@@ -4034,6 +4035,7 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
     size_t size;
     const char *hash_name;
     bfs_catalog_relpath_ctx *f;
+    kryptos_task_ctx t, *ktask = &t;
 
     if (catalog                   == NULL ||
         catalog->bc_version       == NULL ||
@@ -4059,7 +4061,17 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
         return 0;
     }
 
-    size += strlen(catalog->bc_version) + strlen(catalog->protection_layer) + catalog->key_hash_size + strlen(hash_name) +
+    kryptos_task_init_as_null(ktask);
+
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, catalog->protection_layer, catalog->protection_layer_size);
+
+    if (!kryptos_last_task_succeed(ktask)) {
+        // WARN(Rafael): In normal conditions it should never happen.
+        return 0;
+    }
+
+    size += strlen(catalog->bc_version) + ktask->out_size + catalog->key_hash_size + strlen(hash_name) +
             catalog->config_hash_size +
             catalog->kdf_params_size +
             strlen(BCREPO_CATALOG_BC_VERSION) + 1 +
@@ -4077,6 +4089,8 @@ static size_t eval_catalog_buf_size(const bfs_catalog_ctx *catalog) {
     for (f = catalog->files; f != NULL; f = f->next) {
         size += f->path_size + strlen(f->timestamp) + 6 + (f->seed_size << 1);
     }
+
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
 
     return (size + 2);
 }
@@ -4185,12 +4199,21 @@ static kryptos_u8_t *key_hash_w(kryptos_u8_t *out, const size_t out_size, const 
 static kryptos_u8_t *protection_layer_w(kryptos_u8_t *out, const size_t out_size, const bfs_catalog_ctx *catalog) {
     size_t size;
     const char *hash;
+    kryptos_task_ctx t, *ktask = &t;
     size = strlen(BCREPO_CATALOG_PROTECTION_LAYER);
     memcpy(out, BCREPO_CATALOG_PROTECTION_LAYER, size);
     out += size;
-    size = strlen(catalog->protection_layer);
-    memcpy(out, catalog->protection_layer, size);
-    out += size;
+    kryptos_task_init_as_null(ktask);
+    kryptos_task_set_encode_action(ktask);
+    kryptos_run_encoder(base64, ktask, (kryptos_u8_t *)catalog->protection_layer, catalog->protection_layer_size);
+    if (!kryptos_last_task_succeed(ktask)) {
+        // INFO(Rafael): It should never happen in normal conditions.
+        fprintf(stderr, "ERROR: Unable to encode protection layer. Aborting.\n");
+        exit(EFAULT);
+    }
+    memcpy(out, ktask->out, ktask->out_size);
+    out += ktask->out_size;
+    kryptos_task_free(ktask, KRYPTOS_TASK_OUT);
     *out = '\n';
     return (out + 1);
 }
@@ -4363,6 +4386,12 @@ static int is_metadata_compatible(const char *version) {
     //               cmd tool's version, include its version here, otherwise erase this version entry.
     static const char *compatible_versions[] = {
         BCREPO_METADATA_VERSION,
+        "1.2.0", // INFO(Rafael): Metadata version 1.3.0 has introduced encoded protection layers as a security
+                 // mesurement. Since from 1.3.0 became possible to pass extended ascii as escaped chars in cipher's
+                 // parameters. With a raw protection layer dumped directly to the catalog, a malicious user could
+                 // be able to cause buffer overflows. Once a protection layer saved by using a prior bcrepo metadata
+                 // version read by routine from a newer bcrepo, it will be encoded accordingly and the repository's
+                 // bc-version will be refreshed by the current newer version.
         "1.1.0", // INFO(Rafael): Metadata version 1.2.0 has introduced the kdf-params during key crunching
                  // besides new algorithms and modes. Anyway is still possible to read 1.1.0 metadata and
                  // handle it accordingly. If a setkey is done over 1.1.0 stuff it will overwrite the repo's
@@ -4475,7 +4504,24 @@ static int key_hash_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const s
 
 static int protection_layer_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
-    cp->protection_layer = (char *)get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
+    kryptos_task_ctx t, *ktask = &t;
+    kryptos_u8_t *data;
+    if (strcmp(cp->bc_version, "1.0.0") == 0 ||
+        strcmp(cp->bc_version, "1.1.0") == 0 ||
+        strcmp(cp->bc_version, "1.2.0") == 0) {
+        // INFO(Rafael): Backward compatibility. Once read it will be re-written in radix-64 and
+        //               bc_version will be increased for the newer version.
+        cp->protection_layer = get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
+        cp->protection_layer_size = strlen(cp->protection_layer);
+    } else {
+        kryptos_task_init_as_null(ktask);
+        data = get_catalog_field(BCREPO_CATALOG_PROTECTION_LAYER, in, in_size);
+        kryptos_task_set_decode_action(ktask);
+        kryptos_run_encoder(base64, ktask, data, strlen(data));
+        cp->protection_layer = ktask->out;
+        cp->protection_layer_size = ktask->out_size;
+        kryptos_task_free(ktask, KRYPTOS_TASK_IN);
+    }
     return (cp->protection_layer != NULL);
 }
 
