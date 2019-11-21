@@ -313,13 +313,8 @@ int blackcat_cmd_help_help(void) {
            "<https://github.com/rafael-santiago/blackcat/issues>\n"
            "_____\nusage: blackcat <command> [options]\n\n"
            "*** If you want to know more about some command you should try: \"blackcat help <command>\".\n"
-#if defined(__unix__)
-           "    Do not you know any command name? Welcome newbie! It is time to read some documentation: "
-           "\"man blackcat\".\n"
-#elif defined(_WIN32)
-           "    Do not you know any command name? Welcome newbie! It is time to read some documentation. "
-           "Give it a try by reading 'MANUAL.txt' (probably installed together with your executable).\n"
-#endif
+           "    Do not you know any command name? Welcome newbie! It is time to read some documentation.\n"
+           "    Give it a try by running 'blackcat man'.\n"
             );
     return 0;
 }
