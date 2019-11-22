@@ -617,7 +617,7 @@ Supposing you want to restore a repo from a previous packed data:
     root@RedBarn:~/# cd sphinx
     root@RedBarn:~/sphinx# Ya hey! ;)
 
-So during the 'unpack' command you need to specify the packed file and the directory path were the
+So during the 'unpack' command you need to specify the packed file and the directory path where the
 repository will be re-created.
 
 Undo

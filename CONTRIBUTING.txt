@@ -28,6 +28,8 @@ Firstly, thank you for contributing. You should consider the following before su
     - Prebuilts are not provided, users should built it on their own or ask an another trustable party to build it
       (remember: 'paranoid' people);
 
+The best way of knowing what could be done is reading 'doc/todo.txt'.
+
 Code style
 ==========
 

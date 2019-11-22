@@ -127,9 +127,6 @@ is defined.
 
 The SKIP_NET_TESTS lists all platforms where the net command system tests
 should be skipped. Currently, Windows do not has support for net command.
-In FreeBSD, NetBSD and OpenBSD the tests are being skipped because it
-must be adjusted taking into consideration some platform details before
-being included as a default build option for them.
 
 If you want to force the re-build of all modules, use the build option
 '--clean-modules'.
