@@ -1,15 +1,12 @@
 BUILD
 =====
 
-The build of this application is also based on another tool of mine
-<https://github.com/rafael-santiago/hefesto>. If you want to build
-the application by running the whole tests you need 'Hefesto',
-otherwise you are on your own and you do not need this document
-for any help.
+The build of this application is also based on another tool of mine <https://github.com/rafael-santiago/hefesto>. If you
+want to build the application by running the whole tests you need 'Hefesto', otherwise you are on your own and you do not
+need this document for any help.
 
-Now, supposing that you have installed 'Hefesto' in your build
-environment. You need to clone another repo of mine called 'Helios'
-so execute the following commands:
+Now, supposing that you have installed 'Hefesto' in your build environment. You need to clone another repo of mine called
+'Helios' so execute the following commands:
 
 -----------------------------------------------------------------------
 you@Hellfire:~/src# git clone https://github.com/rafael-santiago/helios
@@ -36,14 +33,11 @@ you@Hellfire:~/src# cd blackcat/src
 you@Hellfire:~/src/blackcat/src# hefesto
 -----------------------------------------
 
-Go walk your dog, because it can take a while at first time. Once
-well-succeeded you can use the binary under 'blackcat/bin'. However, I would
-recommend you to install it and make 'blackcat' accessible in your entire system.
+Go walk your dog, because it can take a while at first time. Once well-succeeded you can use the binary under
+'blackcat/bin'. However, I would recommend you to install it and make 'blackcat' accessible in your entire system.
 
-If you have some restriction (personal or legal) related to usage of some
-available cipher you should pull out this cipher from the build option
-'--with-ciphers'. By default, all ciphers are included, anyway, you should watch
-your restrictions.
+If you have some restriction (personal or legal) related to usage of some available cipher you should pull out this cipher
+from the build option '--with-ciphers'. By default, all ciphers are included, anyway, you should watch your restrictions.
 
 In order to know what ciphers are currently available use the build option
 '--avail-ciphers':
@@ -52,25 +46,23 @@ In order to know what ciphers are currently available use the build option
 you@Hellfire:~/src/blackcat/src# hefesto --avail-ciphers
 --------------------------------------------------------
 
-To overwrite the default '--with-ciphers' option you should pass this option
-when calling the build by passing (of course) your desired (available) ciphers:
+To overwrite the default '--with-ciphers' option you should pass this option when calling the build by passing (of course)
+your desired (available) ciphers:
 
 ------------------------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --with-ciphers=aes,des,blowfish
 ------------------------------------------------------------------------
 
-If you do not have the sources of your operating system in order to compile the
-device driver or simply you do not want it, use the build option  '--no-dev'.
+If you do not have the sources of your operating system in order to compile the device driver or simply you do not want
+it, use the build option '--no-dev'.
 
 -------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --no-dev
 -------------------------------------------------
 
-In NetBSD you need to create the device node and also define by yourself the
-major number of the device. The default number is 210 if you want to define
-a different one use the build option --dev-major=<number>. In this case,
-if a previous /dev/blackcat node exists, it will be deleted and a new node
-will be created.
+In NetBSD you need to create the device node and also define by yourself the major number of the device. The default
+number is 210 if you want to define a different one use the build option --dev-major=<number>. In this case, if a previous
+/dev/blackcat node exists, it will be deleted and a new node will be created.
 
 Building some modules only is possible by using the build option 'modules':
 
@@ -78,11 +70,9 @@ Building some modules only is possible by using the build option 'modules':
 you@Hellfire:~/src/blackcat/src# hefesto --modules=base,fs,cmd
 --------------------------------------------------------------
 
-The blackcat's modules are some sub-directories under the toplevel src
-directory.
+The blackcat's modules are some sub-directories under the toplevel src directory.
 
-If you want to build the socket module as a no thread safe library,
-just use the option '--no-thread-safe':
+If you want to build the socket module as a no thread safe library, just use the option '--no-thread-safe':
 
 --------------------------------------------------------------------------
 you@Hellfire:~/src/blackcat/src# hefesto --modules=socket --no-thread-safe
@@ -94,8 +84,7 @@ or simply
 you@Hellfire:~/src/blackcat/src# hefesto --no-thread-safe
 ---------------------------------------------------------
 
-In NetBSD the socket module is no-thread-safe by default and there is
-no option for a thread-safe library.
+In NetBSD the socket module is no-thread-safe by default and there is no option for a thread-safe library.
 
 If you want to skip the net module tests:
 
@@ -119,17 +108,22 @@ Inside the toplevel 'src' sub-directory you will find two plain files:
 
     - BCDEV_PLATFORMS
     - SKIP_NET_TESTS
+    - BAD_FUNCS
 
-The BCDEV_PLATFORMS file lists all platforms which have support to blackcat
-device driver features. Thus, the device driver will be built when
-'--no-dev' is undefined and it will be tested when '--blackcat-dev-tests'
-is defined.
+The BCDEV_PLATFORMS file lists all platforms which have support to blackcat device driver features. Thus, the device
+driver will be built when '--no-dev' is undefined and it will be tested when '--blackcat-dev-tests' is defined.
 
-The SKIP_NET_TESTS lists all platforms where the net command system tests
-should be skipped. Currently, Windows do not has support for net command.
+The SKIP_NET_TESTS lists all platforms where the net command system tests should be skipped. Currently, Windows do not has
+support for net command.
 
-If you want to force the re-build of all modules, use the build option
-'--clean-modules'.
+By default blackcat disallows the usage of functions considered 'bad' due to hooking issues (bad people can use it in
+order to steal passwords). After build a module the blackcat build will verify if some bad function is being referenced.
+If at least one reference to any of them is found the build will break. The verifying process can take some time. It is
+possible to skip it by using the build option '--allow-bad-funcs'. Anyway, if you are building your final copy of
+blackcat, a best practice would be verify if some bad function is being used. All functions considered 'bad' are listed in
+the file BAD_FUNCS.
+
+If you want to force the re-build of all modules, use the build option '--clean-modules'.
 
 The re-build of everything: '--forge-anyway'.
 

@@ -8,3 +8,4 @@
 *.ko
 *.so
 *.get_test_protlayer
+*.asm-out.s

@@ -51,3 +51,11 @@ libbbase.prologue() {
 
     $src = get_codes($dirlist, $deps);
 }
+
+libbbase.epilogue() {
+    if (hefesto.sys.last_forge_result() == 0) {
+        if (has_bad_funcs(hefesto.sys.lines_from_file("../BAD_FUNCS", ".*"), $src, $inc, $cflags)) {
+            hefesto.project.abort(1);
+        }
+    }
+}

@@ -62,6 +62,14 @@ blackcat-cmd.prologue() {
     $appname = get_appname();
 }
 
+blackcat-cmd.epilogue() {
+    if (hefesto.sys.last_forge_result() == 0) {
+        if (has_bad_funcs(hefesto.sys.lines_from_file("../BAD_FUNCS", ".*"), $src, $includes, $cflags)) {
+            hefesto.project.abort(1);
+        }
+    }
+}
+
 local function get_appname() : result type string {
     var appname type string;
 
