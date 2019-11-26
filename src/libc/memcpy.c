@@ -16,7 +16,12 @@ void *blackcat_memcpy(void *dest, void *src, size_t n) {
         goto blackcat_memcpy_epilogue;
     }
 
-#if !defined(__i386__)
+#if defined(__i386__)
+    __asm__ __volatile__("pusha\n\t"
+                         "cld\n\t"
+                         "rep movsb\n\t"
+                         "popa" : : "c"(n), "D"(dest), "S"(src));
+#else
     dest_p = dest;
     src_p = src;
 
@@ -25,11 +30,6 @@ void *blackcat_memcpy(void *dest, void *src, size_t n) {
         dest_p++;
         src_p++;
     }
-#else
-    __asm__ __volatile__("pusha\n\t"
-                         "cld\n\t"
-                         "rep movsb\n\t"
-                         "popa" : : "c"(n), "D"(dest), "S"(src));
 #endif
 
 blackcat_memcpy_epilogue:

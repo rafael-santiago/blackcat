@@ -16,7 +16,12 @@ void *blackcat_memset(void *s, int c, size_t n) {
         goto blackcat_memset_epilogue;
     }
 
-#if !defined(__i386__)
+#if defined(__i386__)
+    __asm__ __volatile__ ("pusha\n\t"
+                          "cld\n\t"
+                          "rep stosb\n\t"
+                          "popa" : : "a"(c), "c"(n), "D"(s));
+#else
     sp = s;
     sp_end = sp + n;
 
@@ -24,11 +29,6 @@ void *blackcat_memset(void *s, int c, size_t n) {
         *sp = c;
         sp++;
     }
-#else
-    __asm__ __volatile__ ("pusha\n\t"
-                          "cld\n\t"
-                          "rep stosb\n\t"
-                          "popa" : : "a"(c), "c"(n), "D"(s));
 #endif
 
 blackcat_memset_epilogue:
