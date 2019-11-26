@@ -18,7 +18,6 @@ include on netbsd ~/toolsets/netbsd/netbsd-module.hsl
 include on windows,openbsd,minix ~/toolsets/null/null.hsl
 
 include ~/fsutil.hsl
-include ~/lsutil.hsl
 
 function blackcat_rootdir() : result type string {
     result hefesto.sys.env("BLACKCAT_ROOTDIR");
