@@ -497,7 +497,7 @@ function has_bad_funcs(func_signatures type list, srcs type list, incs type list
     while ($s < $srcs.count() && $founds.count() == 0) {
         hefesto.sys.echo("\t*** " + $srcs.item($s) + ": ");
 
-        if (hefesto.sys.run($cmdline + " " + $srcs.item($s)) != 0) {
+        if (hefesto.sys.run($cmdline + " \"" + $srcs.item($s) + "\"") != 0) {
             hefesto.sys.echo("\nERROR: Unable to generate assembly file.\n");
             result 1;
         }
