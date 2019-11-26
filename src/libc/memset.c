@@ -1,0 +1,37 @@
+/*
+ *                          Copyright (C) 2019 by Rafael Santiago
+ *
+ * Use of this source code is governed by GPL-v2 license that can
+ * be found in the COPYING file.
+ *
+ */
+#include <libc/memset.h>
+
+void *blackcat_memset(void *s, int c, size_t n) {
+#if !defined(__i386__)
+    const void *sp_end, *sp;
+#endif
+
+    if (s == NULL) {
+        goto blackcat_memset_epilogue;
+    }
+
+#if !defined(__i386__)
+    sp = s;
+    sp_end = sp + n;
+
+    while (sp != sp_end) {
+        *sp = c;
+        sp++;
+    }
+#else
+    __asm__ __volatile__ ("pusha\n\t"
+                          "cld\n\t"
+                          "rep stosb\n\t"
+                          "popa" : : "a"(c), "c"(n), "D"(s));
+#endif
+
+blackcat_memset_epilogue:
+
+    return s;
+}

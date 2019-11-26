@@ -461,24 +461,6 @@ function mkclean_modules(modules type list) : result type none {
     hefesto.sys.cd($rootpath);
 }
 
-local function get_file_data(filepath type string) : result type string {
-    var data type string;
-    var fp type file;
-
-    $fp = hefesto.sys.fopen($filepath, "rb");
-    if ($fp != 0) {
-        var buf type string;
-
-        while (hefesto.sys.feof($fp) != 1) {
-            hefesto.sys.fread($buf, 65535, $fp);
-            $data = $data + $buf;
-        }
-        hefesto.sys.fclose($fp);
-    }
-
-    result $data;
-}
-
 function has_bad_funcs(func_signatures type list, srcs type list, incs type list, cflags type list) : result type int {
     var option type list;
     $option = hefesto.sys.get_option("allow-bad-funcs");
@@ -521,31 +503,18 @@ function has_bad_funcs(func_signatures type list, srcs type list, incs type list
             result 1;
         }
 
-        #var asm_out type string;
-        #$asm_out = get_file_data(".asm-out.s");
-
-        #if ($asm_out.len() == 0) {
-        #    hefesto.sys.echo("\nERROR: No assembly data.\n");
-        #    result 1;
-        #}
-
         var f type int;
         $f = 0;
         while ($f < $func_signatures.count()) {
             var regex type string;
             $regex = "(call|mov).*[ \t]" + $func_signatures.item($f);
-            var lines type list;
-            $lines = hefesto.sys.lines_from_file(".asm-out.s", $regex);
-            if ($lines.count() > 0 && $founds.index_of($func_signatures.item($f)) == -1) {
+            var bad_lines type list;
+            $bad_lines = hefesto.sys.lines_from_file(".asm-out.s", $regex);
+            if ($bad_lines.count() > 0 && $founds.index_of($func_signatures.item($f)) == -1) {
                 $founds.add_item($func_signatures.item($f));
             }
-            #if ($asm_out.match($regex) > 0 && $founds.index_of($func_signatures.item($f)) == -1) {
-            #    $founds.add_item($func_signatures.item($f));
-            #}
             $f = $f + 1;
         }
-
-        #hefesto.sys.rm(".asm-out.s");
 
         if ($founds.count() > 0) {
             hefesto.sys.echo("dirty.\n*** error.\n\n");
@@ -565,6 +534,7 @@ function has_bad_funcs(func_signatures type list, srcs type list, incs type list
 
             hefesto.sys.echo("\n       Take a look at '" + hefesto.sys.pwd() + "/.asm-out.s'.\n\n");
         } else {
+            hefesto.sys.rm(".asm-out.s");
             hefesto.sys.echo("clean.\n");
         }
 

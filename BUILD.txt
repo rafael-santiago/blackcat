@@ -117,10 +117,10 @@ The SKIP_NET_TESTS lists all platforms where the net command system tests should
 support for net command.
 
 By default blackcat disallows the usage of functions considered 'bad' due to hooking issues (bad people can use it in
-order to steal passwords). After build a module the blackcat build will verify if some bad function is being referenced.
+order to steal passwords). After building a module blackcat's build will verify if some bad function is being referenced.
 If at least one reference to any of them is found the build will break. The verifying process can take some time. It is
-possible to skip it by using the build option '--allow-bad-funcs'. Anyway, if you are building your final copy of
-blackcat, a best practice would be verify if some bad function is being used. All functions considered 'bad' are listed in
+possible to skip it by using the build option '--allow-bad-funcs'. Anyway, if you are building your final blackcat's
+copy, a best practice would be verify if some bad function is being used. All functions considered 'bad' are listed in
 the file BAD_FUNCS.
 
 If you want to force the re-build of all modules, use the build option '--clean-modules'.

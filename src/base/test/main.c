@@ -15,6 +15,9 @@
 #include <kbd/kbd.h>
 #include <util/random.h>
 #include <util/token.h>
+#include <libc/memset.h>
+#include <libc/memcpy.h>
+#include <libc/memcmp.h>
 #include <string.h>
 
 CUTE_DECLARE_TEST_CASE(blackcat_base_tests_entry);
@@ -53,10 +56,16 @@ CUTE_DECLARE_TEST_CASE(blackcat_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_fmt_str_tests);
 CUTE_DECLARE_TEST_CASE(token_wrap_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_get_avail_stuff_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_memset_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_memcpy_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_memcmp_tests);
 
 CUTE_MAIN(blackcat_base_tests_entry)
 
 CUTE_TEST_CASE(blackcat_base_tests_entry)
+    CUTE_RUN_TEST(blackcat_memset_tests);
+    CUTE_RUN_TEST(blackcat_memcpy_tests);
+    CUTE_RUN_TEST(blackcat_memcmp_tests);
     CUTE_RUN_TEST(ctx_tests);
     CUTE_RUN_TEST(blackcat_fmt_str_tests);
     CUTE_RUN_TEST(keychain_arg_parsing_tests);
@@ -95,6 +104,24 @@ CUTE_TEST_CASE(blackcat_base_tests_entry)
     CUTE_RUN_TEST(blackcat_kdf_tests);
     CUTE_RUN_TEST(token_wrap_tests);
     CUTE_RUN_TEST(blackcat_get_avail_stuff_tests);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_memset_tests)
+    char buf[10];
+    CUTE_ASSERT(blackcat_memset(buf, '.', sizeof(buf)) == &buf[0]);
+    CUTE_ASSERT(memcmp(buf, "..........", sizeof(buf)) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_memcpy_tests)
+    char *src = "meow!";
+    char dest[10];
+    CUTE_ASSERT(blackcat_memcpy(dest, src, 5) == &dest[0]);
+    CUTE_ASSERT(memcmp(dest, "meow!", 5) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_memcmp_tests)
+    char *buf = "meow";
+    CUTE_ASSERT(blackcat_memcmp(buf, "meow", 4) == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_otp_meta_processor_tests)

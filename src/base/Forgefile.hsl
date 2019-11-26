@@ -48,6 +48,7 @@ libbbase.prologue() {
     $dirlist.add_item("../ctx");
     $dirlist.add_item("../kbd");
     $dirlist.add_item("../util");
+    $dirlist.add_item("../libc");
 
     $src = get_codes($dirlist, $deps);
 }
