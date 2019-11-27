@@ -1,3 +1,4 @@
+(B) Perform gethostbyname() call (in skey_xchg_client()) by using dlsym stuff. +Improvement
 (B) Extend the fs module capabilities. +NewFeature
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
@@ -5,6 +6,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (A) Use static linking model where/when it is possible. +SecurityWorries,+Improvement
 x (B) Do not use memset and memcpy functions. Mitigate libc hooking. +ParanoidImprovement
 x (A) Encode all protection layer with radix-64 in order to avoid raw escaped chars passed during a repo initialization.
       A raw escaped char (eg.: '\xad' instead of '\\xad') could be an entry door to buffer overflows. +SecurityWorries
