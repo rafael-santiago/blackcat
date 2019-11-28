@@ -9,10 +9,13 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-// WARN(Rafael): This code is a trinket to help on testing the static linkage in cmd tool. If it is broken or simply not done
+// INFO(Rafael): This code is quite a lot sloppy. I am sorry! Moreover, it is just a helper trinket for cmd's system
+//               tests.
+
+// WARN(Rafael): It intends to help on testing the static linkage in cmd tool. If it is broken or simply not being done,
 //               the 'peacock's alarms' will show up...
 //
-//               Since build's bad string scanner is work on, this tool will not allowed to hook anything relevant that
+//               Since build's bad string scanner is work on, this tool will not be allowed to hook anything relevant that
 //               could configure a risk, threat, issue, etc. Thus, stderr must be clean when talking about hook messages.
 
 #ifndef RTLD_NEXT
@@ -23,49 +26,51 @@
                                                 "'Somos todos piratas audazes e temerarios, terriveis e ordinarios... "\
                                                                               "copiar, colar e compilar, hey!'...\n");
 
-#define HOOK_BODY(func, args...) {\
+#define CHOOK_BODY(func, alarm, args...) {\
     if (libc_ ## func == NULL) {\
         libc_ ## func = dlsym(RTLD_NEXT, #func);\
     }\
     /*WARN(Rafael): Do not mind about nulls... script kiddie mode on...*/\
-    PEACOCK_ALARM(func)\
+    alarm;\
     return libc_ ## func (args);\
 }
 
 #if defined(__linux__)
 
-size_t (*libc_fwrite)(const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s) = NULL;
+static size_t (*libc_fwrite)(const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s) = NULL;
 
-size_t (*libc_fread)(void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __stream) = NULL;
+static size_t (*libc_fread)(void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __stream) = NULL;
 
-void *(*libc_memset)(void *s, int c, size_t n) = NULL;
+static void *(*libc_memset)(void *s, int c, size_t n) = NULL;
 
-void *(*libc_memcpy)(void *dest, const void *src, size_t n) = NULL;
+static void *(*libc_memcpy)(void *dest, const void *src, size_t n) = NULL;
 
-int (*libc_memcmp)(const void *s1, const void *s2, size_t n) = NULL;
-
+static int (*libc_memcmp)(const void *s1, const void *s2, size_t n) = NULL;
 
 size_t fread (void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __stream) {
-    HOOK_BODY(fread, __ptr, __size, __n, __stream)
+    CHOOK_BODY(fread, PEACOCK_ALARM(fread), __ptr, __size, __n, __stream)
 }
 
 size_t fwrite (const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s) {
-    HOOK_BODY(fwrite, __ptr, __size, __n, __s)
+    CHOOK_BODY(fwrite, {}, // TIP(Rafael): Otherwise you will hit the board of this universe, kid... HUahauhauha!!!
+               __ptr, __size, __n, __s)
 }
 
 void *memset(void *s, int c, size_t n) {
-    HOOK_BODY(memset, s, c, n)
+    CHOOK_BODY(memset, PEACOCK_ALARM(memset), s, c, n)
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
-    HOOK_BODY(memcpy, dest, src, n)
+    CHOOK_BODY(memcpy, PEACOCK_ALARM(memcpy), dest, src, n)
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
-    HOOK_BODY(memcmp, s1, s2, n)
+    CHOOK_BODY(memcmp, PEACOCK_ALARM(memcmp), s1, s2, n)
 }
 
 #else
 # error Some code wanted.
 #endif
 
+#undef PEACOCK_ALARM
+#undef HOOK_BODY

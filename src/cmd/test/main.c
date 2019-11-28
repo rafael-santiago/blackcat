@@ -30,6 +30,10 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
 
 static int blackcat_nowait(const char *command, const unsigned char *p1, const unsigned char *p2);
 
+#if defined(__unix__)
+static int hooked_blackcat(const char *command, const unsigned char *p1, const unsigned char *p2);
+#endif
+
 static int check_blackcat_lkm_hiding(void);
 
 static int try_unload_blackcat_lkm(void);
@@ -231,6 +235,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_token_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_soft_token_usage_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_libc_hooking_avoidance_tests);
 
 CUTE_DECLARE_TEST_CASE_SUITE(blackcat_poking_tests);
 
@@ -589,7 +594,69 @@ CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     CUTE_RUN_TEST(blackcat_poke_net_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_token_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_soft_token_usage_tests);
+    CUTE_RUN_TEST(blackcat_poke_libc_hooking_avoidance_tests);
 CUTE_TEST_CASE_SUITE_END
+
+CUTE_TEST_CASE(blackcat_poke_libc_hooking_avoidance_tests)
+#if defined(__unix__)
+    char *protlayer = get_test_protlayer(0, 3);
+    char bcmd[4096];
+#define CHOOK_ALARM(f) "-- [" #f "] -- 'Somos todos piratas audazes e temerarios, terriveis e ordinarios..."\
+                       " copiar, colar e compilar, hey!'...\n"
+    const char *chook_alarms[] = {
+        CHOOK_ALARM(fread), CHOOK_ALARM(fwrite), CHOOK_ALARM(memset), CHOOK_ALARM(memcpy), CHOOK_ALARM(memcpy)
+    }, **cp, **cp_end;
+#undef CHOOK_ALARM
+    const size_t chook_alarms_nr = sizeof(chook_alarms) / sizeof(chook_alarms[0]);
+    unsigned char *meows = NULL;
+    size_t meows_size;
+
+    if (CUTE_GET_OPTION("allow-bad-funcs") == NULL) {
+        remove("meow.txt");
+        CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+        CUTE_ASSERT(create_file("s2.txt", sensitive2, strlen(sensitive2)) == 1);
+        CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+        snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                         "--catalog-hash=sha3-384 "
+                                         "--key-hash=whirlpool "
+                                         "--protection-layer-hash=sha-512 "
+                                         "--protection-layer=%s "
+                                         "--keyed-alike 2>>meow.txt", protlayer);
+        CUTE_ASSERT(hooked_blackcat(bcmd, "GetBack", "GetBack") == 0);
+        CUTE_ASSERT(hooked_blackcat("add s1.txt s2.txt --lock 2>>meow.txt", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("add p.txt --plain 2>>meow.txt", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("status", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("unlock s1.txt 2>>meow.txt", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("unlock 2>>meow.txt", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("lock 2>>meow.txt", "GetBack", NULL) == 0);
+        CUTE_ASSERT(hooked_blackcat("deinit 2>>meow.txt", "GetBack", NULL) == 0);
+
+        remove("s1.txt");
+        remove("s2.txt");
+        remove("p.txt");
+
+        meows = get_file_data("meow.txt", &meows_size);
+
+        CUTE_ASSERT(meows != NULL);
+
+        cp = &chook_alarms[0];
+        cp_end = cp + chook_alarms_nr;
+
+        while (cp != cp_end) {
+            CUTE_ASSERT(strstr(meows, *cp) == NULL);
+            cp++;
+        }
+
+        remove("meow.txt");
+        kryptos_freeseg(meows, meows_size);
+    } else {
+        fprintf(stdout, "== Test skipped.\n");
+    }
+#else
+    fprintf(stdout, "WARN: This test is Unix only.\n"
+                    "      There is nothing to do here in your current platform.\n");
+#endif
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_poke_wrong_arguments_tests)
     // INFO(Rafael): Wrong commands.
@@ -4610,6 +4677,48 @@ static int blackcat_nowait(const char *command, const unsigned char *p1, const u
 
     return exit_code;
 }
+
+#if defined(__unix__)
+
+static int hooked_blackcat(const char *command, const unsigned char *p1, const unsigned char *p2) {
+    char bin[4096];
+    char cmdline[4096];
+    int exit_code;
+    struct stat st;
+
+    if (p1 == NULL) {
+        return 0;
+    }
+
+    strncpy(cmdline, "../", sizeof(cmdline) - 1);
+    snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
+
+    while (stat(bin, &st) != 0) {
+        strncat(cmdline, "../", sizeof(cmdline) - 1);
+        snprintf(bin, sizeof(bin) - 1, "%sbin/blackcat", cmdline);
+    }
+
+    snprintf(cmdline, sizeof(cmdline) - 1, "%s\n", p1);
+
+    if (p2 != NULL) {
+        strncat(cmdline, p2, sizeof(cmdline) - 1);
+        strncat(cmdline, "\n", sizeof(cmdline) - 1);
+    }
+
+    if (create_file(".bcpass", cmdline, strlen(cmdline)) == 0) {
+        return 0;
+    }
+
+    snprintf(cmdline, sizeof(cmdline) - 1, "LD_PRELOAD=chook/bin/libchook.so %s %s < .bcpass", bin, command);
+
+    exit_code = system(cmdline);
+
+    remove(".bcpass");
+
+    return exit_code;
+}
+
+#endif
 
 unsigned char *get_file_data(const char *filepath, size_t *data_size) {
     FILE *fp;

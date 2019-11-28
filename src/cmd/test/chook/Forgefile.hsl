@@ -36,4 +36,10 @@ libchook.prologue() {
     $cflags = hefesto.sys.get_option("cflags");
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
+
+    if (hefesto.sys.os_name() == "linux") {
+        $ldflags.add_item("-ldl");
+    } else if (hefesto.sys.os_name() == "netbsd") {
+        $cflags.add_item("-std=c99");
+    }
 }
