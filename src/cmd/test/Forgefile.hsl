@@ -81,6 +81,19 @@ blackcat-cmd-tests.prologue() {
         build("ntool");
     }
 
+    $option = hefesto.sys.get_option("allow-bad-funcs");
+
+    if ($option.count() == 0) {
+        build("chook");
+    } else {
+        hefesto.sys.echo("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" +
+                         "! BUILD WARN: You have passed '--allow-bad-funcs' it means that some common libc  !\n" +
+                         "!             function can be hooked and your data stolen. Hooking tests will not !\n" +
+                         "!             be ran. Keep your system clean and good luck!                       !\n" +
+                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
+        # TODO(Rafael): Put a prompt here giving the option of re-building by preventing libc hooking.
+    }
+
     if (hefesto.sys.os_name() != "windows") {
         if (isdir("/usr/local/include")) {
             $includes.add_item("/usr/local/include");

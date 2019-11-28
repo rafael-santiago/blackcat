@@ -1,0 +1,2 @@
+--forgefiles=Forgefile.hsl --Forgefile-projects=libchook --link-model=shared --obj-output-dir=o --bin-output-dir=bin
+

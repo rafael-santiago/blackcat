@@ -221,7 +221,7 @@ local function build_hdev() : result type int {
     result $exit_code;
 }
 
-local function build_ntool() : result type int {
+local function build_nix_helper_trinket(dirname type string, invocation_string type string) : result type int {
     var exit_code type int;
 
     $exit_code = 1;
@@ -229,12 +229,31 @@ local function build_ntool() : result type int {
     var old_cwd type string;
     $old_cwd = hefesto.sys.pwd();
 
-    if (hefesto.sys.cd("ntool")) {
-        $exit_code = hefesto.sys.run("hefesto");
+    if (hefesto.sys.cd($dirname)) {
+        $exit_code = hefesto.sys.run($invocation_string);
         hefesto.sys.cd($old_cwd);
     }
 
     result $exit_code;
+}
+
+local function build_ntool() : result type int {
+    result build_nix_helper_trinket("ntool", "hefesto");
+}
+
+local function build_chook() : result type int {
+    var supported_platforms type list;
+
+    $supported_platforms.add_item("linux");
+    $supported_platforms.add_item("freebsd");
+    $supported_platforms.add_item("netbsd");
+    $supported_platforms.add_item("openbsd");
+    $supported_platforms.add_item("minix");
+
+    if ($supported_platforms.index_of(hefesto.sys.os_name()) == -1) {
+        result 0;
+    }
+    result build_nix_helper_trinket("chook", "hefesto");
 }
 
 function build(libname type string) : result type int {

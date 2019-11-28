@@ -1,3 +1,5 @@
+(A) Implement a system test that ascertains the static linkage and the impossibility of doing hooks over
+    some critical libc functions (when '--allow-bad-funcs' is not passed). +SecurityWorries,+FreakParanoidFeature,+Improvement
 (B) Extend the fs module capabilities. +NewFeature
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature

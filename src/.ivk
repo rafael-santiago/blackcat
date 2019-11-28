@@ -1,1 +1,1 @@
---forgefiles=Forgefile.hsl --Forgefile-projects=blackcat --build-skip=icloak,kook,cutest,hdev,ntool --with-ciphers=arc4,seal,rabbit,aes,des,idea,rc2,rc5,rc6,feal,cast5,camellia,safer-k64,blowfish,serpent,tea,xtea,misty1,mars,present,shacal1,shacal2,noekeon
+--forgefiles=Forgefile.hsl --Forgefile-projects=blackcat --build-skip=icloak,kook,cutest,hdev,ntool,chook --with-ciphers=arc4,seal,rabbit,aes,des,idea,rc2,rc5,rc6,feal,cast5,camellia,safer-k64,blowfish,serpent,tea,xtea,misty1,mars,present,shacal1,shacal2,noekeon
