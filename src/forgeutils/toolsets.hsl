@@ -83,6 +83,14 @@ function mkclean() : result type none {
     hefesto.sys.cd($oldcwd);
 }
 
+function ask_user(query type string, answers type list) : result type string {
+    var a type string;
+    while ($answers.index_of($a) == -1) {
+        $a = hefesto.sys.prompt($query);
+    }
+    result $a;
+}
+
 local function mkclean_recur(dirlist type list) : result type none {
     var d type int;
 
@@ -507,7 +515,7 @@ function has_bad_funcs(func_signatures type list, srcs type list, incs type list
 
     $cmdline = $cmdline + " -S -o .asm-out.s";
 
-    hefesto.sys.echo("\nINFO: Searching for references to bad functions...\n");
+    hefesto.sys.echo("\nBUILD INFO: Searching for direct references to bad functions...\n");
 
     var founds type list;
 

@@ -9,8 +9,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-// INFO(Rafael): This code is quite a lot sloppy. I am sorry! Moreover, it is just a helper trinket for cmd's system
-//               tests.
+// INFO(Rafael): This code is quite sloppy. I am sorry! Moreover, it is just a helper trinket for cmd's system tests.
 
 // WARN(Rafael): It intends to help on testing the static linkage in cmd tool. If it is broken or simply not being done,
 //               the 'peacock's alarms' will show up...

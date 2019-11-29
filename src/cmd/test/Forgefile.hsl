@@ -91,7 +91,39 @@ blackcat-cmd-tests.prologue() {
                          "!             function can be hooked and your data stolen. Hooking tests will not !\n" +
                          "!             be ran. Keep your system clean and good luck!                       !\n" +
                          "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
-        # TODO(Rafael): Put a prompt here giving the option of re-building by preventing libc hooking.
+        $option = hefesto.sys.get_option("ask-me-nothing");
+        if ($option.count() == 0) {
+            hefesto.sys.echo("BUILD TIP: To skip the following prompt next time, use '--ask-me-nothing'.\n\n");
+            var resp type string;
+            var answers type list;
+            $answers.add_item("y");
+            $answers.add_item("n");
+            $answers.add_item("Y");
+            $answers.add_item("N");
+            $resp = ask_user("Would you want to re-build by preventing libc hooking? [y/n]: ", $answers);
+            if ($resp == "y" || $resp == "Y") {
+                hefesto.sys.echo("\nBUILD INFO: Okay, let's rebuild it... hold on...\n\n");
+                hefesto.sys.cd("../..");
+                var rebuild_exit_code type int;
+                var rebuild_options type string;
+                $rebuild_options = hefesto.project.cmdline();
+                # INFO(Rafael): Those following options cannot stay during a re-build. Options related to direct
+                #               compiler flags must be read from the local invocation file.
+                $rebuild_options.replace("(--allow-bad-funcs=.* |--allow-bad-funcs=.*$)", "");
+                $rebuild_options.replace("(--modules=.* |--modules=.*$)", "");
+                $rebuild_options.replace("(--includes=.* |--includes=.*$)", "");
+                $rebuild_options.replace("(--cflags=.* |--cflags=.*$)", "");
+                $rebuild_options.replace("(--libraries=.* |--libraries=.*$)", "");
+                $rebuild_options.replace("(--ldflags=.* |--ldflags=.*$)", "");
+                $rebuild_options.replace("(--obj-output-dir=.* |--obj-output-dir=.*$)", "");
+                $rebuild_options.replace("(--bin-output-dir=.* |--bin-output-dir=.*$)", "");
+                $rebuild_exit_code = hefesto.sys.forge("blackcat", "Forgefile.hsl", $rebuild_options);
+                if ($rebuild_exit_code == 0) {
+                    hefesto.sys.echo("\nBUILD INFO: Nice, now the built blackcat is strengthened against libc hooking.\n");
+                }
+                hefesto.project.abort($rebuild_exit_code);
+            }
+        }
     }
 
     if (hefesto.sys.os_name() != "windows") {
