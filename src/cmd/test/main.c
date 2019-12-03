@@ -4677,8 +4677,11 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
     exit_code = system(cmdline);
 
     remove(".bcpass");
-
+#if defined(__unix__)
     return WEXITSTATUS(exit_code);
+#else
+    return exit_code;
+#endif
 }
 
 static int blackcat_nowait(const char *command, const unsigned char *p1, const unsigned char *p2) {
