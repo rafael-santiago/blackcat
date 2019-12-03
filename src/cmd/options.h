@@ -36,12 +36,19 @@ char *blackcat_get_argv(const int v);
                                    option_var[0] != '-' && option_var[1] != '-') || consume_dashed_options) {\
             consume_stmt;\
         }\
-        do {\
+        if (!consume_dashed_options) {\
+            do {\
+                option_var = blackcat_get_argv(ac++);\
+                if (option_var != NULL) {\
+                    option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
+                }\
+            } while (option_var != NULL && strlen(option_var) > 1 && option_var[0] == '-' && option_var[1] == '-');\
+        } else {\
             option_var = blackcat_get_argv(ac++);\
             if (option_var != NULL) {\
                 option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
             }\
-        } while (option_var != NULL && strlen(option_var) > 1 && option_var[0] == '-' && option_var[1] == '-');\
+        }\
     } while(option_var != NULL);\
 }
 

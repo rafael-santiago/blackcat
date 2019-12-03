@@ -7,6 +7,7 @@
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Extend net protection. +NewFeature
+x (A) Implement count command.
 x (A) Put a prompt in the build giving the option of re-building by preventing libc hooking. +Improvement
 x (A) Implement a system test that ascertains the static linkage and the impossibility of doing hooks over
       some critical libc functions (when '--allow-bad-funcs' is not passed). +SecurityWorries,+FreakParanoidFeature,+Improvement

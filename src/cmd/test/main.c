@@ -236,6 +236,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_token_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_soft_token_usage_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_libc_hooking_avoidance_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_count_cmd_tests);
 
 CUTE_DECLARE_TEST_CASE_SUITE(blackcat_poking_tests);
 
@@ -551,7 +552,7 @@ CUTE_TEST_CASE(blackcat_get_argv_tests)
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(get_blackcat_version_tests)
-    CUTE_ASSERT(strcmp(get_blackcat_version(), "1.2.0") == 0);
+    CUTE_ASSERT(strcmp(get_blackcat_version(), "1.3.0") == 0);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_clear_options_tests)
@@ -595,7 +596,64 @@ CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     CUTE_RUN_TEST(blackcat_poke_token_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_soft_token_usage_tests);
     CUTE_RUN_TEST(blackcat_poke_libc_hooking_avoidance_tests);
+    CUTE_RUN_TEST(blackcat_poke_count_cmd_tests);
 CUTE_TEST_CASE_SUITE_END
+
+CUTE_TEST_CASE(blackcat_poke_count_cmd_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 1);
+
+    CUTE_ASSERT(protlayer != NULL);
+
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=whirlpool "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s "
+                                     "--keyed-alike", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd, "Tribal", "Tribal") == 0);
+
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("s2.txt", sensitive2, strlen(sensitive2)) == 1);
+    CUTE_ASSERT(create_file("p.txt", plain, strlen(plain)) == 1);
+    CUTE_ASSERT(blackcat("add s1.txt --lock", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s2.txt", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("add p.txt --plain", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("count", "Tribal", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("count --plain", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("count --locked", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("count --unlocked", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("count --plain --quiet", "Tribal", NULL) == 1);
+    CUTE_ASSERT(blackcat("count --locked --quiet", "Tribal", NULL) == 1);
+    CUTE_ASSERT(blackcat("count --unlocked --quiet", "Tribal", NULL) == 1);
+
+    CUTE_ASSERT(blackcat("lock s2.txt", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("count --locked", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("count --unlocked", "Tribal", NULL) == 0);
+    CUTE_ASSERT(blackcat("count --plain", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("count --plain --quiet", "Tribal", NULL) == 1);
+    CUTE_ASSERT(blackcat("count --locked --quiet", "Tribal", NULL) == 2);
+    CUTE_ASSERT(blackcat("count --unlocked --quiet", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("unlock s1.txt", "Tribal", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("count --plain --locked --unlocked --quiet", "Tribal", NULL) == 3);
+
+    CUTE_ASSERT(blackcat("deinit", "Tribal", NULL) == 0);
+
+    remove("p.txt");
+    remove("s1.txt");
+    remove("s2.txt");
+CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_poke_libc_hooking_avoidance_tests)
 #if defined(__unix__)
@@ -4619,7 +4677,7 @@ static int blackcat(const char *command, const unsigned char *p1, const unsigned
 
     remove(".bcpass");
 
-    return exit_code;
+    return WEXITSTATUS(exit_code);
 }
 
 static int blackcat_nowait(const char *command, const unsigned char *p1, const unsigned char *p2) {

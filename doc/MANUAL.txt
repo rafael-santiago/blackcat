@@ -1492,6 +1492,26 @@ Pretty simple:
 According to your environment capabilities, blackcat will read and send out the manual data to less, more or
 stdout.
 
+Getting some count stats from your repo
+=======================================
+
+A good way of checking if there are files in some status is to use the count command. This command expects
+only the following flags: '--unlocked', '--locked' and '--plain'. Related to file status, of course. You can
+pass from only one to all of them.
+
+Let's suppose that Alice wants to know how many unlocked files there are in her repo:
+
+    Alice@AlicesCave:/home# blackcat count --unlocked
+
+If Alice wants to integrate this command silently into some script to get the count of all unlocked files,
+she could use the additional flag '--quiet':
+
+    Alice@AlicesCave:/home# blackcat count --unlocked --quiet
+    Alice@AlicesCave:/home# echo "Total of unlocked files: $?"
+
+As you see, when '--quiet' is passed the count command will only return the total count as its exit code.
+Due to it do not do any wrong when passing this flag is quite important...
+
 Few tips for not being a tracked average sheep out there
 ========================================================
 
