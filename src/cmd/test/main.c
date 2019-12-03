@@ -228,9 +228,9 @@ CUTE_DECLARE_TEST_CASE(blackcat_poke_undo_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_tests_decoy_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_init_cmd_by_using_bcrypt_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests);
-CUTE_DECLARE_TEST_CASE(blackcat_untouch_cmd_tests);
-CUTE_DECLARE_TEST_CASE(blackcat_config_cmd_tests);
-CUTE_DECLARE_TEST_CASE(blackcat_do_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_untouch_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_config_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_do_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_token_cmd_tests);
@@ -588,9 +588,9 @@ CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     CUTE_RUN_TEST(blackcat_tests_decoy_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_init_cmd_by_using_bcrypt_tests);
     CUTE_RUN_TEST(blackcat_poke_attach_detach_cmds_tests);
-    CUTE_RUN_TEST(blackcat_untouch_cmd_tests);
-    CUTE_RUN_TEST(blackcat_config_cmd_tests);
-    CUTE_RUN_TEST(blackcat_do_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_untouch_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_config_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_do_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_repo_by_using_kdf_tests);
     CUTE_RUN_TEST(blackcat_poke_net_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_token_cmd_tests);
@@ -2991,7 +2991,7 @@ CUTE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests)
     rmdir("etc");
 CUTE_TEST_CASE_END
 
-CUTE_TEST_CASE(blackcat_untouch_cmd_tests)
+CUTE_TEST_CASE(blackcat_poke_untouch_cmd_tests)
     struct stat st_old, st_curr;
     char bcmd[65535], *protlayer;
 
@@ -3092,7 +3092,7 @@ CUTE_TEST_CASE(blackcat_untouch_cmd_tests)
     rmdir("untouch-test");
 CUTE_TEST_CASE_END
 
-CUTE_TEST_CASE(blackcat_config_cmd_tests)
+CUTE_TEST_CASE(blackcat_poke_config_cmd_tests)
     char bcmd[65535], *protlayer;
 
     protlayer = get_test_protlayer(0, 2);
@@ -3137,7 +3137,7 @@ CUTE_TEST_CASE(blackcat_config_cmd_tests)
     CUTE_ASSERT(blackcat("deinit", "Zzz", NULL) == 0);
 CUTE_TEST_CASE_END
 
-CUTE_TEST_CASE(blackcat_do_cmd_tests)
+CUTE_TEST_CASE(blackcat_poke_do_cmd_tests)
     char bcmd[65535], *protlayer;
     unsigned char *data;
     size_t data_size;
