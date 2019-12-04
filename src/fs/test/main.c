@@ -856,6 +856,7 @@ CUTE_TEST_CASE(bcrepo_incompatibility_tests)
         CUTE_ASSERT(catalog.key_hash != NULL);
 
         catalog.protection_layer = get_test_protlayer(0, 2);
+        catalog.protection_layer_size = strlen(catalog.protection_layer);
         catalog.files = &files;
 
         files.head = &files;
