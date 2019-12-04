@@ -67,6 +67,38 @@ int memcmp(const void *s1, const void *s2, size_t n) {
     CHOOK_BODY(memcmp, PEACOCK_ALARM(memcmp), s1, s2, n)
 }
 
+#elif defined(__FreeBSD__)
+
+static size_t (*libc_fwrite)(const void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream);
+
+static size_t (*libc_fread)(void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream);
+
+static void *(*libc_memset)(void *b, int c, size_t len);
+
+static void *(*libc_memcmp)(const void *b1, const void *b2, size_t len);
+
+static void *(*libc_memcpy)(void *dst, const void *src, size_t len);
+
+size_t fwrite(const void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream) {
+    CHOOK_BODY(fwrite, {}, ptr, size, nmemb, stream)
+}
+
+size_t fread(void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream) {
+    CHOOK_BODY(fread, PEACOCK_ALARM(fread), ptr, size, nmemb, stream)
+}
+
+void *memset(void *b, int c, size_t len) {
+    CHOOK_BODY(memset, PEACOCK_ALARM(memset), b, c, len)
+}
+
+void *memcmp(const  void *b1, const void *b2, size_t len) {
+    CHOOK_BODY(memcmp, PEACOCK_ALARM(memcmp), b1, b2, len)
+}
+
+void *memcpy(void *dst, const void *src, size_t len) {
+    CHOOK_BODY(memcpy, PEACOCK_ALARM(memcpy), dst, src, len)
+}
+
 #else
 # error Some code wanted.
 #endif

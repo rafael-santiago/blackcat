@@ -17,6 +17,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
+#if defined(__FreeBSD__)
+# include <sys/wait.h>
+#endif
 #if !defined(_WIN32)
 # include <unistd.h>
 # include <fcntl.h>
