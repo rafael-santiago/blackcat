@@ -94,6 +94,6 @@ blackcat_cmd_count_epilogue:
 }
 
 int blackcat_cmd_count_help(void) {
-    fprintf(stdout, "use: blackcat count --unlocked | --locked | --plain [--quiet]");
+    fprintf(stdout, "use: blackcat count --unlocked | --locked | --plain [--quiet]\n");
     return 0;
 }
