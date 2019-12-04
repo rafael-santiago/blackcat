@@ -99,7 +99,7 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
                                                      kryptos_u8_t **key, size_t *key_size,
                                                      struct blackcat_keychain_handle_ctx *handle) {
     blackcat_protlayer_chain_ctx *hp, *cp;
-    char err_mesg[1024] = "";
+    char err_mesg[1024];
 
     if (handle == NULL) {
         return chain;
@@ -125,6 +125,8 @@ blackcat_protlayer_chain_ctx *add_protlayer_to_chain(blackcat_protlayer_chain_ct
             goto add_protlayer_to_chain_epilogue;
         }
     }
+
+    memset(err_mesg, 0, sizeof(err_mesg));
 
     if (blackcat_set_keychain(&cp, algo_params, algo_params_size,
                               key, key_size, BLACKCAT_PROTLAYER_EXTRA_ARGS_NR, handle, err_mesg) == 0) {
