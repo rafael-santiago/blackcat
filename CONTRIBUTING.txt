@@ -30,6 +30,43 @@ Firstly, thank you for contributing. You should consider the following before su
 
 The best way of knowing what could be done is reading 'doc/todo.txt'.
 
+Avoiding libc hooking
+=====================
+
+Bad people could use libc hooking, poisoning, etc in order to steal sensitive information such as passwords. Due to it
+is important to antecipate this issue by avoiding external hooking and also direct hooking (LD_PRELOAD, as instance).
+
+    - You must avoid using direct references to memset(), memcmp() and memcpy(). Anyway, you should not avoid use them
+      when coding your stuff. How? You must pass the following defines to the compiler:
+            . -Dmemset=blackcat_memset
+            . -Dmemcmp=blackcat_memcmp
+            . -Dmemcpy=blackcat_memcpy
+      Put those defines into the Hefesto's invocation file (.ivk) through the '--cflag' option;
+    - The defines above create a dependency that you must satisfy by linking your new module with 'libbbase.a';
+    - Always verify the bad functions usage in any new module. You should do it with the build function has_bad_funcs()
+      defined into 'forgeutils/toolsets.hsl'. The general usage is:
+            'has_bad_funcs($bad_funcs_list, $src_list, $includes_list, $cflags_list)'
+      It returns 1 if a bad function occurrence was found into an implementation file.
+      Sometimes the $bad_funcs_list can be cumbersome/useless of maintaining into your build script logics, so you can
+      use the Hefesto's syscall hefesto.sys.lines_from_file():
+            'has_bad_funcs(hefesto.sys.lines_from_file("../BAD_FUNCS", ".*"), $src_list, $includes_list, $cflags_list)'
+      Actually, has_bad_funcs() must be called at the end of the build, into the epilogue, when something was really built:
+            libmeow.epilogue() {
+                if (hefesto.sys.last_forge_result() == 0) { # No build errors
+                    if (has_bad_funcs(hefesto.sys.lines_from_file("../BAD_FUNCS", ".*"),
+                                      $src,
+                                      $inc,
+                                      $cflags)) {
+                        hefesto.project.abort(1); # Someone has used a function listed into 'src/BAD_FUNCS'
+                    }
+                }
+            }
+    - Turning memset, memcmp and memcpy into defines will avoid direct definitions for those functions, but what to
+      do about indirect definitions done in external libraries (including libc)? You must link the application by using
+      static linking. It can be done by passing the option '--link-model=static' through Hefesto's invocation file (.ivk);
+
+Thanks for reading it and being careful about best practices when contributing! You are awesome! :)
+
 Code style
 ==========
 
