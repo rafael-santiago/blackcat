@@ -27,7 +27,9 @@ blackcat-cmd-tests.preloading() {
 
 blackcat-cmd-tests.prologue() {
     if (hefesto.sys.os_name() != "windows") {
-        build("hdev");
+        if (build("hdev") != 0) {
+            hefesto.project.abort(1);
+        }
     }
 
     $src.ls(".*\\.c$");
@@ -78,13 +80,17 @@ blackcat-cmd-tests.prologue() {
     if ($option.count() > 0 || $skip_net_tests.index_of(hefesto.sys.os_name()) > -1) {
         $cflags.add_item("-DSKIP_NET_TESTS=1");
     } else {
-        build("ntool");
+        if (build("ntool") != 0) {
+            hefesto.project.abort(1);
+        }
     }
 
     $option = hefesto.sys.get_option("allow-bad-funcs");
 
     if ($option.count() == 0) {
-        build("chook");
+        if (build("chook") != 0) {
+            hefesto.project.abort(1);
+        }
     } else {
         hefesto.sys.echo("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" +
                          "! BUILD WARN: You have passed '--allow-bad-funcs' it means that some common libc  !\n" +
