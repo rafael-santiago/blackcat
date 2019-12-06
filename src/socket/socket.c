@@ -1313,7 +1313,14 @@ static int do_xchg_server(void) {
     struct sockaddr_in sin;
     socklen_t slen;
     unsigned int yeah_butt_head = 1;
-    size_t seed_sizes[5] = { 4, 8, 16, 32, 64 }; // INFO(Rafael): Seeds from 32 up to 512 bits.
+    size_t seed_sizes[5];
+
+    // INFO(Rafael): Seeds from 32 up to 512 bits.
+    seed_sizes[0] = 4;
+    seed_sizes[1] = 8;
+    seed_sizes[2] = 16;
+    seed_sizes[3] = 32;
+    seed_sizes[4] = 64;
 
     // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
     //               Due to it, let's avoid a deadlock by doing it before anything.
@@ -1493,8 +1500,15 @@ static int do_xchg_client(void) {
     ssize_t buf_size;
     struct sockaddr_in sin;
     socklen_t slen;
-    size_t seed_sizes[5] = { 4, 8, 16, 32, 64 }; // INFO(Rafael): Seeds from 32 up to 512 bits.
+    size_t seed_sizes[5];
     struct hostent *hp;
+
+    // INFO(Rafael): Seeds from 32 up to 512 bits.
+    seed_sizes[0] = 4;
+    seed_sizes[1] = 8;
+    seed_sizes[2] = 16;
+    seed_sizes[3] = 32;
+    seed_sizes[4] = 64;
 
     // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
     //               Due to it, let's avoid a deadlock by doing it before anything.
