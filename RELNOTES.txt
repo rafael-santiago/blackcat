@@ -3,6 +3,37 @@
 
     Rafael
 --
+v1.3.0 [git-tag: 'v1.3.0']
+
+    Features:
+
+        - Now build implements the option '--clean-modules' making clean builds easier.
+        - Cmd tool's system tests tidied up.
+        - Soft-tokens implemented.
+        - Manual reader implemented through command 'man'.
+        - Build adjustments for MINIX.
+        - Pager selection improved on ('status' command).
+        - Stop using DES for catalog encryption.
+        - Showing available kdfs through command 'show' (kdfs).
+        - Fixing get_test_protlayer(). It was making tests break randomly.
+        - Using snprintf instead of sprintf when possible.
+        - Using strncat instead of strcat when possible.
+        - Encryption by socket hooking implemented in NetBSD, but e2ee not implemented yet.
+        - Now also running net tests on FreeBSD, OpenBSD and NetBSD.
+        - Commands 'lock *' and 'unlock *' speeded.
+        - Now is possible to pass extended asciis as cipher parameters by using escaped chars
+          (e.g.:\xde\xad\xbe\xef).
+        - All protection layer is being encoded with radix-64 inside the catalog.
+        - Native memcmp, memcpy and memset were implemented (libc hook avoidance measure).
+        - Now linking statically when possible (libc hook avoidance measure).
+        - Now build searches for bad functions usages.
+        - Testing for libc hooking avoidance.
+        - Implemented the command 'count'.
+
+    Bugfixes:
+
+        - None!
+
 v1.2.0 [git-tag: 'v1.2.0']
 
     Features:
