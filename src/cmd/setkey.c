@@ -29,14 +29,17 @@ int blackcat_cmd_setkey(void) {
     int keyed_alike;
     blackcat_hash_processor catalog_hash_proc, key_hash_proc, protection_layer_hash_proc;
     blackcat_encoder encoder_proc;
-    kryptos_u8_t *new_key[3] = { NULL, NULL, NULL };
-    size_t new_key_size[3] = { 0, 0, 0 };
+    kryptos_u8_t *new_key[3];
+    size_t new_key_size[3];
     char *prompt;
     blackcat_protlayer_chain_ctx *p_layer = NULL;
     void *key_hash_algo_args = NULL;
     int cost;
     char *kdf = NULL;
     struct blackcat_keychain_handle_ctx handle;
+
+    new_key[0] = new_key[1] = new_key[2] = NULL;
+    new_key_size[0] = new_key_size[1] = new_key_size[2] = 0;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 1)) != 0) {
         goto blackcat_cmd_setkey_epilogue;

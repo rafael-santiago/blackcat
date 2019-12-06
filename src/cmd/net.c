@@ -468,8 +468,11 @@ static int mk_dh_key_pair(void) {
     FILE *fp = NULL;
     kryptos_u8_t *k_pub = NULL, *k_priv = NULL, *enc_k_priv = NULL;
     size_t k_pub_size, k_priv_size, enc_k_priv_size;
-    kryptos_u8_t *kpriv_key[2] = { NULL, NULL };
-    size_t kpriv_key_size[2] = { 0, 0 };
+    kryptos_u8_t *kpriv_key[2];
+    size_t kpriv_key_size[2];
+
+    kpriv_key[0] = kpriv_key[1] = NULL;
+    kpriv_key_size[0] = kpriv_key_size[1] = 0;
 
     kryptos_dh_init_xchg_ctx(dh);
 

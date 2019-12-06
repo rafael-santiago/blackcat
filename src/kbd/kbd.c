@@ -58,7 +58,7 @@ kryptos_u8_t *blackcat_getuserkey(size_t *key_size) {
 
     *key_size = 0;
 
-    new = old;
+    memcpy(&new, &old, sizeof(new));
     new.c_lflag &= ~ECHO;
     if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &new) != 0) {
         goto blackcat_getuserkey_epilogue;

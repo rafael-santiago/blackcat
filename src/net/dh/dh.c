@@ -35,7 +35,7 @@ static kryptos_u8_t *get_mp_as_raw_buf(kryptos_mp_value_t *mp, size_t *buf_size)
 int skey_xchg_server(struct skey_xchg_ctx *sx) {
     // WARN(Rafael): For the sake of simplicity this function is being tested in cmd tool's poking test.
     int err = EINVAL;
-    kryptos_u8_t *skey[2] = { NULL, NULL };
+    kryptos_u8_t *skey[2];
     size_t skey_size[2];
     int sockfd = -1, csockfd = -1;
     struct sockaddr_in sk_in;
@@ -48,6 +48,8 @@ int skey_xchg_server(struct skey_xchg_ctx *sx) {
     sx->session_key = NULL;
     sx->session_key_size = 0;
     sx->ret = err;
+
+    skey[0] = skey[1] = NULL;
 
     if (sx->libc_socket == NULL) {
         sx->libc_socket = socket;

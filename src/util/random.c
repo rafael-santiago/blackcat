@@ -11,7 +11,7 @@ kryptos_u8_t *random_printable_padding(size_t *size) {
     // WARN(Rafael): This function only generates random blocks from 1b up to 1Kb. However,
     //               it is enough to make harder the building of an infrastructure to promote
     //               a chosen-plaintext attack over the catalog's data.
-    kryptos_u8_t s1[62] = {
+    static kryptos_u8_t s1[62] = {
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
         'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
