@@ -62,7 +62,7 @@ int blackcat_cmd_count(void) {
 
     if (quiet) {
         // INFO(Rafael): When --quiet is passed the count command will only return the total count as its exit code.
-        //               Due to it do not do any wrong when passing this flag is quite important...
+        //               Due to it do not do any wrong when passing quiet is quite important...
         exit_code = count[(size_t)'P'] + count[(size_t)'L'] + count[(size_t)'U'];
     } else {
         if (blackcat_get_bool_option("plain", 0)) {

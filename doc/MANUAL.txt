@@ -1495,8 +1495,8 @@ stdout.
 Getting some count stats from your repo
 =======================================
 
-A good way of checking if there are files in some status is to use the count command. This command expects
-only the following flags: '--unlocked', '--locked' and '--plain'. Related to file status, of course. You can
+A good way of checking if there are files in some state is to use the count command. This command expects
+the following flags only: '--unlocked', '--locked' and '--plain'. Related to file status, of course. You can
 pass from only one to all of them.
 
 Let's suppose that Alice wants to know how many unlocked files there are in her repo:
@@ -1510,7 +1510,7 @@ she could use the additional flag '--quiet':
     Alice@AlicesCave:/home# echo "Total of unlocked files: $?"
 
 As you see, when '--quiet' is passed the count command will only return the total count as its exit code.
-Due to it do not do any wrong when passing this flag is quite important...
+Due to it do not do any wrong when passing quiet is quite important...
 
 Few tips for not being a tracked average sheep out there
 ========================================================

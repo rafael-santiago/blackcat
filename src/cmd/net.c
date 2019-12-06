@@ -5,7 +5,11 @@
  * be found in the COPYING file.
  *
  */
-#if defined(__unix__)
+#if defined(__unix__) && !defined(__minix__)
+// WARN(Rafael): Until now I could not be able to actually do a decent system test on Minix, due to the lack of a good sniffer,
+//               for this reason I have chosen make net command unavailable on Minix. If it cannot be tested it must not be
+//               used. But if you want to use it anyway, all you should do is just removing '!defined(__minix__)' and
+//               crossing your fingers.
 
 #include <cmd/net.h>
 #include <cmd/defs.h>

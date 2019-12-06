@@ -37,6 +37,8 @@
 #endif
 #if defined(__unix__)
 # include <cmd/paranoid.h>
+#endif
+#if defined(__unix__) && !defined(__minix__)
 # include <cmd/net.h>
 #endif
 #include <cmd/did_you_mean.h>
@@ -76,6 +78,8 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_commands)
 #endif
 #if defined(__unix__)
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid),
+#endif
+#if defined(__unix__) && !defined(__minix__)
     BLACKCAT_COMMAND_TABLE_ENTRY(net),
 #endif
     BLACKCAT_COMMAND_TABLE_ENTRY(setkey),
