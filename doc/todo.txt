@@ -1,3 +1,4 @@
+(A) Use the enhanced/strengthened version of libkryptos with all new security worries. +Build,+Improvement
 (A) Actually upgrade the current bcrepo metadata version when the found prior one is compatible. +Improvement
 (A) Run cmd/test/main.c:blackcat_poke_libc_hooking_avoidance_tests in other Unixes besides Linux.
     Fix any found issue. (It was done. Verify if it is really okay.) +Tests,+Improvement
