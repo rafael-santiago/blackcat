@@ -1,5 +1,9 @@
+(A) Actually upgrade the current bcrepo metadata version when the found prior one is compatible. +Improvement
 (A) Run cmd/test/main.c:blackcat_poke_libc_hooking_avoidance_tests in other Unixes besides Linux.
-    Fix any found issue. +Tests,+Improvement
+    Fix any found issue. (It was done. Verify if it is really okay.) +Tests,+Improvement
+(B) Make fs/bcrepo/bcrepo.c:remove_go_ups_from_path() better by also considering '../thing' instead of turning it into
+    './thing'. +Improvement
+(B) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (B) Extend the fs module capabilities. +NewFeature
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
