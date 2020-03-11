@@ -13,3 +13,6 @@
 [submodule "src/cmd/test/kook"]
 	path = src/cmd/test/hdev/kook
 	url = https://github.com/rafael-santiago/kook
+[submodule "src/lib/lethe"]
+	path = src/lib/lethe
+	url = https://github.com/rafael-santiago/lethe

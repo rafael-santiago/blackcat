@@ -44,6 +44,7 @@ blackcat.prologue() {
         hefesto.sys.rm("lib/kryptos/lib/libkryptos.a");
         hefesto.sys.rm("lib/cutest/src/lib/libcutest.a");
         hefesto.sys.rm("lib/accacia/lib/libaccacia.a");
+        hefesto.sys.rm("lib/lethe/lib/liblethe.a");
     }
 
     var subforges type list;

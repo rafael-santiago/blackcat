@@ -200,6 +200,32 @@ local function build_libaccacia() : result type int {
     result $exit_code;
 }
 
+local function build_liblethe() : result type int {
+    var libpath type string;
+    var rootdir type string;
+
+    $rootdir = hefesto.sys.env("BLACKCAT_ROOTDIR");
+
+    $libpath = hefesto.sys.make_path($rootdir, "lib/lethe/lib/liblethe.a");
+
+    var exit_code type int;
+
+    $exit_code = 0;
+
+    if (isfile($libpath) == 0) {
+        $exit_code = 1;
+        var oldcwd type string;
+        $oldcwd = hefesto.sys.pwd();
+        $libpath = hefesto.sys.make_path($rootdir, "lib/lethe/src");
+        if (hefesto.sys.cd($libpath)) {
+            $exit_code = hefesto.sys.run("hefesto --forge-type=lib");
+            hefesto.sys.cd($oldcwd);
+        }
+    }
+
+    result $exit_code;
+}
+
 local function build_hdev() : result type int {
     var option type list;
 
