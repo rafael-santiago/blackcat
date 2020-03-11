@@ -51,6 +51,10 @@ libbfs.prologue() {
     if (build("libkryptos") != 0) {
         hefesto.project.abort(1);
     }
+
+    if (build("liblethe") != 0) {
+        hefesto.project.abort(1);
+    }
 }
 
 libbfs.epilogue() {

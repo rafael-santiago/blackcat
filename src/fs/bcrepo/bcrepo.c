@@ -17,6 +17,7 @@
 #include <util/random.h>
 #include <dev/defs/io.h>
 #include <dev/defs/types.h>
+#include <lethe.h>
 #include <kryptos.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -2452,98 +2453,28 @@ static int bfs_data_wiping(const char *rootpath, const size_t rootpath_size,
     // TODO(Rafael): Try to find a way of removing thumbnails and things like that. If the user takes "advantage"
     //               this kind of disservices would be cool to protect she/he against her/his own naivety.
     char fullpath[4096];
-    FILE *fp = NULL;
-    kryptos_u8_t *data = NULL;
-    int no_error = 1;
+    int no_error = 0;
+    static int g_data_wiping_init_done = 0;
+
+    if (!g_data_wiping_init_done) {
+        // INFO(Rafael): set_x(x) could sound a little bit dumb & crazy but every reference to memset, memcpy and memcmp
+        //               in blackcat's code is actually a reference to more internal implementations of those functions. At
+        //               the end 'memset' will point to another function than the original libc's memset, for example.
+        g_data_wiping_init_done = lethe_set_memset(memset) == 0 &&
+                                  lethe_set_memcpy(memcpy) == 0 &&
+                                  lethe_set_memcmp(memcmp) == 0 &&
+                                  lethe_set_stat(bstat)    == 0;
+        if (!g_data_wiping_init_done) {
+            goto bfs_data_wiping_epilogue;
+        }
+    }
 
     bcrepo_mkpath(fullpath, sizeof(fullpath), rootpath, rootpath_size, path, path_size);
 
-#define bfs_data_wiping_bit_fliping_step(fn, f, d, ds, bp, ne, esc_text) {\
-    if (((f) = fopen((fn), "wb")) == NULL) {\
-        fprintf(stderr, "ERROR: Unable to open file '%s' for wiping.\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    memset((d), (bp), (ds));\
-    if (fwrite((d), 1, (ds), (f)) == -1) {\
-        fprintf(stderr, "ERROR: Unable to write data to the file '%s'. The data wiping was skipped!\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    if (fflush((f)) != 0) {\
-        fprintf(stderr, "ERROR: Unable to write data to the file '%s'. The data wiping was skipped!\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    /*INFO(Rafael): Yes, we will flush it twice.*/\
-    fclose((f));\
-    (f) = NULL;\
-}
-
-#define bfs_data_wiping_paranoid_reverie_step(fn, d, ds, f, ne, esc_text) {\
-    if (((f) = fopen((fn), "wb")) == NULL) {\
-        fprintf(stderr, "ERROR: Unable to open file '%s' for wiping.\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    (d) =  kryptos_get_random_block((ds));\
-    if ((d) == NULL) {\
-        fprintf(stderr, "WARN: Not enough memory. The data wiping was incomplete!\n");\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    if (fwrite((d), 1, (ds), (f)) == -1) {\
-        fprintf(stderr, "WARN: Unable to write data to the file '%s'. The data wiping was incomplete!\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    if (fflush((f)) != 0) {\
-        fprintf(stderr, "WARN: Unable to flush data to the file '%s'. The data wiping was incomplete!\n", (fn));\
-        (ne) = 0;\
-        goto esc_text;\
-    }\
-    /*INFO(Rafael): Yes, we will flush it twice.*/\
-    fclose((f));\
-    (f) = NULL;\
-    kryptos_freeseg((d), (ds));\
-    (d) = NULL;\
-}
-
-    data = (kryptos_u8_t *) kryptos_newseg(data_size);
-
-    if (data == NULL) {
-        fprintf(stderr, "ERROR: Not enough memory to perform data wiping. It was skipped!\n");
-        no_error = 0;
-        goto bfs_data_wiping_epilogue;
-    }
-
-    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size, 255, no_error, bfs_data_wiping_epilogue);
-    bfs_data_wiping_bit_fliping_step(fullpath, fp, data, data_size,   0, no_error, bfs_data_wiping_epilogue);
-
-    kryptos_freeseg(data, data_size);
-    data = NULL;
-
-    // INFO(Rafael): This step of the implemented data wiping is based on the suggestions given by Bruce Schneier
-    //               in his book Applied Cryptography [228 pp.].
-
-    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
-    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
-    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
-    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
-    bfs_data_wiping_paranoid_reverie_step(fullpath, data, data_size, fp, no_error, bfs_data_wiping_epilogue);
-
-#undef bfs_data_wiping_bit_fliping_step
-#undef bfs_data_wiping_paranoid_reverie_step
+    // INFO(Rafael): Again: at this point we only want 'data oblivion'.
+    no_error = (lethe_drop(fullpath, kLetheDataOblivion | kLetheCustomRandomizer, kryptos_get_random_byte) == 0);
 
 bfs_data_wiping_epilogue:
-
-    if (data != NULL) {
-        kryptos_freeseg(data, data_size);
-    }
-
-    if (fp != NULL) {
-        fclose(fp);
-    }
 
     memset(fullpath, 0, sizeof(fullpath));
 
