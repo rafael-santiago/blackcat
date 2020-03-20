@@ -4348,9 +4348,23 @@ static int is_metadata_compatible(const char *version) {
 
 static int bc_version_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {
     bfs_catalog_ctx *cp = *catalog;
+    int is_compatible = 0;
+    char *curr_version;
+    size_t size;
     cp->bc_version = (char *)get_catalog_field(BCREPO_CATALOG_BC_VERSION, in, in_size);
+    if ((is_compatible = is_metadata_compatible(cp->bc_version)) && strcmp(cp->bc_version, BCREPO_METADATA_VERSION) < 0) {
+        // INFO(Rafael): If the current metadata version is compatible and older than the current tool's metadata version,
+        //               we will try to upgrade the old version to the current tool's metadata newer compatible version.
+        size = strlen(BCREPO_METADATA_VERSION);
+        if ((curr_version = (char *)kryptos_newseg(size + 1)) != NULL) {
+            memset(curr_version, 0, size + 1);
+            memcpy(curr_version, BCREPO_METADATA_VERSION, size);
+            kryptos_freeseg(cp->bc_version, strlen(cp->bc_version));
+            cp->bc_version = curr_version;
+        }
+    }
     // INFO(Rafael): In case of incompatibility we will abort the reading here.
-    return is_metadata_compatible(cp->bc_version);
+    return is_compatible;
 }
 
 static int otp_r(bfs_catalog_ctx **catalog, const kryptos_u8_t *in, const size_t in_size) {

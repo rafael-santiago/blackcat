@@ -30,6 +30,7 @@ CUTE_DECLARE_TEST_CASE(fs_tests);
 CUTE_DECLARE_TEST_CASE(relpath_ctx_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_write_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_read_tests);
+CUTE_DECLARE_TEST_CASE(bcrepo_metadata_version_update_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_stat_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_validate_key_tests);
 CUTE_DECLARE_TEST_CASE(bcrepo_get_rootpath_tests);
@@ -86,6 +87,7 @@ CUTE_TEST_CASE(fs_tests)
     CUTE_RUN_TEST(bcrepo_stat_tests);
     CUTE_RUN_TEST(bcrepo_validate_key_tests);
     remove(BCREPO_DATA);
+    CUTE_RUN_TEST(bcrepo_metadata_version_update_tests);
     CUTE_RUN_TEST(bcrepo_get_rootpath_tests);
     CUTE_RUN_TEST(bcrepo_catalog_file_tests);
     CUTE_RUN_TEST(strglob_tests);
@@ -2692,6 +2694,120 @@ CUTE_TEST_CASE(bcrepo_read_tests)
 
     kryptos_freeseg(data, data_size);
     kryptos_freeseg(hmac_algo, strlen(hmac_algo));
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(bcrepo_metadata_version_update_tests)
+    bfs_catalog_ctx catalog, *cp = NULL;
+    bfs_catalog_relpath_ctx files;
+    kryptos_u8_t *key = "black coffee";
+    kryptos_u8_t *data;
+    size_t data_size;
+
+    memset(&catalog, 0, sizeof(catalog));
+
+    catalog.bc_version = "1.2.0"; // INFO(Rafael): Older but compatible version.
+    catalog.otp = 0;
+    catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
+    catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
+    catalog.hmac_scheme = get_hmac_catalog_scheme(get_test_hmac(0));
+    catalog.key_hash_algo = get_hash_processor("sha-224");
+    catalog.key_hash_algo_size = get_hash_size("sha-224");
+    catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
+    catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
+    catalog.encoder = get_encoder("uuencode");
+    catalog.kdf_params = NULL;
+    catalog.kdf_params_size = 0;
+    catalog.salt = NULL;
+    catalog.salt_size = 0;
+
+    catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
+    CUTE_ASSERT(catalog.key_hash != NULL);
+
+    catalog.protection_layer = g_fs_test_protlayer;
+    catalog.protection_layer_size = strlen(catalog.protection_layer);
+    catalog.files = &files;
+
+    files.head = &files;
+    files.tail = &files;
+    files.path = "a/b/c.txt";
+    files.path_size = strlen("a/b/c.txt");
+    files.status = 'U';
+    files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
+    files.seed_size = 8;
+    snprintf(files.timestamp, sizeof(files.timestamp) - 1, "%s", "123456789");
+    files.last = NULL;
+    files.next = NULL;
+
+    CUTE_ASSERT(bcrepo_write(BCREPO_DATA, &catalog, "it is what i need", strlen("it is what i need")) == 1);
+    kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
+
+    cp = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(cp != NULL);
+
+    data = bcrepo_read(BCREPO_DATA, cp, &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != 0);
+
+    CUTE_ASSERT(bcrepo_stat(&cp, "it is what i need", strlen("it is what i need"), &data, &data_size) == 1);
+    CUTE_ASSERT(cp->bc_version != NULL);
+    CUTE_ASSERT(strcmp(cp->bc_version, BCREPO_METADATA_VERSION) == 0); // INFO(Rafael): It must be upgraded.
+
+    del_bfs_catalog_ctx(cp);
+    remove(BCREPO_DATA);
+
+    memset(&catalog, 0, sizeof(catalog));
+
+    catalog.bc_version = "999.999.999"; // INFO(Rafael): Newer and incompatible version.
+    catalog.otp = 0;
+    catalog.catalog_key_hash_algo = get_hash_processor("whirlpool");
+    catalog.catalog_key_hash_algo_size = get_hash_size("whirlpool");
+    catalog.hmac_scheme = get_hmac_catalog_scheme(get_test_hmac(0));
+    catalog.key_hash_algo = get_hash_processor("sha-224");
+    catalog.key_hash_algo_size = get_hash_size("sha-224");
+    catalog.protlayer_key_hash_algo = get_hash_processor("sha3-384");
+    catalog.protlayer_key_hash_algo_size = get_hash_size("sha3-384");
+    catalog.encoder = get_encoder("uuencode");
+    catalog.kdf_params = NULL;
+    catalog.kdf_params_size = 0;
+    catalog.salt = NULL;
+    catalog.salt_size = 0;
+
+    catalog.key_hash = bcrepo_hash_key(key, strlen(key), catalog.key_hash_algo, NULL, &catalog.key_hash_size);
+    CUTE_ASSERT(catalog.key_hash != NULL);
+
+    catalog.protection_layer = g_fs_test_protlayer;
+    catalog.protection_layer_size = strlen(catalog.protection_layer);
+    catalog.files = &files;
+
+    files.head = &files;
+    files.tail = &files;
+    files.path = "a/b/c.txt";
+    files.path_size = strlen("a/b/c.txt");
+    files.status = 'U';
+    files.seed = "\x00\x11\x22\x33\x44\x55\x66\x77";
+    files.seed_size = 8;
+    snprintf(files.timestamp, sizeof(files.timestamp) - 1, "%s", "123456789");
+    files.last = NULL;
+    files.next = NULL;
+
+    CUTE_ASSERT(bcrepo_write(BCREPO_DATA, &catalog, "it is what i need", strlen("it is what i need")) == 1);
+    kryptos_freeseg(catalog.key_hash, catalog.key_hash_size);
+
+    cp = new_bfs_catalog_ctx();
+
+    CUTE_ASSERT(cp != NULL);
+
+    data = bcrepo_read(BCREPO_DATA, cp, &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size != 0);
+
+    CUTE_ASSERT(bcrepo_stat(&cp, "it is what i need", strlen("it is what i need"), &data, &data_size) == 0);
+    CUTE_ASSERT(cp->bc_version != NULL);
+    CUTE_ASSERT(strcmp(cp->bc_version, "999.999.999") == 0); // INFO(Rafael): It must not be upgraded.
+
+    del_bfs_catalog_ctx(cp);
+    remove(BCREPO_DATA);
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(bcrepo_write_tests)
