@@ -62,6 +62,8 @@ net-tests.prologue() {
     } else if (hefesto.sys.os_name() == "sunos") {
         $cflags.add_item("-DNO_CUTEST_BACKTRACING");
         $ldflags.add_item("-lpthread");
+        $ldflags.add_item("-lsocket");
+        $ldflags.add_item("-lnsl");
     }
 
     if (hefesto.sys.os_name() != "windows") {
