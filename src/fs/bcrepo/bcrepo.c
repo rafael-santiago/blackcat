@@ -27,6 +27,9 @@
 #include <sys/stat.h>
 #if defined(__unix__)
 # include <sys/ioctl.h>
+# if defined(__sun__)
+#  include <sys/filio.h>
+# endif
 #elif defined(_WIN32)
 # include <windows.h>
 #endif
