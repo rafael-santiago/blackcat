@@ -92,7 +92,7 @@ struct blackcat_keychain_handle_ctx {
     struct blackcat_kdf_clockwork_ctx *kdf_clockwork;
 };
 
-typedef struct blackcat_protlayer_chain {
+struct blackcat_protlayer_chain {
     struct blackcat_protlayer_chain *head, *tail;
     int is_hmac;
     blackcat_encoder encoder;
@@ -106,6 +106,6 @@ typedef struct blackcat_protlayer_chain {
     void *arg[BLACKCAT_PROTLAYER_EXTRA_ARGS_NR];
     size_t argc;
     struct blackcat_protlayer_chain *last, *next;
-}blackcat_protlayer_chain_ctx;
+};
 
 #endif
