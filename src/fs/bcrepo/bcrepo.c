@@ -1745,7 +1745,7 @@ static int setfilectime(const char *path) {
     //
     //                          - get the current system time;
     //                          - change the system time to BLACKCAT_EPOCH (11/05/1970 16:05:00);
-    //                          - will the the original file permissions;
+    //                          - get the original file permissions;
     //                          - change the file permissions (0777);
     //                          - change it back to the original ones;
     //                          - re-adjust the system time to the current time (considering the elapsed time);
@@ -1756,7 +1756,11 @@ static int setfilectime(const char *path) {
     struct timezone tz_old;
     int err, tset = 0;
     struct stat st_old;
+#if defined(__sun__)
+    struct timeval times[2];
+#else
     mode_t temp_mode;
+#endif
 
     if ((err = gettimeofday(&tv_old, &tz_old)) != 0) {
         goto setfilectime_epilogue;
@@ -1775,6 +1779,7 @@ static int setfilectime(const char *path) {
         goto setfilectime_epilogue;
     }
 
+#if !defined(__sun__)
     tset |= 2;
 
     temp_mode = S_IRUSR | S_IWUSR | S_IXUSR |
@@ -1784,12 +1789,21 @@ static int setfilectime(const char *path) {
     if ((err = chmod(path, temp_mode)) != 0) {
         goto setfilectime_epilogue;
     }
+#elif defined(__sun__)
+    // INFO(Rafael): If we call touch through a system("touch <path>") it will lock the current session, let's
+    //               perform our own handmade touch ;)
+    times[0] = bc_epch;
+    times[1] = bc_epch;
+    err = utimes(path, times);
+#endif
 
 setfilectime_epilogue:
 
+#if !defined(__sun__)
     if (tset & 2) {
         chmod(path, st_old.st_mode);
     }
+#endif
 
     if (tset & 1) {
         gettimeofday(&tv_curr, &tz_old);
