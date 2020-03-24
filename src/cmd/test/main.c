@@ -765,9 +765,9 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
 # error Some code wanted.
 #endif
 
-#if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__)
+#if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) == 0);
-#elif defined(_WIN32) || defined(__OpenBSD__) || defined(__minix__)
+#elif defined(_WIN32) || defined(__OpenBSD__) || defined(__minix__) || defined(__sun__)
     CUTE_ASSERT(blackcat("help lkm", "", NULL) != 0);
 #else
 # error Some code wanted.
@@ -777,9 +777,9 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     CUTE_ASSERT(blackcat("help decoy", "", NULL) == 0);
     CUTE_ASSERT(blackcat("help info", "", NULL) == 0);
 
-#if defined(__unix__) && !defined(__minix__)
+#if defined(__unix__) && !defined(__minix__) && !defined(__sun__)
     CUTE_ASSERT(blackcat("help net", "", NULL) == 0);
-#elif defined(__minix__) || defined(_WIN32)
+#elif defined(__minix__) || defined(_WIN32) || defined(__sun__)
     CUTE_ASSERT(blackcat("help net", "", NULL) != 0);
 #else
 # error Some code wanted.
@@ -788,13 +788,13 @@ CUTE_TEST_CASE(blackcat_poke_help_cmd_tests)
     CUTE_ASSERT(blackcat("help not-implemented", "", NULL) != 0);
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show boo help pack unpack paranoid lkm setkey undo decoy info net man count", "", NULL) != 0);
 
-#if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__)
+#if defined(__unix__) && !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack lkm setkey undo decoy info net token man count", "", NULL) == 0);
 #elif defined(_WIN32)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack unpack setkey undo decoy info token man count", "", NULL) == 0);
 #elif defined(__OpenBSD__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack setkey undo decoy info net token man count", "", NULL) == 0);
-#elif defined(__minix__)
+#elif defined(__minix__) || defined(__sun__)
     CUTE_ASSERT(blackcat("help init deinit add rm status lock unlock show help pack paranoid unpack setkey undo decoy info token man count", "", NULL) == 0);
 #else
 # error Some code wanted.

@@ -511,8 +511,17 @@ __bcsck_enter(recvmsg)
     rmsg.msg_namelen = msg->msg_namelen;
     rmsg.msg_iov = &iov;
     rmsg.msg_iovlen = 1;
+#if !defined(__sun__)
     rmsg.msg_control = msg->msg_control;
     rmsg.msg_controllen = msg->msg_controllen;
+#elif defined(__sun__) && defined(_XPG4_2)
+    rmsg.msg_control = msg->msg_control;
+    rmsg.msg_controllen = msg->msg_controllen;
+    rmsg.msg_flags = msg->msg_flags;
+#elif defined(__sun__) && !defined(_XPG_2)
+    rmsg.msg_accrights = msg->msg_accrights;
+    rmsg.msg_accrightslen = msg->msg_accrightslen;
+#endif
 
     iov.iov_base = rbuf;
     iov.iov_len = 0xFFFF;
@@ -818,8 +827,17 @@ __bcsck_enter(sendmsg)
     omsg.msg_namelen = msg->msg_namelen;
     omsg.msg_iov = &iov;
     omsg.msg_iovlen = 1;
+#if !defined(__sun__)
     omsg.msg_control = msg->msg_control;
     omsg.msg_controllen = msg->msg_controllen;
+#elif defined(__sun__) && defined(_XPG4_2)
+    omsg.msg_control = msg->msg_control;
+    omsg.msg_controllen = msg->msg_controllen;
+    omsg.msg_flags = msg->msg_flags;
+#elif defined(__sun__) && !defined(_XPG4_2)
+    omsg.msg_accrights = msg->msg_accrights;
+    omsg.msg_accrightslen = msg->msg_accrightslen;
+#endif
 
     iov.iov_base = obuf;
     iov.iov_len = obuf_size;

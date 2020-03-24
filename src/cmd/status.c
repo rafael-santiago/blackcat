@@ -45,7 +45,7 @@ int blackcat_cmd_status(void) {
     stddest = get_stddest();
 
 #if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__) && !defined(__NetBSD__) &&\
-   !defined(__OpenBSD__) && !defined(__minix__)
+   !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
     if (stddest != NULL && g_blackcat_cmd_status_stdout != NULL) {
         // INFO(Rafael): This trick will ensure a colored output when using less as viewer.
         stdout = stddest;
@@ -100,7 +100,7 @@ int blackcat_cmd_status(void) {
 blackcat_cmd_status_epilogue:
 
 #if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__) && !defined(__NetBSD__) &&\
-   !defined(__OpenBSD__) && !defined(__minix__)
+   !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
     if (stdout != g_blackcat_cmd_status_stdout) {
         stdout = g_blackcat_cmd_status_stdout;
     }
@@ -130,7 +130,7 @@ static FILE *get_stddest(void) {
     FILE *stddest = NULL;
 
 #if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__) && !defined(__NetBSD__) &&\
-   !defined(__OpenBSD__) && !defined(__minix__)
+   !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
     if (g_blackcat_cmd_status_stdout == NULL) {
         g_blackcat_cmd_status_stdout = stdout;
     }
