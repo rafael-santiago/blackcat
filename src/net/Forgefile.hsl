@@ -38,7 +38,7 @@ libbcnet.prologue() {
         $cflags.add_item("-Wno-pointer-sign");
     }
 
-    if (hefesto.sys.os_name() == "netbsd") {
+    if (hefesto.sys.os_name() == "netbsd" || hefesto.sys.os_name() == "sunos") {
         $cflags.add_item("-std=c99");
     }
 

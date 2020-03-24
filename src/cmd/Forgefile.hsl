@@ -49,6 +49,8 @@ blackcat-cmd.prologue() {
     if (hefesto.sys.os_name() == "netbsd") {
         $cflags.add_item("-std=c99");
         $ldflags.add_item("-lprop");
+    } else if (hefesto.sys.os_name() == "sunos") {
+        $cflags.add_item("-std=c99");
     }
 
     if (build("libkryptos") != 0) {
