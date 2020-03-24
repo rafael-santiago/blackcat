@@ -14,6 +14,14 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/file.h>
+#if defined(__sun__)
+# include <fcntl.h>
+
+# define LOCK_EX 2
+# define LOCK_UN 8
+
+static int flock(int fd, int operation);
+#endif
 
 #define BCNETDB_HMAC_SCHEME "BCNETDB HMAC SCHEME"
 
@@ -572,6 +580,24 @@ blackcat_netdb_select_epilogue:
 
     return rule;
 }
+
+#if defined(__sun__)
+static int flock(int fd, int operation) {
+    struct flock lck_info;
+
+    memset(&lck_info, 0, sizeof(lck_info));
+
+     // INFO(Rafael): Until now we do not need a complete implementation. Let's keep it simple.
+    lck_info.l_type = (operation == LOCK_EX) ? F_WRLCK : F_UNLCK;
+    lck_info.l_whence = SEEK_SET;
+    lck_info.l_start = (off_t)0;
+    lck_info.l_len = (off_t)0;
+
+    return fcntl(fd, F_SETLKW, &lck_info);
+}
+
+#undef LOCK_EX
+#endif
 
 #undef BCNETDB_HMAC_SCHEME
 
