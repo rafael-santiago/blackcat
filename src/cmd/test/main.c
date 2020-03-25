@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||\
-    defined(__minix__)
+    defined(__minix__) || defined(__sun__)
 # include <sys/wait.h>
 #endif
 #if !defined(_WIN32)

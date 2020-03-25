@@ -140,6 +140,10 @@ blackcat-cmd-tests.prologue() {
             $includes.add_item("/usr/local/include");
         }
 
+        if (isdir("/usr/lib")) {
+            $libraries.add_item("/usr/lib");
+        }
+
         if (isdir("/usr/local/lib")) {
             $libraries.add_item("/usr/local/lib");
         }

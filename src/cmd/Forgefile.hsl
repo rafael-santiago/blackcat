@@ -53,6 +53,20 @@ blackcat-cmd.prologue() {
         $cflags.add_item("-std=c99");
     }
 
+    if (hefesto.sys.os_name() != "windows") {
+        if (isdir("/usr/local/include")) {
+            $includes.add_item("/usr/local/include");
+        }
+
+        if (isdir("/usr/lib")) {
+            $libraries.add_item("/usr/lib");
+        }
+
+        if (isdir("/usr/local/lib")) {
+            $libraries.add_item("/usr/local/lib");
+        }
+    }
+
     if (build("libkryptos") != 0) {
         hefesto.project.abort(1);
     }

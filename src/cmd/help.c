@@ -57,7 +57,7 @@ static DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_helper)
 #if defined(__unix__)
     BLACKCAT_COMMAND_TABLE_ENTRY(paranoid_help),
 #endif
-#if defined(__unix__) && !defined(__minix__)
+#if defined(__unix__) && !defined(__minix__) && !defined(__sun__)
     BLACKCAT_COMMAND_TABLE_ENTRY(net_help),
 #endif
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
