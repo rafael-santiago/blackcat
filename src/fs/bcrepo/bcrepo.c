@@ -1032,7 +1032,7 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     }
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ protection-layer-hash: %s\n", get_hash_processor_name(catalog->protlayer_key_hash_algo));
-    fprintf(stdout, " |_ protection-layer: %s");
+    fprintf(stdout, " |_ protection-layer: ");
     bcrepo_info_print_ext_ascii_data(catalog->protection_layer, catalog->protection_layer_size);
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ cascade type: %s\n", (catalog->otp) ? "one-time pad" : "single flow");
