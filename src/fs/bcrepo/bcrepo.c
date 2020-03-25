@@ -1014,6 +1014,9 @@ bcrepo_attach_metainfo_epilogue:
 
 int bcrepo_info(bfs_catalog_ctx *catalog) {
     int no_error = 0;
+#if defined(__sun__)
+    const char *encoder = NULL;
+#endif
 
     if (catalog == NULL) {
         goto bcrepo_info_epilogue;
@@ -1036,7 +1039,13 @@ int bcrepo_info(bfs_catalog_ctx *catalog) {
     bcrepo_info_print_ext_ascii_data(catalog->protection_layer, catalog->protection_layer_size);
     fprintf(stdout, "\n");
     fprintf(stdout, " |_ cascade type: %s\n", (catalog->otp) ? "one-time pad" : "single flow");
+#if !defined(__sun__)
     fprintf(stdout, " |_ encoder: %s\n", get_encoder_name(catalog->encoder));
+#elif defined(__sun__)
+    encoder = get_encoder_name(catalog->encoder);
+    fprintf(stdout, " |_ encoder: %s\n", (encoder != NULL) ? encoder : "(null)");
+    encoder = NULL;
+#endif
 
     no_error = 1;
 
