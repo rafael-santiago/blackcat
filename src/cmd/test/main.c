@@ -660,7 +660,7 @@ CUTE_TEST_CASE(blackcat_poke_count_cmd_tests)
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_poke_libc_hooking_avoidance_tests)
-#if defined(__unix__)
+#if defined(__unix__) && !defined(__sun__) // INFO(Rafael): Until now we are not using static linking on Solaris.
     char *protlayer = get_test_protlayer(0, 3);
     char bcmd[4096];
 #define CHOOK_ALARM(f) "-- [" #f "] -- 'Somos todos piratas audazes e temerarios, terriveis e ordinarios..."\
