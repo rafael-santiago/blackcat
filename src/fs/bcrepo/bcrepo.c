@@ -3618,6 +3618,199 @@ bcrepo_stat_epilogue:
 }
 
 char *remove_go_ups_from_path(char *path, const size_t path_size) {
+    char cwd[4096], fullpath[8192], filename[4096];
+    char *lt_path = NULL, *cp, *cp_end;
+    char *path_mmap[4096], **pmp, **pmp_end;
+    size_t go_ups_nr, fullpath_size;
+
+#if defined(__unix__)
+    if (path == NULL || strstr(path, "../") == NULL && strstr(path, "./") == NULL) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+#elif defined(_WIN32)
+    if (path == NULL || strstr(path, "..\\") == NULL && strstr(path, "../") == NULL ||
+                        strstr(path, ".\\") == NULL && strstr(path, "./") == NULL) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+#else
+# error Some code wanted.
+#endif
+
+    if ((lt_path = (char *) kryptos_newseg(path_size + 1)) == NULL) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+
+    memset(lt_path, 0, 4096);
+
+    if (getcwd(cwd, sizeof(cwd) - 1) == NULL) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+
+    cp = path;
+    cp_end = cp + path_size;
+
+    memset(filename, 0, sizeof(filename));
+
+    go_ups_nr = 0;
+
+    while (cp != cp_end && go_ups_nr < sizeof(filename) - 1) {
+#if defined(__unix__)
+        while (strstr(cp, "../") == cp) {
+            cp += 3;
+        }
+        while (strstr(cp, "./") == cp) {
+            cp += 2;
+        }
+#elif defined(_WIN32)
+        while (strstr(cp, "..\\") == cp || strstr(cp, "../") == cp) {
+            cp += 3;
+        }
+        while (strstr(cp, ".\\") == cp || strstr(cp, "./") == cp) {
+            cp += 2;
+        }
+#else
+# error Some code wanted.
+#endif
+        filename[go_ups_nr++] = *cp;
+        cp++;
+    }
+
+    if (strstr(cwd, filename) != NULL) {
+        cp = filename + strlen(cwd);
+    } else {
+        cp = filename;
+    }
+
+    if ((fullpath_size = bcrepo_mkpath(fullpath, sizeof(fullpath) - 1, cwd, strlen(cwd), cp, strlen(cp))) == 0) {
+        goto remove_go_ups_from_path_epilogue;
+    }
+
+    cp = &fullpath[0];
+    cp_end = cp + fullpath_size;
+
+    pmp = &path_mmap[0];
+    pmp_end = pmp + 4096;
+
+    do {
+        *pmp = cp;
+
+#if defined(__unix__)
+        while (cp != cp_end && *cp != '/') {
+            cp++;
+        }
+#elif defined(_WIN32)
+        while (cp != cp_end && *cp != '\\' && *cp != '/') {
+            cp++;
+        }
+#else
+# error Some code wanted.
+#endif
+
+        cp += (cp != cp_end);
+
+        pmp++;
+
+        if (pmp != pmp_end) {
+            *pmp = NULL;
+        }
+    } while (cp != cp_end && pmp != pmp_end);
+
+    pmp_end = pmp;
+
+    go_ups_nr = 0;
+
+    cp = path;
+    cp_end = cp + strlen(path);
+
+    while (cp != cp_end) {
+#if defined(__unix__)
+        go_ups_nr += (strstr(cp, "../") == cp);
+#elif defined(_WIN32)
+        go_ups_nr += (strstr(cp, "..\\") == cp || strstr(cp, "../") == cp);
+#else
+# error Some code wanted.
+#endif
+        cp++;
+    }
+
+#if defined(__unix__)
+    if (strstr(path, "./") != path) {
+        pmp = &path_mmap[0];
+        pmp_end -= (go_ups_nr > 0) ? go_ups_nr : 1;
+        go_ups_nr = *pmp_end - *pmp;
+    } else {
+        pmp = pmp_end - 1;
+        go_ups_nr = strlen(*pmp);
+    }
+#elif defined(_WIN32)
+    if (strstr(path, ".\\") != path && strstr(path, "./") != path) {
+        pmp = &path_mmap[0];
+        pmp_end -= (go_ups_nr > 0) ? go_ups_nr : 1;
+        go_ups_nr = *pmp_end - *pmp;
+    } else {
+        pmp = pmp_end - 1;
+        go_ups_nr = strlen(*pmp);
+    }
+#else
+# error Some code wanted.
+#endif
+
+    if (go_ups_nr <= path_size) {
+        memcpy(lt_path, *pmp, go_ups_nr);
+        go_ups_nr = strlen(lt_path) - 1;
+#if defined(__unix__)
+        if (lt_path[go_ups_nr] == '/') {
+            lt_path[go_ups_nr] = 0;
+        }
+#elif defined(_WIN32)
+        if (lt_path[go_ups_nr] == '\\' || lt_path[go_ups_nr] == '/') {
+            lt_path[go_ups_nr] = 0;
+        }
+#else
+# error Some code wanted.
+#endif
+    }
+
+remove_go_ups_from_path_epilogue:
+
+    if (lt_path != NULL) {
+
+        cp = lt_path;
+        cp_end = cp + strlen(lt_path);
+
+        go_ups_nr = 0;
+
+        memset(fullpath, 0, sizeof(fullpath));
+
+        while (cp != cp_end) {
+#if defined(__unix__)
+            while (cp[0] == '.' && (cp + 1) < cp_end && cp[1] == '/') {
+                cp += 2;
+            }
+#elif defined(_WIN32)
+            while (cp[0] == '.' && (cp + 1) < cp_end && (cp[1] == '\\' || cp[1] == '/')) {
+                cp += 2;
+            }
+#else
+# error Some code wanted.
+#endif
+            fullpath[go_ups_nr++] = *cp;
+            cp++;
+        }
+
+        snprintf(path, path_size, "%s", fullpath);
+        kryptos_freeseg(lt_path, path_size + 1);
+    }
+
+    memset(cwd, 0, sizeof(cwd));
+    memset(fullpath, 0, sizeof(fullpath));
+    memset(filename, 0, sizeof(filename));
+
+    return path;
+}
+
+/*
+char *remove_go_ups_from_path(char *path, const size_t path_size) {
     char cwd[4096];
     int go_up_nr = 0;
     char *p, *p_end;
@@ -3722,6 +3915,7 @@ remove_go_ups_from_path_epilogue:
 
     return path;
 }
+*/
 
 static int root_dir_reached(const char *cwd) {
 #if defined(__unix__)
