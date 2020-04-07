@@ -29,7 +29,7 @@ char *blackcat_get_argv(const int v);
     }\
 }
 
-#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, consume_stmt, continue_from, consume_dashed_options) {\
+#define BLACKCAT_CONSUME_USER_OPTIONS(ac, option_var, option_var_size, consume_stmt, continue_from, consume_dashed_options) {\
     ac = continue_from;\
     do {\
         if (option_var == NULL || (!consume_dashed_options && option_var != NULL && strlen(option_var) > 1 &&\
@@ -40,13 +40,13 @@ char *blackcat_get_argv(const int v);
             do {\
                 option_var = blackcat_get_argv(ac++);\
                 if (option_var != NULL) {\
-                    option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
+                    option_var = remove_go_ups_from_path(option_var, option_var_size);\
                 }\
             } while (option_var != NULL && strlen(option_var) > 1 && option_var[0] == '-' && option_var[1] == '-');\
         } else {\
             option_var = blackcat_get_argv(ac++);\
             if (option_var != NULL) {\
-                option_var = remove_go_ups_from_path(option_var, strlen(option_var) + 1);\
+                option_var = remove_go_ups_from_path(option_var, option_var_size);\
             }\
         }\
     } while(option_var != NULL);\

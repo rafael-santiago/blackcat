@@ -21,7 +21,7 @@ int blackcat_cmd_decoy(void) {
     char *encoder_name, *fsize_option;
     int overwrite;
     blackcat_encoder encoder = NULL;
-    char *file_param = NULL;
+    char *data, *file_param = NULL, file_param_data[4096];
     size_t fsize = 0;
     blackcat_exec_session_ctx *session = NULL;
 
@@ -50,15 +50,17 @@ int blackcat_cmd_decoy(void) {
 
     overwrite = blackcat_get_bool_option("overwrite", 0);
 
-    if ((file_param = blackcat_get_argv(0)) == NULL) {
+    if ((data = blackcat_get_argv(0)) == NULL) {
         fprintf(stderr, "ERROR: No file name(s) specified.\n");
         goto blackcat_cmd_decoy_epilogue;
     } else {
-        file_param = remove_go_ups_from_path(file_param, strlen(file_param) + 1);
+        snprintf(file_param_data, sizeof(file_param_data) - 1, "%s", data);
+        file_param = remove_go_ups_from_path(file_param_data, sizeof(file_param_data));
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   file_param,
+                                  sizeof(file_param_data),
                                   {
                                         if (bcrepo_decoy(file_param, fsize, encoder, session->catalog->otp, overwrite) == 0) {
                                             exit_code = EFAULT;
@@ -73,6 +75,8 @@ blackcat_cmd_decoy_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(file_param_data, 0, sizeof(file_param_data));
 
     return exit_code;
 }

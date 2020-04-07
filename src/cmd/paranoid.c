@@ -127,7 +127,7 @@ static int dig_up_repo(void) {
 
 static int dig_up(void) {
     int exit_code = EINVAL;
-    char *dig_up_param;
+    char *dig_up_param, *data, dig_up_param_data[4096];
     blackcat_exec_session_ctx *session = NULL;
     int dig_up_nr = 0, a;
 
@@ -135,12 +135,14 @@ static int dig_up(void) {
         goto dig_up_epilogue;
     }
 
-    if ((dig_up_param = blackcat_get_argv(arg)) != NULL) {
-        dig_up_param = remove_go_ups_from_path(dig_up_param, strlen(dig_up_param) + 1);
+    if ((data = blackcat_get_argv(arg)) != NULL) {
+        snprintf(dig_up_param_data, sizeof(dig_up_param_data) - 1, "%s", data);
+        dig_up_param = remove_go_ups_from_path(dig_up_param_data, sizeof(dig_up_param_data));
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   dig_up_param,
+                                  sizeof(dig_up_param_data),
                                   {
                                     dig_up_nr += bcrepo_dig_up(&session->catalog, session->rootpath, session->rootpath_size,
                                                                (dig_up_param != NULL) ? dig_up_param : "*",
@@ -161,12 +163,14 @@ dig_up_epilogue:
         del_blackcat_exec_session_ctx(session);
     }
 
+    memset(dig_up_param_data, 0, sizeof(dig_up_param_data));
+
     return exit_code;
 }
 
 static int bury(void) {
     int exit_code = EINVAL;
-    char *bury_param;
+    char *bury_param, *data, bury_param_data[4096];
     blackcat_exec_session_ctx *session = NULL;
     int bury_nr = 0, a;
 
@@ -174,12 +178,14 @@ static int bury(void) {
         goto bury_epilogue;
     }
 
-    if ((bury_param = blackcat_get_argv(arg)) != NULL) {
-        bury_param = remove_go_ups_from_path(bury_param, strlen(bury_param) + 1);
+    if ((data = blackcat_get_argv(arg)) != NULL) {
+        snprintf(bury_param_data, sizeof(bury_param_data) - 1, "%s", data);
+        bury_param = remove_go_ups_from_path(bury_param_data, sizeof(bury_param_data));
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   bury_param,
+                                  sizeof(bury_param_data),
                                   {
                                     bury_nr += bcrepo_bury(&session->catalog, session->rootpath, session->rootpath_size,
                                                            (bury_param != NULL) ? bury_param : "*",
@@ -199,6 +205,8 @@ bury_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(bury_param_data, 0, sizeof(bury_param_data));
 
     return exit_code;
 }

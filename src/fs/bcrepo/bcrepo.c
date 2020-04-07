@@ -3762,9 +3762,41 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
         if (lt_path[go_ups_nr] == '/') {
             lt_path[go_ups_nr] = 0;
         }
+
+        cp = path;
+        cp_end = cp + strlen(path) - 1;
+
+        while (cp_end != cp && *cp_end != '/') {
+            cp_end--;
+        }
+
+        if (strstr(cp_end, "../") == NULL) {
+            cp_end += 1;
+            if (cp_end < (cp + strlen(path)) && strcmp(lt_path, cp_end) != 0) {
+                go_ups_nr = strlen(lt_path);
+                memcpy(lt_path + go_ups_nr, "/", 1);
+                memcpy(lt_path + go_ups_nr + 1, cp_end, strlen(cp_end));
+            }
+        }
 #elif defined(_WIN32)
         if (lt_path[go_ups_nr] == '\\' || lt_path[go_ups_nr] == '/') {
             lt_path[go_ups_nr] = 0;
+        }
+
+        cp = path;
+        cp_end = cp + strlen(path) - 1;
+
+        while (cp_end != cp && *cp_end != '\\' && *cp_end != '/') {
+            cp_end--;
+        }
+
+        if (strstr(cp_end, "..\\") == NULL && strstr(cp_end, "../") == NULL) {
+            cp_end += 1;
+            if (cp_end < (cp + strlen(path)) && strcmp(lt_path, cp_end) != 0) {
+                go_ups_nr = strlen(lt_path);
+                memcpy(lt_path + go_ups_nr, "\\", 1);
+                memcpy(lt_path + go_ups_nr + 1, cp_end, strlen(cp_end));
+            }
         }
 #else
 # error Some code wanted.

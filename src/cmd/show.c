@@ -31,12 +31,13 @@ int blackcat_cmd_show(void) {
     show_param = blackcat_get_argv(0);
 
     if (show_param == NULL) {
-        fprintf(stderr, "ERROR: What I should show?\n");
+        fprintf(stderr, "ERROR: What should I show?\n");
         goto blackcat_cmd_show_epilogue;
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   show_param,
+                                  strlen(show_param),
                                   {
                                      if (strcmp(show_param, "ciphers") == 0) {
                                         data = blackcat_get_avail_ciphers(&data_size);

@@ -140,6 +140,7 @@ int blackcat_cmd_do(void) {
     char temp[4096], cwd[4096];
     char **argv = NULL;
     int argc = 0;
+    size_t do_param_size = 0;
 
     if ((exit_code = new_blackcat_exec_session_ctx(&session, 0)) != 0) {
         goto blackcat_cmd_do_epilogue;
@@ -151,10 +152,13 @@ int blackcat_cmd_do(void) {
 
     exit_code = 0;
 
-    do_param = blackcat_get_argv(0);
+    if ((do_param = blackcat_get_argv(0)) != NULL) {
+        do_param_size = strlen(do_param);
+    }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   do_param,
+                                  do_param_size,
                                   {
                                       if (do_param == NULL || (argv = get_cmds(do_param + 2, session, &argc)) == NULL) {
                                           exit_code = EINVAL;
@@ -183,6 +187,8 @@ blackcat_cmd_do_epilogue:
     if (argv != NULL) {
         freeargv(argv, argc);
     }
+
+    do_param_size = 0;
 
     return exit_code;
 }

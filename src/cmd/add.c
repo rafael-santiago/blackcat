@@ -16,7 +16,7 @@
 
 int blackcat_cmd_add(void) {
     int exit_code = EINVAL;
-    char *add_param;
+    char *data, *add_param = NULL, add_param_data[4096];
     int add_nr = 0;
     blackcat_exec_session_ctx *session = NULL;
     char temp[4096];
@@ -29,17 +29,19 @@ int blackcat_cmd_add(void) {
         goto blackcat_cmd_add_epilogue;
     }
 
-    add_param = blackcat_get_argv(0);
+    data = blackcat_get_argv(0);
 
-    if (add_param == NULL) {
+    if (data == NULL) {
         fprintf(stderr, "ERROR: A relative file path or a glob pattern is missing.\n");
         goto blackcat_cmd_add_epilogue;
     }
 
-    add_param = remove_go_ups_from_path(add_param, strlen(add_param) + 1);
+    snprintf(add_param_data, sizeof(add_param_data) - 1, "%s", data);
+    add_param = remove_go_ups_from_path(add_param_data, sizeof(add_param_data));
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   add_param,
+                                  sizeof(add_param_data),
                                   {
                                     add_nr += bcrepo_add(&session->catalog,
                                                          session->rootpath, session->rootpath_size,
@@ -55,11 +57,13 @@ int blackcat_cmd_add(void) {
             if (lock) {
                 add_nr = 0;
 
-                add_param = blackcat_get_argv(0);
-                add_param = remove_go_ups_from_path(add_param, strlen(add_param) + 1);
+                data = blackcat_get_argv(0);
+                snprintf(add_param_data, sizeof(add_param_data) - 1, "%s", data);
+                add_param = remove_go_ups_from_path(add_param_data, sizeof(add_param_data));
 
                 BLACKCAT_CONSUME_USER_OPTIONS(a,
                                               add_param,
+                                              sizeof(add_param_data),
                                               {
                                                 add_nr += bcrepo_lock(&session->catalog, session->rootpath,
                                                                       session->rootpath_size,
@@ -88,6 +92,8 @@ blackcat_cmd_add_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(add_param_data, 0, sizeof(add_param_data));
 
     return exit_code;
 }

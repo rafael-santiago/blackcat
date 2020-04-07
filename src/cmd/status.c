@@ -28,7 +28,7 @@ int blackcat_cmd_status(void) {
     int exit_code = EINVAL;
     blackcat_exec_session_ctx *session = NULL;
     bfs_catalog_relpath_ctx *fp;
-    char *status_param;
+    char *status_param = NULL, *data, status_param_data[4096];
     time_t t;
     char date[50];
     int a;
@@ -38,8 +38,9 @@ int blackcat_cmd_status(void) {
         goto blackcat_cmd_status_epilogue;
     }
 
-    if ((status_param = blackcat_get_argv(0)) != NULL) {
-        status_param = remove_go_ups_from_path(status_param, strlen(status_param) + 1);
+    if ((data = blackcat_get_argv(0)) != NULL) {
+        snprintf(status_param_data, sizeof(status_param_data) - 1, "%s", data);
+        status_param = remove_go_ups_from_path(status_param_data, sizeof(status_param_data));
     }
 
     stddest = get_stddest();
@@ -80,6 +81,7 @@ int blackcat_cmd_status(void) {
     if (session->catalog->files != NULL) {
         BLACKCAT_CONSUME_USER_OPTIONS(a,
                                       status_param,
+                                      sizeof(status_param_data),
                                       {
                                         for (fp = session->catalog->files; fp != NULL; fp = fp->next) {
                                             if (status_param == NULL || strglob((char *)fp->path, status_param)) {
@@ -113,6 +115,8 @@ blackcat_cmd_status_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(status_param_data, 0, sizeof(status_param_data));
 
     return exit_code;
 }

@@ -16,7 +16,7 @@
 
 int blackcat_cmd_lock(void) {
     int exit_code = EINVAL;
-    char *lock_param = NULL;
+    char *lock_param = NULL, *data, lock_param_data[4096];
     blackcat_exec_session_ctx *session = NULL;
     int lock_nr = 0;
     char temp[4096], cwd[4096];
@@ -26,8 +26,9 @@ int blackcat_cmd_lock(void) {
         goto blackcat_cmd_lock_epilogue;
     }
 
-    if ((lock_param = blackcat_get_argv(0)) != NULL) {
-        lock_param = remove_go_ups_from_path(lock_param, strlen(lock_param) + 1);
+    if ((data = blackcat_get_argv(0)) != NULL) {
+        snprintf(lock_param_data, sizeof(lock_param_data) - 1, "%s", data);
+        lock_param = remove_go_ups_from_path(lock_param_data, sizeof(lock_param_data));
     }
 
     if (lock_param == NULL) {
@@ -38,6 +39,7 @@ int blackcat_cmd_lock(void) {
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   lock_param,
+                                  sizeof(lock_param_data),
                                   {
                                     lock_nr += bcrepo_lock(&session->catalog, session->rootpath, session->rootpath_size,
                                                            lock_param,
@@ -63,6 +65,8 @@ blackcat_cmd_lock_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(lock_param_data, 0, sizeof(lock_param_data));
 
     return exit_code;
 }

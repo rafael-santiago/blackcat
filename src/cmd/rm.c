@@ -15,7 +15,7 @@
 
 int blackcat_cmd_rm(void) {
     int exit_code = EINVAL;
-    char *rm_param = NULL;
+    char *rm_param = NULL, rm_param_data[4096], *data;
     int rm_nr = 0;
     blackcat_exec_session_ctx *session = NULL;
     char temp[4096];
@@ -25,19 +25,22 @@ int blackcat_cmd_rm(void) {
         goto blackcat_cmd_rm_epilogue;
     }
 
-    rm_param = blackcat_get_argv(0);
+    data = blackcat_get_argv(0);
 
-    if (rm_param == NULL) {
+    if (data == NULL) {
         fprintf(stderr, "ERROR: A relative file path or a glob pattern is missing.\n");
         goto blackcat_cmd_rm_epilogue;
     }
 
-    rm_param = remove_go_ups_from_path(rm_param, strlen(rm_param) + 1);
+    snprintf(rm_param_data, sizeof(rm_param_data) - 1, "%s", data);
+
+    rm_param = remove_go_ups_from_path(rm_param_data, sizeof(rm_param_data));
 
     force = blackcat_get_bool_option("force", 0);
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   rm_param,
+                                  sizeof(rm_param_data),
                                   {
                                     rm_nr += bcrepo_rm(&session->catalog,
                                                        session->rootpath, session->rootpath_size, rm_param, strlen(rm_param),
@@ -62,6 +65,8 @@ blackcat_cmd_rm_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(rm_param_data, 0, sizeof(rm_param_data));
 
     return exit_code;
 }

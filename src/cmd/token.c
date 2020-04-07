@@ -39,6 +39,7 @@ int blackcat_cmd_token(void) {
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   file_param,
+                                  strlen(file_param),
                                   {
                                         if (bcrepo_decoy(file_param, bytes_total, NULL, 0, overwrite) == 0) {
                                             exit_code = EFAULT;

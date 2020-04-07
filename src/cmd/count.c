@@ -43,6 +43,7 @@ int blackcat_cmd_count(void) {
     if (session->catalog->files != NULL) {
         BLACKCAT_CONSUME_USER_OPTIONS(a,
                                       file_status,
+                                      strlen(file_status),
                                       {
                                             fstatus = (strcmp(file_status, "--unlocked") == 0) ? 'U' :
                                                       (strcmp(file_status, "--locked")   == 0) ? 'L' :

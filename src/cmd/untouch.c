@@ -16,7 +16,7 @@
 
 int blackcat_cmd_untouch(void) {
     int exit_code = EINVAL;
-    char *untouch_param = NULL;
+    char *untouch_param = NULL, *data, untouch_param_data[4096];
     blackcat_exec_session_ctx *session = NULL;
     int untouch_nr = 0;
     char cwd[4096];
@@ -26,8 +26,9 @@ int blackcat_cmd_untouch(void) {
         goto blackcat_cmd_untouch_epilogue;
     }
 
-    if ((untouch_param = blackcat_get_argv(0)) != NULL) {
-        untouch_param = remove_go_ups_from_path(untouch_param, strlen(untouch_param) + 1);
+    if ((data = blackcat_get_argv(0)) != NULL) {
+        snprintf(untouch_param_data, sizeof(untouch_param_data) - 1, "%s", data);
+        untouch_param = remove_go_ups_from_path(untouch_param_data, sizeof(untouch_param_data));
     }
 
     if (untouch_param == NULL) {
@@ -40,6 +41,7 @@ int blackcat_cmd_untouch(void) {
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
                                   untouch_param,
+                                  sizeof(untouch_param),
                                   {
                                     untouch_nr += bcrepo_untouch(session->catalog, session->rootpath, session->rootpath_size,
                                                                  (untouch_param != NULL) ? untouch_param : "*",
@@ -64,6 +66,8 @@ blackcat_cmd_untouch_epilogue:
     if (session != NULL) {
         del_blackcat_exec_session_ctx(session);
     }
+
+    memset(untouch_param_data, 0, sizeof(untouch_param_data));
 
     return exit_code;
 }
