@@ -14,6 +14,10 @@
 
 extern asmlinkage long (*native_sys_open)(const char __user *, int, mode_t);
 
+extern asmlinkage long (*native_sys_readlink)(const char __user *, char __user *, size_t);
+
 asmlinkage long cdev_sys_open(const char __user *file, int flags, mode_t mode);
+
+asmlinkage long cdev_sys_readlink(const char __user *pathname, char __user *buf, size_t buf_size);
 
 #endif
