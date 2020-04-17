@@ -8,8 +8,10 @@
 
 #include <linux/cdev_ioctl.h>
 #include <linux/scan_hook.h>
+#include <linux/cdev_sys_open.h>
 #include <defs/io.h>
 #include <icloak.h>
+#include <kook.h>
 #include <linux/slab.h>
 #include <asm/uaccess.h>
 
@@ -37,6 +39,17 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
 
         case BLACKCAT_SCAN_HOOK:
             error = scan_hook();
+            break;
+
+        case BLACKCAT_NO_DEBUG:
+            error = (native_sys_open == NULL) ? kook(__NR_open, cdev_sys_open, (void **)&native_sys_open) : 0;
+            break;
+
+        case BLACKCAT_ALLOW_DEBUG:
+            error = (native_sys_open != NULL) ? kook(__NR_open, native_sys_open, NULL) : 0;
+            if (error == 0 && native_sys_open != NULL) {
+                native_sys_open = NULL;
+            }
             break;
 
         default:

@@ -28,5 +28,7 @@ struct blackcat_devio_ctx {
 #if defined(__NetBSD__)
 # define BLACKCAT_MODHIDE _IO(BLACKCAT_IOC_MAGIC, 3)
 #endif
+#define BLACKCAT_NO_DEBUG _IO(BLACKCAT_IOC_MAGIC, 4)
+#define BLACKCAT_ALLOW_DEBUG _IO(BLACKCAT_IOC_MAGIC, 5)
 
 #endif

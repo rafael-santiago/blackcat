@@ -10,6 +10,7 @@
 #include <linux/cdev_deinit.h>
 #include <defs/types.h>
 #include <icloak.h>
+#include <kook.h>
 #include <linux/cdev_open.h>
 #include <linux/cdev_ioctl.h>
 #include <linux/cdev_release.h>

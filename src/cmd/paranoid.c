@@ -38,6 +38,8 @@ static int do_ioctl(unsigned long cmd, ...);
 
 static int br_dgur_handle(unsigned long cmd);
 
+static int no_debug(void);
+
 # endif
 
 static int disable_history(void);
@@ -53,6 +55,7 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
     { "--bury-repo",       bury_repo       },
     { "--dig-up-repo",     dig_up_repo     },
     { "--find-hooks",      find_hooks      },
+    { "--no-debug",        no_debug        },
 #endif
     { "--disable-history", disable_history },
     { "--enable-history",  enable_history  },
@@ -104,6 +107,27 @@ int blackcat_cmd_paranoid_help(void) {
 }
 
 # if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
+
+static int no_debug(void) {
+    int exit_code = EFAULT;
+
+    if (blackcat_get_bool_option("enable", 0)) {
+        exit_code = do_ioctl(BLACKCAT_NO_DEBUG);
+    } else if (blackcat_get_bool_option("disable", 0)) {
+        exit_code = do_ioctl(BLACKCAT_ALLOW_DEBUG);
+    } else {
+        fprintf(stderr, "ERROR: Do you want enable or disable it?\n");
+        goto no_debug_epilogue;
+    }
+
+    if (exit_code != 0) {
+        fprintf(stderr, "ERROR: While trying to access blackcat char device.\n");
+    }
+
+no_debug_epilogue:
+
+    return exit_code;
+}
 
 static int bury_repo(void) {
     int exit_code = br_dgur_handle(BLACKCAT_BURY);
