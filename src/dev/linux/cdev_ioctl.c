@@ -56,6 +56,7 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
 
         case BLACKCAT_ALLOW_DEBUG:
             error = (native_sys_open != NULL) ? kook(__NR_open, native_sys_open, NULL) : 0;
+            native_sys_open = NULL;
             /*if (error == 0 && native_sys_open != NULL) {
                 error = (native_sys_readlink != NULL) ? kook(__NR_readlink, native_sys_readlink, NULL) : 0;
                 if (error == 0) {
