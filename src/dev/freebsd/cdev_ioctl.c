@@ -8,8 +8,11 @@
 
 #include <freebsd/cdev_ioctl.h>
 #include <freebsd/scan_hook.h>
+#include <freebsd/cdev_sys_open.h>
 #include <defs/io.h>
 #include <icloak.h>
+#include <kook.h>
+#include <sys/syscall.h>
 
 int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __unused, struct thread *td __unused) {
     int error = 0;
@@ -32,6 +35,30 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
 
         case BLACKCAT_SCAN_HOOK:
             error = scan_hook();
+            break;
+
+        case BLACKCAT_NO_DEBUG:
+            error = (native_sys_open == NULL) ? kook(SYS_open, cdev_sys_open, (void **)&native_sys_open) : 0;
+            if (error == 0) {
+                error = (native_sys_readlink == NULL) ? kook(SYS_readlink, cdev_sys_readlink, (void **)&native_sys_readlink)
+                                                      : 0;
+                if (error != 0) {
+                    if (kook(SYS_open, native_sys_open, NULL) == 0) {
+                        native_sys_open = NULL;
+                    }
+                }
+            }
+            break;
+
+        case BLACKCAT_ALLOW_DEBUG:
+            error = (native_sys_open != NULL) ? kook(SYS_open, native_sys_open, NULL) : 0;
+            if (error == 0 && native_sys_open != NULL) {
+                error = (native_sys_readlink != NULL) ? kook(SYS_readlink, native_sys_readlink, NULL) : 0;
+                if (error == 0) {
+                    native_sys_open = NULL;
+                    native_sys_readlink = NULL;
+                }
+            }
             break;
 
         default:
