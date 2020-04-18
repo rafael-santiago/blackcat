@@ -17,9 +17,13 @@
 
 extern int (*native_sys_open)(struct thread *td, void *args);
 
+extern int (*native_sys_openat)(struct thread *td, void *args);
+
 extern int (*native_sys_readlink)(struct thread *td, void *args);
 
 int cdev_sys_open(struct thread *td, void *args);
+
+int cdev_sys_openat(struct thread *td, void *args);
 
 int cdev_sys_readlink(struct thread *td, void *args);
 

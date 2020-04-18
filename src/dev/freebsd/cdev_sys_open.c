@@ -16,6 +16,8 @@
 
 int (*native_sys_open)(struct thread *td, void *args) = NULL;
 
+int (*native_sys_openat)(struct thread *td, void *args) = NULL;
+
 int (*native_sys_readlink)(struct thread *td, void *args) = NULL;
 
 int cdev_sys_open(struct thread *td, void *args) {
@@ -70,6 +72,59 @@ cdev_sys_open_epilogue:
 
     return err;
 
+}
+
+int cdev_sys_openat(struct thread *td, void *args) {
+    struct openat_args *uap;
+    char *fp_end;
+    char *file_path = NULL;
+    size_t file_path_size;
+    int err = EFAULT;
+
+    td->td_retval[0] = -1;
+
+    uap = (struct openat_args *)args;
+
+    if (native_sys_openat == NULL || uap == NULL || uap->path == NULL) {
+        td->td_retval[0] = -1;
+        err = EFAULT;
+        goto cdev_sys_openat_epilogue;
+    }
+
+    if (uap->path != NULL) {
+        fp_end = (char *)uap->path;
+
+        while (*fp_end != 0) {
+            fp_end++;
+        }
+
+        file_path_size = fp_end - uap->path;
+        file_path = (char *) malloc(file_path_size, M_TEMP, M_NOWAIT);
+
+        if (file_path == NULL) {
+            goto cdev_sys_openat_epilogue;
+        }
+
+        copyin(uap->path, file_path, file_path_size);
+
+        fp_end = file_path + file_path_size - 8;
+
+        if (has_blackcat_ref(file_path, fp_end) && !has_blackcat_dev_ref(file_path, fp_end)) {
+            td->td_retval[0] = -1;
+            err = EACCES;
+            goto cdev_sys_openat_epilogue;
+        }
+    }
+
+    td->td_retval[0] = native_sys_openat(td, args);
+
+cdev_sys_openat_epilogue:
+
+    if (file_path != NULL) {
+        free(file_path, M_TEMP);
+    }
+
+    return err;
 }
 
 int cdev_sys_readlink(struct thread *td, void *args) {

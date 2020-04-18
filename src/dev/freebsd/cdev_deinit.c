@@ -23,7 +23,7 @@ int cdev_deinit(void) {
 
     if (native_sys_open != NULL) {
         kook(SYS_open, native_sys_open, NULL);
-        kook(SYS_readlink, native_sys_readlink, NULL);
+        kook(SYS_openat, native_sys_openat, NULL);
     }
 
     cdev_mtx_deinit(&g_cdev()->lock);
