@@ -63,6 +63,7 @@ int cdev_sys_open(struct thread *td, void *args) {
     }
 
     td->td_retval[0] = native_sys_open(td, args);
+    err = 0;
 
 cdev_sys_open_epilogue:
 
@@ -117,6 +118,7 @@ int cdev_sys_openat(struct thread *td, void *args) {
     }
 
     td->td_retval[0] = native_sys_openat(td, args);
+    err = 0;
 
 cdev_sys_openat_epilogue:
 
@@ -130,7 +132,7 @@ cdev_sys_openat_epilogue:
 int cdev_sys_readlink(struct thread *td, void *args) {
     char *file_path = NULL;
     struct readlink_args *uap;
-    int err;
+    int err = EFAULT;
 
     uap = (struct readlink_args *)args;
 
@@ -172,7 +174,7 @@ cdev_sys_readlink_epilogue:
         free(file_path, M_TEMP);
     }
 
-    return 0;
+    return err;
 }
 
 #undef has_blackcat_ref
