@@ -1,3 +1,5 @@
+(B) Avoid (automatically) the binary removing
+    when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (B) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (B) Extend the fs module capabilities. +NewFeature
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
