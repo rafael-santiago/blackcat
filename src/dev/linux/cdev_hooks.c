@@ -94,7 +94,7 @@ asmlinkage long cdev_sys_open(const char __user *pathname, int flags, umode_t mo
     int deny = (pathname != NULL && deny_path_access(pathname));
 
     if (deny) {
-        deny = (mode == 0) || (mode & (O_WRONLY|O_RDWR));
+        deny = (flags & (O_WRONLY|O_RDWR));
     }
 
     if (!deny) {
@@ -109,7 +109,7 @@ asmlinkage long cdev_sys_openat(int dfd, const char __user *pathname, int flags,
     int deny = (pathname != NULL && deny_path_access(pathname));
 
     if (deny) {
-        deny = (mode == 0) || (mode & (O_WRONLY|O_RDWR));
+        deny = (flags & (O_WRONLY|O_RDWR));
     }
 
     if (!deny) {
@@ -152,7 +152,7 @@ static int deny_path_access(const char __user *path) {
     }
 
     memset(kpathname, 0, kpathname_size + 1);
-    memcpy(kpathname, path, kpathname_size);
+    copy_from_user(kpathname, path, kpathname_size);
 
     deny = has_blackcat_ref(kpathname, kpathname + kpathname_size - 8) &&
            !has_blackcat_dev_ref(kpathname, kpathname + kpathname_size - 8);

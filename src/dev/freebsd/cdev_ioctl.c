@@ -8,7 +8,7 @@
 
 #include <freebsd/cdev_ioctl.h>
 #include <freebsd/scan_hook.h>
-#include <freebsd/cdev_sys_open.h>
+#include <freebsd/cdev_hooks.h>
 #include <defs/io.h>
 #include <icloak.h>
 #include <kook.h>
@@ -37,6 +37,7 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
             error = scan_hook();
             break;
 
+        /*
         case BLACKCAT_NO_DEBUG:
             error = (native_sys_open == NULL) ? kook(SYS_open, cdev_sys_open, (void **)&native_sys_open) : 0;
             if (error == 0) {
@@ -60,6 +61,7 @@ int cdev_ioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flag __u
                 }
             }
             break;
+        */
 
         default:
             error = EINVAL;
