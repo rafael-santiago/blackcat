@@ -7,7 +7,6 @@
  */
 
 #include <linux/cdev_deinit.h>
-#include <linux/cdev_sys_open.h>
 #include <kook.h>
 #include <defs/types.h>
 #include <linux/module.h>
@@ -18,10 +17,6 @@
 
 void cdev_deinit(void) {
     cdev_mtx_deinit(&g_cdev()->lock);
-    if (native_sys_open != NULL) {
-        kook(__NR_open, native_sys_open, NULL);
-        //kook(__NR_readlink, native_sys_readlink, NULL);
-    }
     device_destroy(g_cdev()->device_class, MKDEV(g_cdev()->major_nr, 0));
     class_unregister(g_cdev()->device_class);
     class_destroy(g_cdev()->device_class);

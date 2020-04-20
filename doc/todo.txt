@@ -1,12 +1,12 @@
 (B) Avoid (automatically) the binary removing
     when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
-(B) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (B) Extend the fs module capabilities. +NewFeature
 (C) Add elliptic curve cryptography support (ECDH and ECDSA) in net command. +NewFeature
 (D) Introduce the usage of hard tokens. +DevelReverie,+NewFeature
 (D) Make net tests less magical timeouts dependent. Let's make it more stable. +Improvement,+Tests
 (E) Improve/implement disabling/enabling/cleaning shell history where it is not currently available. +Improvement,+NewFeature
 (Z) What about roll and unroll commands? +DevelReverie
+(Z) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (Z) Extend net protection. +NewFeature
 x (A) Use properly remove_go_ups_from_path() from cmd tool. +Improvement.
 x (B) Make fs/bcrepo/bcrepo.c:remove_go_ups_from_path() better by also considering '../thing' instead of turning it into

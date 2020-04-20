@@ -55,7 +55,7 @@ DECL_BLACKCAT_COMMAND_TABLE(g_blackcat_paranoid_commands)
     { "--bury-repo",       bury_repo       },
     { "--dig-up-repo",     dig_up_repo     },
     { "--find-hooks",      find_hooks      },
-    { "--no-debug",        no_debug        },
+//    { "--no-debug",        no_debug        },
 #endif
     { "--disable-history", disable_history },
     { "--enable-history",  enable_history  },

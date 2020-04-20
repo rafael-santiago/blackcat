@@ -8,7 +8,6 @@
 
 #include <linux/cdev_ioctl.h>
 #include <linux/scan_hook.h>
-#include <linux/cdev_sys_open.h>
 #include <defs/io.h>
 #include <icloak.h>
 #include <kook.h>
@@ -41,17 +40,9 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
             error = scan_hook();
             break;
 
+        /*
         case BLACKCAT_NO_DEBUG:
             error = (native_sys_open == NULL) ? kook(__NR_open, cdev_sys_open, (void **)&native_sys_open) : 0;
-            /*if (error == 0) {
-                error = (native_sys_readlink == NULL) ? kook(__NR_readlink, cdev_sys_readlink, (void **)&native_sys_readlink)
-                                                      : 0;
-                if (error != 0) {
-                    if (kook(__NR_open, native_sys_open, NULL) == 0) {
-                        native_sys_open = NULL;
-                    }
-                }
-            }*/
             break;
 
         case BLACKCAT_ALLOW_DEBUG:
@@ -59,14 +50,8 @@ long cdev_ioctl(struct file *fp, unsigned int cmd, unsigned long user_param) {
             if (error == 0 && native_sys_open != NULL) {
                 native_sys_open = NULL;
             }
-            /*if (error == 0 && native_sys_open != NULL) {
-                error = (native_sys_readlink != NULL) ? kook(__NR_readlink, native_sys_readlink, NULL) : 0;
-                if (error == 0) {
-                    native_sys_open = NULL;
-                    native_sys_readlink = NULL;
-                }
-            }*/
             break;
+        */
 
         default:
             error = -EINVAL;
