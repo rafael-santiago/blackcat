@@ -78,7 +78,7 @@ int cdev_sys_rename(struct thread *td, void *args) {
 
     uap = (struct rename_args *)args;
 
-    if (!deny_path_access(uap->from)) {
+    if (!deny_path_access(uap->from) && !deny_path_access(uap->to)) {
         err = native_sys_rename(td, args);
     } else {
         td->td_retval[0] = -1;
@@ -93,7 +93,7 @@ int cdev_sys_renameat(struct thread *td, void *args) {
 
     uap = (struct renameat_args *)args;
 
-    if (!deny_path_access(uap->old)) {
+    if (!deny_path_access(uap->old) && !deny_path_access(uap->new)) {
         err = native_sys_renameat(td, args);
     } else {
         td->td_retval[0] = -1;
