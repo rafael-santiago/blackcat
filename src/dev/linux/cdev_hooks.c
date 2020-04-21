@@ -152,10 +152,11 @@ static int deny_path_access(const char __user *path) {
     }
 
     memset(kpathname, 0, kpathname_size + 1);
-    copy_from_user(kpathname, path, kpathname_size);
 
-    deny = has_blackcat_ref(kpathname, kpathname + kpathname_size - 8) &&
-           !has_blackcat_dev_ref(kpathname, kpathname + kpathname_size - 8);
+    if (copy_from_user(kpathname, path, kpathname_size) == 0) {
+        deny = has_blackcat_ref(kpathname, kpathname + kpathname_size - 8) &&
+               !has_blackcat_dev_ref(kpathname, kpathname + kpathname_size - 8);
+    }
 
 deny_path_access_epilogue:
 
