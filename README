@@ -54,6 +54,8 @@ Including:
     - Assuming your system is pretty bad configured and hacked...
       A device driver that avoids your files of being downloaded after decrypted;
 
+    - This same device driver can avoid the replacement of your blackcat's binary copy for a tainted one;
+
     - If you are pretty paranoid, some cares for avoiding RAM swap issues that would leak some
       pretty sensitive information (depending on your requirements).
 
