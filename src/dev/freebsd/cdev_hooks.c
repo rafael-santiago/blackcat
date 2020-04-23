@@ -31,20 +31,12 @@ static int deny_path_access(const char *filepath);
 int cdev_sys_open(struct thread *td, void *args) {
     struct open_args *uap;
     int err = EACCES;
-    int deny;
 
-    uap = (struct open_args *)args;
-
-    deny = deny_path_access(uap->path);
-
-    if (deny) {
-        deny = (uap->flags & (O_WRONLY|O_RDWR));
-    }
-
-    if (!deny) {
-        err = native_sys_open(td, args);
-    } else {
-        td->td_retval[0] = -1;
+    if ((err = native_sys_open(td, args)) == 0) {
+        uap = (struct open_args *)args;
+        if (deny_path_access(uap->path) && (uap->flags & (O_WRONLY|O_RDWR)) != 0) {
+            err = EACCES;
+        }
     }
 
     return err;
@@ -53,20 +45,12 @@ int cdev_sys_open(struct thread *td, void *args) {
 int cdev_sys_openat(struct thread *td, void *args) {
     struct openat_args *uap;
     int err = EACCES;
-    int deny;
 
-    uap = (struct openat_args *)args;
-
-    deny = deny_path_access(uap->path);
-
-    if (deny) {
-        deny = (uap->flag & (O_WRONLY|O_RDWR));
-    }
-
-    if (!deny) {
-        err = native_sys_openat(td, args);
-    } else {
-        td->td_retval[0] = -1;
+    if ((err = native_sys_openat(td, args)) == 0) {
+        uap = (struct openat_args *)args;
+        if (deny_path_access(uap->path) && (uap->flag & (O_WRONLY|O_RDWR)) != 0) {
+            err = EACCES;
+        }
     }
 
     return err;
