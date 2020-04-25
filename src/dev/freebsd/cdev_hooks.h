@@ -25,7 +25,7 @@ extern int (*native_sys_renameat)(struct thread *td, struct renameat_args *uap);
 
 extern int (*native_sys_unlink)(struct thread *td, struct unlink_args *uap);
 
-extern int (*native_sys_unlinkat)(struct thread *td, struct unlinkat_args);
+extern int (*native_sys_unlinkat)(struct thread *td, struct unlinkat_args *uap);
 
 int cdev_sys_open(struct thread *td, struct open_args *uap);
 
