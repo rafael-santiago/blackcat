@@ -17,6 +17,10 @@
 #define has_blackcat_dev_ref(s, se) ( ((se) - 4) > (s) && (se)[-4] == 'd' && (se)[-3] == 'e' && (se)[-2] == 'v' &&\
                                                           (se)[-1] == '/' )
 
+#define has_blackcat_ko_ref(s, se) ( (se) > (s) && (se)[ 0] == 'b' && (se)[ 1] == 'l' && (se)[ 2] == 'a' && (se)[ 3] == 'c' &&\
+                                                   (se)[ 4] == 'k' && (se)[ 5] == 'c' && (se)[ 6] == 'a' && (se)[ 7] == 't' &&\
+                                                   (se)[ 8] == '.' && (se)[ 9] == 'k' && (se)[10] == 'o' )
+
 asmlinkage long (*native_sys_open)(const char __user *, int, umode_t) = NULL;
 
 asmlinkage long (*native_sys_openat)(int, const char __user *, int, umode_t) = NULL;
@@ -154,8 +158,9 @@ static int deny_path_access(const char __user *path) {
     memset(kpathname, 0, kpathname_size + 1);
 
     if (copy_from_user(kpathname, path, kpathname_size) == 0) {
-        deny = has_blackcat_ref(kpathname, kpathname + kpathname_size - 8) &&
-               !has_blackcat_dev_ref(kpathname, kpathname + kpathname_size - 8);
+        deny = (has_blackcat_ref(kpathname, kpathname + kpathname_size - 8) &&
+                !has_blackcat_dev_ref(kpathname, kpathname + kpathname_size - 8)) ||
+               has_blackcat_ko_ref(kpathname, kpathname + kpathname_size - 11);
     }
 
 deny_path_access_epilogue:
@@ -170,3 +175,5 @@ deny_path_access_epilogue:
 #undef has_blackcat_ref
 
 #undef has_blackcat_dev_ref
+
+#undef has_blackcat_ko_ref
