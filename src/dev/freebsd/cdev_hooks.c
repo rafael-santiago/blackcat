@@ -34,7 +34,7 @@ int cdev_sys_open(struct thread *td, struct open_args *uap) {
     if (deny_path_access(uap->path) && (uap->flags & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
     } else {
-        err = native_sys_open(td, args);
+        err = native_sys_open(td, uap);
     }
 
     return err;
@@ -46,7 +46,7 @@ int cdev_sys_openat(struct thread *td, struct openat_args *uap) {
     if (deny_path_access(uap->path) && (uap->flag & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
     } else {
-        err = native_sys_openat(td, args);
+        err = native_sys_openat(td, uap);
     }
 
     return err;
@@ -56,7 +56,7 @@ int cdev_sys_rename(struct thread *td, struct rename_args *uap) {
     int err = EACCES;
 
     if (!deny_path_access(uap->from) && !deny_path_access(uap->to)) {
-        err = native_sys_rename(td, args);
+        err = native_sys_rename(td, uap);
     } else {
         td->td_retval[0] = -1;
     }
@@ -68,7 +68,7 @@ int cdev_sys_renameat(struct thread *td, struct renameat_args *uap) {
     int err = EACCES;
 
     if (!deny_path_access(uap->old) && !deny_path_access(uap->new)) {
-        err = native_sys_renameat(td, args);
+        err = native_sys_renameat(td, uap);
     } else {
         td->td_retval[0] = -1;
     }
@@ -82,7 +82,7 @@ int cdev_sys_unlink(struct thread *td, struct unlink_args *uap) {
     uap = (struct unlink_args *)args;
 
     if (!deny_path_access(uap->path)) {
-        err = native_sys_unlink(td, args);
+        err = native_sys_unlink(td, uap);
     } else {
         td->td_retval[0] = -1;
     }
@@ -96,7 +96,7 @@ int cdev_sys_unlinkat(struct thread *td, struct unlinkat_args *uap) {
     uap = (struct unlinkat_args *)args;
 
     if (!deny_path_access(uap->path)) {
-        err = native_sys_unlinkat(td, args);
+        err = native_sys_unlinkat(td, uap);
     } else {
         td->td_retval[0] = -1;
     }
