@@ -14,6 +14,10 @@
 #define has_blackcat_dev_ref(s, se) ( ((se) - 4) > (s) && (se)[-4] == 'd' && (se)[-3] == 'e' && (se)[-2] == 'v' &&\
                                                           (se)[-1] == '/' )
 
+#define has_blackcat_ko_ref(s, se) ( (se) > (s) && (se)[ 0] == 'b' && (se)[ 1] == 'l' && (se)[ 2] == 'a' && (se)[ 3] == 'c' &&\
+                                                   (se)[ 4] == 'k' && (se)[ 5] == 'c' && (se)[ 6] == 'a' && (se)[ 7] == 't' &&\
+                                                   (se)[ 8] == '.' && (se)[ 9] == 'k' && (se)[10] == 'o' )
+
 int (*native_sys_open)(struct thread *td, struct open_args *uap) = NULL;
 
 int (*native_sys_openat)(struct thread *td, struct openat_args *uap) = NULL;
@@ -111,8 +115,8 @@ static int deny_path_access(const char *filepath) {
 
     temp_size = strlen(temp);
 
-    deny = has_blackcat_ref(temp, temp + temp_size - 8) &&
-           !has_blackcat_dev_ref(temp, temp + temp_size - 8);
+    deny = (has_blackcat_ref(temp, temp + temp_size - 8) &&
+            !has_blackcat_dev_ref(temp, temp + temp_size - 8)) || has_blackcat_ko_ref(temp, temp_size - 11);
 
 deny_path_access_epilogue:
 
@@ -122,3 +126,5 @@ deny_path_access_epilogue:
 #undef has_blackcat_ref
 
 #undef has_blackcat_dev_ref
+
+#undef has_blackcat_ko_ref
