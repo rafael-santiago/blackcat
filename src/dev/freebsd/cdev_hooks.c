@@ -76,8 +76,7 @@ int cdev_sys_renameat(struct thread *td, struct renameat_args *uap) {
     return err;
 }
 
-int cdev_sys_unlink(struct thread *td, void *args) {
-    struct unlink_args *uap;
+int cdev_sys_unlink(struct thread *td, struct unlink_args *uap) {
     int err = EACCES;
 
     uap = (struct unlink_args *)args;
@@ -91,8 +90,7 @@ int cdev_sys_unlink(struct thread *td, void *args) {
     return err;
 }
 
-int cdev_sys_unlinkat(struct thread *td, void *args) {
-    struct unlinkat_args *uap;
+int cdev_sys_unlinkat(struct thread *td, struct unlinkat_args *uap) {
     int err = EACCES;
 
     uap = (struct unlinkat_args *)args;
