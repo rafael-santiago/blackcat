@@ -116,7 +116,7 @@ static int deny_path_access(const char *filepath) {
     temp_size = strlen(temp);
 
     deny = (has_blackcat_ref(temp, temp + temp_size - 8) &&
-            !has_blackcat_dev_ref(temp, temp + temp_size - 8)) || has_blackcat_ko_ref(temp, temp_size - 11);
+            !has_blackcat_dev_ref(temp, temp + temp_size - 8)) || has_blackcat_ko_ref(temp, temp + temp_size - 11);
 
 deny_path_access_epilogue:
 
