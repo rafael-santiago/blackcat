@@ -79,8 +79,6 @@ int cdev_sys_renameat(struct thread *td, struct renameat_args *uap) {
 int cdev_sys_unlink(struct thread *td, struct unlink_args *uap) {
     int err = EACCES;
 
-    uap = (struct unlink_args *)args;
-
     if (!deny_path_access(uap->path)) {
         err = native_sys_unlink(td, uap);
     } else {
@@ -92,8 +90,6 @@ int cdev_sys_unlink(struct thread *td, struct unlink_args *uap) {
 
 int cdev_sys_unlinkat(struct thread *td, struct unlinkat_args *uap) {
     int err = EACCES;
-
-    uap = (struct unlinkat_args *)args;
 
     if (!deny_path_access(uap->path)) {
         err = native_sys_unlinkat(td, uap);
