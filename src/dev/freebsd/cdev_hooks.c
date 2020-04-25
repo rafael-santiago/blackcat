@@ -108,7 +108,6 @@ int cdev_sys_unlinkat(struct thread *td, void *args) {
 
 static int deny_path_access(const char *filepath) {
     int deny = 1;
-    char *kfilepath = NULL;
     size_t temp_size;
     char temp[MAXPATHLEN];
 
@@ -118,8 +117,8 @@ static int deny_path_access(const char *filepath) {
 
     temp_size = strlen(temp);
 
-    deny = has_blackcat_ref(kfilepath, kfilepath + kfilepath_size - 8) &&
-           !has_blackcat_dev_ref(kfilepath, kfilepath + kfilepath_size - 8);
+    deny = has_blackcat_ref(temp, temp + temp_size - 8) &&
+           !has_blackcat_dev_ref(temp, temp + temp_size - 8);
 
 deny_path_access_epilogue:
 
