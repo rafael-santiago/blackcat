@@ -162,6 +162,9 @@ static int dig_up(void) {
     if ((data = blackcat_get_argv(arg)) != NULL) {
         snprintf(dig_up_param_data, sizeof(dig_up_param_data) - 1, "%s", data);
         dig_up_param = remove_go_ups_from_path(dig_up_param_data, sizeof(dig_up_param_data));
+    } else {
+        snprintf(dig_up_param_data, sizeof(dig_up_param_data) - 1, "*");
+        dig_up_param = &dig_up_param_data[0];
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
@@ -205,6 +208,9 @@ static int bury(void) {
     if ((data = blackcat_get_argv(arg)) != NULL) {
         snprintf(bury_param_data, sizeof(bury_param_data) - 1, "%s", data);
         bury_param = remove_go_ups_from_path(bury_param_data, sizeof(bury_param_data));
+    } else {
+        snprintf(bury_param_data, sizeof(bury_param_data) - 1, "*");
+        bury_param = &bury_param_data[0];
     }
 
     BLACKCAT_CONSUME_USER_OPTIONS(a,
