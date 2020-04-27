@@ -4609,6 +4609,27 @@ CUTE_TEST_CASE(blackcat_dev_tests)
         remove("s1.txt");
         remove("s2.txt");
         remove("p.txt");
+
+        // INFO(Rafael): Binary protection tests.
+
+        CUTE_ASSERT(system("rm ../../../bin/blackcat") != 0);
+        CUTE_ASSERT(system("mv ../../../bin/blackcat /dev/null") != 0);
+        CUTE_ASSERT(system("mv /dev/null ../../../bin/blackcat") != 0);
+        CUTE_ASSERT(system("cp /dev/null ../../../bin/blackcat") != 0);
+#if defined(__FreeBSD__) || defined(__linux__)
+        CUTE_ASSERT(system("rm ../../dev/blackcat.ko") != 0);
+        CUTE_ASSERT(system("mv ../../dev/blackcat.ko /dev/null") != 0);
+        CUTE_ASSERT(system("mv /dev/null ../../dev/blackcat.ko") != 0);
+        CUTE_ASSERT(system("cp /dev/null ../../dev/blackcat.ko") != 0);
+#elif defined(__NetBSD__)
+        CUTE_ASSERT(system("rm ../../dev/blackcat.kmod") != 0);
+        CUTE_ASSERT(system("mv ../../dev/blackcat.kmod /dev/null") != 0);
+        CUTE_ASSERT(system("mv /dev/null ../../dev/blackcat.kmod") != 0);
+        CUTE_ASSERT(system("cp /dev/null ../../dev/blackcat.kmod") != 0);
+#else
+# error Some code wanted.
+#endif
+        CUTE_ASSERT(system("../../../bin/blackcat") != 0);  // INFO(Rafael): It cannot cause panics
     } else {
         printf("== Test skipped.\n");
     }
