@@ -16,7 +16,7 @@
 
 #define has_blackcat_kmod_ref(s, se) ( (se) > (s) && (se)[ 0] == 'b' && (se)[ 1] == 'l' && (se)[ 2] == 'a' &&\
                                                      (se)[ 3] == 'c' && (se)[ 4] == 'k' && (se)[ 5] == 'c' &&\
-                                                     (se)[ 6] == 'a' &&\(se)[ 7] == 't' && (se)[ 8] == '.' &&\
+                                                     (se)[ 6] == 'a' && (se)[ 7] == 't' && (se)[ 8] == '.' &&\
                                                      (se)[ 9] == 'k' && (se)[10] == 'm' && (se)[11] == 'o' && (se)[12] == 'd' )
 
 
@@ -50,7 +50,7 @@ int cdev_sys_open(struct lwp *lp, struct sys_open_args *uap, register_t *rp) {
 int cdev_sys_openat(struct lwp *lp, struct sys_openat_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (deny_path_access(SCARG(uap, path)) && (SCARG(uap, flag) & (O_WRONLY|O_RDWR)) != 0) {
+    if (deny_path_access(SCARG(uap, path)) && (SCARG(uap, oflags) & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
         *rp = -1;
     } else {
@@ -73,7 +73,7 @@ int cdev_sys_rename(struct lwp *lp, struct sys_rename_args *uap, register_t *rp)
 int cdev_sys_renameat(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (!deny_path_access(SCARG(uap, old)) && !deny_path_access(SCARG(uap, new))) {
+    if (!deny_path_access(SCARG(uap, from)) && !deny_path_access(SCARG(uap, to))) {
         err = native_sys_renameat(lp, uap, rp);
     }
 
