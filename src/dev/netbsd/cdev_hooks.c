@@ -37,7 +37,7 @@ static int deny_path_access(const char *filepath);
 int cdev_sys_open(struct lwp *lp, struct sys_open_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (deny_path_access(SARG(uap, path)) && (SARG(uap, flags) & (O_WRONLY|O_RDWR)) != 0) {
+    if (deny_path_access(SCARG(uap, path)) && (SCARG(uap, flags) & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
         *rp = -1;
     } else {
@@ -50,7 +50,7 @@ int cdev_sys_open(struct lwp *lp, struct sys_open_args *uap, register_t *rp) {
 int cdev_sys_openat(struct lwp *lp, struct sys_openat_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (deny_path_access(SARG(uap, path)) && (SARG(uap, flag) & (O_WRONLY|O_RDWR)) != 0) {
+    if (deny_path_access(SCARG(uap, path)) && (SCARG(uap, flag) & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
         *rp = -1;
     } else {
@@ -63,7 +63,7 @@ int cdev_sys_openat(struct lwp *lp, struct sys_openat_args *uap, register_t *rp)
 int cdev_sys_rename(struct lwp *lp, struct sys_rename_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (!deny_path_access(SARG(uap, from)) && !deny_path_access(SARG(uap, to))) {
+    if (!deny_path_access(SCARG(uap, from)) && !deny_path_access(SCARG(uap, to))) {
         err = native_sys_rename(lp, uap, rp);
     }
 
@@ -73,7 +73,7 @@ int cdev_sys_rename(struct lwp *lp, struct sys_rename_args *uap, register_t *rp)
 int cdev_sys_renameat(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (!deny_path_access(SARG(uap, old)) && !deny_path_access(SARG(uap, new))) {
+    if (!deny_path_access(SCARG(uap, old)) && !deny_path_access(SCARG(uap, new))) {
         err = native_sys_renameat(lp, uap, rp);
     }
 
@@ -83,7 +83,7 @@ int cdev_sys_renameat(struct lwp *lp, struct sys_renameat_args *uap, register_t 
 int cdev_sys_unlink(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (!deny_path_access(SARG(uap, path))) {
+    if (!deny_path_access(SCARG(uap, path))) {
         err = native_sys_unlink(lp, uap, rp);
     }
 
@@ -93,7 +93,7 @@ int cdev_sys_unlink(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp)
 int cdev_sys_unlinkat(struct lwp *lp, struct sys_unlinkat_args *uap, register_t *rp) {
     int err = EACCES;
 
-    if (!deny_path_access(SARG(uap, path))) {
+    if (!deny_path_access(SCARG(uap, path))) {
         err = native_sys_unlinkat(lp, uap, rp);
     }
 
