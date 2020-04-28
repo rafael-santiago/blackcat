@@ -20,87 +20,81 @@
                                                      (se)[ 9] == 'k' && (se)[10] == 'm' && (se)[11] == 'o' && (se)[12] == 'd' )
 
 
-int (*native_sys_open)(struct thread *td, struct open_args *uap) = NULL;
+int (*native_sys_open)(struct lwp *lp, struct sys_open_args *uap, register_t *rp) = NULL;
 
-int (*native_sys_openat)(struct thread *td, struct openat_args *uap) = NULL;
+int (*native_sys_openat)(struct lwp *lp, struct sys_openat_args *uap, register_t *rp) = NULL;
 
-int (*native_sys_rename)(struct thread *td, struct rename_args *uap) = NULL;
+int (*native_sys_rename)(struct lwp *lp, struct sys_rename_args *uap, register_t *rp) = NULL;
 
-int (*native_sys_renameat)(struct thread *td, struct renameat_args *uap) = NULL;
+int (*native_sys_renameat)(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp) = NULL;
 
-int (*native_sys_unlink)(struct thread *td, struct unlink_args *uap) = NULL;
+int (*native_sys_unlink)(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp) = NULL;
 
-int (*native_sys_unlinkat)(struct thread *td, struct unlinkat_args *uap) = NULL;
+int (*native_sys_unlinkat)(struct lwp *lp, struct sys_unlinkat_args *uap, register_t *rp) = NULL;
 
 static int deny_path_access(const char *filepath);
 
-int cdev_sys_open(struct thread *td, struct open_args *uap) {
+int cdev_sys_open(struct lwp *lp, struct sys_open_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (deny_path_access(uap->path) && (uap->flags & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
+        *rp = -1;
     } else {
-        err = native_sys_open(td, uap);
+        err = native_sys_open(lp, uap, rp);
     }
 
     return err;
 }
 
-int cdev_sys_openat(struct thread *td, struct openat_args *uap) {
+int cdev_sys_openat(struct lwp *lp, struct sys_openat_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (deny_path_access(uap->path) && (uap->flag & (O_WRONLY|O_RDWR)) != 0) {
         err = EACCES;
+        *rp = -1;
     } else {
-        err = native_sys_openat(td, uap);
+        err = native_sys_openat(lp, uap, rp);
     }
 
     return err;
 }
 
-int cdev_sys_rename(struct thread *td, struct rename_args *uap) {
+int cdev_sys_rename(struct lwp *lp, struct sys_rename_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (!deny_path_access(uap->from) && !deny_path_access(uap->to)) {
-        err = native_sys_rename(td, uap);
-    } else {
-        td->td_retval[0] = -1;
+        err = native_sys_rename(lp, uap, rp);
     }
 
     return err;
 }
 
-int cdev_sys_renameat(struct thread *td, struct renameat_args *uap) {
+int cdev_sys_renameat(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (!deny_path_access(uap->old) && !deny_path_access(uap->new)) {
-        err = native_sys_renameat(td, uap);
-    } else {
-        td->td_retval[0] = -1;
+        err = native_sys_renameat(lp, uap, rp);
     }
 
     return err;
 }
 
-int cdev_sys_unlink(struct thread *td, struct unlink_args *uap) {
+int cdev_sys_unlink(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (!deny_path_access(uap->path)) {
-        err = native_sys_unlink(td, uap);
-    } else {
-        td->td_retval[0] = -1;
+        err = native_sys_unlink(lp, uap, rp);
     }
 
     return err;
 }
 
-int cdev_sys_unlinkat(struct thread *td, struct unlinkat_args *uap) {
+int cdev_sys_unlinkat(struct lwp *lp, struct sys_unlinkat_args *uap, register_t *rp) {
     int err = EACCES;
 
     if (!deny_path_access(uap->path)) {
-        err = native_sys_unlinkat(td, uap);
-    } else {
-        td->td_retval[0] = -1;
+        err = native_sys_unlinkat(lp, uap, rp);
     }
 
     return err;

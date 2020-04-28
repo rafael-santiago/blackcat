@@ -11,32 +11,33 @@
 
 #include <kook.h>
 #include <sys/proc.h>
-#include <sys/syscallsubr.h>
-#include <sys/sysproto.h>
+#include <sys/systm.h>
+#include <sys/syscallargs.h>
+#include <sys/syscall.h>
 #include <sys/fcntl.h>
 
-extern int (*native_sys_open)(struct thread *td, struct open_args *uap);
+extern int (*native_sys_open)(struct lwp *lp, struct sys_open_args *uap, register_t *rp);
 
-extern int (*native_sys_openat)(struct thread *td, struct openat_args *uap);
+extern int (*native_sys_openat)(struct lwp *lp, struct sys_openat_args *uap, register_t *rp);
 
-extern int (*native_sys_rename)(struct thread *td, struct rename_args *uap);
+extern int (*native_sys_rename)(struct lwp *lp, struct sys_rename_args *uap, register_t *rp);
 
-extern int (*native_sys_renameat)(struct thread *td, struct renameat_args *uap);
+extern int (*native_sys_renameat)(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp);
 
-extern int (*native_sys_unlink)(struct thread *td, struct unlink_args *uap);
+extern int (*native_sys_unlink)(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp);
 
-extern int (*native_sys_unlinkat)(struct thread *td, struct unlinkat_args *uap);
+extern int (*native_sys_unlinkat)(struct lwp *lp, struct sys_unlinkat_args *uap, register_t *rp);
 
-int cdev_sys_open(struct thread *td, struct open_args *uap);
+int cdev_sys_open(struct lwp *lp, struct sys_open_args *uap, register_t *rp);
 
-int cdev_sys_openat(struct thread *td, struct openat_args *uap);
+int cdev_sys_openat(struct lwp *lp, struct sys_openat_args *uap, register_t *rp);
 
-int cdev_sys_rename(struct thread *td, struct rename_args *uap);
+int cdev_sys_rename(struct lwp *lp, struct sys_rename_args *uap, register_t *rp);
 
-int cdev_sys_renameat(struct thread *td, struct renameat_args *uap);
+int cdev_sys_renameat(struct lwp *lp, struct sys_renameat_args *uap, register_t *rp);
 
-int cdev_sys_unlink(struct thread *td, struct unlink_args *uap);
+int cdev_sys_unlink(struct lwp *lp, struct sys_unlink_args *uap, register_t *rp);
 
-int cdev_sys_unlinkat(struct thread *td, struct unlinkat_args *uap);
+int cdev_sys_unlinkat(struct lwp *lp, struct sys_unlinkat_args *uap, register_t *rp);
 
 #endif
