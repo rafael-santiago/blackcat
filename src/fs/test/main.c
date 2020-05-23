@@ -1810,7 +1810,13 @@ CUTE_TEST_CASE(remove_go_ups_from_path_tests)
     snprintf(path, sizeof(path) - 1, "./the-fun-machine-took-a-shit-and-died-exactly-here");
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);
+#if defined(__unix__)
     snprintf(exp_path, sizeof(exp_path) - 1, "%s/main.c", cwd);
+#elif defined(_WIN32)
+    snprintf(exp_path, sizeof(exp_path) - 1, "%s\\main.c", cwd);
+#else
+# error Some code.
+#endif
     snprintf(path, sizeof(path) - 1, "../test/main.c");
     CUTE_ASSERT(remove_go_ups_from_path(path, sizeof(path)) == &path[0]);
     CUTE_ASSERT(strcmp(path, exp_path) == 0);

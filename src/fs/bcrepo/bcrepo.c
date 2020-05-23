@@ -3628,7 +3628,7 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
         goto remove_go_ups_from_path_epilogue;
     }
 #elif defined(_WIN32)
-    if (path == NULL || strstr(path, "..\\") == NULL && strstr(path, "../") == NULL ||
+    if (path == NULL || strstr(path, "..\\") == NULL && strstr(path, "../") == NULL &&
                         strstr(path, ".\\") == NULL && strstr(path, "./") == NULL) {
         goto remove_go_ups_from_path_epilogue;
     }
@@ -3661,6 +3661,7 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
         while (strstr(cp, "./") == cp) {
             cp += 2;
         }
+        filename[go_ups_nr++] = *cp;
 #elif defined(_WIN32)
         while (strstr(cp, "..\\") == cp || strstr(cp, "../") == cp) {
             cp += 3;
@@ -3668,10 +3669,10 @@ char *remove_go_ups_from_path(char *path, const size_t path_size) {
         while (strstr(cp, ".\\") == cp || strstr(cp, "./") == cp) {
             cp += 2;
         }
+        filename[go_ups_nr++] = (*cp == '/') ? '\\' : *cp;
 #else
 # error Some code wanted.
 #endif
-        filename[go_ups_nr++] = *cp;
         cp++;
     }
 
