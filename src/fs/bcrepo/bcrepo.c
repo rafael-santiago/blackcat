@@ -3477,7 +3477,7 @@ kryptos_u8_t *bcrepo_read(const char *filepath, bfs_catalog_ctx *catalog, size_t
 
     *out_size = 0;
 
-    fp = fopen(filepath, "rb");
+    fp = fopen(filepath, "rt");
 
     if (fp == NULL) {
         fprintf(stderr, "ERROR: Unable to read the catalog file '%s'.\n", filepath);
