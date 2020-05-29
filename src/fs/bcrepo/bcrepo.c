@@ -2697,7 +2697,7 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
     }
 #elif defined(_WIN32)
     if (*(p - 1) != '/' && *(p - 1) != '\\') {
-        *(p) = '/';
+        *(p) = '\\';
         p += 1;
     }
 #else
@@ -2750,7 +2750,7 @@ static size_t bcrepo_mkpath(char *path, const size_t path_size,
         }
 #elif defined(_WIN32)
         if (subdir[subdir_size - 1] != '/' && subdir[subdir_size - 1] != '\\') {
-            subdir[subdir_size++] = '/';
+            subdir[subdir_size++] = '\\';
         }
 #else
 # error Some code wanted.
