@@ -1875,7 +1875,11 @@ static int create_rescue_file(const char *rootpath, const size_t rootpath_size, 
         return 0;
     }
 
+#if __STDC_VERSION__ >= 199901L && !defined(_WIN32)
     fprintf(rp, "%s,%zu\n", fullpath, data_size);
+#else
+    fprintf(rp, "%s,%lu\n", fullpath, data_size);
+#endif
     fwrite(data, 1, data_size, rp);
     fclose(rp);
 
