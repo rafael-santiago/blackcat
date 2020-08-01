@@ -22,6 +22,8 @@ void blackcat_set_argc_argv(int argc, char **argv);
 
 char *blackcat_get_argv(const int v);
 
+#define is_dashed_option(option, option_size) ( option_size > 1 && option[0] == '-' && option[1] == '-' )
+
 #define BLACKCAT_GET_OPTION_OR_DIE(option, cute_option, esc_label) {\
     if ((option = blackcat_get_option(cute_option, NULL)) == NULL) {\
         fprintf(stderr, "ERROR: The required '%s' option is missing.\n", cute_option);\
@@ -33,8 +35,9 @@ char *blackcat_get_argv(const int v);
     ac = continue_from;\
     do {\
         if (option_var == NULL || strlen(option_var) == 1 ||\
-                                  (!consume_dashed_options && option_var != NULL && strlen(option_var) > 1 &&\
-                                   option_var[0] != '-' && option_var[1] != '-') || consume_dashed_options) {\
+                                  (!consume_dashed_options && option_var != NULL &&\
+                                   !is_dashed_option(option_var, strlen(option_var))) ||\
+                                   consume_dashed_options) {\
             consume_stmt;\
         }\
         if (!consume_dashed_options) {\
@@ -43,7 +46,7 @@ char *blackcat_get_argv(const int v);
                 if (option_var != NULL) {\
                     option_var = remove_go_ups_from_path(option_var, option_var_size);\
                 }\
-            } while (option_var != NULL && strlen(option_var) > 1 && option_var[0] == '-' && option_var[1] == '-');\
+            } while (option_var != NULL && is_dashed_option(option_var, strlen(option_var)));\
         } else {\
             option_var = blackcat_get_argv(ac++);\
             if (option_var != NULL) {\

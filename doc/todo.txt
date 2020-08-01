@@ -9,6 +9,7 @@
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (Z) Extend net protection. +NewFeature
+x (A) Understand why some files sometimes are not being added accordingly. +BugFix
 x (A) Extend the binary protection also to kernel module object
       file. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 x (B) Avoid (automatically) the binary removing
