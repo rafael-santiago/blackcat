@@ -4317,7 +4317,7 @@ static void dump_catalog_data(kryptos_u8_t *out, const size_t out_size, const bf
     o = out;
 
     while (!all_dump_done(dumpers)) {
-        d = kryptos_get_random_byte() % dumpers_nr;
+        d = kryptos_unbiased_rand_mod_u8(dumpers_nr);
 
         if (dumpers[d].done) {
             // INFO(Rafael): This is a little bit inefficient but for the sake of paranoia is better.
@@ -4982,7 +4982,7 @@ static kryptos_u8_t *get_random_catalog_salt(size_t *out_size) {
         goto get_random_catalog_salt_epilogue;
     }
 
-    *out_size = salt_size[kryptos_get_random_byte() % salt_size_nr];
+    *out_size = salt_size[kryptos_unbiased_rand_mod_u8(salt_size_nr)];
     if ((out = (kryptos_u8_t *)kryptos_get_random_block(*out_size)) == NULL) {
         *out_size = 0;
     }
