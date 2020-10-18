@@ -10,11 +10,15 @@
 
 int strglob(const char *str, const char *pattern) {
     const char *sp, *sp_end;
-    const char *p, *p_end;
+    const char *p, *p_end, *lp;
     int matches = 1;
 
     if (str == NULL || pattern == NULL) {
         return 0;
+    }
+
+    if (strcmp(pattern, "*") == 0 || *pattern == 0) {
+        return 1;
     }
 
     // EMPTY-CAUSE(Rafael): Maybe avoid an excessive callstack growth on star cases, it is ugly and also sucks...
@@ -27,7 +31,7 @@ int strglob(const char *str, const char *pattern) {
     while (matches && p != p_end && sp != sp_end) {
         switch (*p) {
             case '*':
-                matches = (*(p + 1) == 0) || (*(sp + 1) == 0);
+                matches = (*(p + 1) == 0) && (*(sp + 1) == 0);
 
                 while (!matches && sp != sp_end) {
                     matches = strglob(sp, p + 1);
