@@ -982,6 +982,14 @@ Always when you lock/unlock files, set any attribute or even read/write it direc
 you really want to let a null time information to a possible attacker, the command untouch must be the last command. After
 locking every sensitive data run a untouch command over the whole repo or at least over data you judge more sensible.
 
+IMPORTANT: If you are using Ntfs, untouch command will not fully work due to Ntfs' fine tuning related to performance.
+           By default Ntfs does not update last access time on devices greater than 128 GB. If leaking last access time
+		   and modification time are issues for you, try to modify:
+				HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\FileSystem\NtfsDisableLastAccessUpdate to 0x80000000
+						(there is no guarantee that this workaround will keep working after future Windows updates) or
+		   take into consideration to create your repository into a FAT filesystem instead, no cringe harmful performance
+		   measures to your privacy!
+
 Protecting network traffic
 ==========================
 

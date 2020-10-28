@@ -9,7 +9,7 @@
 
 void *blackcat_memcpy(void *dest, void *src, size_t n) {
 #if !defined(__i386__)
-    void *dest_p, *src_p;
+    unsigned char *dest_p = (unsigned char *)dest, *src_p = (unsigned char *)src;
 #endif
 
     if (dest == NULL) {

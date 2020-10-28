@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#if defined(_WIN32)
+# include <windows.h>
+#endif
 
 #define BCREPO_DATA "bcrepo.data"
 
@@ -63,6 +66,9 @@ struct checkpoint_ctx {
 int save_text(const char *data, const size_t data_size, const char *filepath);
 char *open_text(const char *filepath, size_t *data_size);
 int checkpoint(void *args);
+#if defined(_WIN32)
+int last_access_update_enabled(void);
+#endif
 
 CUTE_MAIN(fs_tests);
 
@@ -265,6 +271,48 @@ CUTE_TEST_CASE(bcrepo_config_module_tests)
 
     CUTE_ASSERT(rmdir(".bcrepo") == 0);
 CUTE_TEST_CASE_END
+
+#if defined(_WIN32)
+
+int last_access_update_enabled(void) {
+	static int g_last_access_update_enabled = -1;
+	HKEY hKey = NULL;
+	DWORD value, value_size;
+	char volname[4096], fs_name[20];
+	DWORD mcn, fs_flags;
+
+	if (g_last_access_update_enabled > -1) {
+		goto last_access_update_enabled_epilogue;
+	}
+
+	memset(fs_name, 0, sizeof(fs_name));
+	if (GetVolumeInformation(NULL, volname, sizeof(volname), NULL, &mcn, &fs_flags, fs_name, sizeof(fs_name)) != FALSE) {
+		if (strcmp(fs_name, "NTFS") != 0) {
+			g_last_access_update_enabled = 1;
+			goto last_access_update_enabled_epilogue;
+		}
+	}
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\FileSystem", 0, KEY_QUERY_VALUE, &hKey) != ERROR_SUCCESS) {
+		g_last_access_update_enabled = 0;
+		goto last_access_update_enabled_epilogue;
+	}
+
+	value_size = sizeof(value);
+	if (RegQueryValueEx(hKey, "NtfsDisableLastAccessUpdate", NULL, NULL, (BYTE *)&value, &value_size) == ERROR_SUCCESS) {
+		g_last_access_update_enabled = (value == 0x80000000);
+	} else {
+		g_last_access_update_enabled = 0;
+	}
+
+	RegCloseKey(hKey);
+
+last_access_update_enabled_epilogue:
+
+	return g_last_access_update_enabled;
+}
+
+#endif
 
 CUTE_TEST_CASE(bcrepo_untouch_tests)
     bfs_catalog_ctx *catalog = NULL;
@@ -588,41 +636,48 @@ CUTE_TEST_CASE(bcrepo_untouch_tests)
 
     CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
-    CUTE_ASSERT(stat("etc", &etc_curr) == 0);
+	if (last_access_update_enabled()) {
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// INFO(Rafael): By default Nfts does not update last access time for performance issues on devices larger than 128 GB.     !!
+		//               Due to it untouch capabilities will be reduced on Ntfs environments, user must explicitly deactivate this  !!
+		//               fs fine tuning on registry if she/he wants to use full capabilites of untouch command.                     !!
+		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		CUTE_ASSERT(stat("etc", &etc_curr) == 0);
 
-    CUTE_ASSERT(memcmp(&etc_curr.st_atime, &etc_old.st_atime, sizeof(etc_old.st_atime)) != 0);
+		CUTE_ASSERT(memcmp(&etc_curr.st_atime, &etc_old.st_atime, sizeof(etc_old.st_atime)) != 0);
 
-    g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_atime));
-    g_cute_leak_check = !g_cute_leak_check;
+		g_cute_leak_check = !g_cute_leak_check;
+		strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_atime));
+		g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
+		CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
-    CUTE_ASSERT(memcmp(&etc_curr.st_mtime, &etc_old.st_mtime, sizeof(etc_old.st_mtime)) != 0);
+		CUTE_ASSERT(memcmp(&etc_curr.st_mtime, &etc_old.st_mtime, sizeof(etc_old.st_mtime)) != 0);
 
-    g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_mtime));
-    g_cute_leak_check = !g_cute_leak_check;
+		g_cute_leak_check = !g_cute_leak_check;
+		strftime(str_time, sizeof(str_time), "%Y", localtime(&etc_curr.st_mtime));
+		g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
+		CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
-    CUTE_ASSERT(stat(".bcrepo", &bcrepo_curr) == 0);
+		CUTE_ASSERT(stat(".bcrepo", &bcrepo_curr) == 0);
 
-    CUTE_ASSERT(memcmp(&bcrepo_curr.st_atime, &bcrepo_old.st_atime, sizeof(bcrepo_old.st_atime)) != 0);
+		CUTE_ASSERT(memcmp(&bcrepo_curr.st_atime, &bcrepo_old.st_atime, sizeof(bcrepo_old.st_atime)) != 0);
 
-    g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_atime));
-    g_cute_leak_check = !g_cute_leak_check;
+		g_cute_leak_check = !g_cute_leak_check;
+		strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_atime));
+		g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
+		CUTE_ASSERT(strcmp(str_time, "1970") == 0);
 
-    CUTE_ASSERT(memcmp(&bcrepo_curr.st_mtime, &bcrepo_old.st_mtime, sizeof(bcrepo_old.st_mtime)) != 0);
+		CUTE_ASSERT(memcmp(&bcrepo_curr.st_mtime, &bcrepo_old.st_mtime, sizeof(bcrepo_old.st_mtime)) != 0);
 
-    g_cute_leak_check = !g_cute_leak_check;
-    strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_mtime));
-    g_cute_leak_check = !g_cute_leak_check;
+		g_cute_leak_check = !g_cute_leak_check;
+		strftime(str_time, sizeof(str_time), "%Y", localtime(&bcrepo_curr.st_mtime));
+		g_cute_leak_check = !g_cute_leak_check;
 
-    CUTE_ASSERT(strcmp(str_time, "1970") == 0);
+		CUTE_ASSERT(strcmp(str_time, "1970") == 0);
+	}
 #else
 # error Some code wanted.
 #endif

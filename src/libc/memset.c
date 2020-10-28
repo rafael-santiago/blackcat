@@ -9,7 +9,7 @@
 
 void *blackcat_memset(void *s, int c, size_t n) {
 #if !defined(__i386__)
-    const void *sp_end, *sp;
+    unsigned char *sp_end, *sp;
 #endif
 
     if (s == NULL) {
@@ -26,7 +26,7 @@ void *blackcat_memset(void *s, int c, size_t n) {
     sp_end = sp + n;
 
     while (sp != sp_end) {
-        *sp = c;
+        *sp = (unsigned char)c;
         sp++;
     }
 #endif
