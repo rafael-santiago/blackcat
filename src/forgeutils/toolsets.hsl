@@ -19,6 +19,18 @@ include on windows,openbsd,minixm,sunos ~/toolsets/null/null.hsl
 
 include ~/fsutil.hsl
 
+function is_x64() : result type int {
+    var is type int;
+    $is = 0;
+    if (hefesto.sys.run(get_toolset() + " -dumpmachine > .dumpmachine") == 0) {
+        var x64 type list;
+        $x64 = hefesto.sys.lines_from_file(".dumpmachine", "^x86_64");
+        $is = ($x64.count() > 0);
+        hefesto.sys.rm(".dumpmachine");
+    }
+    result $is;
+}
+
 function blackcat_rootdir() : result type string {
     result hefesto.sys.env("BLACKCAT_ROOTDIR");
 }

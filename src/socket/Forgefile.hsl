@@ -32,6 +32,10 @@ libbcsck.prologue() {
     $lib = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    if (hefesto.sys.os_name() != "windows" && is_x64()) {
+        $cflags.add_item("-fPIC");
+    }
+
     setup_ciphering_schemes($cflags);
 
     var option type list;
