@@ -123,7 +123,7 @@ asmlinkage long cdev_sys_openat(int dfd, const char __user *pathname, int flags,
     return fd;
 }
 
-asmlinkage long cdev_sys_creat(const char __user *pathname, mode_t mode) {
+asmlinkage long cdev_sys_creat(const char __user *pathname, umode_t mode) {
     int fd = -EACCES;
 
     if (pathname != NULL && !deny_path_access(pathname)) {

@@ -28,11 +28,11 @@ extern asmlinkage long (*native_sys_renameat)(int, const char __user *, int, con
 
 extern asmlinkage long (*native_sys_renameat2)(int, const char __user *, int, const char __user *, unsigned int);
 
-asmlinkage long cdev_sys_open(const char __user *pathname, int flags, mode_t umode);
+asmlinkage long cdev_sys_open(const char __user *pathname, int flags, umode_t mode);
 
-asmlinkage long cdev_sys_openat(int dfd, const char __user *pathname, int flags, mode_t umode);
+asmlinkage long cdev_sys_openat(int dfd, const char __user *pathname, int flags, umode_t mode);
 
-asmlinkage long cdev_sys_creat(const char __user *file, mode_t umode);
+asmlinkage long cdev_sys_creat(const char __user *file, umode_t mode);
 
 asmlinkage long cdev_sys_unlink(const char __user *pathname);
 

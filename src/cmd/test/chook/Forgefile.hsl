@@ -37,6 +37,10 @@ libchook.prologue() {
     $libraries = hefesto.sys.get_option("libraries");
     $ldflags = hefesto.sys.get_option("ldflags");
 
+    if (is_x64() && hefesto.sys.os_name() != "sunos") {
+        $cflags.add_item("-fPIC");
+    }
+
     if (hefesto.sys.os_name() == "linux") {
         $ldflags.add_item("-ldl");
     } else if (hefesto.sys.os_name() == "netbsd") {
