@@ -1,3 +1,5 @@
+(A) Stop using biased random picking in `socket/socket.c:*`. +SecurityWorries
+(A) Stop using biased random picking in `utils/random.c:random_printable_padding`. +SecurityWorries
 (A) Implement a sanity check for the environment. It must ensure that any related binary was
     replaced since the last update. It must work based on a well-initialized
     repository. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
