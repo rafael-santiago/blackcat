@@ -19,23 +19,14 @@ kryptos_u8_t *random_printable_padding(size_t *size) {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
     };
     kryptos_u8_t s2[62];
-    size_t *rs, s;
+    size_t s;
     kryptos_u8_t *data, *dp, *dp_end;
 
-    *size = 0;
-    rs = (size_t *) kryptos_get_random_block(sizeof(size_t));
-
-    if (rs == NULL) {
-        goto random_printable_padding_epilogue;
-    }
-
-    *size = *rs % 1025;
+    *size = kryptos_unbiased_rand_mod_u16(1025);
 
     if (*size == 0) {
         *size = 1;
     }
-
-    kryptos_freeseg(rs, sizeof(size_t));
 
     dp = data = (kryptos_u8_t *) kryptos_newseg(*size);
 
@@ -47,11 +38,11 @@ kryptos_u8_t *random_printable_padding(size_t *size) {
     dp_end = dp + *size;
 
     for (s = 0; s < 62; s++) {
-        s2[s] = s1[kryptos_get_random_byte() % 62];
+        s2[s] = s1[kryptos_unbiased_rand_mod_u8(62)];
     }
 
     while (dp != dp_end) {
-        *dp = s2[kryptos_get_random_byte() % 62];
+        *dp = s2[kryptos_unbiased_rand_mod_u8(62)];
         dp++;
     }
 
