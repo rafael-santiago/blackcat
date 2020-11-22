@@ -959,7 +959,7 @@ static int bcsck_read_rule(void) {
 
     kryptos_u8_t *db_key = NULL, *temp = NULL, *session_key = NULL, rule_id[255], *kpriv = NULL, *kpub = NULL;
     kryptos_u8_t *kpriv_key = NULL;
-    size_t kpriv_key_size, *key_size = NULL;
+    size_t kpriv_key_size;
     char db_path[4096], *port = NULL;
     int err = 0;
     size_t session_key_size = 0, temp_size = 0, db_size = 0, db_path_size = 0, db_key_size = 0;
@@ -1119,20 +1119,11 @@ static int bcsck_read_rule(void) {
             goto bcsck_read_rule_epilogue;
         }
 
-        if ((key_size = (size_t *) kryptos_get_random_block(sizeof(size_t))) == NULL) {
-            fprintf(stderr, "ERROR: Unable to generate a random key size.\n");
-            err =  EFAULT;
-            goto bcsck_read_rule_epilogue;
-        }
-
-        sx.key_size = (*key_size % 8192);
+        sx.key_size = kryptos_unbiased_rand_mod_u16(8192);
 
         if (sx.key_size == 0) {
             sx.key_size = 32;
         }
-
-        kryptos_freeseg(key_size, sizeof(size_t));
-        key_size = NULL;
 
         sx.s_bits = strtoul(temp, NULL, 10);
         temp = NULL;
@@ -1281,10 +1272,6 @@ bcsck_read_rule_epilogue:
         session_key_size = 0;
     }
 
-    if (key_size != NULL) {
-        kryptos_freeseg(key_size, sizeof(size_t));
-    }
-
     if (fp != NULL) {
         fclose(fp);
     }
@@ -1343,7 +1330,7 @@ static int do_xchg_server(void) {
     // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
     //               Due to it, let's avoid a deadlock by doing it before anything.
 
-    send_seed_size = seed_sizes[kryptos_get_random_byte() % (sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
+    send_seed_size = seed_sizes[kryptos_unbiased_rand_mod_u8(sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
     send_seed = kryptos_get_random_block(send_seed_size);
 
     // INFO(Rafael): Ensuring that any hooked socket function will not be used by the user application.
@@ -1531,7 +1518,7 @@ static int do_xchg_client(void) {
     // INFO(Rafael): Depending on the system, libkryptos randomness functions will call read.
     //               Due to it, let's avoid a deadlock by doing it before anything.
 
-    send_seed_size = seed_sizes[kryptos_get_random_byte() % (sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
+    send_seed_size = seed_sizes[kryptos_unbiased_rand_mod_u8(sizeof(seed_sizes) / sizeof(seed_sizes[0]))];
     send_seed = kryptos_get_random_block(send_seed_size);
 
     // INFO(Rafael): Ensuring that any hooked socket function will not be used by the user application.

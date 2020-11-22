@@ -1,4 +1,3 @@
-(A) Stop using biased random picking in `socket/socket.c:*`. +SecurityWorries
 (A) Implement a sanity check for the environment. It must ensure that any related binary was
     replaced since the last update. It must work based on a well-initialized
     repository. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
@@ -10,6 +9,7 @@
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (Z) Extend net protection. +NewFeature
+x (A) Stop using biased random picking in `socket/socket.c:*`. +SecurityWorries
 x (A) Stop using biased random picking in `utils/random.c:random_printable_padding`. +SecurityWorries
 x (A) Understand why some files sometimes are not being added accordingly. +BugFix
 x (A) Extend the binary protection also to kernel module object
