@@ -16,3 +16,6 @@
 [submodule "src/lib/lethe"]
 	path = src/lib/lethe
 	url = https://github.com/rafael-santiago/lethe
+[submodule "src/lib/aegis"]
+	path = src/lib/aegis
+	url = https://github.com/rafael-santiago/aegis

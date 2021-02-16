@@ -130,6 +130,30 @@ local function mkclean_recur(dirlist type list) : result type none {
     }
 }
 
+local function build_libaegis() : result type int {
+    var libpath type string;
+    var rootdir type string;
+
+    $rootdir = hefesto.sys.env("BLACKCAT_ROOTDIR");
+    $libpath = hefesto.sys.make_path($rootdir, "lib/aegis/lib/libaegis.a");
+
+    var exit_code type int;
+    $exit_code = 0;
+
+    if (isfile($libpath) == 0) {
+        $exit_code = 1;
+        var oldcwd type string;
+        $oldcwd = hefesto.sys.pwd();
+        $libpath = hefesto.sys.make_path($rootdir, "lib/aegis/src");
+        if (hefesto.sys.cd($libpath)) {
+            $exit_code = hefesto.sys.run("hefesto");
+        }
+        hefesto.sys.cd($oldcwd);
+    }
+
+    result $exit_code;
+}
+
 local function build_libkryptos() : result type int {
     var libpath type string;
     var rootdir type string;

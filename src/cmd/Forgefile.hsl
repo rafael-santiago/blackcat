@@ -75,6 +75,10 @@ blackcat-cmd.prologue() {
         hefesto.project.abort(1);
     }
 
+    if (build("libaegis") != 0) {
+        hefesto.project.abort(1);
+    }
+
     $appname = get_appname();
 }
 

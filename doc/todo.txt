@@ -1,3 +1,4 @@
+(A) Put anti-debug panic button by using Aegis. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (A) Implement a sanity check for the environment. It must ensure that any related binary was
     replaced since the last update. It must work based on a well-initialized
     repository. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
@@ -9,6 +10,7 @@
 (Z) What about roll and unroll commands? +DevelReverie
 (Z) Avoid on-line debugging when on FreeBSD, NetBSD and Linux. +NewFeature,+SecurityWorries,+FreakParanoidFeature,+Improvement
 (Z) Extend net protection. +NewFeature
+x (A) Integrate libaegis to application build. +Build
 x (A) Stop using biased random picking in `socket/socket.c:*`. +SecurityWorries
 x (A) Stop using biased random picking in `utils/random.c:random_printable_padding`. +SecurityWorries
 x (A) Understand why some files sometimes are not being added accordingly. +BugFix
