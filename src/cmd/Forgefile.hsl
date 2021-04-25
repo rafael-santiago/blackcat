@@ -49,8 +49,15 @@ blackcat-cmd.prologue() {
     if (hefesto.sys.os_name() == "netbsd") {
         $cflags.add_item("-std=c99");
         $ldflags.add_item("-lprop");
+        $ldflags.add_item("-lpthread");
     } else if (hefesto.sys.os_name() == "sunos") {
         $cflags.add_item("-std=c99");
+    } else if (hefesto.sys.os_name() == "freebsd") {
+        $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "linux") {
+        $ldflags.add_item("-lpthread");
+    } else if (hefesto.sys.os_name() == "openbsd") {
+        $ldflags.add_item("-lpthread");
     }
 
     if (hefesto.sys.os_name() != "windows") {

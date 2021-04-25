@@ -235,6 +235,7 @@ CUTE_DECLARE_TEST_CASE(blackcat_poke_attach_detach_cmds_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_untouch_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_config_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_do_cmd_tests);
+CUTE_DECLARE_TEST_CASE(blackcat_poke_do_cmd_with_no_debug_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_repo_by_using_kdf_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_net_cmd_tests);
 CUTE_DECLARE_TEST_CASE(blackcat_poke_token_cmd_tests);
@@ -595,6 +596,7 @@ CUTE_TEST_CASE_SUITE(blackcat_poking_tests)
     CUTE_RUN_TEST(blackcat_poke_untouch_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_config_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_do_cmd_tests);
+    CUTE_RUN_TEST(blackcat_poke_do_cmd_with_no_debug_tests);
     CUTE_RUN_TEST(blackcat_poke_repo_by_using_kdf_tests);
     CUTE_RUN_TEST(blackcat_poke_net_cmd_tests);
     CUTE_RUN_TEST(blackcat_poke_token_cmd_tests);
@@ -3142,6 +3144,129 @@ CUTE_TEST_CASE(blackcat_poke_config_cmd_tests)
     CUTE_ASSERT(blackcat("config --remove", "Zzz", NULL) == 0);
 
     CUTE_ASSERT(blackcat("deinit", "Zzz", NULL) == 0);
+CUTE_TEST_CASE_END
+
+CUTE_TEST_CASE(blackcat_poke_do_cmd_with_no_debug_tests)
+    char bcmd[65535], *protlayer;
+    unsigned char *data;
+    size_t data_size;
+
+    protlayer = get_test_protlayer(0, 3);
+
+    CUTE_ASSERT(protlayer != NULL);
+
+    // INFO(Rafael): Do tests.
+
+    snprintf(bcmd, sizeof(bcmd) - 1, "init "
+                                     "--catalog-hash=sha3-384 "
+                                     "--key-hash=bcrypt "
+                                     "--bcrypt-cost=8 "
+                                     "--protection-layer-hash=sha-512 "
+                                     "--protection-layer=%s --keyed-alike --no-debug", protlayer);
+
+    CUTE_ASSERT(blackcat(bcmd,
+                         "Zzzoldar\nZzzoldar", NULL) == 0);
+
+#if defined(__unix__)
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG",
+                            "user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                            "lock-s1:\n\t../../../bin/blackcat lock s1.txt --no-debug<dummy\n\n"
+                            "lock-s3:\n\t../../../bin/blackcat lock s3.txt --no-debug<dummy\n\n"
+                            "unlock-s1:\n\t../../../bin/blackcat unlock s1.txt --no-debug<dummy\n\n"
+                            "unlock-s3:\n\t../../../bin/blackcat unlock s3.txt --no-debug<dummy\n\n",
+                            strlen("user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                                    "lock-s1:\n\t../../../bin/blackcat lock s1.txt --no-debug<dummy\n\n"
+                                    "lock-s3:\n\t../../../bin/blackcat lock s3.txt --no-debug<dummy\n\n"
+                                    "unlock-s1:\n\t../../../bin/blackcat unlock s1.txt --no-debug<dummy\n\n"
+                                    "unlock-s3:\n\t../../../bin/blackcat unlock s3.txt --no-debug<dummy\n\n")) == 1);
+#elif defined(_WIN32)
+    CUTE_ASSERT(create_file(".bcrepo/CONFIG",
+                            "user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                            "lock-s1:\n\t..\\..\\..\\bin\\blackcat.exe lock s1.txt --no-debug<dummy\n\n"
+                            "lock-s3:\n\t..\\..\\..\\bin\\blackcat.exe lock s3.txt --no-debug<dummy\n\n"
+                            "unlock-s1:\n\t..\\..\\..\\bin\\blackcat.exe unlock s1.txt --no-debug<dummy\n\n"
+                            "unlock-s3:\n\t..\\..\\..\\bin\\blackcat.exe unlock s3.txt --no-debug<dummy\n\n",
+                            strlen("user-commands:\n\tlock-s1\n\tlock-s3\n\tunlock-s1\n\tunlock-s3\n\n"
+                                    "lock-s1:\n\t..\\..\\..\\bin\\blackcat.exe lock s1.txt --no-debug<dummy\n\n"
+                                    "lock-s3:\n\t..\\..\\..\\bin\\blackcat.exe lock s3.txt --no-debug<dummy\n\n"
+                                    "unlock-s1:\n\t..\\..\\..\\bin\\blackcat.exe unlock s1.txt --no-debug<dummy\n\n"
+                                    "unlock-s3:\n\t..\\..\\..\\bin\\blackcat.exe unlock s3.txt --no-debug<dummy\n\n")) == 1);
+#else
+# error Some code wanted.
+#endif
+
+    CUTE_ASSERT(blackcat("config --update --no-debug", "Zzzoldar", NULL) == 0);
+
+    CUTE_ASSERT(create_file("dummy", "Zzzoldar\n", strlen("Zzzoldar\n")) == 1);
+    CUTE_ASSERT(create_file("s1.txt", sensitive1, strlen(sensitive1)) == 1);
+    CUTE_ASSERT(create_file("s3.txt", sensitive3, strlen(sensitive3)) == 1);
+
+    CUTE_ASSERT(blackcat("add s1.txt", "Zzzoldar", NULL) == 0);
+    CUTE_ASSERT(blackcat("add s3.txt", "Zzzoldar", NULL) == 0);
+
+    CUTE_ASSERT(blackcat("do --me-wrong", "Zzzoldar", NULL) != 0);
+
+    CUTE_ASSERT(blackcat("do --lock-s1", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(memcmp(data, sensitive1, strlen(sensitive1)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --unlock-s1", "Zzzoldar!", NULL) != 0);
+    CUTE_ASSERT(blackcat("do --unlock-s1", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --lock-s3", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(memcmp(data, sensitive3, strlen(sensitive3)) != 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("do --unlock-s3", "Soldar", NULL) != 0);
+    CUTE_ASSERT(blackcat("do --unlock-s3", "Zzzoldar", NULL) == 0);
+
+    data = get_file_data("s3.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive3));
+    CUTE_ASSERT(memcmp(data, sensitive3, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    data = get_file_data("s1.txt", &data_size);
+    CUTE_ASSERT(data != NULL);
+    CUTE_ASSERT(data_size == strlen(sensitive1));
+    CUTE_ASSERT(memcmp(data, sensitive1, data_size) == 0);
+    kryptos_freeseg(data, data_size);
+
+    CUTE_ASSERT(blackcat("deinit --no-debug", "Zzzoldar", NULL) == 0);
+    remove("s1.txt");
+    remove("s3.txt");
+    remove("dummy");
+
 CUTE_TEST_CASE_END
 
 CUTE_TEST_CASE(blackcat_poke_do_cmd_tests)

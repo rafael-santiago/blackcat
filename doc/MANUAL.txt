@@ -529,6 +529,17 @@ When using '--no-swap', any memory allocated by the application will stay in RAM
 during a swap operation. However, you must avoid suspending or hibernating your system, in
 this case, your current session will be saved to some point into your disk.
 
+Sometimes debugging can be really harmful for an encryption tool. It allows an attacker to
+inspect sensitive buffers in order to extract some information about the encryption key(s).
+
+Blackcat offers you a big red panic button on situations when a debugger attachment happens
+during an execution. When this attachment is detected the application simply exits seeking to
+reduce more damage. In order to activate this debugging mitigation all you should do is to
+pass the additional flag opton '--no-debug' together with a general purporse command. It
+tends to be a rather paranoid care, because if you are on a well-controlled environment,
+there is no much sense on doing it. Anyway, when worried about someone connected in your
+host and able to some remote debugging, pass this flag option will cause no harm.
+
 Encoding your stuff after encrypting
 ====================================
 

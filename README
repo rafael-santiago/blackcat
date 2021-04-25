@@ -57,7 +57,9 @@ Including:
     - This same device driver can avoid the replacement of your blackcat's binary copy for a tainted one;
 
     - If you are pretty paranoid, some cares for avoiding RAM swap issues that would leak some
-      pretty sensitive information (depending on your requirements).
+      pretty sensitive information (depending on your requirements);
+
+    - Debugging mitigation mechanism (if you are paranoid about it too);
 
     - Vpn-tunnel (socket level) with E2EE (by using a double ratchet-like mechanism or not);
 

@@ -35,6 +35,7 @@ int blackcat_cmd_config(void) {
     int exit_code = 0;
     char *sub_command;
     size_t c;
+    size_t executed_subcommands_nr = 0;
 
     arg = 0;
     exit_code = 0;
@@ -47,13 +48,18 @@ int blackcat_cmd_config(void) {
     }
 
     while (exit_code == 0 && sub_command != NULL) {
-        exit_code = EINVAL;
         for (c = 0; c < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_config_commands); c++) {
             if (strcmp(sub_command, GET_BLACKCAT_COMMAND_NAME(g_blackcat_config_commands, c)) == 0) {
                 exit_code = GET_BLACKCAT_COMMAND_TEXT(g_blackcat_config_commands, c)();
+                executed_subcommands_nr++;
             }
         }
         sub_command = blackcat_get_argv(arg++);
+    }
+
+    if (executed_subcommands_nr == 0) {
+        fprintf(stderr, "ERROR: No valid command supplied.\n");
+        exit_code = EINVAL;
     }
 
 blackcat_cmd_config_epilogue:

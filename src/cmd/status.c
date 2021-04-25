@@ -103,12 +103,12 @@ blackcat_cmd_status_epilogue:
 
 #if defined(__GNUC__) && !defined(__MINGW32__) && !defined(__MINGW64__) && !defined(__NetBSD__) &&\
    !defined(__OpenBSD__) && !defined(__minix__) && !defined(__sun__)
-    if (stdout != g_blackcat_cmd_status_stdout) {
+    if (g_blackcat_cmd_status_stdout != NULL && stdout != g_blackcat_cmd_status_stdout) {
         stdout = g_blackcat_cmd_status_stdout;
     }
 #endif
 
-    if (stddest != NULL) {
+    if (stddest != NULL && stddest != stdout) {
         pclose(stddest);
     }
 

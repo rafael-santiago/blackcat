@@ -31,7 +31,9 @@
 #include <cmd/token.h>
 #include <cmd/man.h>
 #include <cmd/count.h>
+#include <cmd/debugger_trap.h>
 #include <fs/bcrepo/bcrepo.h>
+#include <aegis.h>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # include <cmd/lkm.h>
 #endif
@@ -53,6 +55,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <accacia.h>
 #if defined(__unix__)
 # include <sys/resource.h>
 #endif
@@ -98,12 +102,25 @@ DECL_BLACKCAT_COMMAND_TABLE_END
 
 DECL_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands)
 
+static int g_blackcat_exec_end = 0;
+
+static int blackcat_finish_exec(const int exit_code);
+
+static int blackcat_exec_should_disable_gorgon(void *arg);
+
 int blackcat_exec(int argc, char **argv) {
     size_t c;
     const char *command = NULL;
     int err = EINVAL;
+    int no_debug;
 
     blackcat_set_argc_argv(argc, argv);
+
+    no_debug = blackcat_get_bool_option("no-debug", 0);
+
+    if (no_debug) {
+        aegis_set_gorgon(blackcat_exec_should_disable_gorgon, NULL, blackcat_debugger_trap, NULL);
+    }
 
 #if defined(__unix__) && !defined(__minix__)
     if (blackcat_get_bool_option("no-swap", 0) == 1) {
@@ -171,7 +188,13 @@ int blackcat_exec(int argc, char **argv) {
 
     for (c = 0; c < GET_BLACKCAT_COMMAND_TABLE_SIZE(g_blackcat_commands); c++) {
         if (strcmp(command, GET_BLACKCAT_COMMAND_NAME(g_blackcat_commands, c)) == 0) {
-            return GET_BLACKCAT_COMMAND_TEXT(g_blackcat_commands, c)();
+            err = GET_BLACKCAT_COMMAND_TEXT(g_blackcat_commands, c)();
+            if (no_debug) {
+                // INFO(Rafael): Flagging out exit and waiting anti-debugging Gorgon exit before actually exiting,
+                //               Otherwise it will screw-up our main return exit code.
+                blackcat_finish_exec(err);
+            }
+            return err;
         }
     }
 
@@ -184,5 +207,24 @@ blackcat_exec_epilogue:
         fprintf(stderr, "Invalid command.\n");
     }
 
+    if (no_debug) {
+        // INFO(Rafael): Flagging out exit and waiting anti-debugging Gorgon exit before actually exiting,
+        //               Otherwise it will screw-up our main return exit code.
+        blackcat_finish_exec(err);
+    }
+
     return err;
+}
+
+static int blackcat_finish_exec(const int exit_code) {
+    int chld_status;
+    g_blackcat_exec_end = 1;
+    while (wait(&chld_status) > 0)
+        ;
+    accacia_screennormalize();
+    exit(exit_code);
+}
+
+static int blackcat_exec_should_disable_gorgon(void *arg) {
+    return g_blackcat_exec_end;
 }
